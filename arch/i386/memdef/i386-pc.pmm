@@ -1,0 +1,14 @@
+. = 0x00000000 -> 0x00000000;
+
+// Kernel bottom area
+region KBOTTOM[0x00400000] = 0x00000000 -> 0x00000000;
+
+region USER[0x7ffff000 - .] = ? -> .;
+
+region USER_PROTECT[0x1000] = ? -> .;
+
+// Kernel image
+region KIMAGE[0x00c00000] = 0x02000000 -> 0x80000000;
+
+// Kernel PDT
+region KPDT[0x00004000] = $ -> %;

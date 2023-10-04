@@ -1,0 +1,18 @@
+get_property(FREESTDC_INCLUDE_DIR GLOBAL PROPERTY FREESTDC_INCLUDE_DIR)
+
+file(GLOB SRC *.h *.c *.S)
+target_sources(hal PRIVATE ${SRC})
+target_include_directories(hal SYSTEM BEFORE PRIVATE ${FREESTDC_INCLUDE_DIR})
+add_dependencies(hal oicarch freestdc)
+target_link_libraries(hal oicarch freestdc)
+
+add_subdirectory("boot")
+add_subdirectory("dbg")
+add_subdirectory("display")
+add_subdirectory("exec")
+add_subdirectory("initcar")
+add_subdirectory("irq")
+add_subdirectory("logger")
+add_subdirectory("misc")
+add_subdirectory("mm")
+add_subdirectory("proc")

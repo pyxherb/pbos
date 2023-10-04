@@ -1,0 +1,16 @@
+const subset core {
+    [0x0000] = sysent_exit,
+	[0x0100] = sysent_read,
+	[0x0101] = sysent_write,
+	[0x0102] = sysent_open,
+	[0x0103] = sysent_close,
+	[0x0104] = sysent_create,
+	[0x0105] = sysent_remove,
+	[0x0106] = sysent_seek,
+	[0x0107] = sysent_ioctl,
+
+	[0x0180] = sysent_mmap,
+	[0x0181] = sysent_unmmap
+
+	[0x0200] = sysent_exec,
+}

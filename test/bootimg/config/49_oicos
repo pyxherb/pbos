@@ -1,0 +1,5 @@
+menuentry "OicOS" {
+	multiboot2 /sys/kernel/oickim
+	module2 /sys/boot/initcar initcar
+	boot
+}
