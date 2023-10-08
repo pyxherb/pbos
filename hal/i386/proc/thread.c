@@ -17,7 +17,7 @@ ps_tcb_t *kn_alloc_tcb(ps_pcb_t *pcb) {
 
 thread_id_t ps_create_thread(
 	ps_proc_access_t access,
-	ps_pcb_t* pcb,
+	ps_pcb_t *pcb,
 	size_t stacksize) {
 	if (!stacksize)
 		return -1;
@@ -51,12 +51,13 @@ void kn_thread_setentry(ps_tcb_t *pcb, void *ptr) {
 
 void kn_thread_setstack(ps_tcb_t *pcb, void *ptr, size_t size) {
 	const void *sp = ((char *)ptr) + size;
-	pcb->context.gp_regs.esp = (uint32_t)sp;
-	pcb->context.gp_regs.ebp = (uint32_t)sp;
+	pcb->context.esp = (uint32_t)sp;
+	pcb->context.ebp = (uint32_t)sp;
 	pcb->stack = PGROUNDDOWN(ptr);
 }
 
 km_result_t kn_thread_allocstack(ps_tcb_t *tcb, size_t size) {
+	km_result_t result;
 	ps_pcb_t *pcb = tcb->parent;
 
 	tcb->stacksize = PGROUNDUP(size);
@@ -65,21 +66,29 @@ km_result_t kn_thread_allocstack(ps_tcb_t *tcb, size_t size) {
 		(void *)UFREE_VBASE,
 		(void *)UFREE_VTOP,
 		UNPGSIZE(tcb->stacksize),
-		PAGE_READ | PAGE_WRITE));
+		PAGE_READ | PAGE_WRITE | PAGE_USER));
 
 	for (pgsize_t i = 0; i < tcb->stacksize; ++i) {
-		void *pg = mm_pgalloc(MM_PMEM_AVAILABLE, PAGE_READ | PAGE_WRITE, 0);
+		void *pg = mm_pgalloc(MM_PMEM_AVAILABLE, 0);
 
 		if (!pg) {
 			do {
 				mm_pgfree(mm_getmap(pcb->mmctxt, UNPGADDR(tcb->stack + i)), 0);
-			} while (i);
+			} while (--i);
 			mm_vmfree(pcb->mmctxt, UNPGADDR(tcb->stack), size);
 			return KM_RESULT_NO_MEM;
 		}
 
-		hn_pgmap(pcb->mmctxt->pdt, PGROUNDDOWN(pg), tcb->stack + i, 1, PAGE_READ | PAGE_WRITE);
+		if (KM_FAILED(result = mm_mmap(pcb->mmctxt, UNPGADDR(tcb->stack), PGFLOOR(pg), PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_USER))) {
+			do {
+				mm_pgfree(mm_getmap(pcb->mmctxt, UNPGADDR(tcb->stack + i)), 0);
+			} while (--i);
+			mm_vmfree(pcb->mmctxt, UNPGADDR(tcb->stack), size);
+			return result;
+		}
 	}
+
+	tcb->context.ebp = (tcb->context.esp = (uint32_t)UNPGADDR(tcb->stack) + size - 4);
 
 	return KM_RESULT_OK;
 }

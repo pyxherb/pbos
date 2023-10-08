@@ -16,7 +16,13 @@ ps_pcb_t *kn_alloc_pcb() {
 
 	memset(proc, 0, sizeof(ps_pcb_t));
 
+	if(!(proc->mmctxt = mm_create_context())) {
+		mm_kfree(proc);
+		return NULL;
+	}
+
 	om_init_object(&(proc->object_header), ps_proc_class);
+
 	kf_rbtree_init(
 		&(proc->parp_list),
 		_parp_nodecmp,
@@ -24,7 +30,6 @@ ps_pcb_t *kn_alloc_pcb() {
 		_parp_nodefree);
 
 	proc->flags = PROC_P;
-	proc->mmctxt = mm_create_context();
 
 	return proc;
 }
@@ -55,18 +60,14 @@ void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
 		proc->threads = thread;
 }
 
-void kn_start_process(ps_pcb_t *pcb) {
+void kn_start_user_process(ps_pcb_t *pcb) {
 	mm_switch_context(pcb->mmctxt);
 
-	kn_start_thread(pcb->threads);
+	kn_start_user_thread(pcb->threads);
 }
 
-void kn_start_thread(ps_tcb_t *tcb) {
-	__asm__ __volatile__("movl %0, %%eax" ::"d"(UNPGADDR(tcb->stack + tcb->stacksize)));
-	__asm__ __volatile__("movl %0, %%edx" ::"d"(&tcb->context.eip));
-	__asm__ __volatile__("movl %eax, %esp");
-	__asm__ __volatile__("movl %eax, %ebp");
-	__asm__ __volatile__("jmp *(%edx)");
+void kn_start_user_thread(ps_tcb_t *tcb) {
+	ps_load_user_context(&tcb->context);
 }
 
 static int _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {

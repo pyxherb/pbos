@@ -1,7 +1,7 @@
 #include "vm.h"
 #include <hal/i386/mm.h>
 
-static uint16_t hn_access_to_pgmask(mm_pgaccess_t access) {
+static uint16_t hn_pgaccess_to_pgmask(mm_pgaccess_t access) {
 	uint16_t mask = PTE_P;
 
 	// We cannot set if a page frame is read-only on x86  :(
@@ -9,7 +9,7 @@ static uint16_t hn_access_to_pgmask(mm_pgaccess_t access) {
 		mask |= PTE_RW;
 	if (access & PAGE_NOCACHE)
 		mask |= PTE_CD;
-	if (!(access & PAGE_USER))
+	if (access & PAGE_USER)
 		mask |= PTE_U;
 	// Only works on processors that support DEP.
 	if (!(access & PAGE_EXEC))
@@ -19,8 +19,8 @@ static uint16_t hn_access_to_pgmask(mm_pgaccess_t access) {
 }
 
 void *mm_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access) {
-	return mm_vmalloc(ctxt, ((uint8_t *)CRITICAL_VTOP) + 1,
-		(void *)UINTPTR_MAX, size, access);
+	return mm_vmalloc(ctxt, ((uint8_t *)KRESERVED_VTOP) + 1,
+		(void *)KSPACE_VTOP, size, access);
 }
 
 void mm_vmfree(mm_context_t *ctxt, const void *addr, size_t size) {
@@ -35,7 +35,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	const pgaddr_t pgvaddr = PGROUNDDOWN(vaddr), pgpaddr = PGROUNDDOWN(paddr),
 				   pgsize = PGROUNDUP(size);
 
-	uint16_t mask = hn_access_to_pgmask(access);
+	uint16_t mask = hn_pgaccess_to_pgmask(access);
 
 	for (uint16_t i = PDX(vaddr); i < PDX(vaddr + size) + 1; ++i)
 		if (!(ctxt->pdt[i].mask & PDE_P))
@@ -54,7 +54,7 @@ void mm_chpgmod(
 	const void *vaddr,
 	size_t size,
 	mm_pgaccess_t access) {
-	uint16_t mask = hn_access_to_pgmask(access);
+	uint16_t mask = hn_pgaccess_to_pgmask(access);
 	pgsize_t pg_num = PGROUNDUP(size);
 
 	for (uint16_t di = PDX(vaddr); di < (PDX(vaddr) + PDX(pg_num + PTX_MAX));
@@ -399,10 +399,10 @@ pgaddr_t hn_mmctxt_pgtaballoc(mm_context_t *ctxt, uint16_t pdx) {
 		return ctxt->pdt[pdx].address;
 
 	if (!(pde->address = PGROUNDDOWN(
-			  mm_pgalloc(MM_PMEM_AVAILABLE, PAGE_READ | PAGE_WRITE, 0))))
+			  mm_pgalloc(MM_PMEM_AVAILABLE, 0))))
 		return (pgaddr_t)NULL;
 
-	pde->mask = PDE_P;
+	pde->mask = PDE_P | PDE_RW | PDE_U;
 
 	return ctxt->pdt[pdx].address;
 }

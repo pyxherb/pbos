@@ -26,7 +26,7 @@ typedef struct _mm_context_t mm_context_t;
 mm_order_t mm_max_order();
 size_t mm_getpgsize();
 
-__nodiscard void *__malloc mm_pgalloc(uint8_t memtype, uint8_t access, uint8_t order);
+__nodiscard void *__malloc mm_pgalloc(uint8_t memtype, uint8_t order);
 void mm_pgfree(void *ptr, uint8_t order);
 
 __nodiscard void *__malloc mm_kmalloc(size_t size)

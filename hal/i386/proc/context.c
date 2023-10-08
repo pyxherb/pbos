@@ -1,48 +1,37 @@
 #include <arch/i386/reg.h>
 #include <hal/i386/proc.h>
+#include <oicos/km/logger.h>
 
-void hn_save_context(hn_proc_context_t *ctxt) {
-	// Save general-purpose registers.
-	{
-		__asm__ volatile("movl %esp, %eax");  // Save ESP
+typedef struct _kn_ctxtsw_tmp_t {
+	ps_user_context_t context;
+	struct {
+		char padding[PAGESIZE - sizeof(ps_user_context_t)];
+	};
+	uint16_t cs;
+	uint16_t ds;
+} kn_ctxtsw_tmp_t;
 
-		__asm__ volatile("movl %0, %%esp"
-						 : "=m"(*(((char *)&ctxt->gp_regs) + (sizeof(ctxt->gp_regs) - 1))));
-		__asm__ volatile("pushal");
+#define hn_ctxtsw_tmp_area ((kn_ctxtsw_tmp_t *)KCTXTSWTMP_VBASE)
 
-		__asm__ volatile("movl %eax, %esp");  // Restore ESP
-	}
+__noreturn void hn_load_user_context();
 
-	ctxt->eip = arch_reip();
+void ps_save_context(ps_user_context_t *ctxt) {
+}
 
-	__asm__ volatile("pushfl");
-	__asm__ volatile("popl %0"
-					 : "=m"(ctxt->eflags));
-
-	__asm__ volatile("movw %%cs, %0"
-					 : "=r"(ctxt->cs));
-	__asm__ volatile("movw %%ds, %0"
-					 : "=r"(ctxt->ds));
-	__asm__ volatile("movw %%ss, %0"
-					 : "=r"(ctxt->ss));
-	__asm__ volatile("movw %%es, %0"
-					 : "=r"(ctxt->es));
-	__asm__ volatile("movw %%fs, %0"
-					 : "=r"(ctxt->fs));
-	__asm__ volatile("movw %%gs, %0"
-					 : "=r"(ctxt->gs));
-
-	__asm__ volatile("movl %%cr0, %0"
-					 : "=r"(ctxt->cr0));
-	__asm__ volatile("movl %%cr2, %0"
-					 : "=r"(ctxt->cr2));
-	__asm__ volatile("movl %%cr4, %0"
-					 : "=r"(ctxt->cr4));
-
-	if (arch_rcr4() & CR4_OSXSAVE) {
-		// TODO:Save XCR register.
-		__asm__ volatile("xorl %ecx, %ecx");
-		__asm__ volatile("xgetbv"
-						 : "=a"(ctxt->xcr0));
-	}
+__noreturn void ps_load_user_context(ps_user_context_t *ctxt) {
+	kdprintf("Switching context:\n"
+			"EAX=%.8x EBX=%.8x\n"
+			"ECX=%.8x EDX=%.8x\n"
+			"ESP=%.8x EBP=%.8x\n"
+			"ESI=%.8x EDI=%.8x\n"
+			"EIP=%.8x EFLAGS=%.8x\n",
+			ctxt->eax, ctxt->ebx,
+			ctxt->ecx, ctxt->edx,
+			ctxt->esp, ctxt->ebp,
+			ctxt->esi, ctxt->edi,
+			ctxt->eip, ctxt->eflags);
+	hn_ctxtsw_tmp_area->cs = SELECTOR_UCODE;
+	hn_ctxtsw_tmp_area->ds = SELECTOR_UDATA;
+	memcpy(&hn_ctxtsw_tmp_area->context, ctxt, sizeof(ps_user_context_t));
+	hn_load_user_context();
 }

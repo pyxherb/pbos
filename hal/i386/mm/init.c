@@ -7,7 +7,7 @@ hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1] = {
 };
 
 FASTCALL_DECL(static void, hn_push_pmad(hn_pmad_t *pmad));
-static void hn_mm_init_gdt();
+static void hn_init_gdt();
 static void hn_mm_init_paging();
 static void hn_mm_init_pmadlist();
 static void hn_mm_init_areas();
@@ -15,7 +15,7 @@ static void hn_mm_init_areas();
 void hn_mm_init() {
 	mm_kernel_context->pdt = hn_kernel_pdt;
 
-	hn_mm_init_gdt();
+	hn_init_gdt();
 	hn_mm_init_pmadlist();
 	hn_mm_init_paging();
 	hn_mm_init_areas();
@@ -94,7 +94,7 @@ static void hn_mm_init_areas() {
 			// Create MAD pages for each block.
 			for (uint32_t k = 0; k < (k_max ? k_max : 1); ++k) {
 				pgaddr_t vaddr = hn_vpgalloc(hn_kernel_pdt, PGROUNDDOWN(KPRIVMAP_VBASE), PGROUNDUP(KPRIVMAP_VTOP));
-				pgaddr_t pgaddr = PGROUNDDOWN(mm_pgalloc(KN_PMEM_AVAILABLE, PAGE_READ|PAGE_WRITE,0));
+				pgaddr_t pgaddr = PGROUNDDOWN(mm_pgalloc(KN_PMEM_AVAILABLE, 0));
 				assert(ISVALIDPG(vaddr));
 				assert(ISVALIDPG(pgaddr));
 
@@ -140,20 +140,21 @@ static void hn_mm_init_areas() {
 ///
 /// @brief Initialize and load GDT.
 ///
-static void hn_mm_init_gdt() {
+static void hn_init_gdt() {
 	// NULL descriptor.
 	_kgdt.null_desc = GDTDESC(0, 0, 0, 0);
 
 	// Kernel mode descriptors.
 	_kgdt.kcode_desc =
 		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(0) | GDT_AB_S | GDT_AB_DC | GDT_AB_EX, GDT_FL_DB | GDT_FL_GR);
-	_kgdt.kdata_desc = GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(0) | GDT_AB_S | GDT_AB_RW, GDT_FL_DB | GDT_FL_GR);
+	_kgdt.kdata_desc =
+		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(0) | GDT_AB_S | GDT_AB_RW, GDT_FL_DB | GDT_FL_GR);
 
 	// User mode descriptors.
-	_kgdt.ucode_desc = GDTDESC(0, PGROUNDDOWN(KERNEL_VBASE),
-		GDT_AB_P | GDT_AB_DPL(3) | GDT_AB_S | GDT_AB_DC | GDT_AB_EX, GDT_FL_DB | GDT_FL_GR);
+	_kgdt.ucode_desc =
+		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(3) | GDT_AB_S | GDT_AB_DC | GDT_AB_EX, GDT_FL_DB | GDT_FL_GR);
 	_kgdt.udata_desc =
-		GDTDESC(0, PGROUNDDOWN(KERNEL_VBASE), GDT_AB_P | GDT_AB_DPL(3) | GDT_AB_S | GDT_AB_RW, GDT_FL_DB | GDT_FL_GR);
+		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(3) | GDT_AB_S | GDT_AB_RW, GDT_FL_DB | GDT_FL_GR);
 
 	arch_lgdt(&_kgdt, sizeof(_kgdt) / sizeof(arch_gdt_desc_t));
 

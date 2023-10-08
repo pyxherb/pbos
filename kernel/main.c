@@ -18,12 +18,10 @@ void __noreturn _start() {
 	// irq_init();
 
 	om_init();
-
 	fs_init();
+	ps_init();
 
 	initcar_init();
-
-	kn_init_exec();
 
 	om_handle_t init_handle;
 	if (KM_FAILED(fs_open("/initcar/insinit", sizeof("/initcar/insinit") - 1, &init_handle)))

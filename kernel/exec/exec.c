@@ -39,7 +39,7 @@ km_result_t km_exec(
 			return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
 		if (KM_SUCCEEDED(binldr->binldr.load_exec(pcb, file_handle))) {
-			kn_start_process(pcb);
+			kn_start_user_process(pcb);
 		}
 	}
 

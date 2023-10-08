@@ -87,11 +87,11 @@ void kputc(char ch);
 void kputs(const char *str);
 
 #ifndef _NDEBUG
-	#define kdvprintf(str, args) kvprintf(str, args)
-	#define kdprintf(str, ...) kprintf(str, ##__VA_ARGS__)
+	#define kdvprintf kvprintf
+	#define kdprintf kprintf
 #else
-	#define kdvprintf(str, args)
-	#define kdprintf(str, ...)
+	#define kdvprintf
+	#define kdprintf
 #endif
 
 #endif

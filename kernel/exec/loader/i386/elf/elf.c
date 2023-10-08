@@ -80,13 +80,13 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle) {
 		{
 			// Allocate pages for current segment.
 			for (Elf32_Word j = 0; j < ph.p_memsz; j += PAGESIZE) {
-				void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, PAGE_READ | PAGE_WRITE | PAGE_EXEC, 0);
-				mm_mmap(ps_mmcontext_of(proc), vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_READ | PAGE_WRITE);
+				void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, 0);
+				mm_mmap(ps_mmcontext_of(proc), vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER);
 			}
 
 			// Read the whole segment into the memory.
 			memset(vaddr, 0, ph.p_memsz);
-			if (!KM_SUCCEEDED(result = fs_read(file_handle, (void*)ph.p_vaddr, ph.p_filesz, ph.p_offset, &bytes_read))) {
+			if (!KM_SUCCEEDED(result = fs_read(file_handle, (void *)ph.p_vaddr, ph.p_filesz, ph.p_offset, &bytes_read))) {
 				// TODO: free allocated resources here.
 				return result;
 			}

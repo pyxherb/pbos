@@ -8,7 +8,7 @@ static hn_mad_t *_hn_find_mad(hn_madpool_t *pool, uint32_t pgaddr, uint8_t order
 #define LHINT 0x80	// Lesser Hint
 #define GHINT 0x40	// Greater Hint
 
-void *mm_pgalloc(uint8_t memtype, uint8_t access, uint8_t order) {
+void *mm_pgalloc(uint8_t memtype, uint8_t order) {
 	assert(order <= MM_MAXORD);
 
 	uint8_t pmemtype;

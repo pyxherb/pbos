@@ -92,7 +92,7 @@ kf_hashmap_node_t *kf_hashmap_find(kf_hashmap_t *dest, const void *key) {
 
 	kf_list_foreach(i, &dest->buckets[index].nodes->list_header) {
 		if (!dest->key_cmp(CONTAINER_OF(kf_hashmap_node_t, list_header, i), key))
-			return i;
+			return CONTAINER_OF(kf_hashmap_node_t, list_header, i);
 	}
 
 	return NULL;

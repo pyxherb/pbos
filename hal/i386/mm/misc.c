@@ -17,7 +17,7 @@ uint8_t hn_to_kn_pmem_type(uint8_t memtype) {
 	return KN_PMEM_END;
 }
 
-void mm_copy_kspace_pgtab(mm_context_t *context) {
+void mm_sync_fixed_pgtab_parts(mm_context_t *context) {
 	memcpy(
 		context->pdt + PDX(KBOTTOM_VBASE),
 		mm_kernel_context->pdt + PDX(KBOTTOM_VBASE),
@@ -33,12 +33,12 @@ __nodiscard mm_context_t *mm_create_context() {
 	if (!context)
 		return NULL;
 
-	void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, PAGE_READ | PAGE_WRITE, 0),
+	void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, 0),
 		 *vaddr = UNPGADDR(hn_vpgalloc(hn_kernel_mmctxt.pdt, PGROUNDDOWN(KSPACE_VBASE), PGADDR_MAX));
 	context->pdt = vaddr;
 	mm_mmap(&hn_kernel_mmctxt, vaddr, paddr, PAGESIZE, PAGE_READ | PAGE_WRITE);
 
-	mm_copy_kspace_pgtab(context);
+	mm_sync_fixed_pgtab_parts(context);
 	return context;
 }
 
@@ -52,6 +52,6 @@ void mm_free_context(mm_context_t *context) {
 }
 
 void mm_switch_context(mm_context_t *context) {
-	mm_copy_kspace_pgtab(context);
+	mm_sync_fixed_pgtab_parts(context);
 	arch_lpdt(PGROUNDDOWN(hn_getmap(mm_kernel_context->pdt, context->pdt)));
 }

@@ -8,8 +8,8 @@
 
 #define SELECTOR_KCODE SELECTOR(0, 0, 1)
 #define SELECTOR_KDATA SELECTOR(0, 0, 2)
-#define SELECTOR_UCODE SELECTOR(0, 0, 3)
-#define SELECTOR_UDATA SELECTOR(0, 0, 4)
+#define SELECTOR_UCODE SELECTOR(3, 0, 3)
+#define SELECTOR_UDATA SELECTOR(3, 0, 4)
 
 typedef struct __packed _hn_kgdt_t {
 	arch_gdt_desc_t null_desc;

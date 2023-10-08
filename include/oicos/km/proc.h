@@ -17,7 +17,7 @@
 typedef struct _ps_mod_t ps_mod_t;
 typedef struct _ps_pcb_t ps_pcb_t;	// Process Environment Descriptor (PED)
 typedef struct _ps_tcb_t ps_tcb_t;	// Thread Environment Descriptor (TED)
-typedef struct _ps_context_t ps_context_t;
+typedef struct _ps_user_context_t ps_user_context_t;
 
 typedef uint32_t ps_proc_access_t;
 

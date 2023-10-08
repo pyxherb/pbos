@@ -10,7 +10,7 @@ skid_pchunkpg_t *skid_pchunkpg_new() {
 	if (!vaddr)
 		return NULL;
 
-	void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, PAGE_READ | PAGE_WRITE, 0);
+	void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, 0);
 	if (!paddr) {
 		mm_vmfree(mm_kernel_context, vaddr, sizeof(skid_pchunkpg_t));
 		return NULL;
@@ -83,7 +83,7 @@ skid_pchunk_t *skid_pchunk_alloc(uint8_t order) {
 	skid_pchunk_t *pchunk = skid_pchunk_slotalloc();
 
 	if (pchunk) {
-		if (!(pchunk->ptr = mm_pgalloc(MM_PMEM_AVAILABLE, PAGE_READ | PAGE_WRITE, order)))
+		if (!(pchunk->ptr = mm_pgalloc(MM_PMEM_AVAILABLE, order)))
 			return NULL;
 		pchunk->order = order;
 		skid_pchunkpg_of(pchunk)->inuse_num++;
@@ -93,7 +93,7 @@ skid_pchunk_t *skid_pchunk_alloc(uint8_t order) {
 
 		pchunk = &pg->chunks[0];
 
-		if (!(pchunk->ptr = mm_pgalloc(MM_PMEM_AVAILABLE, PAGE_READ | PAGE_WRITE, order))) {
+		if (!(pchunk->ptr = mm_pgalloc(MM_PMEM_AVAILABLE, order))) {
 			skid_pchunkpg_free(pg);
 			return NULL;
 		}

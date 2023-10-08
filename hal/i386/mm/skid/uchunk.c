@@ -10,7 +10,7 @@ skid_uchunkpg_t *skid_uchunkpg_new() {
 	if (!vaddr)
 		return NULL;
 
-	void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, PAGE_READ | PAGE_WRITE, 0);
+	void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, 0);
 	if (!paddr) {
 		mm_vmfree(mm_kernel_context, vaddr, sizeof(skid_uchunkpg_t));
 		return NULL;
