@@ -1,8 +1,8 @@
-#include <oicos/kf/string.h>
-#include <oicos/km/logger.h>
-#include <oicos/km/mm.h>
-#include <oicos/km/panic.h>
-#include <oicos/kn/km/objmgr.h>
+#include <pbos/kf/string.h>
+#include <pbos/km/logger.h>
+#include <pbos/km/mm.h>
+#include <pbos/km/panic.h>
+#include <pbos/kn/km/objmgr.h>
 
 om_class_t *kn_class_list = NULL;
 kf_rbtree_t kn_global_handles;

@@ -1,8 +1,8 @@
 #ifndef _ARCH_I386_KPARAM_H_
 #define _ARCH_I386_KPARAM_H_
 
-#include <oicos/attribs.h>
-#include <oicos/common.h>
+#include <pbos/attribs.h>
+#include <pbos/common.h>
 
 /// @brief Maximum number of memory maps
 #define ARCH_MMAP_MAX 32

@@ -1,8 +1,8 @@
-#include <oicos/kf/hash.h>
-#include <oicos/kf/string.h>
-#include <oicos/km/mm.h>
-#include <oicos/kn/fs/file.h>
-#include <oicos/kn/fs/fs.h>
+#include <pbos/kf/hash.h>
+#include <pbos/kf/string.h>
+#include <pbos/km/mm.h>
+#include <pbos/kn/fs/file.h>
+#include <pbos/kn/fs/fs.h>
 
 typedef struct _kn_file_hasher_key_t {
 	size_t filename_len;
@@ -152,7 +152,7 @@ static int _kn_file_keycmp(const kf_hashmap_node_t *lhs, const void *key) {
 	return 0;
 }
 
-#include <oicos/km/logger.h>
+#include <pbos/km/logger.h>
 
 km_result_t fs_mount_file(om_handle_t parent, om_handle_t file_handle) {
 	fs_file_t *parent_file, *file;

@@ -2,7 +2,7 @@
 #define _HAL_I386_MM_MISC_H_
 
 #include <hal/i386/mm.h>
-#include <oicos/km/mm.h>
+#include <pbos/km/mm.h>
 #include <arch/i386/seg.h>
 #include "pgalloc/pgalloc.h"
 

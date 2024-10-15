@@ -1,0 +1,5 @@
+menuentry "PbOS" {
+	multiboot2 /sys/kernel/pbkim
+	module2 /sys/boot/initcar initcar
+	boot
+}

@@ -1,5 +1,5 @@
-#include <oicos/kn/fs/initcar.h>
-#include <oicos/km/panic.h>
+#include <pbos/kn/fs/initcar.h>
+#include <pbos/km/panic.h>
 #include <string.h>
 
 km_result_t initcar_open(fs_file_t *file, om_handle_t *handle_out) {

@@ -1,6 +1,6 @@
 #include <arch/i386/reg.h>
 #include <hal/i386/proc.h>
-#include <oicos/km/logger.h>
+#include <pbos/km/logger.h>
 
 typedef struct _kn_ctxtsw_tmp_t {
 	ps_user_context_t context;

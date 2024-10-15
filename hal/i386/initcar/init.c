@@ -1,7 +1,7 @@
 #include <hal/i386/initcar.h>
-#include <oicos/km/logger.h>
-#include <oicos/kn/fs/file.h>
-#include <oicos/kn/fs/fs.h>
+#include <pbos/km/logger.h>
+#include <pbos/kn/fs/file.h>
+#include <pbos/kn/fs/fs.h>
 
 void *initcar_ptr = NULL;
 
@@ -101,7 +101,7 @@ void initcar_init() {
 
 	mm_mmap(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_ptr, ARCH_KARGS_PTR->initcar_size, PAGE_READ);
 
-	oicar_metadata_t *md = initcar_ptr;
+	pbcar_metadata_t *md = initcar_ptr;
 	if (md->magic[0] != OICAR_MAGIC_0 ||
 		md->magic[1] != OICAR_MAGIC_1 ||
 		md->magic[2] != OICAR_MAGIC_2 ||
@@ -115,7 +115,7 @@ void initcar_init() {
 		km_panic("Incompatible INITCAR byte-order");
 
 	// Create file objects.
-	const char *p_cur = initcar_ptr + sizeof(oicar_metadata_t);
+	const char *p_cur = initcar_ptr + sizeof(pbcar_metadata_t);
 	const uint32_t initcar_size = ARCH_KARGS_PTR->initcar_size;
 
 #define initcar_checksize(size)                                      \
@@ -133,10 +133,10 @@ void initcar_init() {
 			km_panic("Error mounting initcar directory, error code = %.0x", result);
 	}
 
-	oicar_fentry_t *fe;
+	pbcar_fentry_t *fe;
 	while (true) {
 		initcar_checksize(sizeof(*fe));
-		fe = (oicar_fentry_t *)p_cur, p_cur += sizeof(*fe);
+		fe = (pbcar_fentry_t *)p_cur, p_cur += sizeof(*fe);
 
 		if (fe->flags & OICAR_FILE_FLAG_END)
 			break;

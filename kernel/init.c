@@ -1,5 +1,5 @@
-#include <oicos/km/exec.h>
-#include <oicos/kn/fs/initcar.h>
+#include <pbos/km/exec.h>
+#include <pbos/kn/fs/initcar.h>
 
 #define INIT_PATH "/initcar/init"
 

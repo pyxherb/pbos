@@ -1,6 +1,6 @@
-#include <oicos/kf/hashmap.h>
-#include <oicos/km/assert.h>
-#include <oicos/km/mm.h>
+#include <pbos/kf/hashmap.h>
+#include <pbos/km/assert.h>
+#include <pbos/km/mm.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -146,7 +146,7 @@ static km_result_t _kf_hashmap_insert(kf_hashmap_t *dest, kf_hashmap_node_t *nod
 	return KM_RESULT_OK;
 }
 
-#include <oicos/km/logger.h>
+#include <pbos/km/logger.h>
 
 static km_result_t _kf_hashmap_resize_buckets(kf_hashmap_t *dest, size_t size) {
 	kprintf("resizing buckets, size = %d\n", (int)size);

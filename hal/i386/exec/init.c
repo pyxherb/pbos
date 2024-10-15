@@ -1,7 +1,7 @@
 #include <arch/i386/kargs.h>
 #include <hal/i386/initcar.h>
-#include <oicos/km/panic.h>
-#include <oicos/kn/km/exec.h>
+#include <pbos/km/panic.h>
+#include <pbos/kn/km/exec.h>
 #include <string.h>
 
 extern km_binldr_t kn_binldr_elf;

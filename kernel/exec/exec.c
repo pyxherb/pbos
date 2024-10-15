@@ -1,4 +1,4 @@
-#include <oicos/kn/km/exec.h>
+#include <pbos/kn/km/exec.h>
 #include <string.h>
 
 typedef struct _kn_binldr_reg_t {

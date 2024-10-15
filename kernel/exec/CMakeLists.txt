@@ -1,4 +1,4 @@
-set(_LOADER_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/loader/${OICOS_ARCH}")
+set(_LOADER_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/loader/${PBOS_ARCH}")
 file(GLOB _children RELATIVE ${_LOADER_SOURCE_DIR} ${_LOADER_SOURCE_DIR}/*)
 set(_binldrs "")
 
@@ -8,8 +8,8 @@ foreach(i ${_children})
     endif()
 endforeach()
 
-set(OICOS_BINLDRS "${_binldrs}" CACHE STRING "Found built-in binary loaders" FORCE)
+set(PBOS_BINLDRS "${_binldrs}" CACHE STRING "Found built-in binary loaders" FORCE)
 
-foreach(i ${OICOS_BINLDRS})
+foreach(i ${PBOS_BINLDRS})
     message("Found binary loader: ${i}")
 endforeach()

@@ -1,8 +1,8 @@
 #ifndef _ARCH_I386_ATOMIC_H_
 #define _ARCH_I386_ATOMIC_H_
 
-#include <oicos/attribs.h>
-#include <oicos/common.h>
+#include <pbos/attribs.h>
+#include <pbos/common.h>
 
 __always_inline static inline uint8_t arch_xchg8(volatile uint8_t *addr, uint8_t value) {
 	uint8_t result;

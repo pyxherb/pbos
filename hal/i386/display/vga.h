@@ -1,7 +1,7 @@
 #ifndef _HAL_I386_DISPLAY_VGA_H_
 #define _HAL_I386_DISPLAY_VGA_H_
 
-#include <oicos/common.h>
+#include <pbos/common.h>
 #include <stdarg.h>
 #include <stddef.h>
 

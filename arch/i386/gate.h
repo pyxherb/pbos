@@ -1,7 +1,7 @@
 #ifndef _ARCH_I386_GATE_H_
 #define _ARCH_I386_GATE_H_
 
-#include <oicos/attribs.h>
+#include <pbos/attribs.h>
 #include <stdint.h>
 
 typedef struct __packed _arch_gate_t {

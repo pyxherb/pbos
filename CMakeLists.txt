@@ -3,10 +3,10 @@ cmake_minimum_required(VERSION 3.15)
 include(ExternalProject)
 
 # Cache variables
-set(OICOS_ARCH "i386" CACHE STRING "Identifier of target architecture")
+set(PBOS_ARCH "i386" CACHE STRING "Identifier of target architecture")
 
 # Setup project
-project(OICOS VERSION 0.0.1)
+project(PBOS VERSION 0.0.1)
 
 # Setup build environments
 enable_language(ASM)
@@ -18,9 +18,9 @@ set(CMAKE_INCLUDE_PATH "${PROJECT_SOURCE_DIR}/scripts/cmake")
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
-set(OICOS_ROOT_DIR ${PROJECT_SOURCE_DIR})
-set(OICOS_TOOLS_BINARY_DIR "${OICOS_BINARY_DIR}/tools")
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM "${OICOS_BINARY_DIR}/tools/bin")
+set(PBOS_ROOT_DIR ${PROJECT_SOURCE_DIR})
+set(PBOS_TOOLS_BINARY_DIR "${PBOS_BINARY_DIR}/tools")
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM "${PBOS_BINARY_DIR}/tools/bin")
 
 # Subdirectories
 add_subdirectory("arch")
@@ -36,15 +36,15 @@ add_subdirectory("init")
 add_subdirectory("include")
 
 ExternalProject_Add(tools
-    SOURCE_DIR ${OICOS_SOURCE_DIR}/tools
-    BINARY_DIR ${OICOS_TOOLS_BINARY_DIR}/bin
-    PREFIX ${OICOS_BINARY_DIR}/tools
+    SOURCE_DIR ${PBOS_SOURCE_DIR}/tools
+    BINARY_DIR ${PBOS_TOOLS_BINARY_DIR}/bin
+    PREFIX ${PBOS_BINARY_DIR}/tools
     CMAKE_ARGS
         # Use native toolchain
         -UCMAKE_TOOLCHAIN_FILE
         # Inherited variables
-        -DOICOS_SOURCE_DIR=${OICOS_SOURCE_DIR}
-        -DOICOS_TOOLS_BINARY_DIR=${OICOS_TOOLS_BINARY_DIR}
+        -DPBOS_SOURCE_DIR=${PBOS_SOURCE_DIR}
+        -DPBOS_TOOLS_BINARY_DIR=${PBOS_TOOLS_BINARY_DIR}
     BUILD_ALWAYS true
     # Ignore installations
     INSTALL_COMMAND ${CMAKE_COMMAND} -E true

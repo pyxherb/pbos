@@ -4,7 +4,7 @@
 #include "mm.h"
 
 #include <arch/i386/int.h>
-#include <oicos/hal/irq.h>
+#include <pbos/hal/irq.h>
 
 void __noreturn isr_diverr(); // 0x00 Divide-by-zero Error
 void __noreturn isr_overflow(); // 0x04 Overflow

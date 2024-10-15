@@ -1,8 +1,8 @@
 #include <arch/i386/mlayout.h>
 #include <arch/i386/paging.h>
-#include <oicos/fmt/elf.h>
-#include <oicos/fs/file.h>
-#include <oicos/kn/km/exec.h>
+#include <pbos/fmt/elf.h>
+#include <pbos/fs/file.h>
+#include <pbos/kn/km/exec.h>
 #include <string.h>
 
 km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle);

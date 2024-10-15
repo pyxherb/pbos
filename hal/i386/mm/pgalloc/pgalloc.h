@@ -5,7 +5,7 @@
 #include <arch/i386/misc.h>
 #include <arch/i386/mlayout.h>
 #include <arch/i386/paging.h>
-#include <oicos/km/mm.h>
+#include <pbos/km/mm.h>
 #include <stdint.h>
 
 //

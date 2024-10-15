@@ -51,11 +51,11 @@ function InstallGrub {
 
 function UpdateGrubConfig {
 	Copy-Item test\bootimg\config\grub.cfg B:\sys\boot\grub\
-	Get-Content -Raw test\bootimg\config\49_oicos | Out-File -Encoding "utf8" -Append B:\sys\boot\grub\grub.cfg
+	Get-Content -Raw test\bootimg\config\49_pbos | Out-File -Encoding "utf8" -Append B:\sys\boot\grub\grub.cfg
 }
 
 function CopySystemFiles {
-	Copy-Item build\oickim B:\sys\kernel\
+	Copy-Item build\pbkim B:\sys\kernel\
 	Copy-Item build\initcar B:\sys\boot\
 }
 

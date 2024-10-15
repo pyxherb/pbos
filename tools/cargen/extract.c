@@ -1,6 +1,6 @@
 #include "op.h"
 
-#include <oicos/fmt/oicar.h>
+#include <pbos/fmt/pbcar.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -18,7 +18,7 @@ int op_extract(int argc, char** argv) {
 
 	FILE* src_fp = fopen(src_filename, "rb");
 
-	oicar_metadata_t md;
+	pbcar_metadata_t md;
 
 	if (!fread(&md, sizeof(md), 1, src_fp)) {
 		fclose(src_fp);
@@ -34,7 +34,7 @@ int op_extract(int argc, char** argv) {
 	}
 
 	while (true) {
-		oicar_fentry_t fe;
+		pbcar_fentry_t fe;
 		if (!fread(&fe, sizeof(fe), 1, src_fp)) {
 			fclose(src_fp);
 			puts("Error: Error reading the archive");

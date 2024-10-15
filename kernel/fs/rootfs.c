@@ -1,5 +1,5 @@
-#include <oicos/km/mm.h>
-#include <oicos/kn/fs/rootfs.h>
+#include <pbos/km/mm.h>
+#include <pbos/kn/fs/rootfs.h>
 
 fs_fsops_t kn_rootfs_ops = {
 	.open = kn_rootfs_open,

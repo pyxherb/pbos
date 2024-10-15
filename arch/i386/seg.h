@@ -1,7 +1,7 @@
 #ifndef _ARCH_I386_SEG_H_
 #define _ARCH_I386_SEG_H_
 
-#include <oicos/attribs.h>
+#include <pbos/attribs.h>
 #include <stdint.h>
 #include "reg.h"
 

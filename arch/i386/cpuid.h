@@ -1,7 +1,7 @@
 #ifndef _ARCH_I386_CPUID_H_
 #define _ARCH_I386_CPUID_H_
 
-#include <oicos/common.h>
+#include <pbos/common.h>
 
 #define CPUID_FUNC_VENDOR 0x00000000
 #define CPUID_FUNC_CPU_NAME1 0x80000002

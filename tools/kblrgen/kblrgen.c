@@ -5,7 +5,7 @@
  * @version 0.1
  * @date 2023-08-11
  *
- * @copyright Copyright (c) 2023 OicOS Contributors
+ * @copyright Copyright (c) 2023 PbOS Contributors
  *
  */
 #include <stdio.h>

@@ -1,7 +1,7 @@
 #ifndef _ARCH_I386_MLAYOUT_H_
 #define _ARCH_I386_MLAYOUT_H_
 
-#include <oicos/common.h>
+#include <pbos/common.h>
 #include "paging.h"
 
 #define PADDR_TOP(prefix) ((prefix##_PBASE) + ((prefix##_SIZE) - 1))

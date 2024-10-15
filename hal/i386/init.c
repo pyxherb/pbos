@@ -1,9 +1,9 @@
 #include <arch/i386/kargs.h>
 #include <arch/i386/misc.h>
-#include <oicos/hal/init.h>
-#include <oicos/km/exec.h>
-#include <oicos/km/mm.h>
-#include <oicos/km/panic.h>
+#include <pbos/hal/init.h>
+#include <pbos/km/exec.h>
+#include <pbos/km/mm.h>
+#include <pbos/km/panic.h>
 #include "initcar.h"
 #include "logger.h"
 

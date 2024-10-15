@@ -1,10 +1,10 @@
 #ifndef _HAL_I386_PROC_H_
 #define _HAL_I386_PROC_H_
 
-#include <oicos/kf/list.h>
-#include <oicos/kf/rbtree.h>
-#include <oicos/km/objmgr.h>
-#include <oicos/kn/km/proc.h>
+#include <pbos/kf/list.h>
+#include <pbos/kf/rbtree.h>
+#include <pbos/km/objmgr.h>
+#include <pbos/kn/km/proc.h>
 #include "mm.h"
 
 typedef struct _ps_user_context_t {

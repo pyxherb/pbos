@@ -24,7 +24,7 @@ for ($i = 0; $i -lt $args.Count; $i++) {
 cmake `
 --no-warn-unused-cli `
 -DCMAKE_BUILD_TYPE:STRING=Debug `
---toolchain cmake/platform/i386-pc-oickim.cmake `
+--toolchain cmake/platform/i386-pc-pbkim.cmake `
 -DCMAKE_C_COMPILER:FILEPATH="$CC" `
 -DCMAKE_CXX_COMPILER:FILEPATH="$CXX" `
 -DCMAKE_ASM_COMPILER:FILEPATH="$ASM" `

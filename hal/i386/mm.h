@@ -3,8 +3,8 @@
 
 #include <arch/i386/kargs.h>
 #include <arch/i386/paging.h>
-#include <oicos/km/assert.h>
-#include <oicos/km/mm.h>
+#include <pbos/km/assert.h>
+#include <pbos/km/mm.h>
 #include <stdalign.h>
 #include <string.h>
 #include "mm/misc.h"

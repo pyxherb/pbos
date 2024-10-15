@@ -1,4 +1,4 @@
-#include <oicos/attribs.h>
+#include <pbos/attribs.h>
 
 char test[512];
 

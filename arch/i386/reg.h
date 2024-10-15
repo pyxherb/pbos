@@ -1,7 +1,7 @@
 #ifndef _ARCH_I386_REG_H_
 #define _ARCH_I386_REG_H_
 
-#include <oicos/common.h>
+#include <pbos/common.h>
 
 #define CR0_PE 0x00000001  // Protected mode enable
 #define CR0_MP 0x00000002  // Monitor coprocessor

@@ -61,4 +61,4 @@ usb_ohci: enabled=1, port1=none, options1=none, port2=none, options2=none
 usb_ehci: enabled=1, port1=none, options1=none, port2=none, options2=none, port3=none, options3=none, port4=none, options4=none, port5=none, options5=none, port6=none, options6=none
 usb_xhci: enabled=1, port1=none, options1=none, port2=none, options2=none, port3=none, options3=none, port4=none, options4=none
 es1370: enabled=true, midimode=0, wavemode=0
-sb16: enabled=true, midimode=0, wavemode=0, loglevel=0, dmatimer=0
+sb16: enabled=true, midimode=0, wavemode=0, loglevel=0, dmatimer=100000

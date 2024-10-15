@@ -1,5 +1,5 @@
 #include <hal/i386/proc.h>
-#include <oicos/kn/km/exec.h>
+#include <pbos/kn/km/exec.h>
 
 om_class_t *ps_proc_class = NULL, *ps_thread_class = NULL;
 ps_pcb_t *hn_proc_list = NULL;

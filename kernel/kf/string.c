@@ -1,5 +1,5 @@
-#include <oicos/kf/string.h>
-#include <oicos/km/symbol.h>
+#include <pbos/kf/string.h>
+#include <pbos/km/symbol.h>
 
 KM_SYMEXPORT(strlen);
 

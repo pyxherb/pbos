@@ -28,8 +28,8 @@ void boot_main() {
 
 	boot_init_paging();
 
-	if (!boot_load_oickim())
-		boot_panic("Error loading oickim:\n%s", boot_geterr());
+	if (!boot_load_pbkim())
+		boot_panic("Error loading pbkim:\n%s", boot_geterr());
 
 	vga_printf("Starting kernel at %p\n", boot_kentry);
 

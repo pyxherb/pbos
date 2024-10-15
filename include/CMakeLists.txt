@@ -1,3 +1,3 @@
-project(oicarch)
+project(pbarch)
 
-add_subdirectory("oicos")
+add_subdirectory("pbos")

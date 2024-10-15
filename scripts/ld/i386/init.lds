@@ -1,4 +1,4 @@
-/* Linker script for OicOS kernel. */
+/* Linker script for PbOS kernel. */
 
 ENTRY(_start)
 

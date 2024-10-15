@@ -2,8 +2,8 @@
 #include <arch/i386/misc.h>
 #include <arch/i386/mlayout.h>
 #include <hal/i386/display/vga.h>
-#include <oicos/fmt/elf.h>
-#include <oicos/fmt/oickim.h>
+#include <pbos/fmt/elf.h>
+#include <pbos/fmt/pbkim.h>
 #include <string.h>
 #include "error.h"
 #include "misc.h"
@@ -12,8 +12,8 @@ void __noreturn (*boot_kentry)();
 
 #define PHDR(base, sz_entry, i) ((Elf32_Phdr *)(((const void *)base) + sz_entry * i))
 
-bool boot_load_oickim() {
-	oickim_ihdr_t *ih = (oickim_ihdr_t *)KERNEL_IMAGE_BASE;
+bool boot_load_pbkim() {
+	pbkim_ihdr_t *ih = (pbkim_ihdr_t *)KERNEL_IMAGE_BASE;
 	{
 		if (ih->magic[0] != OICKIM_MAGIC_0 ||
 			ih->magic[1] != OICKIM_MAGIC_1 ||
@@ -29,8 +29,8 @@ bool boot_load_oickim() {
 		}
 	}
 
-	void *oickim_ptr = &(ih[1]);
-	Elf32_Ehdr *ehdr = oickim_ptr;
+	void *pbkim_ptr = &(ih[1]);
+	Elf32_Ehdr *ehdr = pbkim_ptr;
 	{
 		if (ehdr->e_ident[EI_MAG0] != ELFMAG0 || ehdr->e_ident[EI_MAG1] != ELFMAG1 ||
 			ehdr->e_ident[EI_MAG2] != ELFMAG2 || ehdr->e_ident[EI_MAG3] != ELFMAG3) {
@@ -71,7 +71,7 @@ bool boot_load_oickim() {
 
 	// Load for each segment.
 	Elf32_Half phdr_num = ehdr->e_phnum;
-	Elf32_Phdr *phdr = oickim_ptr + ehdr->e_phoff;
+	Elf32_Phdr *phdr = pbkim_ptr + ehdr->e_phoff;
 
 	for (Elf32_Half i = 0; i < phdr_num; ++i) {
 		// Current program header.
@@ -95,7 +95,7 @@ bool boot_load_oickim() {
 			return false;
 		}
 
-		memcpy((void *)(ph->p_vaddr), oickim_ptr + ph->p_offset, ph->p_filesz);
+		memcpy((void *)(ph->p_vaddr), pbkim_ptr + ph->p_offset, ph->p_filesz);
 
 		if (ph->p_filesz < ph->p_memsz)
 			memset((void *)(ph->p_vaddr + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);

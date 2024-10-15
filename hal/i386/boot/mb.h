@@ -1,9 +1,9 @@
 #ifndef MB_H
 #define MB_H
 
-#include <oicos/attribs.h>
-#include <oicos/common.h>
-#include <oicos/pm/acpi.h>
+#include <pbos/attribs.h>
+#include <pbos/common.h>
+#include <pbos/pm/acpi.h>
 #include <arch/i386/mlayout.h>
 
 #define INITCAR_MODULE_NAME "initcar"

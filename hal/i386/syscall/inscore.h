@@ -1,5 +1,5 @@
-#ifndef _HAL_I386_SYSCALL_OICOS_H_
-#define _HAL_I386_SYSCALL_OICOS_H_
+#ifndef _HAL_I386_SYSCALL_PBOS_H_
+#define _HAL_I386_SYSCALL_PBOS_H_
 
 #include <hal/i386/syscall.h>
 

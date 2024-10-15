@@ -1,7 +1,7 @@
 #ifndef _ARCH_I386_PAGING_H_
 #define _ARCH_I386_PAGING_H_
 
-#include <oicos/common.h>
+#include <pbos/common.h>
 #include <stdint.h>
 
 #define PAGESIZE 4096

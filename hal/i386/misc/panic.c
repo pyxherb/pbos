@@ -1,7 +1,7 @@
 #include <arch/i386/int.h>
 #include <arch/i386/misc.h>
 #include <hal/i386/display/vga.h>
-#include <oicos/km/panic.h>
+#include <pbos/km/panic.h>
 
 void __noreturn _km_panic_halt();
 

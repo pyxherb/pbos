@@ -1,7 +1,7 @@
 #ifndef _ARCH_I386_PORT_H_
 #define _ARCH_I386_PORT_H_
 
-#include <oicos/common.h>
+#include <pbos/common.h>
 
 ///
 /// @brief Read 1 byte from a port.

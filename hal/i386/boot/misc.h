@@ -2,7 +2,7 @@
 #define MISC_H
 
 #include <arch/i386/kargs.h>
-#include <oicos/common.h>
+#include <pbos/common.h>
 
 #define BOOTSTRAP_CODE_SIZE 65536
 

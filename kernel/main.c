@@ -1,14 +1,14 @@
 #include <hal/i386/debug.h>
 #include <hal/i386/initcar.h>
-#include <oicos/hal/init.h>
-#include <oicos/hal/irq.h>
-#include <oicos/km/logger.h>
-#include <oicos/km/mm.h>
-#include <oicos/km/panic.h>
-#include <oicos/kn/fs/fs.h>
-#include <oicos/kn/fs/initcar.h>
-#include <oicos/kn/km/exec.h>
-#include <oicos/kn/km/objmgr.h>
+#include <pbos/hal/init.h>
+#include <pbos/hal/irq.h>
+#include <pbos/km/logger.h>
+#include <pbos/km/mm.h>
+#include <pbos/km/panic.h>
+#include <pbos/kn/fs/fs.h>
+#include <pbos/kn/fs/initcar.h>
+#include <pbos/kn/km/exec.h>
+#include <pbos/kn/km/objmgr.h>
 #include <string.h>
 
 void __noreturn _start() {

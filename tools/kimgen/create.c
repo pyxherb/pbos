@@ -3,7 +3,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <stdbool.h>
-#include <oicos/fmt/oickim.h>
+#include <pbos/fmt/pbkim.h>
 
 int op_create(int argc, char **argv)
 {
@@ -20,7 +20,7 @@ int op_create(int argc, char **argv)
 	//
 	// Read the bootstrap code.
 	//
-	FILE *fp_bootcode = NULL, *fp_kimage = NULL, *fp_oickim = NULL;
+	FILE *fp_bootcode = NULL, *fp_kimage = NULL, *fp_pbkim = NULL;
 	size_t sz_bootcode, sz_kimage;
 	void *buf_bootcode = NULL, *buf_kimage = NULL;
 
@@ -98,7 +98,7 @@ int op_create(int argc, char **argv)
 	//
 	// Combine the parts together.
 	//
-	if (!(fp_oickim = fopen(out_filename, "wb")))
+	if (!(fp_pbkim = fopen(out_filename, "wb")))
 	{
 		free(buf_kimage);
 		free(buf_bootcode);
@@ -107,7 +107,7 @@ int op_create(int argc, char **argv)
 	}
 
 	// Set the image header.
-	oickim_ihdr_t ih;
+	pbkim_ihdr_t ih;
 	memset(&ih, 0, sizeof(ih));
 
 	ih.magic[0] = OICKIM_MAGIC_0;
@@ -121,25 +121,25 @@ int op_create(int argc, char **argv)
 	ih.machine = OICKIM_MACHINE_I386;
 
 	// Write all data.
-	if (!fwrite(buf_bootcode, 1024 * 64, 1, fp_oickim))
+	if (!fwrite(buf_bootcode, 1024 * 64, 1, fp_pbkim))
 	{
 		puts("Error: Error writing file");
 		goto fail;
 	}
 
-	if (!fwrite(&ih, sizeof(ih), 1, fp_oickim))
+	if (!fwrite(&ih, sizeof(ih), 1, fp_pbkim))
 	{
 		puts("Error: Error writing file");
 		goto fail;
 	}
 
-	if (!fwrite(buf_kimage, sz_kimage, 1, fp_oickim))
+	if (!fwrite(buf_kimage, sz_kimage, 1, fp_pbkim))
 	{
 		puts("Error: Error writing file");
 		goto fail;
 	}
 
-	fclose(fp_oickim);
+	fclose(fp_pbkim);
 	free(buf_kimage);
 	free(buf_bootcode);
 
@@ -147,8 +147,8 @@ int op_create(int argc, char **argv)
 fail:
 	if(fp_bootcode)
 		fclose(fp_bootcode);
-	if(fp_oickim)
-		fclose(fp_oickim);
+	if(fp_pbkim)
+		fclose(fp_pbkim);
 	if(buf_kimage)
 		free(buf_kimage);
 	if(buf_bootcode)

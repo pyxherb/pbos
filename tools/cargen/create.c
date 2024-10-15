@@ -1,4 +1,4 @@
-#include <oicos/fmt/oicar.h>
+#include <pbos/fmt/pbcar.h>
 #include <stdio.h>
 #include <string.h>
 #include "op.h"
@@ -19,7 +19,7 @@ int op_create(int argc, char **argv) {
 	}
 
 	// Initialize metadata.
-	oicar_metadata_t metadata;
+	pbcar_metadata_t metadata;
 
 	memset(&metadata, 0, sizeof(metadata));
 
@@ -74,7 +74,7 @@ int op_create(int argc, char **argv) {
 		rewind(src_fp);
 
 		// Initialize file entry.
-		oicar_fentry_t file_entry;
+		pbcar_fentry_t file_entry;
 
 		memset(&file_entry, 0, sizeof(file_entry));
 
@@ -134,7 +134,7 @@ int op_create(int argc, char **argv) {
 
 		fclose(src_fp);
 	}
-	oicar_fentry_t end_file_entry;
+	pbcar_fentry_t end_file_entry;
 	memset(&end_file_entry, 0, sizeof(end_file_entry));
 
 	strcpy(end_file_entry.filename, "");

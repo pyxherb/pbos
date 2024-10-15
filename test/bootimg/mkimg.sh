@@ -43,10 +43,10 @@ grub-install \
 # Copy files.
 
 cp ./test/bootimg/config/grub.cfg /media/boot/grub/
-cat ./test/bootimg/config/49_oicos >> /media/boot/grub/grub.cfg
+cat ./test/bootimg/config/49_pbos >> /media/boot/grub/grub.cfg
 
 cp \
-./build/oickim \
+./build/pbkim \
 ./build/initcar \
 /media/
 
