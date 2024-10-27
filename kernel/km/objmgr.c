@@ -10,20 +10,8 @@ om_handle_t kn_last_handle = 0;
 
 static kf_rbtree_t kn_unused_objects;
 
-static int _kn_object_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	if (x > y)
-		return 1;
-	else if (x < y)
-		return -1;
-	return 0;
-}
-
-static int _kn_object_keycmp(const kf_rbtree_node_t *x, const void *k) {
-	if ((const void *)x > k)
-		return 1;
-	else if ((const void *)x < k)
-		return -1;
-	return 0;
+static bool _kn_object_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
+	return x < y;
 }
 
 static void _kn_unused_object_nodefree(kf_rbtree_node_t *p) {
@@ -97,23 +85,10 @@ void om_decref(om_object_t *obj) {
 		obj->p_class->destructor(obj);
 }
 
-static int _kn_handle_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
+static bool _kn_handle_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
 	const kn_handle_registry_t *_x = CONTAINER_OF(kn_handle_registry_t, tree_header, x),
 							   *_y = CONTAINER_OF(kn_handle_registry_t, tree_header, y);
-	if (_x->handle < _y->handle)
-		return -1;
-	else if (_x->handle > _y->handle)
-		return 1;
-	return 0;
-}
-
-static int _kn_handle_keycmp(const kf_rbtree_node_t *x, const void *k) {
-	const kn_handle_registry_t *_x = CONTAINER_OF(kn_handle_registry_t, tree_header, x);
-	if (_x->handle < (om_handle_t)k)
-		return -1;
-	else if (_x->handle > (om_handle_t)k)
-		return 1;
-	return 0;
+	return _x->handle < _y->handle;
 }
 
 static void _kn_handle_nodefree(kf_rbtree_node_t *p) {
@@ -123,7 +98,10 @@ static void _kn_handle_nodefree(kf_rbtree_node_t *p) {
 }
 
 kn_handle_registry_t *kn_lookup_handle_registry(om_handle_t handle) {
-	kf_rbtree_node_t *node = kf_rbtree_find(&kn_global_handles, (const void *)handle);
+	kn_handle_registry_t find_node = {
+		.handle = handle
+	};
+	kf_rbtree_node_t *node = kf_rbtree_find(&kn_global_handles, &(find_node.tree_header));
 	if (node)
 		return CONTAINER_OF(kn_handle_registry_t, tree_header, node);
 	return NULL;
@@ -184,8 +162,10 @@ void om_gc() {
 
 km_result_t om_deref_handle(om_handle_t handle, om_object_t **obj_out) {
 	kn_handle_registry_t *registry = kn_lookup_handle_registry(handle);
-	if (!registry)
+	if (!registry) {
+		kdprintf("Dereferencing an invalid handle: %u\n", handle);
 		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
+	}
 	*obj_out = registry->object;
 	return KM_RESULT_OK;
 }
@@ -194,11 +174,9 @@ void om_init() {
 	kf_rbtree_init(
 		&kn_global_handles,
 		_kn_handle_nodecmp,
-		_kn_handle_keycmp,
 		_kn_handle_nodefree);
 	kf_rbtree_init(
 		&kn_unused_objects,
 		_kn_object_nodecmp,
-		_kn_object_keycmp,
 		_kn_unused_object_nodefree);
 }

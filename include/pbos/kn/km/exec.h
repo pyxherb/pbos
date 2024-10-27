@@ -8,8 +8,7 @@
 extern km_binldr_t* kn_builtin_binldrs[];
 extern kf_rbtree_t kn_registered_binldrs;
 
-int kn_binldr_reg_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
-int kn_binldr_reg_keycmp(const kf_rbtree_node_t *x, const void *key);
+bool kn_binldr_reg_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 void kn_binldr_reg_nodefree(kf_rbtree_node_t *p);
 
 void kn_load_init();

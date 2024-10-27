@@ -76,9 +76,9 @@ void initcar_init() {
 	if (!(initcar_fs = fs_register_filesys("initcar", &uuid, &initcar_ops)))
 		km_panic("Error registering initcar file system");
 
-	kdprintf("INITCAR area: %p-%p\n",
+	kdprintf("INITCAR range: %p-%p\n",
 		ARCH_KARGS_PTR->initcar_ptr,
-		ARCH_KARGS_PTR->initcar_ptr + ARCH_KARGS_PTR->initcar_size);
+		((const char*)ARCH_KARGS_PTR->initcar_ptr) + ARCH_KARGS_PTR->initcar_size);
 
 	size_t sz_left = ARCH_KARGS_PTR->initcar_size;
 
@@ -115,7 +115,7 @@ void initcar_init() {
 		km_panic("Incompatible INITCAR byte-order");
 
 	// Create file objects.
-	const char *p_cur = initcar_ptr + sizeof(pbcar_metadata_t);
+	const char *p_cur = ((const char*)initcar_ptr) + sizeof(pbcar_metadata_t);
 	const uint32_t initcar_size = ARCH_KARGS_PTR->initcar_size;
 
 #define initcar_checksize(size)                                      \

@@ -23,8 +23,8 @@ typedef struct _kf_hashmap_bucket_t {
 
 typedef size_t (*kf_hashmap_hasher_t)(size_t bucket_num, const void* target, bool is_target_key);
 typedef void (*kf_hashmap_nodefree_t)(kf_hashmap_node_t *node);
-typedef int (*kf_hashmap_nodecmp_t)(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs);
-typedef int (*kf_hashmap_keycmp_t)(const kf_hashmap_node_t *lhs, const void *key);
+typedef bool (*kf_hashmap_nodecmp_t)(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs);
+typedef bool (*kf_hashmap_keycmp_t)(const kf_hashmap_node_t *lhs, const void *key);
 
 typedef struct _kf_hashmap_t {
 	kf_hashmap_bucket_t *buckets;

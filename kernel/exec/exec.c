@@ -9,9 +9,6 @@ typedef struct _kn_binldr_reg_t {
 
 kf_rbtree_t kn_registered_binldrs;
 
-int kn_binldr_reg_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
-void kn_binldr_reg_nodefree(kf_rbtree_node_t *p);
-
 km_result_t km_register_binldr(km_binldr_t *binldr) {
 	kn_binldr_reg_t *reg = mm_kmalloc(sizeof(kn_binldr_reg_t));
 	if (!reg)
@@ -46,28 +43,11 @@ km_result_t km_exec(
 	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_EXECFMT);
 }
 
-int kn_binldr_reg_keycmp(const kf_rbtree_node_t *x, const void *key) {
-	const kn_binldr_reg_t *_x = (const kn_binldr_reg_t *)x;
-	const uuid_t *_key = (uuid_t *)key;
-
-	if (uuid_gt(&_x->uuid, _key))
-		return 1;
-	else if (uuid_lt(&_x->uuid, _key))
-		return -1;
-
-	return 0;
-}
-
-int kn_binldr_reg_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
+bool kn_binldr_reg_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
 	const kn_binldr_reg_t *_x = (const kn_binldr_reg_t *)x,
 						  *_y = (const kn_binldr_reg_t *)y;
 
-	if (uuid_gt(&_x->uuid, &_y->uuid))
-		return 1;
-	else if (uuid_lt(&_x->uuid, &_y->uuid))
-		return -1;
-
-	return 0;
+	return uuid_lt(&_x->uuid, &_y->uuid);
 }
 
 void kn_binldr_reg_nodefree(kf_rbtree_node_t *p) {

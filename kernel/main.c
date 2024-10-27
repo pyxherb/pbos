@@ -24,7 +24,7 @@ void __noreturn _start() {
 	initcar_init();
 
 	om_handle_t init_handle;
-	if (KM_FAILED(fs_open("/initcar/insinit", sizeof("/initcar/insinit") - 1, &init_handle)))
+	if (KM_FAILED(fs_open("/initcar/pbinit", sizeof("/initcar/pbinit") - 1, &init_handle)))
 		km_panic("Error opening the init executable");
 
 	proc_id_t pid;

@@ -73,8 +73,8 @@ km_result_t fs_create_file(
 
 static size_t _kn_file_hasher(size_t bucket_num, const void *target, bool is_target_key);
 static void _kn_file_nodefree(kf_hashmap_node_t *node);
-static int _kn_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs);
-static int _kn_file_keycmp(const kf_hashmap_node_t *lhs, const void *key);
+static bool _kn_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs);
+static bool _kn_file_keycmp(const kf_hashmap_node_t *lhs, const void *key);
 
 km_result_t fs_create_dir(
 	fs_filesys_t *fs,
@@ -116,7 +116,7 @@ static void _kn_file_nodefree(kf_hashmap_node_t *node) {
 	om_close_handle(registry->file_handle);
 }
 
-static int _kn_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs) {
+static bool _kn_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs) {
 	kn_child_file_entry_t *_lhs = CONTAINER_OF(kn_child_file_entry_t, hashmap_header, lhs),
 						  *_rhs = CONTAINER_OF(kn_child_file_entry_t, hashmap_header, rhs);
 
@@ -129,13 +129,9 @@ static int _kn_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_
 	uint64_t lhs_hash = kf_hash_djb(lhs_file->filename, lhs_file->filename_len),
 			 rhs_hash = kf_hash_djb(rhs_file->filename, rhs_file->filename_len);
 
-	if (lhs_hash > rhs_hash)
-		return 1;
-	else if (lhs_hash < rhs_hash)
-		return -1;
-	return 0;
+	return lhs_hash == rhs_hash;
 }
-static int _kn_file_keycmp(const kf_hashmap_node_t *lhs, const void *key) {
+static bool _kn_file_keycmp(const kf_hashmap_node_t *lhs, const void *key) {
 	kn_child_file_entry_t *_lhs = CONTAINER_OF(kn_child_file_entry_t, hashmap_header, lhs);
 
 	fs_file_t *lhs_file;
@@ -145,11 +141,7 @@ static int _kn_file_keycmp(const kf_hashmap_node_t *lhs, const void *key) {
 	uint64_t lhs_hash = kf_hash_djb(lhs_file->filename, lhs_file->filename_len),
 			 key_hash = kf_hash_djb(((kn_file_hasher_key_t *)key)->filename, ((kn_file_hasher_key_t *)key)->filename_len);
 
-	if (lhs_hash > key_hash)
-		return 1;
-	else if (lhs_hash < key_hash)
-		return -1;
-	return 0;
+	return lhs_hash == key_hash;
 }
 
 #include <pbos/km/logger.h>

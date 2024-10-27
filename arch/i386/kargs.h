@@ -46,7 +46,7 @@ typedef struct __packed _arch_apm_entry_t {
 ///
 /// @brief Kernel arguments structure
 ///
-typedef struct __packed _ARCH_KARGS_PTR_t {
+typedef struct __packed _arch_kargs_ptr_t {
 	uint8_t magic[4];
 
 	char loader_name[256];
@@ -57,10 +57,10 @@ typedef struct __packed _ARCH_KARGS_PTR_t {
 
 	void *initcar_ptr;
 	uint32_t initcar_size;
-} ARCH_KARGS_PTR_t;
+} arch_kargs_ptr_t;
 
 /// @brief Pointer to kernel arguments
-#define ARCH_KARGS_PTR ((ARCH_KARGS_PTR_t *)0x80000)
+#define ARCH_KARGS_PTR ((arch_kargs_ptr_t *)0x80000)
 
 #define KARG_MAGIC0 'K'
 #define KARG_MAGIC1 'A'

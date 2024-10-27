@@ -1,7 +1,6 @@
 #include <hal/i386/proc.h>
 
-static int _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
-static int _parp_keycmp(const kf_rbtree_node_t *x, const void *key);
+static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 static void _parp_nodefree(kf_rbtree_node_t *p);
 
 void kn_proc_destructor(om_object_t *obj) {
@@ -26,7 +25,6 @@ ps_pcb_t *kn_alloc_pcb() {
 	kf_rbtree_init(
 		&(proc->parp_list),
 		_parp_nodecmp,
-		_parp_keycmp,
 		_parp_nodefree);
 
 	proc->flags = PROC_P;
@@ -70,27 +68,10 @@ void kn_start_user_thread(ps_tcb_t *tcb) {
 	ps_load_user_context(&tcb->context);
 }
 
-static int _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
+static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
 	const hn_parp_t *_x = (const hn_parp_t *)x, *_y = (const hn_parp_t *)y;
 
-	if (_x->addr > _y->addr)
-		return 1;
-	else if (_x->addr < _y->addr)
-		return -1;
-
-	return 0;
-}
-
-static int _parp_keycmp(const kf_rbtree_node_t *x, const void *key) {
-	const hn_parp_t *_x = (const hn_parp_t *)x;
-	pgaddr_t _key = (pgaddr_t)key;
-
-	if (_x->addr > _key)
-		return 1;
-	else if (_x->addr < _key)
-		return -1;
-
-	return 0;
+	return _x->addr < _y->addr;
 }
 
 static void _parp_nodefree(kf_rbtree_node_t *p) {

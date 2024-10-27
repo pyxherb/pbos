@@ -8,10 +8,8 @@ static void kf_rbtree_walk_nodes_for_freeing(kf_rbtree_t *tree, kf_rbtree_node_t
 
 void kf_rbtree_init(kf_rbtree_t *dest,
 	kf_rbtree_nodecmp_t node_cmp,
-	kf_rbtree_keycmp_t key_cmp,
 	kf_rbtree_nodefree_t node_free) {
 	dest->node_cmp = node_cmp;
-	dest->key_cmp = key_cmp;
 	dest->node_free = node_free;
 	dest->root = NULL;
 }
@@ -29,16 +27,15 @@ km_result_t kf_rbtree_insert(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
 	kf_rbtree_node_t *x = tree->root, *y = NULL;
 	while (x) {
 		y = x;
-		int result = tree->node_cmp(x, node);
-		if (result > 0)
+		if (tree->node_cmp(node, x))
 			x = x->l;
-		else if (result < 0)
+		else if (tree->node_cmp(x, node))
 			x = x->r;
 		else
 			return KM_MAKEERROR(KM_RESULT_EXISTED);
 	}
 
-	if (tree->node_cmp(node, y) < 0)
+	if (tree->node_cmp(node, y))
 		y->l = node;
 	else
 		y->r = node;
@@ -58,13 +55,12 @@ void kf_rbtree_remove(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
 	tree->node_free(y);
 }
 
-kf_rbtree_node_t *kf_rbtree_find(kf_rbtree_t *tree, const void *key) {
+kf_rbtree_node_t *kf_rbtree_find(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
 	kf_rbtree_node_t *i = tree->root;
 	while (i) {
-		int result = tree->key_cmp(i, key);
-		if (result < 0)
+		if (tree->node_cmp(i, node))
 			i = i->r;
-		else if (result > 0)
+		else if (tree->node_cmp(node, i))
 			i = i->l;
 		else
 			return i;

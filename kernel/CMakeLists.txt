@@ -13,9 +13,9 @@ target_link_options(pbkim PRIVATE "-T${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/ke
 add_custom_command(
     TARGET pbkim POST_BUILD
     COMMAND ${PBOS_TOOLS_BINARY_DIR}/kimgen create ${PBOS_BINARY_DIR}/bootldr $<TARGET_FILE:pbkim> ${PBOS_BINARY_DIR}/pbkim
-    COMMAND ${PBOS_TOOLS_BINARY_DIR}/cargen -c ${PBOS_BINARY_DIR}/initcar _ $<TARGET_FILE:insinit>
+    COMMAND ${PBOS_TOOLS_BINARY_DIR}/cargen -c ${PBOS_BINARY_DIR}/initcar _ $<TARGET_FILE:pbinit>
     BYPRODUCTS ${PBOS_BINARY_DIR}/pbkim ${PBOS_BINARY_DIR}/initcar
-    DEPENDS bootldr insinit
+    DEPENDS bootldr pbinit
     WORKING_DIRECTORY ${PBOS_TOOLS_BINARY_DIR})
 
 add_subdirectory("exec")

@@ -1,12 +1,11 @@
 #include <pbos/kf/string.h>
+#include <pbos/km/logger.h>
 #include <pbos/km/mm.h>
 #include <pbos/kn/fs/file.h>
 #include <pbos/kn/fs/fs.h>
 #include <pbos/kn/fs/rootfs.h>
-#include <pbos/km/logger.h>
 
-static int _filesys_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
-static int _filesys_keycmp(const kf_rbtree_node_t *x, const void *key);
+static bool _filesys_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 static void _filesys_nodefree(kf_rbtree_node_t *p);
 
 kf_rbtree_t kn_registered_fs;
@@ -37,7 +36,6 @@ void fs_init() {
 	kf_rbtree_init(
 		&kn_registered_fs,
 		_filesys_nodecmp,
-		_filesys_keycmp,
 		_filesys_nodefree);
 
 	uuid_t uuid = FILE_CLASS_UUID;
@@ -56,25 +54,11 @@ void fs_init() {
 	kdprintf("Created the root directory\n");
 }
 
-static int _filesys_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
+static bool _filesys_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
 	fs_filesys_t *_x = CONTAINER_OF(fs_filesys_t, tree_header, x),
 				 *_y = CONTAINER_OF(fs_filesys_t, tree_header, y);
 
-	if (uuid_gt(&_x->uuid, &_y->uuid))
-		return 1;
-	else if (uuid_lt(&_x->uuid, &_y->uuid))
-		return -1;
-	return 0;
-}
-
-static int _filesys_keycmp(const kf_rbtree_node_t *x, const void *key) {
-	fs_filesys_t *_x = CONTAINER_OF(fs_filesys_t, tree_header, x);
-
-	if (uuid_gt(&_x->uuid, (uuid_t *)key))
-		return 1;
-	else if (uuid_lt(&_x->uuid, (uuid_t *)key))
-		return -1;
-	return 0;
+	return uuid_lt(&_x->uuid, &_y->uuid);
 }
 
 static void _filesys_nodefree(kf_rbtree_node_t *p) {

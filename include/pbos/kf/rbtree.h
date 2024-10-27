@@ -26,14 +26,12 @@ typedef struct _kf_rbtree_node_t {
 	struct _kf_rbtree_node_t *l, *r, *p_color;
 } kf_rbtree_node_t;
 
-typedef int (*kf_rbtree_nodecmp_t)(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
-typedef int (*kf_rbtree_keycmp_t)(const kf_rbtree_node_t *x, const void *k);
+typedef bool (*kf_rbtree_nodecmp_t)(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 typedef void (*kf_rbtree_nodefree_t)(kf_rbtree_node_t *p);
 
 typedef struct _kf_rbtree_t {
 	kf_rbtree_node_t *root;
 	kf_rbtree_nodecmp_t node_cmp;
-	kf_rbtree_keycmp_t key_cmp;
 	kf_rbtree_nodefree_t node_free;
 } kf_rbtree_t;
 
@@ -42,14 +40,13 @@ kf_rbtree_node_t *kf_rbtree_maxnode(kf_rbtree_node_t *node);
 
 km_result_t kf_rbtree_insert(kf_rbtree_t *tree, kf_rbtree_node_t *node);
 void kf_rbtree_remove(kf_rbtree_t *tree, kf_rbtree_node_t *node);
-kf_rbtree_node_t *kf_rbtree_find(kf_rbtree_t *tree, const void *key);
+kf_rbtree_node_t *kf_rbtree_find(kf_rbtree_t *tree, kf_rbtree_node_t *node);
 void kf_rbtree_free(kf_rbtree_t *tree);
 
 #define kf_rbtree_clear(tree) kf_rbtree_free(tree)
 
 void kf_rbtree_init(kf_rbtree_t *dest,
 	kf_rbtree_nodecmp_t node_cmp,
-	kf_rbtree_keycmp_t key_cmp,
 	kf_rbtree_nodefree_t node_free);
 
 #define kf_rbtree_begin(tree) ((tree)->root ? kf_rbtree_minnode((tree)->root) : NULL)

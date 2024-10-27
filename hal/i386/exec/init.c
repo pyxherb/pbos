@@ -12,7 +12,6 @@ void kn_init_exec() {
 	kf_rbtree_init(
 		&kn_registered_binldrs,
 		kn_binldr_reg_nodecmp,
-		kn_binldr_reg_keycmp,
 		kn_binldr_reg_nodefree);
 
 	for (km_binldr_t **i = kn_builtin_binldrs; *i; ++i) {
