@@ -7,6 +7,5 @@ void __noreturn _start() {
 		for (int i = 0; i < 512; ++i)
 			test[i] = i;
 		asm volatile("xchg %bx, %bx");
-		*((char*)0x80000000) = 0xcc;
 	}
 }

@@ -1,4 +1,5 @@
 #include "vm.h"
+#include <hal/i386/logger.h>
 #include <hal/i386/mm.h>
 
 static uint16_t hn_pgaccess_to_pgmask(mm_pgaccess_t access) {
@@ -46,7 +47,32 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 }
 
 void mm_unmmap(mm_context_t *ctxt, const void *vaddr, size_t size) {
+	const pgaddr_t pgvaddr = PGROUNDDOWN(vaddr);
+	const void *vaddr_limit = ((const char *)vaddr) + (size - 1);
+
 	hn_unpgmap(ctxt->pdt, PGROUNDDOWN(vaddr), PGROUNDUP(size));
+
+	for (uint16_t i = PDX(vaddr); i < PDX(vaddr_limit) + 1; ++i) {
+		if (ctxt->pdt[i].mask & PDE_P) {
+			if ((VADDR(i, 0, 0) >= vaddr) &&
+				(VADDR(i, PTX_MAX, PGOFF_MAX) <= vaddr_limit)) {
+				hn_mmctxt_pgtabfree(ctxt, i);
+			} else {
+				pgaddr_t pgtab_tmpmap_addr = hn_tmpmap(ctxt->pdt[i].address, 1, PTE_P);
+				arch_pte_t *pgtab = UNPGADDR(pgtab_tmpmap_addr);
+
+				for (uint16_t j = 0; j < PTX_MAX; ++j) {
+					if (pgtab[j].mask & PTE_P) {
+						goto keep_pgtab;
+					}
+				}
+
+				hn_mmctxt_pgtabfree(ctxt, i);
+
+			keep_pgtab:;
+			}
+		}
+	}
 }
 
 void mm_chpgmod(
@@ -392,6 +418,7 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 }
 
 pgaddr_t hn_mmctxt_pgtaballoc(mm_context_t *ctxt, uint16_t pdx) {
+	kdprintf("Allocating page table for context %p at PDX %hu: \n", ctxt, pdx);
 	assert(pdx <= PDX_MAX);
 	arch_pde_t *pde = &(ctxt->pdt[pdx]);
 
@@ -408,6 +435,7 @@ pgaddr_t hn_mmctxt_pgtaballoc(mm_context_t *ctxt, uint16_t pdx) {
 }
 
 void hn_mmctxt_pgtabfree(mm_context_t *ctxt, uint16_t pdx) {
+	kdprintf("Freeing page table for context %p at PDX %hu: \n", ctxt, pdx);
 	assert(pdx <= PDX_MAX);
 	assert(ctxt->pdt[pdx].mask & PDE_P);
 	mm_pgfree(UNPGADDR(ctxt->pdt[pdx].address), 0);

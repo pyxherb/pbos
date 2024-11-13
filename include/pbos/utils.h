@@ -27,8 +27,7 @@
 		#define typeof(x) decltype(x)
 	#elif defined(__GNUC__) || defined(__clang__)
 	#else
-		#warning The compiler does not support typeof trait
-		#define typeof(x) static_assert(false);//Unsupported
+		#define typeof(x) static_assert(false);	 // Unsupported
 	#endif
 #endif
 
