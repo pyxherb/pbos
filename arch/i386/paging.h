@@ -52,9 +52,9 @@ typedef uint32_t pgsize_t;
 /// @brief Round down a linear address into a paged address
 #define PGROUNDDOWN(addr) ((((pgaddr_t)(addr))) >> 12)
 /// @brief Round up a linear address into page-aligned.
-#define PGCEIL(addr) ((void *)((((size_t)(addr)) + PTX_MAX) & (~PTX_MAX)))
+#define PGCEIL(addr) ((uintptr_t)((((size_t)(addr)) + PGOFF_MAX) & (~PGOFF_MAX)))
 /// @brief Round down a linear address into page-aligned.
-#define PGFLOOR(addr) ((void *)(((size_t)(addr)) & (~PTX_MAX)))
+#define PGFLOOR(addr) ((uintptr_t)(((size_t)(addr)) & (~PGOFF_MAX)))
 
 #define PDE_P 0x0001   // Present
 #define PDE_RW 0x0002  // Read/Write

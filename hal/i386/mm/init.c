@@ -20,6 +20,8 @@ void hn_mm_init() {
 	hn_mm_init_paging();
 	hn_mm_init_areas();
 
+	kima_init();
+
 	kdprintf("Initialized memory manager\n");
 }
 

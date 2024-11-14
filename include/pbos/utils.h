@@ -10,7 +10,7 @@
 
 // Check if 2 areas were overlapped.
 #ifndef ISOVERLAPPED
-	#define ISOVERLAPPED(p1, sz1, p2, sz2) (((p2) >= (p1) && (p2) < ((p1) + (sz1))) || ((p1) >= (p2) && (p1) <= ((p2) + (sz2))))
+	#define ISOVERLAPPED(p1, sz1, p2, sz2) (((p2) >= (p1) && (p2) < ((p1) + (sz1))) || ((p1) >= (p2) && (p1) < ((p2) + (sz2))))
 #endif
 
 // Static assert

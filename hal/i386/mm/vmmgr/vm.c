@@ -25,7 +25,7 @@ void *mm_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access) {
 }
 
 void mm_vmfree(mm_context_t *ctxt, const void *addr, size_t size) {
-	hn_unpgmap(ctxt->pdt, PGROUNDDOWN(addr), PGROUNDUP(size));
+	mm_unmmap(ctxt, addr, size);
 }
 
 km_result_t mm_mmap(mm_context_t *ctxt,
@@ -38,10 +38,13 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 	uint16_t mask = hn_pgaccess_to_pgmask(access);
 
-	for (uint16_t i = PDX(vaddr); i < PDX(vaddr + size) + 1; ++i)
-		if (!(ctxt->pdt[i].mask & PDE_P))
-			if (!hn_mmctxt_pgtaballoc(ctxt, i))
+	for (uint16_t i = PDX(vaddr); i <= PDX(((char*)vaddr) + size); ++i) {
+		if (!(ctxt->pdt[i].mask & PDE_P)) {
+			if (!hn_mmctxt_pgtaballoc(ctxt, i)) {
 				return KM_RESULT_NO_MEM;
+			}
+		}
+	}
 
 	return hn_pgmap(ctxt->pdt, pgpaddr, pgvaddr, pgsize, mask);
 }

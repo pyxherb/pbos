@@ -72,7 +72,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle) {
 		if (ph.p_filesz > ph.p_memsz)
 			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
 
-		char *vaddr = PGFLOOR(ph.p_vaddr);
+		char *vaddr = (char*)PGFLOOR(ph.p_vaddr);
 
 		off = ph.p_offset;
 

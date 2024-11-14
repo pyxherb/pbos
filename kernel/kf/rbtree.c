@@ -68,6 +68,23 @@ kf_rbtree_node_t *kf_rbtree_find(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
 	return NULL;
 }
 
+kf_rbtree_node_t **kf_rbtree_find_slot(kf_rbtree_t *tree, kf_rbtree_node_t *node, kf_rbtree_node_t **p_out) {
+	kf_rbtree_node_t **i = &tree->root;
+	*p_out = NULL;
+
+	while (*i) {
+		*p_out = *i;
+
+		if (tree->node_cmp(*i, node))
+			i = &(*i)->r;
+		else if (tree->node_cmp(node, *i))
+			i = &(*i)->l;
+		else
+			return NULL;
+	}
+	return i;
+}
+
 void kf_rbtree_free(kf_rbtree_t *tree) {
 	if (tree->root)
 		kf_rbtree_walk_nodes_for_freeing(tree, tree->root);

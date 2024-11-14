@@ -8,7 +8,7 @@
 #include <stdalign.h>
 #include <string.h>
 #include "mm/misc.h"
-#include "mm/skid.h"
+#include "mm/kima/init.h"
 #include "mm/vmmgr/vm.h"
 
 typedef struct _mm_context_t {

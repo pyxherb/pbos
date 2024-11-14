@@ -6,5 +6,5 @@ project(PbOSTools)
 # endif()
 
 add_subdirectory("kimgen")
-add_subdirectory("cltgen")
+# add_subdirectory("cltgen")
 add_subdirectory("cargen")
