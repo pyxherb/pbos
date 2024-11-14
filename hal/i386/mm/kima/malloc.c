@@ -9,8 +9,14 @@ void *mm_kmalloc(size_t size) {
 
 			for (void *cur_base = cur_desc->ptr;
 				 cur_base < limit;) {
-				kima_ublk_t *nearest_ublk = kima_lookup_nearest_ublk(cur_base);
-				if (nearest_ublk) {
+				kima_ublk_t *nearest_ublk;
+				if ((nearest_ublk = kima_lookup_nearest_ublk(cur_base))) {
+					if (ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->ptr, nearest_ublk->size)) {
+						cur_base = ((char *)nearest_ublk->ptr) + nearest_ublk->size;
+						goto skip1;
+					}
+				}
+				if ((nearest_ublk = kima_lookup_nearest_ublk(((char *)cur_base) + size - 1))) {
 					if (ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->ptr, nearest_ublk->size)) {
 						cur_base = ((char *)nearest_ublk->ptr) + nearest_ublk->size;
 						goto skip1;
@@ -40,7 +46,7 @@ void *mm_kmalloc(size_t size) {
 				 j < PGCEIL(size);
 				 j += PAGESIZE) {
 				if (!kima_lookup_vpgdesc(((char *)cur_desc->ptr) + j)) {
-					filter_base = ((char*)cur_desc->ptr) + j;
+					filter_base = ((char *)cur_desc->ptr) + j;
 					goto noncontinuous;
 				}
 			}
@@ -50,8 +56,14 @@ void *mm_kmalloc(size_t size) {
 
 				for (void *cur_base = cur_desc->ptr;
 					 cur_base < limit;) {
-					kima_ublk_t *nearest_ublk = kima_lookup_nearest_ublk(cur_base);
-					if (nearest_ublk) {
+					kima_ublk_t *nearest_ublk;
+					if ((nearest_ublk = kima_lookup_nearest_ublk(cur_base))) {
+						if (ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->ptr, nearest_ublk->size)) {
+							cur_base = ((char *)nearest_ublk->ptr) + nearest_ublk->size;
+							goto skip2;
+						}
+					}
+					if ((nearest_ublk = kima_lookup_nearest_ublk(((char *)cur_base) + size - 1))) {
 						if (ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->ptr, nearest_ublk->size)) {
 							cur_base = ((char *)nearest_ublk->ptr) + nearest_ublk->size;
 							goto skip2;
@@ -102,10 +114,10 @@ void mm_kfree(void *ptr) {
 	kima_ublk_t *ublk = kima_lookup_ublk(ptr);
 	assert(ublk);
 	for (uintptr_t i = PGFLOOR(ublk->ptr);
-		 i < PGCEIL(((char*)ublk->ptr) + ublk->size);
+		 i < PGCEIL(((char *)ublk->ptr) + ublk->size);
 		 i += PAGESIZE) {
 		kprintf("i = %p\n", i);
-		kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc((void*)i);
+		kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc((void *)i);
 
 		assert(vpgdesc);
 
