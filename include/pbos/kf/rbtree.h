@@ -40,6 +40,7 @@ km_result_t kf_rbtree_insert(kf_rbtree_t *tree, kf_rbtree_node_t *node);
 void kf_rbtree_remove(kf_rbtree_t *tree, kf_rbtree_node_t *node);
 kf_rbtree_node_t *kf_rbtree_find(kf_rbtree_t *tree, kf_rbtree_node_t *node);
 kf_rbtree_node_t **kf_rbtree_find_slot(kf_rbtree_t *tree, kf_rbtree_node_t *node, kf_rbtree_node_t **p_out);
+kf_rbtree_node_t *kf_rbtree_find_max_lteq_node(kf_rbtree_t *tree, kf_rbtree_node_t *node);
 void kf_rbtree_free(kf_rbtree_t *tree);
 
 #define kf_rbtree_clear(tree) kf_rbtree_free(tree)

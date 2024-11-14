@@ -34,11 +34,12 @@ kima_ublk_t *kima_lookup_nearest_ublk(void *ptr) {
 		.ptr = ptr
 	};
 
-	kf_rbtree_node_t *p;
+	kf_rbtree_node_t *node = kf_rbtree_find_max_lteq_node(&kima_ublk_query_tree, &query_desc.node_header);
 
-	kf_rbtree_node_t **slot = kf_rbtree_find_slot(&kima_ublk_query_tree, &query_desc, &p);
+	if (!node)
+		return NULL;
 
-	return CONTAINER_OF(kima_ublk_t, node_header, p);
+	return CONTAINER_OF(kima_ublk_t, node_header, node);
 }
 
 void kima_free_ublk(kima_ublk_t *ublk) {

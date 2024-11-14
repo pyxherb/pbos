@@ -85,6 +85,23 @@ kf_rbtree_node_t **kf_rbtree_find_slot(kf_rbtree_t *tree, kf_rbtree_node_t *node
 	return i;
 }
 
+kf_rbtree_node_t *kf_rbtree_find_max_lteq_node(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
+	kf_rbtree_node_t *cur_node = tree->root, *max_node = NULL;
+
+	while (cur_node) {
+		// cur_node < n
+		if (tree->node_cmp(cur_node, node)) {
+			max_node = cur_node;
+			cur_node = cur_node->r;
+		} else if(tree->node_cmp(node, cur_node)) {
+			cur_node = cur_node->l;
+		} else
+			return cur_node;
+	}
+
+	return max_node;
+}
+
 void kf_rbtree_free(kf_rbtree_t *tree) {
 	if (tree->root)
 		kf_rbtree_walk_nodes_for_freeing(tree, tree->root);
