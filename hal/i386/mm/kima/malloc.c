@@ -2,9 +2,6 @@
 #include <pbos/km/logger.h>
 
 void *mm_kmalloc(size_t size) {
-	bool retried = false;
-
-retry_alloc:;
 	void *filter_base = NULL;
 
 	kf_rbtree_foreach(i, &kima_vpgdesc_query_tree) {
@@ -64,7 +61,6 @@ retry_alloc:;
 	void *new_free_pg = kima_vpgalloc(NULL, PGCEIL(size));
 
 	assert(new_free_pg);
-	kprintf("Allocated: %p\n", new_free_pg);
 
 	for (size_t i = 0; i < PGROUNDUP(size); ++i) {
 		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(((char *)new_free_pg) + i * PAGESIZE);
@@ -72,9 +68,10 @@ retry_alloc:;
 		assert(vpgdesc);
 	}
 
-	retried = true;
+	kima_ublk_t *ublk = kima_alloc_ublk(new_free_pg, size);
+	assert(ublk);
 
-	goto retry_alloc;
+	return new_free_pg;
 }
 
 void mm_kfree(void *ptr) {
