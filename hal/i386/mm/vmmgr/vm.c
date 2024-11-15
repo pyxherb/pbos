@@ -38,15 +38,31 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 	uint16_t mask = hn_pgaccess_to_pgmask(access);
 
-	for (uint16_t i = PDX(vaddr); i <= PDX(((char*)vaddr) + size); ++i) {
+	for (uint16_t i = PDX(vaddr); i <= PDX(((char *)vaddr) + size); ++i) {
 		if (!(ctxt->pdt[i].mask & PDE_P)) {
-			if (!hn_mmctxt_pgtaballoc(ctxt, i)) {
+			pgaddr_t pgdir = hn_mmctxt_pgtaballoc(ctxt, i);
+			if (!pgdir) {
+				mm_unmmap(ctxt, vaddr, size);
 				return KM_RESULT_NO_MEM;
+			} else {
+				pgaddr_t mapped_pgdir = hn_tmpmap(pgdir, 1, PTE_P | PTE_RW);
+				arch_pte_t *pgdir_entries = (arch_pte_t*)UNPGADDR(mapped_pgdir);
+
+				memset(pgdir_entries, 0, sizeof(arch_pte_t) * (PTX_MAX + 1));
+
+				hn_tmpunmap(mapped_pgdir);
 			}
+			ctxt->pdt[i].mask = PDE_P | PDE_RW | PDE_U;
 		}
 	}
 
-	return hn_pgmap(ctxt->pdt, pgpaddr, pgvaddr, pgsize, mask);
+	km_result_t result = hn_pgmap(ctxt->pdt, pgpaddr, pgvaddr, pgsize, mask);
+	if (KM_FAILED(result)) {
+		mm_unmmap(ctxt, vaddr, size);
+		return result;
+	}
+
+	return KM_RESULT_OK;
 }
 
 void mm_unmmap(mm_context_t *ctxt, const void *vaddr, size_t size) {
@@ -117,6 +133,7 @@ void *mm_vmalloc(mm_context_t *ctxt,
 	const void *maxaddr,
 	size_t size,
 	mm_pgaccess_t access) {
+	assert(size);
 	pgaddr_t pgminaddr = PGROUNDDOWN(minaddr), pgmaxaddr = PGROUNDUP(maxaddr),
 			 pgsize = PGROUNDUP(size);
 
@@ -266,9 +283,13 @@ void hn_tmpunmap(pgaddr_t addr) {
 	tmpmap_info_t *i = NULL;
 	for (uint8_t i = 0; i < ARRAYLEN(_tmpmap_slots); ++i) {
 		if (_tmpmap_slots[i].addr == addr) {
-			memset(&hn_kernel_pgt[PGROUNDDOWN(UNPGADDR(addr) - CRITICAL_VBASE)], 0,
-				_tmpmap_slots[i].size * sizeof(arch_pte_t));
-			arch_invlpg(UNPGADDR(_tmpmap_slots[i].addr));
+			for (uint16_t j = 0; j < _tmpmap_slots[i].size; ++j) {
+				arch_pte_t *cur_pte = &hn_kernel_pgt[PGROUNDDOWN(((char *)UNPGADDR(addr)) - CRITICAL_VBASE) + j];
+
+				cur_pte->address = 0;
+				cur_pte->mask = ~PTE_P;
+				arch_invlpg(UNPGADDR(_tmpmap_slots[i].addr + j));
+			}
 			_tmpmap_slots[i].addr = 0;
 			return;
 		}
@@ -277,25 +298,14 @@ void hn_tmpunmap(pgaddr_t addr) {
 	kd_dbgcheck(false, "Invalid TMPMAP address: %p", UNPGADDR(addr));
 }
 
-pgaddr_t _hn_mmctxt_pgtaballoc(arch_pde_t *pdt, pgaddr_t vaddr) {
-	if (!(pdt[PDX(vaddr)].mask & PDE_P)) {
-		pdt[PDX(vaddr)].address = hn_alloc_freeblk(KN_PMEM_AVAILABLE, 0);
-		pdt[PDX(vaddr)].mask = PDE_P;
-
-		pgaddr_t tmapaddr = hn_tmpmap(pdt[PDX(vaddr)].address, 1, PTE_P | PTE_RW);
-		memset((void *)UNPGADDR(tmapaddr), 0, PAGESIZE);
-		hn_tmpunmap(tmapaddr);
-	}
-	return pdt[PDX(vaddr)].address;
-}
-
 km_result_t hn_pgmap(arch_pde_t *pdt,
 	pgaddr_t paddr,
 	pgaddr_t vaddr,
 	pgsize_t pg_num,
 	uint16_t mask) {
 	assert(paddr < PGADDR_MAX);
-	assert(((vaddr) || !(mask & PTE_P)) && vaddr <= PGADDR_MAX);
+	assert(((vaddr) || !(mask & PTE_P)));
+	assert(vaddr <= PGADDR_MAX);
 	assert(ISVALIDPG(pg_num));
 	assert(ISVALIDPG(vaddr + pg_num - 1));
 	assert(paddr + pg_num - 1 < PGADDR_MAX);
@@ -324,8 +334,18 @@ km_result_t hn_pgmap(arch_pde_t *pdt,
 			// The page table was mapped temporarily.
 			arch_pte_t *const pte = &(((arch_pte_t *)UNPGADDR(tmapaddr))[ti]);
 
+			if (pte->mask & PTE_P) {
+				if (pte->address)
+					mm_pgfree(UNPGADDR(pte->address), 0);
+			}
+
 			pte->address = paddr;
 			pte->mask = mask;
+
+			if (mask & PTE_P) {
+				if (paddr)
+					mm_refpg(UNPGADDR(paddr), 0);
+			}
 
 			if (paddr)
 				++paddr;
@@ -335,46 +355,6 @@ km_result_t hn_pgmap(arch_pde_t *pdt,
 		}
 
 		hn_tmpunmap(tmapaddr);
-
-		/*
-		if (mask & PTE_P) {
-			for (pgaddr_t ti = (PGADDR(di, 0) >= vaddr ? 0 : PGTX(vaddr));
-				 (ti < (PTX_MAX + 1)) && ((PGADDR(di, ti) - vaddr) < pg_num);
-				 ti++) {
-				// The page table was mapped temporarily.
-				arch_pte_t *const pte = &(((arch_pte_t *)KTMPMAP_VBASE)[ti]);
-
-				pte->address = paddr++;
-				pte->mask = mask;
-
-				arch_invlpg((void *)VADDR(di, ti, 0));
-			}
-
-			hn_tmpunmap();
-		} else {
-			bool pde_free = true;
-
-			for (uint16_t ti = 0; ti < PTX_MAX + 1; ti++) {
-				arch_pte_t *const pte = &(((arch_pte_t *)KTMPMAP_VBASE)[ti]);
-
-				if (ISINRANGE(vaddr, pg_num, PGADDR(di, ti))) {
-					// The page table was mapped temporarily.
-					pte->address = paddr++;
-					pte->mask = mask;
-
-					arch_invlpg((void *)VADDR(di, ti, 0));
-				} else
-					pde_free = false;
-			}
-
-			hn_tmpunmap();
-
-			if (pde_free) {
-				pde->mask = ~PDE_P;
-				hn_set_pgblk_free(pde->address, 0);
-			}
-		}
-		*/
 	}
 
 	return KM_RESULT_OK;
@@ -431,8 +411,6 @@ pgaddr_t hn_mmctxt_pgtaballoc(mm_context_t *ctxt, uint16_t pdx) {
 	if (!(pde->address = PGROUNDDOWN(
 			  mm_pgalloc(MM_PMEM_AVAILABLE, 0))))
 		return (pgaddr_t)NULL;
-
-	pde->mask = PDE_P | PDE_RW | PDE_U;
 
 	return ctxt->pdt[pdx].address;
 }

@@ -1,4 +1,5 @@
 #include <pbos/km/logger.h>
+#include <pbos/km/proc.h>
 #include "../mm.h"
 
 hn_kgdt_t hn_kgdt;
@@ -26,7 +27,16 @@ void hn_mm_init() {
 	hn_mm_init_areas();
 
 	kima_init();
-	
+
+	ps_eu_num = 1;
+	if (!(mm_current_contexts = mm_kmalloc(ps_eu_num * sizeof(mm_context_t *)))) {
+		km_panic("Unable to allocate memory context for all CPUs");
+	}
+
+	for (euid_t i = 0; i < ps_eu_num; ++i) {
+		mm_current_contexts[i] = mm_kernel_context;
+	}
+
 	hn_init_tss();
 
 	kdprintf("Initialized memory manager\n");
@@ -35,29 +45,31 @@ void hn_mm_init() {
 static void hn_init_tss() {
 	hn_tss_storage_num = 1;
 	hn_tss_storage_ptr = mm_kmalloc(hn_tss_storage_num * sizeof(arch_tss_t));
-	if(!hn_tss_storage_ptr) {
+	if (!hn_tss_storage_ptr) {
 		km_panic("Unable to allocate memory for TSS storage for processors");
 	}
 	memset(hn_tss_storage_ptr, 0, hn_tss_storage_num * sizeof(arch_tss_t));
-	
+
 	hn_tss_stacks = mm_kmalloc(hn_tss_storage_num * sizeof(char *));
-	if(!hn_tss_stacks) {
+	if (!hn_tss_stacks) {
 		km_panic("Unable to allocate memory for TSS storage for processors");
 	}
-	for(size_t i = 0; i < hn_tss_storage_num; ++i) {
-		if(!(hn_tss_stacks[i] = mm_kmalloc(1024 * 1024 * 2))) {
+	for (size_t i = 0; i < hn_tss_storage_num; ++i) {
+		if (!(hn_tss_stacks[i] = mm_kmalloc(1024 * 1024 * 2))) {
 			km_panic("Unable to allocate memory for TSS stacks");
 		}
 
 		hn_tss_storage_ptr[i].ss0 = SELECTOR_KDATA;
 		hn_tss_storage_ptr[i].esp0 = ((uint32_t)hn_tss_stacks[i]) + 1024 * 1024 * 2;
 	}
-	
+
 	hn_kgdt.tss_desc =
 		GDTDESC(((uintptr_t)hn_tss_storage_ptr), hn_tss_storage_num * sizeof(arch_tss_t), GDT_AB_P | GDT_AB_DPL(0) | GDT_SYSTYPE_TSS32, 0);
 
 	arch_lgdt(&hn_kgdt, sizeof(hn_kgdt) / sizeof(arch_gdt_desc_t));
 	arch_ltr(SELECTOR_TSS);
+
+	kdprintf("Initialized TSS\n");
 }
 
 static void hn_mm_init_areas() {
@@ -73,12 +85,10 @@ static void hn_mm_init_areas() {
 
 			// Create MAD pages for each block.
 			for (uint32_t k = 0; k < (k_max ? k_max : 1); ++k) {
-				pgaddr_t vaddr = hn_vpgalloc(hn_kernel_pdt, PGROUNDDOWN(KPRIVMAP_VBASE), PGROUNDUP(KPRIVMAP_VTOP));
 				pgaddr_t pgaddr = addr_cur++;
+				pgaddr_t vaddr = hn_tmpmap(pgaddr, 1, PTE_P | PTE_RW);
 				assert(ISVALIDPG(vaddr));
 				assert(ISVALIDPG(pgaddr));
-
-				hn_pgmap(hn_kernel_pdt, pgaddr, vaddr, 1, PTE_P | PTE_RW);
 
 				hn_madpool_t *newpool = UNPGADDR(vaddr);
 
@@ -87,14 +97,13 @@ static void hn_mm_init_areas() {
 					i->madpools[j] = pgaddr;
 				} else {
 					pgaddr_t tmpvaddr =
-						hn_vpgalloc(hn_kernel_pdt, PGROUNDDOWN(KPRIVMAP_VBASE), PGROUNDUP(KPRIVMAP_VTOP));
+						hn_tmpmap(addr_last, 1, PTE_P | PTE_RW);
 					assert(ISVALIDPG(tmpvaddr));
-					hn_pgmap(hn_kernel_pdt, addr_last, tmpvaddr, 1, PTE_P | PTE_RW);
 
 					hn_madpool_t *pool = UNPGADDR(tmpvaddr);
 					pool->next = pgaddr;
 
-					hn_unpgmap(hn_kernel_pdt, tmpvaddr, 1);
+					hn_tmpunmap(tmpvaddr);
 				}
 
 				memset(newpool->descs, 0, sizeof(newpool->descs));
@@ -108,9 +117,10 @@ static void hn_mm_init_areas() {
 					newpool->descs[l].type = MAD_ALLOC_FREE;
 					newpool->descs[l].flags = MAD_P;
 					newpool->descs[l].pgaddr = (i->attribs.base + MM_PGUNWIND(j, k * 256)) + MM_PGUNWIND(j, l);
+					newpool->descs[l].ref_count = 0;
 				}
 
-				hn_unpgmap(hn_kernel_pdt, vaddr, 1);
+				hn_tmpunmap(vaddr);
 				addr_last = pgaddr;
 			}
 		}
@@ -172,6 +182,8 @@ static void hn_mm_init_areas() {
 			}
 		}
 	}
+	
+	kdprintf("Initialized memory areas\n");
 }
 
 ///
@@ -201,10 +213,15 @@ static void hn_init_gdt() {
 
 	arch_loadds(SELECTOR_KDATA);
 	arch_loades(SELECTOR_KDATA);
-	arch_loadfs(SELECTOR_KDATA);
+
+	// stub, the initial CPU always has EUID 0
+	arch_loadfs(0);
+
 	arch_loadgs(SELECTOR_KDATA);
 	arch_loadss(SELECTOR_KDATA);
 	arch_loadcs(SELECTOR_KCODE);
+	
+	kdprintf("Initialized GDT\n");
 }
 
 ///
@@ -328,6 +345,8 @@ static void hn_mm_init_pmadlist() {
 			break;
 		}
 	}
+
+	kdprintf("Initialized PMAD list\n");
 }
 
 ///
@@ -371,6 +390,8 @@ static void hn_mm_init_paging() {
 
 	// Load PDT.
 	arch_lpdt(PGROUNDDOWN(KPDT_PBASE));
+	
+	kdprintf("Initialized paging\n");
 }
 
 ///

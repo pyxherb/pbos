@@ -1,4 +1,5 @@
 #include "vmalloc.h"
+#include <pbos/km/logger.h>
 
 void *kima_vpgalloc(void *addr, size_t size) {
 	char *vaddr = (char *)mm_kvmalloc(mm_kernel_context, size, PAGE_READ | PAGE_WRITE);

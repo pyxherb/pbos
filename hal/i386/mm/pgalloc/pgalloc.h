@@ -43,6 +43,7 @@ typedef struct __packed _hn_mad_t {
 	uint8_t flags : 8;
 	uint8_t type : 4;
 	uint32_t pgaddr : 20;
+	uint32_t ref_count;
 } hn_mad_t;
 
 #define _mm_isvalidmad(mad) (((hn_mad_t *)mad)->flags & MAD_P)

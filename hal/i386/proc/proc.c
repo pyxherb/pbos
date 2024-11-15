@@ -1,4 +1,5 @@
 #include <hal/i386/proc.h>
+#include <pbos/km/logger.h>
 
 static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 static void _parp_nodefree(kf_rbtree_node_t *p);
@@ -15,7 +16,7 @@ ps_pcb_t *kn_alloc_pcb() {
 
 	memset(proc, 0, sizeof(ps_pcb_t));
 
-	if(!(proc->mmctxt = mm_create_context())) {
+	if(KM_FAILED(mm_create_context(&proc->mmctxt))) {
 		mm_kfree(proc);
 		return NULL;
 	}
@@ -37,7 +38,7 @@ ps_pcb_t *ps_getpcb(proc_id_t pid) {
 }
 
 void hn_proc_cleanup(ps_pcb_t *proc) {
-	mm_free_context(proc->mmctxt);
+	mm_free_context(&proc->mmctxt);
 	proc->flags &= ~PROC_A;
 
 	for (ps_tcb_t *i = proc->threads; i; i = CONTAINER_OF(ps_tcb_t, list_header, kf_list_next(&(i->list_header)))) {
@@ -48,7 +49,7 @@ void hn_proc_cleanup(ps_pcb_t *proc) {
 }
 
 mm_context_t *ps_mmcontext_of(ps_pcb_t *proc) {
-	return proc->mmctxt;
+	return &proc->mmctxt;
 }
 
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
@@ -59,13 +60,21 @@ void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
 }
 
 void kn_start_user_process(ps_pcb_t *pcb) {
-	mm_switch_context(pcb->mmctxt);
+	mm_switch_context(&pcb->mmctxt);
 
 	kn_start_user_thread(pcb->threads);
 }
 
 void kn_start_user_thread(ps_tcb_t *tcb) {
 	ps_load_user_context(&tcb->context);
+}
+
+euid_t ps_get_current_euid() {
+	return arch_storefs();
+}
+
+void kn_set_current_euid(euid_t euid) {
+	arch_loadfs(euid);
 }
 
 static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {

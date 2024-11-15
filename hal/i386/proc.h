@@ -37,7 +37,7 @@ typedef struct _ps_pcb_t {
 	om_object_t object_header;
 
 	kf_rbtree_t parp_list;
-	mm_context_t *mmctxt;
+	mm_context_t mmctxt;
 	ps_tcb_t *threads;
 	uint8_t priority, flags;
 } ps_pcb_t;

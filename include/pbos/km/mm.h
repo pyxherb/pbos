@@ -29,6 +29,8 @@ size_t mm_getpgsize();
 __nodiscard void *__malloc mm_pgalloc(uint8_t memtype, uint8_t order);
 void mm_pgfree(void *ptr, uint8_t order);
 
+void mm_refpg(void *ptr, uint8_t order);
+
 __nodiscard void *__malloc mm_kmalloc(size_t size)
 	__allocsize(1);
 
@@ -84,10 +86,11 @@ void mm_unmmap(mm_context_t *context, const void *vaddr, size_t size);
 
 void *mm_getmap(mm_context_t *context, const void *vaddr);
 
-__nodiscard mm_context_t *mm_create_context();
+__nodiscard km_result_t mm_create_context(mm_context_t *context);
 void mm_free_context(mm_context_t *context);
 void mm_switch_context(mm_context_t *context);
 
 extern mm_context_t *mm_kernel_context;
+extern mm_context_t **mm_current_contexts;
 
 #endif

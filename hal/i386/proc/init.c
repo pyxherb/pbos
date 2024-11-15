@@ -3,6 +3,7 @@
 
 om_class_t *ps_proc_class = NULL, *ps_thread_class = NULL;
 ps_pcb_t *hn_proc_list = NULL;
+uint32_t ps_eu_num;
 
 void ps_init() {
 	if (!(ps_proc_class = om_register_class(&PROC_CLASSID, kn_proc_destructor)))

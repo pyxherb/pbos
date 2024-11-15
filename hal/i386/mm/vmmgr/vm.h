@@ -22,6 +22,7 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 /// @param pg_num Number of pages to map.
 /// @param mask PTE mask.
 /// @return Result code of the mapping operation.
+/// @note Mapped page will not be referenced!
 km_result_t hn_pgmap(arch_pde_t *pdt, pgaddr_t paddr, pgaddr_t vaddr, pgsize_t pg_num, uint16_t mask);
 
 #define hn_unpgmap(pdt, vaddr, pg_num) hn_pgmap((pdt), (PGADDR_MAX) - (pg_num), (vaddr), (pg_num), ~PTE_P)

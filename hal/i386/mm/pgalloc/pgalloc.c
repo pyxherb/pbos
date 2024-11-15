@@ -1,7 +1,7 @@
 #include "pgalloc.h"
-
 #include <hal/i386/mm.h>
 #include <math.h>
+#include <pbos/km/logger.h>
 
 static hn_mad_t *_hn_find_mad(hn_madpool_t *pool, uint32_t pgaddr, uint8_t order);
 
@@ -27,6 +27,10 @@ void *mm_pgalloc(uint8_t memtype, uint8_t order) {
 void mm_pgfree(void *ptr, uint8_t order) {
 	assert(order <= MM_MAXORD);
 	hn_set_pgblk_free(PGROUNDDOWN(ptr), order);
+}
+
+void mm_refpg(void *ptr, uint8_t order) {
+	hn_set_pgblk_used(PGROUNDDOWN(ptr), MAD_ALLOC_KERNEL, order);
 }
 
 void hn_madpool_init(hn_madpool_t *madpool, pgaddr_t last, pgaddr_t next) {
@@ -74,10 +78,8 @@ void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type, uint8_t order) {
 
 	pgaddr_t i = pmad->madpools[order];
 	while (ISVALIDPG(i)) {
-		pgaddr_t vaddr = hn_vpgalloc(cur_pdt, PGROUNDDOWN(KPRIVMAP_VBASE), PGROUNDUP(KPRIVMAP_VTOP));
+		pgaddr_t vaddr = hn_tmpmap(i, 1, PTE_P | PTE_RW);
 		assert(ISVALIDPG(vaddr));
-
-		hn_pgmap(cur_pdt, i, vaddr, 1, PTE_P | PTE_RW);
 
 		hn_madpool_t *pool = UNPGADDR(vaddr);
 		hn_mad_t *mad = _hn_find_mad(pool, pgaddr, order);
@@ -86,8 +88,9 @@ void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type, uint8_t order) {
 
 			mad->flags = MAD_P;
 			mad->type = type;
+			++mad->ref_count;
 
-			hn_unpgmap(cur_pdt, vaddr, 1);
+			hn_tmpunmap(vaddr);
 
 			if (order && lhint) {
 				hn_set_pgblk_used(addr, type, LHINT | (order - 1));
@@ -111,7 +114,7 @@ void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type, uint8_t order) {
 		assert(i != pool->next);
 		arch_fence();
 		i = pool->next;
-		hn_unpgmap(cur_pdt, vaddr, 1);
+		hn_tmpunmap(vaddr);
 	}
 
 	assert(false);
@@ -125,31 +128,30 @@ void hn_set_pgblk_free(pgaddr_t addr, uint8_t order) {
 
 	pgaddr_t i = pmad->madpools[order];
 	while (ISVALIDPG(i)) {
-		pgaddr_t vaddr = hn_vpgalloc(cur_pdt, PGROUNDDOWN(KPRIVMAP_VBASE), PGROUNDUP(KPRIVMAP_VTOP));
+		pgaddr_t vaddr = hn_tmpmap(i, 1, PTE_P | PTE_RW);
 		assert(ISVALIDPG(vaddr));
-
-		hn_pgmap(cur_pdt, i, vaddr, 1, PTE_P | PTE_RW);
 
 		hn_madpool_t *const pool = UNPGADDR(vaddr);
 		hn_mad_t *mad = _hn_find_mad(pool, addr, order);
 		if (mad) {
-			mad->type = MAD_ALLOC_FREE;
+			if (--mad->ref_count) {
+				mad->type = MAD_ALLOC_FREE;
 
-			if (order < MM_MAXORD) {
-				hn_mad_t *nearest_mad = mad + ((mad - pool->descs) & 1 ? -1 : 1);
-				assert(nearest_mad->flags & MAD_P);
+				if (order < MM_MAXORD) {
+					hn_mad_t *nearest_mad = mad + ((mad - pool->descs) & 1 ? -1 : 1);
+					assert(nearest_mad->flags & MAD_P);
 
-				if (nearest_mad->type == MAD_ALLOC_FREE)
-					hn_set_pgblk_free(addr, order + 1);
+					if (nearest_mad->type == MAD_ALLOC_FREE)
+						hn_set_pgblk_free(addr, order + 1);
+				}
+				hn_tmpunmap(vaddr);
+				hn_tmpunmap(PGROUNDDOWN(cur_pdt));
 			}
-			hn_unpgmap(cur_pdt, vaddr, 1);
-			hn_tmpunmap(PGROUNDDOWN(cur_pdt));
 			return;
 		}
 
 		assert(i != pool->next);
-		arch_fence();
 		i = pool->next;
-		hn_unpgmap(cur_pdt, vaddr, 1);
+		hn_tmpunmap(vaddr);
 	}
 }

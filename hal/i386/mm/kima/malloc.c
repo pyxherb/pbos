@@ -2,6 +2,7 @@
 #include <pbos/km/logger.h>
 
 void *mm_kmalloc(size_t size) {
+	assert(size);
 	void *filter_base = NULL;
 
 	kf_rbtree_foreach(i, &kima_vpgdesc_query_tree) {
@@ -80,7 +81,6 @@ void mm_kfree(void *ptr) {
 	for (uintptr_t i = PGFLOOR(ublk->ptr);
 		 i < PGCEIL(((char *)ublk->ptr) + ublk->size);
 		 i += PAGESIZE) {
-		kprintf("i = %p\n", i);
 		kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc((void *)i);
 
 		assert(vpgdesc);

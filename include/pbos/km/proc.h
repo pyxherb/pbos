@@ -26,10 +26,12 @@ typedef uint32_t ps_proc_access_t;
 
 typedef int32_t proc_id_t;
 typedef int32_t thread_id_t;
+typedef uint32_t euid_t;
 
 typedef void (*thread_proc_t)(void *args);
 
 extern om_class_t *ps_proc_class, *ps_thread_class;
+extern uint32_t ps_eu_num;
 
 #define PROC_CLASSID UUID(88e8f612, 0b0c, 4f75, 921b, 88110ca3b116)
 #define THREAD_CLASSID UUID(5dd4ece1, 89a0, 4bec, b14b, 62e11312723d)
@@ -66,5 +68,8 @@ ps_tcb_t *ps_curthread();
 void ps_init();
 
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread);
+
+euid_t ps_get_current_euid();
+void kn_set_current_euid(euid_t euid);
 
 #endif

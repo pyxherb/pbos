@@ -26,10 +26,8 @@ pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area, uint8_t order) {
 	arch_pde_t *cur_pdt = UNPGADDR(hn_tmpmap(PGROUNDDOWN(arch_spdt()), 1, PTE_P | PTE_RW));
 
 	while (ISVALIDPG(k)) {
-		pgaddr_t vaddr = hn_vpgalloc(cur_pdt, PGROUNDDOWN(KPRIVMAP_VBASE), PGROUNDUP(KPRIVMAP_VTOP));
+		pgaddr_t vaddr = hn_tmpmap(k, 1, PTE_P);
 		assert(ISVALIDPG(vaddr));
-
-		hn_pgmap(cur_pdt, k, vaddr, 1, PTE_P);
 
 		hn_madpool_t *pool = UNPGADDR(vaddr);
 		for (uint16_t i = 0; i < ARRAYLEN(pool->descs); ++i) {
@@ -40,7 +38,7 @@ pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area, uint8_t order) {
 			// kprintf("PGADDR: %p, type = %d\n", UNPGADDR(mad->pgaddr), (int)mad->type);
 			if (mad->type == MAD_ALLOC_FREE) {
 				pgaddr_t pgaddr = mad->pgaddr;
-				hn_unpgmap(cur_pdt, vaddr, 1);
+				hn_tmpunmap(vaddr);
 				hn_tmpunmap(PGROUNDDOWN(cur_pdt));
 				return pgaddr;
 			}
@@ -48,7 +46,7 @@ pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area, uint8_t order) {
 
 		assert(k != pool->next);
 		k = pool->next;
-		hn_unpgmap(cur_pdt, vaddr, 1);
+		hn_tmpunmap(vaddr);
 	}
 
 	hn_tmpunmap(PGROUNDDOWN(cur_pdt));

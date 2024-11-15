@@ -114,4 +114,11 @@ __always_inline static inline void arch_loadcs(uint16_t value) {
 #define arch_loadgs(value) \
 	__asm__ __volatile__("movw %0, %%gs" ::"r"((uint16_t)(value)))
 
+__always_inline static inline uint16_t arch_storefs() {
+	uint16_t value;
+	__asm__ __volatile__("movw %fs, %ax");
+	__asm__ __volatile__("movw %%ax, %0" :"=m"((value)));
+	return value;
+}
+
 #endif
