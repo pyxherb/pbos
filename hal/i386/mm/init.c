@@ -1,16 +1,21 @@
 #include <pbos/km/logger.h>
 #include "../mm.h"
 
-hn_kgdt_t _kgdt;
+hn_kgdt_t hn_kgdt;
 hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1] = {
 	{ .attribs = { .base = 0, .len = 0, .maxord = 0, .type = KN_PMEM_END }, .madpools = { 0 } }
 };
+
+size_t hn_tss_storage_num;
+arch_tss_t *hn_tss_storage_ptr;
+char **hn_tss_stacks;
 
 FASTCALL_DECL(static void, hn_push_pmad(hn_pmad_t *pmad));
 static void hn_init_gdt();
 static void hn_mm_init_paging();
 static void hn_mm_init_pmadlist();
 static void hn_mm_init_areas();
+static void hn_init_tss();
 
 void hn_mm_init() {
 	mm_kernel_context->pdt = hn_kernel_pdt;
@@ -21,8 +26,38 @@ void hn_mm_init() {
 	hn_mm_init_areas();
 
 	kima_init();
+	
+	hn_init_tss();
 
 	kdprintf("Initialized memory manager\n");
+}
+
+static void hn_init_tss() {
+	hn_tss_storage_num = 1;
+	hn_tss_storage_ptr = mm_kmalloc(hn_tss_storage_num * sizeof(arch_tss_t));
+	if(!hn_tss_storage_ptr) {
+		km_panic("Unable to allocate memory for TSS storage for processors");
+	}
+	memset(hn_tss_storage_ptr, 0, hn_tss_storage_num * sizeof(arch_tss_t));
+	
+	hn_tss_stacks = mm_kmalloc(hn_tss_storage_num * sizeof(char *));
+	if(!hn_tss_stacks) {
+		km_panic("Unable to allocate memory for TSS storage for processors");
+	}
+	for(size_t i = 0; i < hn_tss_storage_num; ++i) {
+		if(!(hn_tss_stacks[i] = mm_kmalloc(1024 * 1024 * 2))) {
+			km_panic("Unable to allocate memory for TSS stacks");
+		}
+
+		hn_tss_storage_ptr[i].ss0 = SELECTOR_KDATA;
+		hn_tss_storage_ptr[i].esp0 = ((uint32_t)hn_tss_stacks[i]) + 1024 * 1024 * 2;
+	}
+	
+	hn_kgdt.tss_desc =
+		GDTDESC(((uintptr_t)hn_tss_storage_ptr), hn_tss_storage_num * sizeof(arch_tss_t), GDT_AB_P | GDT_AB_DPL(0) | GDT_SYSTYPE_TSS32, 0);
+
+	arch_lgdt(&hn_kgdt, sizeof(hn_kgdt) / sizeof(arch_gdt_desc_t));
+	arch_ltr(SELECTOR_TSS);
 }
 
 static void hn_mm_init_areas() {
@@ -144,23 +179,31 @@ static void hn_mm_init_areas() {
 ///
 static void hn_init_gdt() {
 	// NULL descriptor.
-	_kgdt.null_desc = GDTDESC(0, 0, 0, 0);
+	hn_kgdt.null_desc = GDTDESC(0, 0, 0, 0);
 
 	// Kernel mode descriptors.
-	_kgdt.kcode_desc =
-		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(0) | GDT_AB_S | GDT_AB_DC | GDT_AB_EX, GDT_FL_DB | GDT_FL_GR);
-	_kgdt.kdata_desc =
+	hn_kgdt.kcode_desc =
+		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(0) | GDT_AB_S | GDT_AB_EX, GDT_FL_DB | GDT_FL_GR);
+	hn_kgdt.kdata_desc =
 		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(0) | GDT_AB_S | GDT_AB_RW, GDT_FL_DB | GDT_FL_GR);
 
 	// User mode descriptors.
-	_kgdt.ucode_desc =
+	hn_kgdt.ucode_desc =
 		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(3) | GDT_AB_S | GDT_AB_DC | GDT_AB_EX, GDT_FL_DB | GDT_FL_GR);
-	_kgdt.udata_desc =
+	hn_kgdt.udata_desc =
 		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(3) | GDT_AB_S | GDT_AB_RW, GDT_FL_DB | GDT_FL_GR);
 
-	arch_lgdt(&_kgdt, sizeof(_kgdt) / sizeof(arch_gdt_desc_t));
+	// TSS is a stub, we have to reload the GDT later.
+	hn_kgdt.tss_desc =
+		GDTDESC(0, 0xfffff, 0, 0);
+
+	arch_lgdt(&hn_kgdt, sizeof(hn_kgdt) / sizeof(arch_gdt_desc_t));
 
 	arch_loadds(SELECTOR_KDATA);
+	arch_loades(SELECTOR_KDATA);
+	arch_loadfs(SELECTOR_KDATA);
+	arch_loadgs(SELECTOR_KDATA);
+	arch_loadss(SELECTOR_KDATA);
 	arch_loadcs(SELECTOR_KCODE);
 }
 

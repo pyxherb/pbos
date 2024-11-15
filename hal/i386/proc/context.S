@@ -12,6 +12,15 @@ hn_load_user_context:
 
 	movw (KCTXTSWTMP_VBASE + 4096 + 2), %ax
 	mov %ax, %ds
+	
+	movw (KCTXTSWTMP_VBASE + 4096 + 4), %ax
+	mov %ax, %es
+	
+	movw (KCTXTSWTMP_VBASE + 4096 + 6), %ax
+	mov %ax, %fs
+	
+	movw (KCTXTSWTMP_VBASE + 4096 + 8), %ax
+	mov %ax, %gs
 
 	// Data selector for the stack
 	movzwl %ax, %eax

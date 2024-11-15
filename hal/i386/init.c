@@ -6,6 +6,7 @@
 #include <pbos/km/panic.h>
 #include "initcar.h"
 #include "logger.h"
+#include "irq.h"
 
 void hal_init() {
 	hn_klog_init();
@@ -18,7 +19,7 @@ void hal_init() {
 
 	hn_mm_init();
 
-	// irq_init();
+	irq_init();
 
 	kdprintf("Initialized HAL\n");
 }

@@ -2,6 +2,7 @@
 #include <arch/i386/paging.h>
 #include <pbos/fmt/elf.h>
 #include <pbos/fs/file.h>
+#include <pbos/km/logger.h>
 #include <pbos/kn/km/exec.h>
 #include <string.h>
 
@@ -72,7 +73,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle) {
 		if (ph.p_filesz > ph.p_memsz)
 			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
 
-		char *vaddr = (char*)PGFLOOR(ph.p_vaddr);
+		char *vaddr = (char *)PGFLOOR(ph.p_vaddr);
 
 		off = ph.p_offset;
 
@@ -80,17 +81,22 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle) {
 		{
 			// Allocate pages for current segment.
 			for (Elf32_Word j = 0; j < ph.p_memsz; j += PAGESIZE) {
-				void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, 0);
-				mm_mmap(ps_mmcontext_of(proc), vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER);
+				if (!mm_getmap(ps_mmcontext_of(proc), vaddr + PAGESIZE * j)) {
+					void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, 0);
+					mm_mmap(ps_mmcontext_of(proc), vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER);
+				}
 			}
 
+			kdprintf("vaddr=%p, memsz=%u, filesz=%u\n", ph.p_vaddr, ph.p_memsz, ph.p_filesz);
+
 			// Read the whole segment into the memory.
-			memset(vaddr, 0, ph.p_memsz);
+			memset((void *)ph.p_vaddr, 0, ph.p_memsz);
 			if (!KM_SUCCEEDED(result = fs_read(file_handle, (void *)ph.p_vaddr, ph.p_filesz, ph.p_offset, &bytes_read))) {
 				// TODO: free allocated resources here.
 				return result;
 			}
 			off += bytes_read;
+			kdprintf("bytes_read=%p\n", bytes_read);
 
 			// Mark the pages as executable.
 			mm_chpgmod(ps_mmcontext_of(proc), vaddr, ph.p_memsz, PAGE_EXEC);

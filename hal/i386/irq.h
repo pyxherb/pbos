@@ -27,6 +27,8 @@ void __noreturn isr_hverr(); // 0x1c Hypervisor Injection Exception
 void __noreturn isr_vmmerr(); // 0x1d VMM Communication Exception
 void __noreturn isr_securityerr(); // 0x1e Security Exception
 
+void __noreturn isr_syscall();
+
 void __noreturn isr_stub();
 
 extern arch_gate_t hn_kidt[256];

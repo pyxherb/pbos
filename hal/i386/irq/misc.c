@@ -11,7 +11,7 @@ size_t irq_getmax()
 void hn_setisr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type) {
 	assert(irq <= ARRAYLEN(hn_kidt));
 	assert(dpl <= 3);
-	hn_kidt[irq] = GATEDESC(isr, SELECTOR_KCODE, GATEDESC_ATTRIBS(1, 0, dpl, gate_type));
+	hn_kidt[irq] = GATEDESC(isr, SELECTOR_KCODE, GATEDESC_ATTRIBS(1, dpl, 0, gate_type));
 }
 
 void irq_setisr(hal_isr_t isr, size_t irq)

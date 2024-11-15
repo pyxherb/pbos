@@ -9,6 +9,9 @@ typedef struct _kn_ctxtsw_tmp_t {
 	};
 	uint16_t cs;
 	uint16_t ds;
+	uint16_t es;
+	uint16_t fs;
+	uint16_t gs;
 } kn_ctxtsw_tmp_t;
 
 #define hn_ctxtsw_tmp_area ((kn_ctxtsw_tmp_t *)KCTXTSWTMP_VBASE)
@@ -32,6 +35,9 @@ __noreturn void ps_load_user_context(ps_user_context_t *ctxt) {
 			ctxt->eip, ctxt->eflags);
 	hn_ctxtsw_tmp_area->cs = SELECTOR_UCODE;
 	hn_ctxtsw_tmp_area->ds = SELECTOR_UDATA;
+	hn_ctxtsw_tmp_area->es = SELECTOR_UDATA;
+	hn_ctxtsw_tmp_area->fs = SELECTOR_UDATA;
+	hn_ctxtsw_tmp_area->gs = SELECTOR_UDATA;
 	memcpy(&hn_ctxtsw_tmp_area->context, ctxt, sizeof(ps_user_context_t));
 	hn_load_user_context();
 }

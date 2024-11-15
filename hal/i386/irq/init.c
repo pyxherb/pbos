@@ -1,4 +1,6 @@
+#include <pbos/km/logger.h>
 #include <hal/i386/irq.h>
+#include <hal/i386/syscall.h>
 
 void irq_init() {
 	hn_setisr(isr_diverr, 0x00, 0, GATE_TRAP386);
@@ -11,7 +13,7 @@ void irq_init() {
 	hn_setisr(isr_noseg, 0x0b, 0, GATE_INT386);
 	hn_setisr(isr_stackerr, 0x0c, 0, GATE_INT386);
 	hn_setisr(isr_prot, 0x0d, 0, GATE_INT386);
-	hn_setisr(isr_pgfault, 0x0e, 0, GATE_INT386);
+	// hn_setisr(isr_pgfault, 0x0e, 0, GATE_INT386);
 	hn_setisr(isr_fpuerr, 0x10, 0, GATE_INT386);
 	hn_setisr(isr_alignchk, 0x11, 0, GATE_INT386);
 	hn_setisr(isr_machchk, 0x12, 0, GATE_INT386);
@@ -21,6 +23,10 @@ void irq_init() {
 	hn_setisr(isr_hverr, 0x1c, 0, GATE_INT386);
 	hn_setisr(isr_vmmerr, 0x1d, 0, GATE_INT386);
 	hn_setisr(isr_securityerr, 0x1e, 0, GATE_INT386);
+	
+	hn_setisr(isr_syscall, 1, 3, GATE_TRAP386);
 
-	arch_lidt(hn_kidt, ARRAYLEN(hn_kidt));
+	arch_lidt(hn_kidt, 2);
+	
+	kdprintf("Initialized IRQ\n");
 }

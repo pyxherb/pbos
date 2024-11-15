@@ -33,27 +33,25 @@
 ///
 /// @brief The structure represents a GDT descriptor.
 ///
-typedef struct __packed _arch_gdt_desc_t {
-	uint16_t limit_low : 16;
-	uint16_t base_low : 16;
-	uint8_t base_mid : 8;
-	uint8_t access_byte : 8;
-	uint8_t limit_high : 4;
-	uint8_t flags : 4;
-	uint8_t base_high : 8;
-} arch_gdt_desc_t;
+typedef uint64_t arch_gdt_desc_t;
 
 ///
 /// @brief Initialize a GDT descriptor.
 ///
-#define GDTDESC(base, limit, _access_byte, _flags)        \
-	((arch_gdt_desc_t){ .base_low = ((base)&0x0000ffff),  \
-		.base_mid = ((uint32_t)(base)&0x00ff0000 >> 16),  \
-		.base_high = ((uint32_t)(base)&0xff000000 >> 24), \
-		.limit_low = ((limit)&0x0ffff),                   \
-		.limit_high = ((limit)&0xf0000 >> 16),            \
-		.access_byte = (_access_byte),                    \
-		.flags = (_flags) })
+#define GDTDESC(base, limit, access_byte, flags)        \
+	((arch_gdt_desc_t)\
+	((((uint64_t)(limit)) & 0x0ffff)|\
+	((((uint64_t)(base)) & 0x00ffffff) << 16)|\
+	(((uint64_t)(access_byte)) << 40) |\
+	((((uint64_t)(limit)) & 0xf0000) >> 16 << 48) |\
+	(((uint64_t)(flags)) << 52) |\
+	(((uint64_t)(base) & 0xff000000) >> 24 << 56)))
+
+#define GDT_SYSTYPE_TSS16 0x1
+#define GDT_SYSTYPE_LDT 0x2
+#define GDT_SYSTYPE_TSS16BUSY 0x3
+#define GDT_SYSTYPE_TSS32 0x9
+#define GDT_SYSTYPE_TSS32BUSY 0xb
 
 ///
 /// @brief Get base from a GDT descriptor.

@@ -1,11 +1,29 @@
-.global _irq_syscall_handler
+.global isr_syscall
 .align 4
 
 //
 // e[a-d]x: Arguments
 //
-_irq_syscall_handler:
+isr_syscall:
 	pushal
+	
+	movw %ds, %ax
+	pushw %ax
+	
+	movw %es, %ax
+	pushw %ax
+	
+	movw %fs, %ax
+	pushw %ax
+	
+	movw %gs, %ax
+	pushw %ax
+
+	movw %ss, %ax
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %fs
+	movw %ax, %gs
 
 	pushl %edi
 	pushl %esi
@@ -16,10 +34,21 @@ _irq_syscall_handler:
 
 	cld
 
-	movl hn_syscall_entries(, %esi, 4), %eax
-	call *(%eax, %edi, 4)
+	call hn_syscall_handler
 
-	addl $16, %esp
+	addl $24, %esp
+
+	popw %ax
+	movw %ax, %gs
+	
+	popw %ax
+	movw %ax, %fs
+
+	popw %ax
+	movw %ax, %es
+	
+	popw %ax
+	movw %ax, %ds
 
 	popal
 	iret
