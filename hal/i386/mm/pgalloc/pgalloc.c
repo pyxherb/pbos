@@ -70,8 +70,6 @@ void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type, uint8_t order) {
 	hn_pmad_t *pmad = hn_pmad_get(pgaddr);
 	assert(pmad);
 
-	arch_pde_t *cur_pdt = UNPGADDR(hn_tmpmap(PGROUNDDOWN(arch_spdt()), 1, PTE_P | PTE_RW));
-
 	// Lesser hint and greater hint.
 	uint8_t lhint = order & LHINT, ghint = order & GHINT;
 	order &= ~(LHINT | GHINT);
@@ -95,8 +93,6 @@ void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type, uint8_t order) {
 			if (order && lhint) {
 				hn_set_pgblk_used(addr, type, LHINT | (order - 1));
 				hn_set_pgblk_used(addr + MM_BLKPGSIZE(order), type, LHINT | (order - 1));
-
-				hn_tmpunmap(PGROUNDDOWN(cur_pdt));
 				return;
 			}
 			if (order < MM_MAXORD) {
@@ -107,12 +103,10 @@ void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type, uint8_t order) {
 					hn_set_pgblk_used(addr + MM_BLKPGSIZE(order) / 2, type, LHINT | (order - 1));
 				}
 			}
-			hn_tmpunmap(PGROUNDDOWN(cur_pdt));
 			return;
 		}
 
 		assert(i != pool->next);
-		arch_fence();
 		i = pool->next;
 		hn_tmpunmap(vaddr);
 	}
@@ -124,8 +118,6 @@ void hn_set_pgblk_free(pgaddr_t addr, uint8_t order) {
 	hn_pmad_t *const pmad = hn_pmad_get(addr);
 	assert(pmad);
 
-	arch_pde_t *cur_pdt = UNPGADDR(hn_tmpmap(PGROUNDDOWN(arch_spdt()), 1, PTE_P | PTE_RW));
-
 	pgaddr_t i = pmad->madpools[order];
 	while (ISVALIDPG(i)) {
 		pgaddr_t vaddr = hn_tmpmap(i, 1, PTE_P | PTE_RW);
@@ -134,7 +126,7 @@ void hn_set_pgblk_free(pgaddr_t addr, uint8_t order) {
 		hn_madpool_t *const pool = UNPGADDR(vaddr);
 		hn_mad_t *mad = _hn_find_mad(pool, addr, order);
 		if (mad) {
-			if (--mad->ref_count) {
+			if (!(--mad->ref_count)) {
 				mad->type = MAD_ALLOC_FREE;
 
 				if (order < MM_MAXORD) {
@@ -144,9 +136,8 @@ void hn_set_pgblk_free(pgaddr_t addr, uint8_t order) {
 					if (nearest_mad->type == MAD_ALLOC_FREE)
 						hn_set_pgblk_free(addr, order + 1);
 				}
-				hn_tmpunmap(vaddr);
-				hn_tmpunmap(PGROUNDDOWN(cur_pdt));
 			}
+			hn_tmpunmap(vaddr);
 			return;
 		}
 

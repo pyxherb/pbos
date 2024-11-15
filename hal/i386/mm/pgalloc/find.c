@@ -23,7 +23,6 @@ hn_pmad_t *hn_pmad_get(pgaddr_t addr) {
 
 pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area, uint8_t order) {
 	pgaddr_t k = area->madpools[order];
-	arch_pde_t *cur_pdt = UNPGADDR(hn_tmpmap(PGROUNDDOWN(arch_spdt()), 1, PTE_P | PTE_RW));
 
 	while (ISVALIDPG(k)) {
 		pgaddr_t vaddr = hn_tmpmap(k, 1, PTE_P);
@@ -39,7 +38,6 @@ pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area, uint8_t order) {
 			if (mad->type == MAD_ALLOC_FREE) {
 				pgaddr_t pgaddr = mad->pgaddr;
 				hn_tmpunmap(vaddr);
-				hn_tmpunmap(PGROUNDDOWN(cur_pdt));
 				return pgaddr;
 			}
 		}
@@ -49,7 +47,6 @@ pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area, uint8_t order) {
 		hn_tmpunmap(vaddr);
 	}
 
-	hn_tmpunmap(PGROUNDDOWN(cur_pdt));
 	return NULLPG;
 }
 
