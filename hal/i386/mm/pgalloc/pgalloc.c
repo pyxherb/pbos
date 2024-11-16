@@ -3,8 +3,6 @@
 #include <math.h>
 #include <pbos/km/logger.h>
 
-static hn_mad_t *_hn_find_mad(hn_madpool_t *pool, uint32_t pgaddr, uint8_t order);
-
 #define LHINT 0x80	// Lesser Hint
 #define GHINT 0x40	// Greater Hint
 
@@ -35,7 +33,6 @@ void mm_refpg(void *ptr, uint8_t order) {
 
 void hn_madpool_init(hn_madpool_t *madpool, pgaddr_t last, pgaddr_t next) {
 	memset(madpool->descs, 0, sizeof(madpool->descs));
-	madpool->last = last;
 	madpool->next = next;
 }
 
@@ -47,7 +44,7 @@ void hn_madpool_init(hn_madpool_t *madpool, pgaddr_t last, pgaddr_t next) {
 /// @param order Target order.
 /// @return Found MAD. NULL if not found.
 ///
-hn_mad_t *_hn_find_mad(hn_madpool_t *pool, uint32_t pgaddr, uint8_t order) {
+hn_mad_t *hn_find_mad(hn_madpool_t *pool, uint32_t pgaddr, uint8_t order) {
 	for (uint16_t i = 0; i < ARRAYLEN(pool->descs); ++i) {
 		// There's no more MAD once we found that a MAD does not present.
 		if (!(pool->descs[i].flags & MAD_P))
@@ -67,6 +64,7 @@ hn_mad_t *_hn_find_mad(hn_madpool_t *pool, uint32_t pgaddr, uint8_t order) {
 /// @param type Allocation type.
 ///
 void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type, uint8_t order) {
+	// kprintf("hn_set_pgblk_used: %p (%d)\n", UNPGADDR(pgaddr), (int)order & 0x3f);
 	hn_pmad_t *pmad = hn_pmad_get(pgaddr);
 	assert(pmad);
 
@@ -77,10 +75,9 @@ void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type, uint8_t order) {
 	pgaddr_t i = pmad->madpools[order];
 	while (ISVALIDPG(i)) {
 		pgaddr_t vaddr = hn_tmpmap(i, 1, PTE_P | PTE_RW);
-		assert(ISVALIDPG(vaddr));
 
 		hn_madpool_t *pool = UNPGADDR(vaddr);
-		hn_mad_t *mad = _hn_find_mad(pool, pgaddr, order);
+		hn_mad_t *mad = hn_find_mad(pool, pgaddr, order);
 		if (mad) {
 			pgaddr_t addr = mad->pgaddr;
 
@@ -95,7 +92,7 @@ void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type, uint8_t order) {
 				hn_set_pgblk_used(addr + MM_BLKPGSIZE(order), type, LHINT | (order - 1));
 				return;
 			}
-			if (order < MM_MAXORD) {
+			if (order < pmad->attribs.maxord) {
 				hn_set_pgblk_used(addr, type, GHINT | (order + 1));
 
 				if (order && (!ghint)) {
@@ -121,12 +118,13 @@ void hn_set_pgblk_free(pgaddr_t addr, uint8_t order) {
 	pgaddr_t i = pmad->madpools[order];
 	while (ISVALIDPG(i)) {
 		pgaddr_t vaddr = hn_tmpmap(i, 1, PTE_P | PTE_RW);
-		assert(ISVALIDPG(vaddr));
 
 		hn_madpool_t *const pool = UNPGADDR(vaddr);
-		hn_mad_t *mad = _hn_find_mad(pool, addr, order);
+		hn_mad_t *mad = hn_find_mad(pool, addr, order);
 		if (mad) {
+			assert(mad->ref_count);
 			if (!(--mad->ref_count)) {
+				mad->flags = MAD_P;
 				mad->type = MAD_ALLOC_FREE;
 
 				if (order < MM_MAXORD) {
@@ -145,4 +143,6 @@ void hn_set_pgblk_free(pgaddr_t addr, uint8_t order) {
 		i = pool->next;
 		hn_tmpunmap(vaddr);
 	}
+
+	assert(false);
 }

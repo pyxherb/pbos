@@ -1,5 +1,9 @@
 #include "../mm.h"
 
+void kn_invlpg(void *ptr) {
+	arch_invlpg(ptr);
+}
+
 uint8_t hn_to_kn_pmem_type(uint8_t memtype) {
 	switch (memtype) {
 		case MM_PMEM_AVAILABLE:

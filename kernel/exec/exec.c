@@ -15,8 +15,8 @@ km_result_t km_register_binldr(km_binldr_t *binldr) {
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
 	// Initialize the registry
+	memset(reg, 0, sizeof(kn_binldr_reg_t));
 	memcpy(&(reg->binldr), binldr, sizeof(km_binldr_t));
-
 
 	kf_rbtree_insert(&kn_registered_binldrs, &reg->tree_header);
 

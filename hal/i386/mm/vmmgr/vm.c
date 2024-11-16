@@ -335,16 +335,18 @@ km_result_t hn_pgmap(arch_pde_t *pdt,
 			arch_pte_t *const pte = &(((arch_pte_t *)UNPGADDR(tmapaddr))[ti]);
 
 			if (pte->mask & PTE_P) {
-				if (pte->address)
+				if (pte->address) {
 					mm_pgfree(UNPGADDR(pte->address), 0);
+				}
 			}
 
 			pte->address = paddr;
 			pte->mask = mask;
 
 			if (mask & PTE_P) {
-				if (paddr)
+				if (paddr) {
 					mm_refpg(UNPGADDR(paddr), 0);
+				}
 			}
 
 			if (paddr)
@@ -405,8 +407,7 @@ pgaddr_t hn_mmctxt_pgtaballoc(mm_context_t *ctxt, uint16_t pdx) {
 	assert(pdx <= PDX_MAX);
 	arch_pde_t *pde = &(ctxt->pdt[pdx]);
 
-	if (pde->mask & PDE_P)
-		return ctxt->pdt[pdx].address;
+	assert(!(pde->mask & PDE_P));
 
 	if (!(pde->address = PGROUNDDOWN(
 			  mm_pgalloc(MM_PMEM_AVAILABLE, 0))))

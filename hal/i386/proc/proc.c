@@ -69,11 +69,11 @@ void kn_start_user_thread(ps_tcb_t *tcb) {
 	ps_load_user_context(&tcb->context);
 }
 
-euid_t ps_get_current_euid() {
+ps_euid_t ps_get_current_euid() {
 	return arch_storefs();
 }
 
-void kn_set_current_euid(euid_t euid) {
+void kn_set_current_euid(ps_euid_t euid) {
 	arch_loadfs(euid);
 }
 

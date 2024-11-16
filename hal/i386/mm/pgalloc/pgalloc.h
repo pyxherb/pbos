@@ -61,7 +61,6 @@ typedef struct __packed _hn_mad_t {
 
 typedef struct __packed _hn_madpool_t {
 	hn_mad_t descs[256];
-	pgaddr_t last;
 	pgaddr_t next;
 } hn_madpool_t;
 
@@ -87,6 +86,7 @@ extern hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1];
 	for (hn_pmad_t *i = hn_pmad_list; i->attribs.type != KN_PMEM_END; ++i)
 
 hn_pmad_t *hn_pmad_get(pgaddr_t addr);
+hn_mad_t *hn_find_mad(hn_madpool_t *pool, uint32_t pgaddr, uint8_t order);
 
 pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area, uint8_t order);
 pgaddr_t hn_alloc_freeblk(uint8_t type, uint8_t order);

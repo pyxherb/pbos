@@ -33,7 +33,7 @@ void hn_mm_init() {
 		km_panic("Unable to allocate memory context for all CPUs");
 	}
 
-	for (euid_t i = 0; i < ps_eu_num; ++i) {
+	for (ps_euid_t i = 0; i < ps_eu_num; ++i) {
 		mm_current_contexts[i] = mm_kernel_context;
 	}
 
@@ -77,54 +77,44 @@ static void hn_mm_init_areas() {
 		if (i->attribs.type != KN_PMEM_AVAILABLE)
 			continue;
 
-		pgaddr_t addr_cur = i->attribs.base;
-		pgaddr_t addr_last = NULLPG;
+		pgaddr_t pooladdr_cur = i->attribs.base;
+		pgaddr_t pooladdr_last = NULLPG;
 		// Create MAD pages for each order.
-		for (uint16_t j = 0; j <= MM_MAXORD; ++j) {
-			uint32_t k_max = (MM_PGWIND(j, i->attribs.len) / 256);
+		for (uint16_t j = 0; j <= i->attribs.maxord; ++j) {
+			pgaddr_t addr = i->attribs.base;
 
-			// Create MAD pages for each block.
-			for (uint32_t k = 0; k < (k_max ? k_max : 1); ++k) {
-				pgaddr_t pgaddr = addr_cur++;
-				pgaddr_t vaddr = hn_tmpmap(pgaddr, 1, PTE_P | PTE_RW);
-				assert(ISVALIDPG(vaddr));
-				assert(ISVALIDPG(pgaddr));
-
+			while (true) {
+				i->madpools[j] = pooladdr_cur;
+				pgaddr_t vaddr = hn_tmpmap(pooladdr_cur, 1, PTE_P | PTE_RW);
 				hn_madpool_t *newpool = UNPGADDR(vaddr);
 
-				// Prepend the new pool to the list if it is not empty.
-				if (!ISVALIDPG(i->madpools[j])) {
-					i->madpools[j] = pgaddr;
-				} else {
-					pgaddr_t tmpvaddr =
-						hn_tmpmap(addr_last, 1, PTE_P | PTE_RW);
-					assert(ISVALIDPG(tmpvaddr));
-
-					hn_madpool_t *pool = UNPGADDR(tmpvaddr);
-					pool->next = pgaddr;
-
-					hn_tmpunmap(tmpvaddr);
-				}
-
 				memset(newpool->descs, 0, sizeof(newpool->descs));
-				newpool->last = addr_last;
-				newpool->next = (pgaddr_t)NULL;
+				newpool->next = pooladdr_last;
 
-				// Initialize each descriptor.
-				for (pgaddr_t l = 0; l < ARRAYLEN(newpool->descs) &&
-									 ((MM_PGUNWIND(j, k * 256) + MM_PGUNWIND(j, l)) < i->attribs.len);
-					 ++l) {
-					newpool->descs[l].type = MAD_ALLOC_FREE;
-					newpool->descs[l].flags = MAD_P;
-					newpool->descs[l].pgaddr = (i->attribs.base + MM_PGUNWIND(j, k * 256)) + MM_PGUNWIND(j, l);
-					newpool->descs[l].ref_count = 0;
+				for (size_t k = 0; k < ARRAYLEN(newpool->descs); ++k) {
+					if (addr >= i->attribs.base + i->attribs.len)
+						break;
+
+					hn_mad_t *cur_mad = &newpool->descs[k];
+
+					cur_mad->flags |= MAD_P;
+					cur_mad->pgaddr = addr;
+					cur_mad->type = MAD_ALLOC_FREE;
+					cur_mad->ref_count = 0;
+
+					addr += MM_BLKPGSIZE(j);
 				}
+
+				pooladdr_last = pooladdr_cur;
+				pooladdr_cur += 1;
 
 				hn_tmpunmap(vaddr);
-				addr_last = pgaddr;
+
+				if (addr >= i->attribs.base + i->attribs.len)
+					break;
 			}
 		}
-		for (pgaddr_t j = i->attribs.base; j < addr_cur; ++j) {
+		for (pgaddr_t j = i->attribs.base; j < pooladdr_cur; ++j) {
 			hn_set_pgblk_used(j, MAD_ALLOC_KERNEL, 0);
 		}
 	}
@@ -133,56 +123,45 @@ static void hn_mm_init_areas() {
 		if (i->attribs.type == KN_PMEM_AVAILABLE)
 			continue;
 
-		pgaddr_t addr_last = NULLPG;
+		pgaddr_t pooladdr_last = NULLPG;
 		// Create MAD pages for each order.
-		for (uint16_t j = 0; j <= MM_MAXORD; ++j) {
-			uint32_t k_max = (MM_PGWIND(j, i->attribs.len) / 256);
+		for (uint16_t j = 0; j <= i->attribs.maxord; ++j) {
+			pgaddr_t addr = i->attribs.base;
 
-			// Create MAD pages for each block.
-			for (uint32_t k = 0; k < (k_max ? k_max : 1); ++k) {
-				pgaddr_t vaddr = hn_vpgalloc(hn_kernel_pdt, PGROUNDDOWN(KPRIVMAP_VBASE), PGROUNDUP(KPRIVMAP_VTOP));
-				pgaddr_t pgaddr = PGROUNDDOWN(mm_pgalloc(KN_PMEM_AVAILABLE, 0));
-				assert(ISVALIDPG(vaddr));
-				assert(ISVALIDPG(pgaddr));
-
-				hn_pgmap(hn_kernel_pdt, pgaddr, vaddr, 1, PTE_P | PTE_RW);
-
+			while (true) {
+				void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, 0);
+				assert(paddr);
+				i->madpools[j] = PGROUNDDOWN(paddr);
+				pgaddr_t vaddr = hn_tmpmap(PGROUNDDOWN(paddr), 1, PTE_P | PTE_RW);
 				hn_madpool_t *newpool = UNPGADDR(vaddr);
 
-				// Prepend the new pool to the list if it is not empty.
-				if (!ISVALIDPG(i->madpools[j])) {
-					i->madpools[j] = pgaddr;
-				} else {
-					pgaddr_t tmpvaddr =
-						hn_vpgalloc(hn_kernel_pdt, PGROUNDDOWN(KPRIVMAP_VBASE), PGROUNDUP(KPRIVMAP_VTOP));
-					assert(ISVALIDPG(tmpvaddr));
-					hn_pgmap(hn_kernel_pdt, addr_last, tmpvaddr, 1, PTE_P | PTE_RW);
-
-					hn_madpool_t *pool = UNPGADDR(tmpvaddr);
-					pool->next = pgaddr;
-
-					hn_unpgmap(hn_kernel_pdt, tmpvaddr, 1);
-				}
-
 				memset(newpool->descs, 0, sizeof(newpool->descs));
-				newpool->last = addr_last;
-				newpool->next = (pgaddr_t)NULL;
+				newpool->next = pooladdr_last;
 
-				// Initialize each descriptor.
-				for (pgaddr_t l = 0; l < ARRAYLEN(newpool->descs) &&
-									 ((MM_PGUNWIND(j, k * 256) + MM_PGUNWIND(j, l)) < i->attribs.len);
-					 ++l) {
-					newpool->descs[l].type = MAD_ALLOC_FREE;
-					newpool->descs[l].flags = MAD_P;
-					newpool->descs[l].pgaddr = (i->attribs.base + MM_PGUNWIND(j, k * 256)) + MM_PGUNWIND(j, l);
+				for (size_t k = 0; k < ARRAYLEN(newpool->descs); ++k) {
+					if (addr >= i->attribs.base + i->attribs.len)
+						break;
+
+					hn_mad_t *cur_mad = &newpool->descs[k];
+
+					cur_mad->flags |= MAD_P;
+					cur_mad->pgaddr = addr;
+					cur_mad->type = MAD_ALLOC_FREE;
+					cur_mad->ref_count = 0;
+
+					addr += MM_BLKPGSIZE(j);
 				}
 
-				hn_unpgmap(hn_kernel_pdt, vaddr, 1);
-				addr_last = pgaddr;
+				pooladdr_last = PGROUNDDOWN(paddr);
+
+				hn_tmpunmap(vaddr);
+
+				if (addr >= i->attribs.base + i->attribs.len)
+					break;
 			}
 		}
 	}
-	
+
 	kdprintf("Initialized memory areas\n");
 }
 
@@ -220,7 +199,7 @@ static void hn_init_gdt() {
 	arch_loadgs(SELECTOR_KDATA);
 	arch_loadss(SELECTOR_KDATA);
 	arch_loadcs(SELECTOR_KCODE);
-	
+
 	kdprintf("Initialized GDT\n");
 }
 
@@ -390,7 +369,7 @@ static void hn_mm_init_paging() {
 
 	// Load PDT.
 	arch_lpdt(PGROUNDDOWN(KPDT_PBASE));
-	
+
 	kdprintf("Initialized paging\n");
 }
 

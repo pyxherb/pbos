@@ -137,8 +137,10 @@ static km_result_t _kf_hashmap_insert(kf_hashmap_t *dest, kf_hashmap_node_t *nod
 
 	node->owner_bucket = bucket;
 	if (bucket->nodes) {
-		kf_list_append(&bucket->nodes->list_header, &node->list_header);
-	} else
+		bucket->nodes->list_header.last = &node->list_header;
+		// kf_list_append(&bucket->nodes->list_header, &node->list_header);
+	}
+	// else
 		bucket->nodes = node;
 
 	++dest->node_num;

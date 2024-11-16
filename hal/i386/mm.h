@@ -4,7 +4,7 @@
 #include <arch/i386/kargs.h>
 #include <arch/i386/paging.h>
 #include <pbos/km/assert.h>
-#include <pbos/km/mm.h>
+#include <pbos/kn/km/mm.h>
 #include <pbos/kf/rbtree.h>
 #include <stdalign.h>
 #include <string.h>

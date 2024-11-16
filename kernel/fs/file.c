@@ -98,6 +98,8 @@ km_result_t fs_create_dir(
 	return KM_RESULT_OK;
 }
 
+#include <pbos/km/logger.h>
+
 static size_t _kn_file_hasher(size_t bucket_num, const void *target, bool is_target_key) {
 	if (is_target_key) {
 		const kn_file_hasher_key_t *key = target;
@@ -217,14 +219,8 @@ km_result_t fs_child_of(om_handle_t file_handle, const char *name, size_t filena
 	switch (file->filetype) {
 		case FS_FILETYPE_DIR: {
 			// Copy the file name.
-			char *filename = mm_kmalloc(filename_len + 1);
-			if (!filename)
-				return KM_MAKEERROR(KM_RESULT_NO_MEM);
-			memcpy(filename, name, filename_len);
-			filename[filename_len] = '\0';
-
 			kn_file_hasher_key_t k = {
-				.filename = filename,
+				.filename = name,
 				.filename_len = filename_len
 			};
 
@@ -233,8 +229,6 @@ km_result_t fs_child_of(om_handle_t file_handle, const char *name, size_t filena
 				return KM_MAKEERROR(KM_RESULT_NOT_FOUND);
 
 			*handle_out = CONTAINER_OF(kn_child_file_entry_t, hashmap_header, node)->file_handle;
-
-			mm_kfree(filename);
 			break;
 		}
 		case FS_FILETYPE_LINK:
@@ -255,6 +249,7 @@ km_result_t fs_resolve_path(om_handle_t cur_dir, const char *path, size_t path_l
 		switch (*i) {
 			case '/': {
 				size_t filename_len = i - last_divider;
+				
 				if (!filename_len) {
 					if (last_divider == path)
 						file = fs_abs_root_dir;
@@ -288,6 +283,8 @@ km_result_t fs_open(const char *path, size_t path_len, om_handle_t *handle_out) 
 
 	if (KM_FAILED(result = fs_resolve_path(fs_abs_root_dir, path, path_len, &file_handle)))
 		return result;
+		
+	asm volatile("xchg %bx, %bx");
 
 	if (KM_FAILED(result = fs_deref_file_handle(file_handle, &file)))
 		return result;

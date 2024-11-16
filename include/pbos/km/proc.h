@@ -26,7 +26,7 @@ typedef uint32_t ps_proc_access_t;
 
 typedef int32_t proc_id_t;
 typedef int32_t thread_id_t;
-typedef uint32_t euid_t;
+typedef uint32_t ps_euid_t;
 
 typedef void (*thread_proc_t)(void *args);
 
@@ -69,7 +69,7 @@ void ps_init();
 
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread);
 
-euid_t ps_get_current_euid();
-void kn_set_current_euid(euid_t euid);
+ps_euid_t ps_get_current_euid();
+void kn_set_current_euid(ps_euid_t euid);
 
 #endif

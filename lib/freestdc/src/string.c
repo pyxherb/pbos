@@ -157,7 +157,6 @@ int memcmp(const void* s1, const void* s2, size_t n) {
 }
 #endif
 
-#ifndef _FREESTDC_HAVE_NATIVE_memcpy
 void* memcpy(void* dest, const void* src, size_t n) {
 	// Check if the size is aligned to 2, 4, 8, etc.
 	if (!(n & 0b11)) {
@@ -174,4 +173,3 @@ void* memcpy(void* dest, const void* src, size_t n) {
 		((uint8_t*)dest)[i] = ((uint8_t*)src)[i];
 	return dest;
 }
-#endif

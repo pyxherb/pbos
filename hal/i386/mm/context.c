@@ -30,7 +30,7 @@ void mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 }
 
 void mm_sync_global_mappings(const mm_context_t *src) {
-	for (euid_t i = 0; i < ps_eu_num; ++i) {
+	for (ps_euid_t i = 0; i < ps_eu_num; ++i) {
 		mm_context_t *cur_context = mm_current_contexts[i];
 
 		if (cur_context == src)

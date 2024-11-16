@@ -29,7 +29,7 @@ void __noreturn _start() {
 
 	proc_id_t pid;
 
-	if(KM_FAILED(result=km_exec(0, 0, init_handle, &pid)))
+	if (KM_FAILED(result = km_exec(0, 0, init_handle, &pid)))
 		km_panic("Error starting the init process");
 
 	initcar_deinit();

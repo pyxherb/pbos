@@ -5,9 +5,9 @@
 
 typedef bool kf_spinlock_t;
 
-#define kf_spinlock_lock(lock) \
-	while ((lock)) {}
-#define kf_spinlock_trylock(lock) ((lock) ? false : (lock = true))
 #define kf_spinlock_islocked(lock) (lock)
+
+void kf_spinlock_lock(kf_spinlock_t *lock);
+bool kf_spinlock_trylock(kf_spinlock_t *lock);
 
 #endif

@@ -21,6 +21,7 @@ fs_filesys_t *fs_register_filesys(
 	if (!fs)
 		return NULL;
 
+	memset(fs, 0, sizeof(fs_filesys_t));
 	strncpy(fs->name, name, sizeof(fs->name));
 	memcpy(&fs->uuid, uuid, sizeof(uuid_t));
 	memcpy(&fs->ops, ops, sizeof(fs_fsops_t));

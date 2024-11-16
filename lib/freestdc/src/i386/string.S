@@ -1,31 +1,3 @@
-.global memcpy
-memcpy:
-pushl %ebp
-movl %esp, %ebp
-	movl 8(%ebp), %edi // dest
-	movl 12(%ebp), %esi // src
-	movl 16(%ebp), %ecx // n
-	movl %edi, %eax // return value
-
-	cld
-
-	testl %ecx, 0b11
-	jz 32f
-	testl %ecx, 0b1
-	jz 16f
-		rep movsb
-		jmp 0f
-	32:
-		shrl $2, %ecx
-		rep movsl
-		jmp 0f
-	16:
-		shrl $1, %ecx
-		rep movsw
-	0:
-leave
-retl
-
 .global memset
 memset:
 pushl %ebp
