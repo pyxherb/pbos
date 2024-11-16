@@ -69,8 +69,7 @@ __nodiscard void *__malloc mm_kvmalloc(mm_context_t *context, size_t size, mm_pg
 /// @param size Previous allocated size.
 void mm_vmfree(mm_context_t *context, void *addr, size_t size);
 
-#define MMAP_NOREF 0x01
-#define MMAP_NODEREF 0x02
+#define MMAP_NORC 0x00000001
 
 typedef uint32_t mmap_flags_t;
 

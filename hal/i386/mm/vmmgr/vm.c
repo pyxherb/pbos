@@ -64,14 +64,17 @@ typedef struct _hn_mmap_walker_args {
 	uint16_t mask;
 	bool is_curpgtab;
 	mmap_flags_t flags;
+	bool rawmap;
 } hn_mmap_walker_args;
 
 km_result_t hn_mmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs) {
 	hn_mmap_walker_args *args = (hn_mmap_walker_args *)exargs;
 
-	if (pte->mask & PTE_P) {
-		if (pte->address) {
-			mm_pgfree(UNPGADDR(pte->address), 0);
+	if (args->flags & MMAP_NORC) {
+		if (pte->mask & PTE_P) {
+			if (pte->address) {
+				mm_pgfree(UNPGADDR(pte->address), 0);
+			}
 		}
 	}
 
@@ -122,17 +125,29 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	return hn_walkpgtab(ctxt->pdt, vaddr, size, hn_mmap_walker, &args);
 }
 
+km_result_t mm_mrawmap(
+	mm_context_t *context,
+	void *vaddr,
+	void *paddr,
+	size_t size,
+	mm_pgaccess_t access,
+	mmap_flags_t flags) {
+}
+
 typedef struct _hn_unmmap_walker_args {
 	bool is_curpgtab;
 	mmap_flags_t flags;
+	bool rawmap;
 } hn_unmmap_walker_args;
 
 km_result_t hn_unmmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs) {
 	hn_unmmap_walker_args *args = (hn_unmmap_walker_args *)exargs;
 
-	if (pte->mask & PTE_P) {
-		if (pte->address) {
-			mm_pgfree(UNPGADDR(pte->address), 0);
+	if (args->flags & MMAP_NORC) {
+		if (pte->mask & PTE_P) {
+			if (pte->address) {
+				mm_pgfree(UNPGADDR(pte->address), 0);
+			}
 		}
 	}
 
@@ -174,6 +189,9 @@ void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 			}
 		}
 	}
+}
+
+void mm_mrawunmap(mm_context_t *context, void *vaddr, size_t size, mmap_flags_t flags) {
 }
 
 void mm_chpgmod(
