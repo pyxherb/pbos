@@ -99,7 +99,7 @@ void initcar_init() {
 			  PAGE_READ)))
 		km_panic("Error allocating virtual memory space for INITCAR");
 
-	mm_mmap(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_ptr, ARCH_KARGS_PTR->initcar_size, PAGE_READ, MMAP_NORC);
+	mm_mmap(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_ptr, ARCH_KARGS_PTR->initcar_size, PAGE_READ, 0);
 
 	pbcar_metadata_t *md = initcar_ptr;
 	if (md->magic[0] != OICAR_MAGIC_0 ||
@@ -172,5 +172,5 @@ void initcar_init() {
 }
 
 void initcar_deinit() {
-	mm_unmmap(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_size, MMAP_NORC);
+	mm_unmmap(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_size, 0);
 }
