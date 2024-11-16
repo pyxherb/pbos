@@ -283,8 +283,6 @@ km_result_t fs_open(const char *path, size_t path_len, om_handle_t *handle_out) 
 
 	if (KM_FAILED(result = fs_resolve_path(fs_abs_root_dir, path, path_len, &file_handle)))
 		return result;
-		
-	asm volatile("xchg %bx, %bx");
 
 	if (KM_FAILED(result = fs_deref_file_handle(file_handle, &file)))
 		return result;

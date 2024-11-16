@@ -7,7 +7,7 @@ void *kima_vpgalloc(void *addr, size_t size) {
 	for (size_t i = 0; i < PGCEIL(size); i += PAGESIZE) {
 		void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, 0);
 		assert(paddr);
-		mm_mmap(mm_kernel_context, vaddr + i, paddr, PAGESIZE, PAGE_READ | PAGE_WRITE);
+		mm_mmap(mm_kernel_context, vaddr + i, paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
 	}
 	return vaddr;
 }

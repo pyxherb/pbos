@@ -15,7 +15,7 @@
 #define PTX_MAX 0x3ff
 #define PTX_MIN 0
 
-#define PGOFF_MAX ((PAGESIZE)-1)
+#define PGOFF_MAX ((PAGESIZE) - 1)
 #define PGOFF_MIN 0
 
 #define PAGESIZE_MAX 0x100000
@@ -69,16 +69,18 @@ typedef struct __packed _arch_pde_t {
 	pgaddr_t address : 20;
 } arch_pde_t;
 
-#define PTE_P 0x0001   // Present
-#define PTE_RW 0x0002  // Read/Write
-#define PTE_U 0x0004   // User
-#define PTE_WT 0x0008  // Write-Through
-#define PTE_CD 0x0010  // Cache Disabled
-#define PTE_A 0x0020   // Accessed
-#define PTE_D 0x0040   // Dirty
-#define PTE_AT 0x0080  // Page Attribute Table
-#define PTE_G 0x0080   // Global
-#define PTE_XD 0x0400  // Execute Disabled
+#define PTE_P 0x0001	   // Present
+#define PTE_RW 0x0002	   // Read/Write
+#define PTE_U 0x0004	   // User
+#define PTE_WT 0x0008	   // Write-Through
+#define PTE_CD 0x0010	   // Cache Disabled
+#define PTE_A 0x0020	   // Accessed
+#define PTE_D 0x0040	   // Dirty
+#define PTE_AT 0x0080	   // Page Attribute Table
+#define PTE_G 0x0080	   // Global
+#define PTE_AVAIL0 0x0100  // Available bit 0
+#define PTE_AVAIL1 0x0200  // Available bit 1
+#define PTE_XD 0x0400	   // Execute Disabled
 
 typedef struct __packed _arch_pte_t {
 	uint16_t mask : 12;

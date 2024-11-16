@@ -20,7 +20,7 @@ void ps_init() {
 		void *paddr = mm_pgalloc(KN_PMEM_AVAILABLE, 0);
 		if (!paddr)
 			km_panic("Error allocating memory for user context area");
-		if (KM_FAILED(mm_mmap(mm_kernel_context, (const void *)(KCTXTSWTMP_VBASE + i), paddr, PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_USER)))
+		if (KM_FAILED(mm_mmap(mm_kernel_context, (const void *)(KCTXTSWTMP_VBASE + i), paddr, PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_USER, 0)))
 			km_panic("Error mapping the user context area");
 	}
 

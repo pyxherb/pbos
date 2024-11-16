@@ -1,6 +1,7 @@
 #include "vm.h"
 #include <hal/i386/logger.h>
 #include <hal/i386/mm.h>
+#include <pbos/km/proc.h>
 
 static uint16_t hn_pgaccess_to_pgmask(mm_pgaccess_t access) {
 	uint16_t mask = PTE_P;
@@ -24,29 +25,85 @@ void *mm_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access) {
 		(void *)KSPACE_VTOP, size, access);
 }
 
-void mm_vmfree(mm_context_t *ctxt, const void *addr, size_t size) {
-	mm_unmmap(ctxt, addr, size);
+void mm_vmfree(mm_context_t *ctxt, void *addr, size_t size) {
+	mm_unmmap(ctxt, addr, size, 0);
+}
+
+km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_walker walker, void *exargs) {
+	km_result_t result;
+
+	for (uint16_t di = PDX(vaddr); di <= (PDX(vaddr) + PDX(size));
+		 di++) {
+		arch_pde_t *const pde = &pdt[di];
+		assert(pde->mask & PDE_P);
+
+		pgaddr_t tmapaddr = hn_tmpmap(pde->address, 1, PTE_P | PTE_RW);
+
+		for (uint16_t ti = VADDR(di, 0, 0) >= vaddr ? 0 : PTX(vaddr);
+			 (ti <= PTX_MAX);
+			 ++ti) {
+			if ((((char *)VADDR(di, ti, 0)) - ((char *)vaddr)) >= size) {
+				break;
+			}
+
+			// The page table will be mapped temporarily.
+			arch_pte_t *const pte = &(((arch_pte_t *)UNPGADDR(tmapaddr))[ti]);
+
+			if (KM_FAILED(result = walker(pde, pte, di, ti, exargs)))
+				return result;
+		}
+
+		hn_tmpunmap(tmapaddr);
+	}
+
+	return KM_RESULT_OK;
+}
+
+typedef struct _hn_mmap_walker_args {
+	char *paddr;
+	uint16_t mask;
+	bool is_curpgtab;
+	mmap_flags_t flags;
+} hn_mmap_walker_args;
+
+km_result_t hn_mmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs) {
+	hn_mmap_walker_args *args = (hn_mmap_walker_args *)exargs;
+
+	if (pte->mask & PTE_P) {
+		if (pte->address) {
+			mm_pgfree(UNPGADDR(pte->address), 0);
+		}
+	}
+
+	pte->address = PGROUNDDOWN(args->paddr);
+	pte->mask = args->mask;
+
+	if (args->paddr)
+		args->paddr += PAGESIZE;
+
+	if (args->is_curpgtab)
+		arch_invlpg((void *)VADDR(pdx, ptx, 0));
+
+	return KM_RESULT_OK;
 }
 
 km_result_t mm_mmap(mm_context_t *ctxt,
-	const void *vaddr,
-	const void *paddr,
+	void *vaddr,
+	void *paddr,
 	size_t size,
-	mm_pgaccess_t access) {
-	const pgaddr_t pgvaddr = PGROUNDDOWN(vaddr), pgpaddr = PGROUNDDOWN(paddr),
-				   pgsize = PGROUNDUP(size);
+	mm_pgaccess_t access,
+	mmap_flags_t flags) {
+	const void *vaddr_limit = ((const char *)vaddr) + size;
 
-	uint16_t mask = hn_pgaccess_to_pgmask(access);
-
-	for (uint16_t i = PDX(vaddr); i <= PDX(((char *)vaddr) + size); ++i) {
+	for (uint16_t i = PDX(vaddr); i <= PDX(vaddr_limit); ++i) {
 		if (!(ctxt->pdt[i].mask & PDE_P)) {
 			pgaddr_t pgdir = hn_mmctxt_pgtaballoc(ctxt, i);
 			if (!pgdir) {
-				mm_unmmap(ctxt, vaddr, size);
+				mm_unmmap(ctxt, vaddr, size, flags);
 				return KM_RESULT_NO_MEM;
 			} else {
 				pgaddr_t mapped_pgdir = hn_tmpmap(pgdir, 1, PTE_P | PTE_RW);
-				arch_pte_t *pgdir_entries = (arch_pte_t*)UNPGADDR(mapped_pgdir);
+				arch_pte_t *pgdir_entries = (arch_pte_t *)UNPGADDR(mapped_pgdir);
 
 				memset(pgdir_entries, 0, sizeof(arch_pte_t) * (PTX_MAX + 1));
 
@@ -56,20 +113,45 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 		}
 	}
 
-	km_result_t result = hn_pgmap(ctxt->pdt, pgpaddr, pgvaddr, pgsize, mask);
-	if (KM_FAILED(result)) {
-		mm_unmmap(ctxt, vaddr, size);
-		return result;
+	hn_mmap_walker_args args = {
+		.paddr = (char *)paddr,
+		.mask = hn_pgaccess_to_pgmask(access),
+		.is_curpgtab = ctxt == mm_current_contexts[ps_get_current_euid()],
+		.flags = flags
+	};
+	return hn_walkpgtab(ctxt->pdt, vaddr, size, hn_mmap_walker, &args);
+}
+
+typedef struct _hn_unmmap_walker_args {
+	bool is_curpgtab;
+	mmap_flags_t flags;
+} hn_unmmap_walker_args;
+
+km_result_t hn_unmmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs) {
+	hn_unmmap_walker_args *args = (hn_unmmap_walker_args *)exargs;
+
+	if (pte->mask & PTE_P) {
+		if (pte->address) {
+			mm_pgfree(UNPGADDR(pte->address), 0);
+		}
 	}
+
+	pte->mask &= ~PTE_P;
+
+	if (args->is_curpgtab)
+		arch_invlpg((void *)VADDR(pdx, ptx, 0));
 
 	return KM_RESULT_OK;
 }
 
-void mm_unmmap(mm_context_t *ctxt, const void *vaddr, size_t size) {
-	const pgaddr_t pgvaddr = PGROUNDDOWN(vaddr);
-	const void *vaddr_limit = ((const char *)vaddr) + (size - 1);
-
-	hn_unpgmap(ctxt->pdt, PGROUNDDOWN(vaddr), PGROUNDUP(size));
+void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
+	const void *vaddr_limit = ((const char *)vaddr) + size;
+	hn_unmmap_walker_args args = {
+		.is_curpgtab = ctxt == mm_current_contexts[ps_get_current_euid()],
+		.flags = flags
+	};
+	km_result_t result = hn_walkpgtab(ctxt->pdt, vaddr, size, hn_mmap_walker, &args);
+	assert(KM_SUCCEEDED(result));
 
 	for (uint16_t i = PDX(vaddr); i < PDX(vaddr_limit) + 1; ++i) {
 		if (ctxt->pdt[i].mask & PDE_P) {
@@ -186,7 +268,7 @@ void *mm_vmalloc(mm_context_t *ctxt,
 
 	return NULL;
 succeeded:
-	mm_mmap(ctxt, p_found, NULL, size, access);
+	mm_mmap(ctxt, p_found, NULL, size, access, 0);
 	return p_found;
 }
 
@@ -296,70 +378,6 @@ void hn_tmpunmap(pgaddr_t addr) {
 	}
 
 	kd_dbgcheck(false, "Invalid TMPMAP address: %p", UNPGADDR(addr));
-}
-
-km_result_t hn_pgmap(arch_pde_t *pdt,
-	pgaddr_t paddr,
-	pgaddr_t vaddr,
-	pgsize_t pg_num,
-	uint16_t mask) {
-	assert(paddr < PGADDR_MAX);
-	assert(((vaddr) || !(mask & PTE_P)));
-	assert(vaddr <= PGADDR_MAX);
-	assert(ISVALIDPG(pg_num));
-	assert(ISVALIDPG(vaddr + pg_num - 1));
-	assert(paddr + pg_num - 1 < PGADDR_MAX);
-
-	bool is_curpgtab;
-	{
-		pgaddr_t tmapaddr = hn_tmpmap(PGROUNDDOWN(arch_spdt()), 1, PTE_P);
-		is_curpgtab = PGROUNDDOWN(hn_getmap((arch_pde_t *)UNPGADDR(tmapaddr), pdt)) == PGROUNDDOWN(arch_spdt());
-		hn_tmpunmap(tmapaddr);
-	}
-
-	for (uint16_t di = PGDX(vaddr); di < (PGDX(vaddr) + PGDX(pg_num + PTX_MAX));
-		 di++) {
-		arch_pde_t *const pde = &pdt[di];
-		if (!(pde->mask & PDE_P))
-			km_panic("Mapping pages in non-existing PDE %p-%p for PDT %p",
-				VADDR(di, 0, 0),
-				VADDR(di, PTX_MAX, PGOFF_MAX),
-				pdt);
-
-		pgaddr_t tmapaddr = hn_tmpmap(pde->address, 1, PTE_P | PTE_RW);
-
-		for (pgaddr_t ti = (PGADDR(di, 0) >= vaddr ? 0 : PGTX(vaddr));
-			 (ti < (PTX_MAX + 1)) && ((PGADDR(di, ti) - vaddr) < pg_num);
-			 ++ti) {
-			// The page table was mapped temporarily.
-			arch_pte_t *const pte = &(((arch_pte_t *)UNPGADDR(tmapaddr))[ti]);
-
-			if (pte->mask & PTE_P) {
-				if (pte->address) {
-					mm_pgfree(UNPGADDR(pte->address), 0);
-				}
-			}
-
-			pte->address = paddr;
-			pte->mask = mask;
-
-			if (mask & PTE_P) {
-				if (paddr) {
-					mm_refpg(UNPGADDR(paddr), 0);
-				}
-			}
-
-			if (paddr)
-				++paddr;
-
-			if (is_curpgtab)
-				arch_invlpg((void *)VADDR(di, ti, 0));
-		}
-
-		hn_tmpunmap(tmapaddr);
-	}
-
-	return KM_RESULT_OK;
 }
 
 pgaddr_t hn_kvpgalloc(const arch_pde_t *pgdir) {

@@ -83,7 +83,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle) {
 			for (Elf32_Word j = 0; j < ph.p_memsz; j += PAGESIZE) {
 				if (!mm_getmap(ps_mmcontext_of(proc), vaddr + PAGESIZE * j)) {
 					void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, 0);
-					mm_mmap(ps_mmcontext_of(proc), vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER);
+					mm_mmap(ps_mmcontext_of(proc), vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0);
 				}
 			}
 

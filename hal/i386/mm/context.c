@@ -113,7 +113,7 @@ km_result_t hn_mm_insert_vpd_unchecked(mm_context_t *context, const void *addr) 
 		goto fail;
 	}
 
-	if (KM_FAILED(result = mm_mmap(mm_kernel_context, new_vpdpool_vaddr, new_vpdpool_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE))) {
+	if (KM_FAILED(result = mm_mmap(mm_kernel_context, new_vpdpool_vaddr, new_vpdpool_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, 0))) {
 		goto fail;
 	}
 
@@ -198,7 +198,7 @@ km_result_t mm_create_context(mm_context_t *context) {
 		&context->vpd_rbtree,
 		hn_vpd_nodecmp,
 		hn_vpd_nodefree);
-	if (KM_FAILED(result = mm_mmap(mm_kernel_context, pdt_vaddr, pdt_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE))) {
+	if (KM_FAILED(result = mm_mmap(mm_kernel_context, pdt_vaddr, pdt_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, 0))) {
 		goto fail;
 	}
 	context->pdt = pdt_vaddr;
@@ -226,7 +226,7 @@ void mm_free_context(mm_context_t *context) {
 	kf_rbtree_free(&context->vpd_rbtree);
 	for (mm_vpdpool_t *i = context->vpd_pools; i; i = i->header.next) {
 		void *paddr = mm_getmap(mm_kernel_context, i);
-		mm_unmmap(mm_kernel_context, i, PAGESIZE);
+		mm_unmmap(mm_kernel_context, i, PAGESIZE, 0);
 		mm_pgfree(paddr, 0);
 	}
 

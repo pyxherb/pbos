@@ -67,14 +67,20 @@ __nodiscard void *__malloc mm_kvmalloc(mm_context_t *context, size_t size, mm_pg
 /// @param context Target memory context.
 /// @param addr Pointer to allocated virtual address.
 /// @param size Previous allocated size.
-void mm_vmfree(mm_context_t *context, const void *addr, size_t size);
+void mm_vmfree(mm_context_t *context, void *addr, size_t size);
+
+#define MMAP_NOREF 0x01
+#define MMAP_NODEREF 0x02
+
+typedef uint32_t mmap_flags_t;
 
 km_result_t mm_mmap(
 	mm_context_t *context,
-	const void *vaddr,
-	const void *paddr,
+	void *vaddr,
+	void *paddr,
 	size_t size,
-	mm_pgaccess_t access);
+	mm_pgaccess_t access,
+	mmap_flags_t flags);
 
 void mm_chpgmod(
 	mm_context_t *context,
@@ -82,7 +88,7 @@ void mm_chpgmod(
 	size_t size,
 	mm_pgaccess_t access);
 
-void mm_unmmap(mm_context_t *context, const void *vaddr, size_t size);
+void mm_unmmap(mm_context_t *context, void *vaddr, size_t size, mmap_flags_t flags);
 
 void *mm_getmap(mm_context_t *context, const void *vaddr);
 

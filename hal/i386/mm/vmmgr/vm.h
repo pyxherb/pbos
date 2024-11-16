@@ -15,24 +15,15 @@ pgaddr_t hn_kvpgalloc(const arch_pde_t *pgdir);
 /// @return Paged address of allocated virtual page, NULLPG otherwise.
 pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr);
 
-/// @brief Map physical pages to a virtual memory area.
-/// @param pdt Target PDT.
-/// @param paddr Address to a continuous physical area to be mapped.
-/// @param vaddr Address to a virtual memory area to map.
-/// @param pg_num Number of pages to map.
-/// @param mask PTE mask.
-/// @return Result code of the mapping operation.
-/// @note Mapped page will not be referenced!
-km_result_t hn_pgmap(arch_pde_t *pdt, pgaddr_t paddr, pgaddr_t vaddr, pgsize_t pg_num, uint16_t mask);
-
-#define hn_unpgmap(pdt, vaddr, pg_num) hn_pgmap((pdt), (PGADDR_MAX) - (pg_num), (vaddr), (pg_num), ~PTE_P)
+typedef km_result_t (*hn_pgtab_walker)(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs);
+km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_walker walker, void *exargs);
 
 void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr);
 
 /// @brief Allocate a page table for a memory context.
 /// @param ctxt Context to be operated.
 /// @param pdx PDX of the page table to be allocated.
-/// @return 
+/// @return
 pgaddr_t hn_mmctxt_pgtaballoc(mm_context_t *ctxt, uint16_t pdx);
 
 /// @brief Free a page table for a memory context.
