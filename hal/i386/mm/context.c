@@ -103,12 +103,12 @@ km_result_t hn_mm_insert_vpd_unchecked(mm_context_t *context, const void *addr) 
 	void *new_vpdpool_paddr = NULL,
 		 *new_vpdpool_vaddr = NULL;
 
-	if ((!(new_vpdpool_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_READ | PAGE_WRITE)))) {
+	if ((!(new_vpdpool_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_READ | PAGE_WRITE, 0)))) {
 		result = KM_RESULT_NO_MEM;
 		goto fail;
 	}
 
-	if (!(new_vpdpool_paddr = mm_pgalloc(MM_PMEM_AVAILABLE, 0))) {
+	if (!(new_vpdpool_paddr = mm_pgalloc(MM_PMEM_AVAILABLE))) {
 		result = KM_RESULT_NO_MEM;
 		goto fail;
 	}
@@ -140,7 +140,7 @@ km_result_t hn_mm_insert_vpd_unchecked(mm_context_t *context, const void *addr) 
 
 fail:
 	if (new_vpdpool_paddr) {
-		mm_pgfree(new_vpdpool_paddr, 0);
+		mm_pgfree(new_vpdpool_paddr);
 	}
 	if (new_vpdpool_vaddr) {
 		mm_vmfree(mm_kernel_context, new_vpdpool_vaddr, PAGESIZE);
@@ -177,7 +177,7 @@ void hn_mm_free_vpd(mm_context_t *context, const void *addr) {
 		if (pool->header.next)
 			pool->header.next->header.prev = pool->header.prev;
 
-		mm_pgfree(pool, 0);
+		mm_pgfree(pool);
 	}
 }
 
@@ -185,11 +185,11 @@ km_result_t mm_create_context(mm_context_t *context) {
 	km_result_t result;
 	void *pdt_paddr = NULL,
 		 *pdt_vaddr = NULL;
-	if (!(pdt_paddr = mm_pgalloc(MM_PMEM_AVAILABLE, 0))) {
+	if (!(pdt_paddr = mm_pgalloc(MM_PMEM_AVAILABLE))) {
 		result = KM_RESULT_NO_MEM;
 		goto fail;
 	}
-	if (!(pdt_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_READ | PAGE_WRITE))) {
+	if (!(pdt_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_READ | PAGE_WRITE, 0))) {
 		result = KM_RESULT_NO_MEM;
 		goto fail;
 	}
@@ -208,7 +208,7 @@ km_result_t mm_create_context(mm_context_t *context) {
 
 fail:
 	if (pdt_paddr) {
-		mm_pgfree(pdt_paddr, 0);
+		mm_pgfree(pdt_paddr);
 	}
 	if (pdt_vaddr) {
 		mm_vmfree(mm_kernel_context, pdt_vaddr, PAGESIZE);
@@ -219,7 +219,7 @@ void mm_free_context(mm_context_t *context) {
 	for (uint16_t i = 0; i < PDX_MAX; ++i) {
 		arch_pde_t *pde = &(context->pdt[i]);
 		if (pde->mask & PDE_P)
-			mm_pgfree(UNPGADDR(pde->address), 0);
+			mm_pgfree(UNPGADDR(pde->address));
 	}
 
 	// Free VPD query tree and pools.
@@ -227,10 +227,10 @@ void mm_free_context(mm_context_t *context) {
 	for (mm_vpdpool_t *i = context->vpd_pools; i; i = i->header.next) {
 		void *paddr = mm_getmap(mm_kernel_context, i);
 		mm_unmmap(mm_kernel_context, i, PAGESIZE, 0);
-		mm_pgfree(paddr, 0);
+		mm_pgfree(paddr);
 	}
 
-	mm_pgfree(context->pdt, 0);
+	mm_pgfree(context->pdt);
 }
 
 void mm_switch_context(mm_context_t *context) {

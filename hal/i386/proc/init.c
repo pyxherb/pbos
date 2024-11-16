@@ -17,10 +17,10 @@ void ps_init() {
 		// km_panic("Error allocating memory space for process list");
 
 	for (size_t i = 0; i < KCTXTSWTMP_SIZE; i += PAGESIZE) {
-		void *paddr = mm_pgalloc(KN_PMEM_AVAILABLE, 0);
+		void *paddr = mm_pgalloc(KN_PMEM_AVAILABLE);
 		if (!paddr)
 			km_panic("Error allocating memory for user context area");
-		if (KM_FAILED(mm_mmap(mm_kernel_context, (const void *)(KCTXTSWTMP_VBASE + i), paddr, PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_USER, 0)))
+		if (KM_FAILED(mm_mmap(mm_kernel_context, (void *)(KCTXTSWTMP_VBASE + i), paddr, PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_USER, 0)))
 			km_panic("Error mapping the user context area");
 	}
 

@@ -4,7 +4,7 @@
 
 hn_kgdt_t hn_kgdt;
 hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1] = {
-	{ .attribs = { .base = 0, .len = 0, .maxord = 0, .type = KN_PMEM_END }, .madpools = { 0 } }
+	{ .attribs = { .base = 0, .len = 0, .type = KN_PMEM_END }, .madpools = NULL }
 };
 
 size_t hn_tss_storage_num;
@@ -78,44 +78,67 @@ static void hn_mm_init_areas() {
 			continue;
 
 		pgaddr_t pooladdr_cur = i->attribs.base;
-		pgaddr_t pooladdr_last = NULLPG;
+		hn_madpool_t *pooladdr_last = NULL;
 		// Create MAD pages for each order.
-		for (uint16_t j = 0; j <= i->attribs.maxord; ++j) {
-			pgaddr_t addr = i->attribs.base;
+		pgaddr_t addr = i->attribs.base;
 
-			while (true) {
-				i->madpools[j] = pooladdr_cur;
-				pgaddr_t vaddr = hn_tmpmap(pooladdr_cur, 1, PTE_P | PTE_RW);
-				hn_madpool_t *newpool = UNPGADDR(vaddr);
+		while (true) {
+			void *vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE);
+			void *paddr = UNPGADDR(pooladdr_cur);
+			pgaddr_t new_pgtab_paddr = NULLPG;
 
-				memset(newpool->descs, 0, sizeof(newpool->descs));
-				newpool->next = pooladdr_last;
+			if (pooladdr_cur >= i->attribs.base + i->attribs.len) {
+				km_panic("No enough space for MAD pools");
+			}
 
-				for (size_t k = 0; k < ARRAYLEN(newpool->descs); ++k) {
-					if (addr >= i->attribs.base + i->attribs.len)
-						break;
-
-					hn_mad_t *cur_mad = &newpool->descs[k];
-
-					cur_mad->flags |= MAD_P;
-					cur_mad->pgaddr = addr;
-					cur_mad->type = MAD_ALLOC_FREE;
-					cur_mad->ref_count = 0;
-
-					addr += MM_BLKPGSIZE(j);
+			if (!(mm_kernel_context->pdt[PDX(vaddr)].mask & PDE_P)) {
+				if (pooladdr_cur >= i->attribs.base + i->attribs.len) {
+					km_panic("No enough space for page tables");
 				}
 
-				pooladdr_last = pooladdr_cur;
+				new_pgtab_paddr = pooladdr_cur;
+				pgaddr_t new_pgtab_vaddr = hn_tmpmap(new_pgtab_paddr, 1, PTE_P | PTE_RW);
+				memset(UNPGADDR(new_pgtab_vaddr), 0, PAGESIZE);
+				hn_tmpunmap(new_pgtab_vaddr);
+				mm_kernel_context->pdt[PDX(vaddr)].mask = PDE_P | PDE_RW;
+				mm_kernel_context->pdt[PDX(vaddr)].address = new_pgtab_paddr;
+
 				pooladdr_cur += 1;
+			}
 
-				hn_tmpunmap(vaddr);
+			km_result_t result = mm_mmap(mm_kernel_context, vaddr, paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, MMAP_NORC);
+			assert(KM_SUCCEEDED(result));
 
+			hn_madpool_t *newpool = (hn_madpool_t *)vaddr;
+			i->madpools = newpool;
+
+			memset(newpool->descs, 0, sizeof(newpool->descs));
+			newpool->next = pooladdr_last;
+
+			for (size_t k = 0; k < ARRAYLEN(newpool->descs); ++k) {
 				if (addr >= i->attribs.base + i->attribs.len)
 					break;
+
+				hn_mad_t *cur_mad = &newpool->descs[k];
+
+				cur_mad->flags |= MAD_P;
+				cur_mad->pgaddr = addr;
+				cur_mad->type = MAD_ALLOC_FREE;
+				cur_mad->ref_count = 0;
+
+				addr += 1;
 			}
+
+			pooladdr_last = newpool;
+			pooladdr_cur += 1;
+
+			if (addr >= i->attribs.base + i->attribs.len)
+				break;
+			if (new_pgtab_paddr != NULLPG)
+				hn_set_pgblk_used(new_pgtab_paddr, MAD_ALLOC_KERNEL);
 		}
 		for (pgaddr_t j = i->attribs.base; j < pooladdr_cur; ++j) {
-			hn_set_pgblk_used(j, MAD_ALLOC_KERNEL, 0);
+			hn_set_pgblk_used(j, MAD_ALLOC_KERNEL);
 		}
 	}
 
@@ -123,42 +146,40 @@ static void hn_mm_init_areas() {
 		if (i->attribs.type == KN_PMEM_AVAILABLE)
 			continue;
 
-		pgaddr_t pooladdr_last = NULLPG;
+		hn_madpool_t *pooladdr_last = NULL;
 		// Create MAD pages for each order.
-		for (uint16_t j = 0; j <= i->attribs.maxord; ++j) {
-			pgaddr_t addr = i->attribs.base;
+		pgaddr_t addr = i->attribs.base;
 
-			while (true) {
-				void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE, 0);
-				assert(paddr);
-				i->madpools[j] = PGROUNDDOWN(paddr);
-				pgaddr_t vaddr = hn_tmpmap(PGROUNDDOWN(paddr), 1, PTE_P | PTE_RW);
-				hn_madpool_t *newpool = UNPGADDR(vaddr);
+		while (true) {
+			void *vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
+			void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
+			assert(paddr);
+			km_result_t result = mm_mmap(mm_kernel_context, vaddr, paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
+			assert(KM_SUCCEEDED(result));
+			hn_madpool_t *newpool = (hn_madpool_t *)vaddr;
+			i->madpools = newpool;
 
-				memset(newpool->descs, 0, sizeof(newpool->descs));
-				newpool->next = pooladdr_last;
+			memset(newpool->descs, 0, sizeof(newpool->descs));
+			newpool->next = pooladdr_last;
 
-				for (size_t k = 0; k < ARRAYLEN(newpool->descs); ++k) {
-					if (addr >= i->attribs.base + i->attribs.len)
-						break;
-
-					hn_mad_t *cur_mad = &newpool->descs[k];
-
-					cur_mad->flags |= MAD_P;
-					cur_mad->pgaddr = addr;
-					cur_mad->type = MAD_ALLOC_FREE;
-					cur_mad->ref_count = 0;
-
-					addr += MM_BLKPGSIZE(j);
-				}
-
-				pooladdr_last = PGROUNDDOWN(paddr);
-
-				hn_tmpunmap(vaddr);
-
+			for (size_t k = 0; k < ARRAYLEN(newpool->descs); ++k) {
 				if (addr >= i->attribs.base + i->attribs.len)
 					break;
+
+				hn_mad_t *cur_mad = &newpool->descs[k];
+
+				cur_mad->flags |= MAD_P;
+				cur_mad->pgaddr = addr;
+				cur_mad->type = MAD_ALLOC_FREE;
+				cur_mad->ref_count = 0;
+
+				addr += 1;
 			}
+
+			pooladdr_last = newpool;
+
+			if (addr >= i->attribs.base + i->attribs.len)
+				break;
 		}
 	}
 
@@ -306,23 +327,6 @@ static void hn_mm_init_pmadlist() {
 		}
 
 		hn_push_pmad(&pmad);
-	}
-
-	//
-	// Detect and set the maximum order for each MADs.
-	//
-	for (uint8_t i = 0; i < ARRAYLEN(hn_pmad_list); ++i) {
-		if (hn_pmad_list[i].attribs.type == KN_PMEM_END)
-			break;
-		hn_pmad_list[i].attribs.maxord = 0;
-
-		for (uint8_t j = 7; j > 0; j--) {
-			if (hn_pmad_list[i].attribs.len % (1 << (j - 1)))
-				continue;
-
-			hn_pmad_list[i].attribs.maxord = j;
-			break;
-		}
 	}
 
 	kdprintf("Initialized PMAD list\n");

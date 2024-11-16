@@ -19,14 +19,10 @@ hn_pmad_t *hn_pmad_get(pgaddr_t addr) {
 	return NULL;
 }
 
-pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area, uint8_t order) {
-	pgaddr_t k = area->madpools[order];
+pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area) {
+	hn_madpool_t *pool = area->madpools;
 
-	while (ISVALIDPG(k)) {
-		pgaddr_t vaddr = hn_tmpmap(k, 1, PTE_P);
-		assert(ISVALIDPG(vaddr));
-
-		hn_madpool_t *pool = UNPGADDR(vaddr);
+	while (pool) {
 		for (uint16_t i = 0; i < ARRAYLEN(pool->descs); ++i) {
 			hn_mad_t *mad = &(pool->descs[i]);
 			// There's no more MAD once we found that a MAD does not present.
@@ -35,25 +31,22 @@ pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area, uint8_t order) {
 			// kprintf("PGADDR: %p, type = %d\n", UNPGADDR(mad->pgaddr), (int)mad->type);
 			if (mad->type == MAD_ALLOC_FREE) {
 				pgaddr_t pgaddr = mad->pgaddr;
-				assert(hn_find_mad(pool, pgaddr, order));
-				hn_tmpunmap(vaddr);
 				return pgaddr;
 			}
 		}
 
-		assert(k != pool->next);
-		k = pool->next;
-		hn_tmpunmap(vaddr);
+		assert(pool != pool->next);
+		pool = pool->next;
 	}
 
 	return NULLPG;
 }
 
-pgaddr_t hn_alloc_freeblk(uint8_t type, uint8_t order) {
+pgaddr_t hn_alloc_freeblk(uint8_t type) {
 	PMAD_FOREACH(i) {
 		if (i->attribs.type != type)
 			continue;
-		pgaddr_t addr = hn_alloc_freeblk_in_area(i, order);
+		pgaddr_t addr = hn_alloc_freeblk_in_area(i);
 		if (ISVALIDPG(addr))
 			return addr;
 	}

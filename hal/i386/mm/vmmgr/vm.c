@@ -20,9 +20,9 @@ static uint16_t hn_pgaccess_to_pgmask(mm_pgaccess_t access) {
 	return mask;
 }
 
-void *mm_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access) {
+void *mm_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags) {
 	return mm_vmalloc(ctxt, ((uint8_t *)KRESERVED_VTOP) + 1,
-		(void *)KSPACE_VTOP, size, access);
+		(void *)KSPACE_VTOP, size, access, flags);
 }
 
 void mm_vmfree(mm_context_t *ctxt, void *addr, size_t size) {
@@ -70,10 +70,10 @@ typedef struct _hn_mmap_walker_args {
 km_result_t hn_mmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs) {
 	hn_mmap_walker_args *args = (hn_mmap_walker_args *)exargs;
 
-	if (args->flags & MMAP_NORC) {
+	if (!(args->flags & MMAP_NORC)) {
 		if (pte->mask & PTE_P) {
 			if (pte->address) {
-				mm_pgfree(UNPGADDR(pte->address), 0);
+				mm_pgfree(UNPGADDR(pte->address));
 			}
 		}
 	}
@@ -143,10 +143,10 @@ typedef struct _hn_unmmap_walker_args {
 km_result_t hn_unmmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs) {
 	hn_unmmap_walker_args *args = (hn_unmmap_walker_args *)exargs;
 
-	if (args->flags & MMAP_NORC) {
+	if (!(args->flags & MMAP_NORC)) {
 		if (pte->mask & PTE_P) {
 			if (pte->address) {
-				mm_pgfree(UNPGADDR(pte->address), 0);
+				mm_pgfree(UNPGADDR(pte->address));
 			}
 		}
 	}
@@ -232,7 +232,8 @@ void *mm_vmalloc(mm_context_t *ctxt,
 	const void *minaddr,
 	const void *maxaddr,
 	size_t size,
-	mm_pgaccess_t access) {
+	mm_pgaccess_t access,
+	mm_vmalloc_flags_t flags) {
 	assert(size);
 	pgaddr_t pgminaddr = PGROUNDDOWN(minaddr), pgmaxaddr = PGROUNDUP(maxaddr),
 			 pgsize = PGROUNDUP(size);
@@ -286,7 +287,8 @@ void *mm_vmalloc(mm_context_t *ctxt,
 
 	return NULL;
 succeeded:
-	mm_mmap(ctxt, p_found, NULL, size, access, 0);
+	if (!(flags & VMALLOC_NORESERVE))
+		mm_mmap(ctxt, p_found, NULL, size, access, 0);
 	return p_found;
 }
 
@@ -446,7 +448,7 @@ pgaddr_t hn_mmctxt_pgtaballoc(mm_context_t *ctxt, uint16_t pdx) {
 	assert(!(pde->mask & PDE_P));
 
 	if (!(pde->address = PGROUNDDOWN(
-			  mm_pgalloc(MM_PMEM_AVAILABLE, 0))))
+			  mm_pgalloc(MM_PMEM_AVAILABLE))))
 		return (pgaddr_t)NULL;
 
 	return ctxt->pdt[pdx].address;
@@ -456,6 +458,6 @@ void hn_mmctxt_pgtabfree(mm_context_t *ctxt, uint16_t pdx) {
 	kdprintf("Freeing page table for context %p at PDX %hu: \n", ctxt, pdx);
 	assert(pdx <= PDX_MAX);
 	assert(ctxt->pdt[pdx].mask & PDE_P);
-	mm_pgfree(UNPGADDR(ctxt->pdt[pdx].address), 0);
+	mm_pgfree(UNPGADDR(ctxt->pdt[pdx].address));
 	ctxt->pdt[pdx].mask = ~PDE_P;
 }

@@ -26,15 +26,19 @@ typedef struct _mm_context_t mm_context_t;
 mm_order_t mm_max_order();
 size_t mm_getpgsize();
 
-__nodiscard void *__malloc mm_pgalloc(uint8_t memtype, uint8_t order);
-void mm_pgfree(void *ptr, uint8_t order);
+__nodiscard void *__malloc mm_pgalloc(uint8_t memtype);
+void mm_pgfree(void *ptr);
 
-void mm_refpg(void *ptr, uint8_t order);
+void mm_refpg(void *ptr);
 
 __nodiscard void *__malloc mm_kmalloc(size_t size)
 	__allocsize(1);
 
 void mm_kfree(void *ptr);
+
+#define VMALLOC_NORESERVE 0x80000000
+
+typedef uint32_t mm_vmalloc_flags_t;
 
 /// @brief Allocate a virtual memory space, allocated spaces will be reserved
 /// until it was unmapped.
@@ -50,7 +54,8 @@ __nodiscard void *__malloc mm_vmalloc(
 	const void *minaddr,
 	const void *maxaddr,
 	size_t size,
-	mm_pgaccess_t access)
+	mm_pgaccess_t access,
+	mm_vmalloc_flags_t flags)
 	__allocsize(4);
 
 /// @brief Allocate a virtual memory space in kernel area.
@@ -59,7 +64,7 @@ __nodiscard void *__malloc mm_vmalloc(
 /// @param size Size for allocation.
 /// @param access Page access for allocation.
 /// @return Pointer to allocated virtual address, NULL if failed.
-__nodiscard void *__malloc mm_kvmalloc(mm_context_t *context, size_t size, mm_pgaccess_t access)
+__nodiscard void *__malloc mm_kvmalloc(mm_context_t *context, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags)
 	__allocsize(2);
 
 /// @brief Free a virtual memory space.
@@ -69,7 +74,7 @@ __nodiscard void *__malloc mm_kvmalloc(mm_context_t *context, size_t size, mm_pg
 /// @param size Previous allocated size.
 void mm_vmfree(mm_context_t *context, void *addr, size_t size);
 
-#define MMAP_NORC 0x00000001
+#define MMAP_NORC 0x80000000
 
 typedef uint32_t mmap_flags_t;
 

@@ -39,16 +39,6 @@ km_result_t initcar_destructor() {
 	if (KM_FAILED(fs_unmount_file(initcar_dir_handle)))
 		km_panic("Error unounting the initcar directory");
 
-	pgsize_t sz_left = ARCH_KARGS_PTR->initcar_size;
-	for (pgaddr_t i = PGROUNDDOWN(ARCH_KARGS_PTR->initcar_ptr); sz_left;) {
-		// Order of the block to be allocated.
-		uint16_t order = hn_get_alloc_order(sz_left);
-
-		hn_set_pgblk_free(i, order);
-		i += MM_BLKSIZE(order);
-		sz_left -= MIN(sz_left, MM_BLKSIZE(order));
-	}
-
 	mm_vmfree(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_size);
 
 	return KM_RESULT_OK;
@@ -82,21 +72,13 @@ void initcar_init() {
 
 	size_t sz_left = ARCH_KARGS_PTR->initcar_size;
 
-	for (pgaddr_t i = PGROUNDDOWN(ARCH_KARGS_PTR->initcar_ptr); sz_left;) {
-		// Order of block to allocate.
-		uint16_t order = hn_get_alloc_order(sz_left);
-
-		hn_set_pgblk_used(i, MAD_ALLOC_KERNEL, order);
-		i += MM_BLKSIZE(order);
-		sz_left -= MIN(sz_left, MM_BLKSIZE(order));
-	}
-
 	if (!(initcar_ptr = mm_vmalloc(
 			  mm_kernel_context,
 			  (const void *)CRITICAL_VTOP + 1,
 			  (const void *)UINTPTR_MAX,
 			  ARCH_KARGS_PTR->initcar_size,
-			  PAGE_READ)))
+			  PAGE_READ,
+			  0)))
 		km_panic("Error allocating virtual memory space for INITCAR");
 
 	mm_mmap(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_ptr, ARCH_KARGS_PTR->initcar_size, PAGE_READ, 0);

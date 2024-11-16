@@ -53,9 +53,11 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(void *ptr) {
 		for (size_t i = 0; i < ARRAYLEN(pg->slots); ++i) {
 			if (!pg->slots[i].ptr) {
 				++pg->header.used_num;
+				
 				pg->slots[i].ptr = ptr;
 				pg->slots[i].ref_count = 0;
 				memset(&pg->slots[i].node_header, 0, sizeof(pg->slots[i].node_header));
+
 				kf_rbtree_insert(&kima_vpgdesc_query_tree, &pg->slots[i].node_header);
 				return &pg->slots[i];
 			}
@@ -66,6 +68,7 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(void *ptr) {
 
 	memset(pg->slots, 0, sizeof(pg->slots));
 
+	pg->header.prev = NULL;
 	pg->header.next = kima_vpgdesc_poolpg_list;
 	if (kima_vpgdesc_poolpg_list) {
 		kima_vpgdesc_poolpg_list->header.prev = pg;
@@ -73,9 +76,11 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(void *ptr) {
 	kima_vpgdesc_poolpg_list = pg;
 
 	pg->header.used_num = 1;
+	
 	pg->slots[0].ptr = ptr;
 	pg->slots[0].ref_count = 0;
 	memset(&pg->slots[0].node_header, 0, sizeof(pg->slots[0].node_header));
+
 	kf_rbtree_insert(&kima_vpgdesc_query_tree, &pg->slots[0].node_header);
 	return &pg->slots[0];
 }
