@@ -26,8 +26,8 @@ int op_extract(int argc, char** argv) {
 		return 1;
 	}
 
-	if (md.magic[0] != OICAR_MAGIC_0 || md.magic[1] != OICAR_MAGIC_1 || md.magic[2] != OICAR_MAGIC_2 ||
-		md.magic[3] != OICAR_MAGIC_3) {
+	if (md.magic[0] != PBCAR_MAGIC_0 || md.magic[1] != PBCAR_MAGIC_1 || md.magic[2] != PBCAR_MAGIC_2 ||
+		md.magic[3] != PBCAR_MAGIC_3) {
 		fclose(src_fp);
 		puts("Error: Error reading the archive");
 		return 1;

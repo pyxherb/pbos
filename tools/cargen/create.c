@@ -23,10 +23,10 @@ int op_create(int argc, char **argv) {
 
 	memset(&metadata, 0, sizeof(metadata));
 
-	metadata.magic[0] = OICAR_MAGIC_0;
-	metadata.magic[1] = OICAR_MAGIC_1;
-	metadata.magic[2] = OICAR_MAGIC_2;
-	metadata.magic[3] = OICAR_MAGIC_3;
+	metadata.magic[0] = PBCAR_MAGIC_0;
+	metadata.magic[1] = PBCAR_MAGIC_1;
+	metadata.magic[2] = PBCAR_MAGIC_2;
+	metadata.magic[3] = PBCAR_MAGIC_3;
 
 	metadata.major_ver = 0;
 	metadata.minor_ver = 1;
@@ -138,7 +138,7 @@ int op_create(int argc, char **argv) {
 	memset(&end_file_entry, 0, sizeof(end_file_entry));
 
 	strcpy(end_file_entry.filename, "");
-	end_file_entry.flags |= OICAR_FILE_FLAG_END;
+	end_file_entry.flags |= PBCAR_FILE_FLAG_END;
 
 	if (!fwrite(&end_file_entry, sizeof(end_file_entry), 1, fp)) {
 		fclose(fp);

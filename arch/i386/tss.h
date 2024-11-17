@@ -46,7 +46,7 @@ typedef struct __packed _arch_tss_t {
     uint32_t ssp;
 } arch_tss_t;
 
-__always_inline static inline void arch_ltr(uint16_t tr) {
+FORCEINLINE static void arch_ltr(uint16_t tr) {
 	__asm__ __volatile__("mov %0, %%ax" ::"m"(tr));
 	__asm__ __volatile__("ltr %ax" );
 }

@@ -12,7 +12,7 @@ movl %esp, %ebp
 	cld
 		pushl $MSG_STACKTRACE
 		call kprintf
-	add $4, %esp
+	addl $4, %esp
 
 	movl (%esp), %ecx// ECX = Previous EBP
 	xorl %eax, %eax// EAX = Number of current frame

@@ -34,7 +34,7 @@ mount "$bootFsName" /media
 # GRUB Installation.
 grub-install \
 --target=i386-pc \
---root-directory=/media \
+--root-directory=/media/sys \
 --skip-fs-probe \
 --no-rs-codes \
 --modules="part_msdos fat ext2 elf iso9660 udf cat odc" \
@@ -42,13 +42,15 @@ grub-install \
 
 # Copy files.
 
-cp ./test/bootimg/config/grub.cfg /media/boot/grub/
-cat ./test/bootimg/config/49_pbos >> /media/boot/grub/grub.cfg
+cp ./test/bootimg/config/grub.cfg /media/sys/boot/grub/
+cat ./test/bootimg/config/49_pbos >> /media/sys/boot/grub/grub.cfg
 
-cp \
-./build/pbkim \
-./build/initcar \
-/media/
+# mkdir /media/sys
+# mkdir /media/sys/boot
+mkdir /media/sys/kernel
+
+cp ./build/initcar /media/sys/boot
+cp ./build/pbkim /media/sys/kernel
 
 # Unmount boot partition.
 umount /media

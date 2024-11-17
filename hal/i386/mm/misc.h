@@ -35,7 +35,7 @@ extern char **hn_tss_stacks;
 
 uint8_t hn_to_kn_pmem_type(uint8_t memtype);
 
-__always_inline inline uint8_t hn_get_alloc_order(size_t size) {
+FORCEINLINE uint8_t hn_get_alloc_order(size_t size) {
 	// Order of block to allocate.
 	uint16_t order = 0;
 

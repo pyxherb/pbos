@@ -7,7 +7,7 @@ add_dependencies(hal pbarch freestdc)
 target_link_libraries(hal pbarch freestdc)
 
 add_subdirectory("boot")
-add_subdirectory("dbg")
+# add_subdirectory("dbg")
 add_subdirectory("display")
 add_subdirectory("exec")
 add_subdirectory("initcar")

@@ -6,16 +6,16 @@
 //
 isr_syscall:
 	pushal
-	
+
 	movw %ds, %ax
 	pushw %ax
-	
+
 	movw %es, %ax
 	pushw %ax
-	
+
 	movw %fs, %ax
 	pushw %ax
-	
+
 	movw %gs, %ax
 	pushw %ax
 
@@ -40,13 +40,13 @@ isr_syscall:
 
 	popw %ax
 	movw %ax, %gs
-	
+
 	popw %ax
 	movw %ax, %fs
 
 	popw %ax
 	movw %ax, %es
-	
+
 	popw %ax
 	movw %ax, %ds
 

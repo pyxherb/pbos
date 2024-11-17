@@ -21,5 +21,5 @@ uint64_t __udivdi3(uint64_t x, uint64_t y) {
 }
 
 uint64_t __umoddi3(uint64_t x, uint64_t y) {
-	return x - x / y * y;
+	return x - __mulvdi3(__udivdi3(x, y), y);
 }

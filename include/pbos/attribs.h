@@ -22,11 +22,11 @@
 #endif
 
 // Always inline
-#ifndef __always_inline
+#ifndef FORCEINLINE
 	#if defined(__GNUC__) || defined(__clang__)
-		#define __always_inline __attribute__((__always_inline__))
+		#define FORCEINLINE __attribute__((__always_inline__)) inline
 	#else
-		#define __always_inline
+		#define FORCEINLINE
 	#endif
 #endif
 

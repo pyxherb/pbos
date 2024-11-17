@@ -8,10 +8,10 @@
 #define CPUID_FUNC_CPU_NAME2 0x80000003
 #define CPUID_FUNC_CPU_NAME3 0x80000004
 
-__always_inline static inline bool arch_iscpuidcap() {
+FORCEINLINE static bool arch_iscpuidcap() {
 	bool result = 0;
 
-	__asm__ __volatile__("pushfd");
+	__asm__ __volatile__("pushfl");
 	__asm__ __volatile__("popl %eax");
 	__asm__ __volatile__("andl 0x00200000,%eax");
 	__asm__ __volatile__("cmpl 0x00200000,%eax");

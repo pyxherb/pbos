@@ -84,16 +84,16 @@ void initcar_init() {
 	mm_mmap(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_ptr, ARCH_KARGS_PTR->initcar_size, PAGE_READ, 0);
 
 	pbcar_metadata_t *md = initcar_ptr;
-	if (md->magic[0] != OICAR_MAGIC_0 ||
-		md->magic[1] != OICAR_MAGIC_1 ||
-		md->magic[2] != OICAR_MAGIC_2 ||
-		md->magic[3] != OICAR_MAGIC_3)
+	if (md->magic[0] != PBCAR_MAGIC_0 ||
+		md->magic[1] != PBCAR_MAGIC_1 ||
+		md->magic[2] != PBCAR_MAGIC_2 ||
+		md->magic[3] != PBCAR_MAGIC_3)
 		km_panic("Invalid INITCAR magic, the file may be damaged or invalid");
 
 	if (md->major_ver != 0 || md->minor_ver != 1)
 		km_panic("Incompatible INITCAR version");
 
-	if (md->flags & OICAR_METADATA_BE)
+	if (md->flags & PBCAR_METADATA_BE)
 		km_panic("Incompatible INITCAR byte-order");
 
 	// Create file objects.
@@ -120,7 +120,7 @@ void initcar_init() {
 		initcar_checksize(sizeof(*fe));
 		fe = (pbcar_fentry_t *)p_cur, p_cur += sizeof(*fe);
 
-		if (fe->flags & OICAR_FILE_FLAG_END)
+		if (fe->flags & PBCAR_FILE_FLAG_END)
 			break;
 
 		kdprintf("File: %s\n", fe->filename);
