@@ -7,7 +7,7 @@
 /// @return Corresponding PMAD. NULL if not found.
 ///
 hn_pmad_t *hn_pmad_get(pgaddr_t addr) {
-	for (uint8_t i = 0; i < ARRAYLEN(hn_pmad_list); ++i) {
+	for (uint8_t i = 0; i < PB_ARRAYSIZE(hn_pmad_list); ++i) {
 		if (hn_pmad_list[i].attribs.type == KN_PMEM_END)
 			break;
 
@@ -23,7 +23,7 @@ pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area) {
 	hn_madpool_t *pool = area->madpools;
 
 	while (pool) {
-		for (uint16_t i = 0; i < ARRAYLEN(pool->descs); ++i) {
+		for (uint16_t i = 0; i < PB_ARRAYSIZE(pool->descs); ++i) {
 			hn_mad_t *mad = &(pool->descs[i]);
 			// There's no more MAD once we found that a MAD does not present.
 			if (!(mad->flags & MAD_P))

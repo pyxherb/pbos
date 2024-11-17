@@ -1,7 +1,7 @@
 #include <hal/i386/proc.h>
 
 void kn_thread_destructor(om_object_t *obj) {
-	hn_thread_cleanup(CONTAINER_OF(ps_tcb_t, object_header, obj));
+	hn_thread_cleanup(PB_CONTAINER_OF(ps_tcb_t, object_header, obj));
 }
 
 ps_tcb_t *kn_alloc_tcb(ps_pcb_t *pcb) {
@@ -36,7 +36,7 @@ thread_id_t ps_create_thread(
 
 void hn_thread_cleanup(ps_tcb_t *thread) {
 	if (thread == thread->parent->threads)
-		thread->parent->threads = CONTAINER_OF(ps_tcb_t, list_header, kf_list_next((kf_list_node_t *)thread));
+		thread->parent->threads = PB_CONTAINER_OF(ps_tcb_t, list_header, kf_list_next((kf_list_node_t *)thread));
 	kf_list_remove((kf_list_node_t *)thread);
 
 	while (thread->stacksize) {

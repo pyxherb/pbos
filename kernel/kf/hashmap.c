@@ -48,7 +48,7 @@ km_result_t kf_hashmap_remove(kf_hashmap_t *dest, kf_hashmap_node_t *node) {
 
 	if (node->owner_bucket->nodes == node) {
 		kf_list_node_t *next = kf_list_next(&node->list_header);
-		node->owner_bucket->nodes = next ? CONTAINER_OF(kf_hashmap_node_t, list_header, next) : NULL;
+		node->owner_bucket->nodes = next ? PB_CONTAINER_OF(kf_hashmap_node_t, list_header, next) : NULL;
 	}
 	kf_list_remove(&node->list_header);
 
@@ -77,7 +77,7 @@ void kf_hashmap_free(kf_hashmap_t *dest) {
 
 		if (bucket->nodes) {
 			kf_list_foreach(i, &bucket->nodes[0].list_header) {
-				dest->node_free(CONTAINER_OF(kf_hashmap_node_t, list_header, i));
+				dest->node_free(PB_CONTAINER_OF(kf_hashmap_node_t, list_header, i));
 			}
 		}
 	}
@@ -91,8 +91,8 @@ kf_hashmap_node_t *kf_hashmap_find(kf_hashmap_t *dest, const void *key) {
 		return NULL;
 
 	kf_list_foreach(i, &dest->buckets[index].nodes->list_header) {
-		if (dest->key_cmp(CONTAINER_OF(kf_hashmap_node_t, list_header, i), key))
-			return CONTAINER_OF(kf_hashmap_node_t, list_header, i);
+		if (dest->key_cmp(PB_CONTAINER_OF(kf_hashmap_node_t, list_header, i), key))
+			return PB_CONTAINER_OF(kf_hashmap_node_t, list_header, i);
 	}
 
 	return NULL;
@@ -109,7 +109,7 @@ kf_hashmap_node_t *kf_hashmap_begin(kf_hashmap_t *dest) {
 kf_hashmap_node_t *kf_hashmap_end(kf_hashmap_t *dest) {
 	for (size_t i = dest->bucket_num; i; --i) {
 		if (dest->buckets[i - 1].nodes)
-			return CONTAINER_OF(kf_hashmap_node_t, list_header, kf_list_end(&dest->buckets[i - 1].nodes->list_header));
+			return PB_CONTAINER_OF(kf_hashmap_node_t, list_header, kf_list_end(&dest->buckets[i - 1].nodes->list_header));
 	}
 	return NULL;
 }
@@ -118,7 +118,7 @@ kf_hashmap_node_t *kf_hashmap_next(kf_hashmap_node_t *cur) {
 	kf_hashmap_t *owner_map = cur->owner_bucket->owner_map;
 	kf_list_node_t *next = kf_list_next(&cur->list_header);
 	if (next)
-		return CONTAINER_OF(kf_hashmap_node_t, list_header, next);
+		return PB_CONTAINER_OF(kf_hashmap_node_t, list_header, next);
 
 	for (size_t i = cur->owner_bucket - owner_map->buckets + 1; i < owner_map->bucket_num; ++i)
 		if (owner_map->buckets[i].nodes)
@@ -181,7 +181,7 @@ static km_result_t _kf_hashmap_resize_buckets(kf_hashmap_t *dest, size_t size) {
 
 				kf_list_node_t *next = i->next;
 
-				result = _kf_hashmap_insert(dest, CONTAINER_OF(kf_hashmap_node_t, list_header, i));
+				result = _kf_hashmap_insert(dest, PB_CONTAINER_OF(kf_hashmap_node_t, list_header, i));
 				assert(KM_SUCCEEDED(result));
 
 				i = next;

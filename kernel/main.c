@@ -11,7 +11,7 @@
 #include <pbos/kn/km/objmgr.h>
 #include <string.h>
 
-void __noreturn _start() {
+PB_NORETURN void _start() {
 	km_result_t result;
 
 	hal_init();

@@ -4,7 +4,7 @@
 #include <pbos/attribs.h>
 #include <stdint.h>
 
-typedef struct __packed _arch_tss_t {
+typedef struct PB_PACKED _arch_tss_t {
     uint16_t link;
     uint16_t reserved0;
     uint32_t esp0;
@@ -46,7 +46,7 @@ typedef struct __packed _arch_tss_t {
     uint32_t ssp;
 } arch_tss_t;
 
-FORCEINLINE static void arch_ltr(uint16_t tr) {
+PB_FORCEINLINE static void arch_ltr(uint16_t tr) {
 	__asm__ __volatile__("mov %0, %%ax" ::"m"(tr));
 	__asm__ __volatile__("ltr %ax" );
 }

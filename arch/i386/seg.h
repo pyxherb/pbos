@@ -68,8 +68,8 @@ typedef uint64_t arch_gdt_desc_t;
 ///
 /// @param gdt Address of GDT.
 /// @param desc_num Number of descriptors.
-FORCEINLINE static void arch_lgdt(void *gdt, uint16_t desc_num) {
-	volatile struct __packed {
+PB_FORCEINLINE static void arch_lgdt(void *gdt, uint16_t desc_num) {
+	volatile struct PB_PACKED {
 		uint16_t limit;
 		void *base;
 	} reg;
@@ -82,10 +82,10 @@ FORCEINLINE static void arch_lgdt(void *gdt, uint16_t desc_num) {
 /// @brief Load the selector to CS register.
 ///
 /// @param value Selector to load.
-FORCEINLINE static void arch_loadcs(uint16_t value) {
+PB_FORCEINLINE static void arch_loadcs(uint16_t value) {
 	bool loaded = false;
 
-	struct __packed {
+	struct PB_PACKED {
 		void *ptr;
 		uint16_t value;
 	} data;
@@ -114,7 +114,7 @@ FORCEINLINE static void arch_loadcs(uint16_t value) {
 #define arch_loadgs(value) \
 	__asm__ __volatile__("movw %0, %%gs" ::"r"((uint16_t)(value)))
 
-FORCEINLINE static uint16_t arch_storefs() {
+PB_FORCEINLINE static uint16_t arch_storefs() {
 	uint16_t value;
 	__asm__ __volatile__("movw %fs, %ax");
 	__asm__ __volatile__("movw %%ax, %0" :"=m"((value)));

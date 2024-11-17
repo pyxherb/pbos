@@ -4,7 +4,7 @@
 #include <pbos/attribs.h>
 #include <stdint.h>
 
-typedef struct __packed _arch_gate_t {
+typedef struct PB_PACKED _arch_gate_t {
 	uint16_t off_low : 16;
 	uint16_t selector : 16;
 	uint8_t unused : 8;

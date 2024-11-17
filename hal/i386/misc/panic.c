@@ -3,14 +3,14 @@
 #include <hal/i386/display/vga.h>
 #include <pbos/km/panic.h>
 
-void __noreturn _km_panic_halt();
+PB_NORETURN void _km_panic_halt();
 
 static bool _panicked = false;
 bool km_ispanicked() {
 	return _panicked;
 }
 
-void __noreturn km_panic(const char *str, ...) {
+PB_NORETURN void km_panic(const char *str, ...) {
 	if (_panicked)
 		goto panicked;
 

@@ -11,7 +11,7 @@ size_t hn_tss_storage_num;
 arch_tss_t *hn_tss_storage_ptr;
 char **hn_tss_stacks;
 
-FASTCALL_DECL(static void, hn_push_pmad(hn_pmad_t *pmad));
+static void hn_push_pmad(hn_pmad_t *pmad);
 static void hn_init_gdt();
 static void hn_mm_init_paging();
 static void hn_mm_init_pmadlist();
@@ -115,7 +115,7 @@ static void hn_mm_init_areas() {
 			memset(newpool->descs, 0, sizeof(newpool->descs));
 			newpool->next = pooladdr_last;
 
-			for (size_t k = 0; k < ARRAYLEN(newpool->descs); ++k) {
+			for (size_t k = 0; k < PB_ARRAYSIZE(newpool->descs); ++k) {
 				if (addr >= i->attribs.base + i->attribs.len)
 					break;
 
@@ -162,7 +162,7 @@ static void hn_mm_init_areas() {
 			memset(newpool->descs, 0, sizeof(newpool->descs));
 			newpool->next = pooladdr_last;
 
-			for (size_t k = 0; k < ARRAYLEN(newpool->descs); ++k) {
+			for (size_t k = 0; k < PB_ARRAYSIZE(newpool->descs); ++k) {
 				if (addr >= i->attribs.base + i->attribs.len)
 					break;
 
@@ -382,8 +382,8 @@ static void hn_mm_init_paging() {
 ///
 /// @param pmad PMAD to push.
 ///
-FASTCALL_DECL(static void, hn_push_pmad(hn_pmad_t *pmad)) {
-	for (uint8_t i = 0; i < ARRAYLEN(hn_pmad_list); ++i)
+static void hn_push_pmad(hn_pmad_t *pmad) {
+	for (uint8_t i = 0; i < PB_ARRAYSIZE(hn_pmad_list); ++i)
 		if (hn_pmad_list[i].attribs.type == KN_PMEM_END) {
 			memcpy(&(hn_pmad_list[i]), pmad, sizeof(hn_pmad_t));
 			hn_pmad_list[i + 1].attribs.type = KN_PMEM_END;

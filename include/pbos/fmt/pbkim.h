@@ -22,9 +22,9 @@ enum{
 	OICKIM_MACHINE_I386
 };
 
-__packed_begin
+PB_PACKED_BEGIN
 
-typedef struct __packed _pbkim_ihdr_t {
+typedef struct PB_PACKED _pbkim_ihdr_t {
 	uint8_t magic[4];
 	bool endian;
 	uint16_t machine;
@@ -32,7 +32,7 @@ typedef struct __packed _pbkim_ihdr_t {
 	uint64_t image_size;
 } pbkim_ihdr_t;
 
-__packed_end
+PB_PACKED_END
 
 #ifdef __cplusplus
 }

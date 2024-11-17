@@ -65,14 +65,14 @@ bool klog_iscapable(uint16_t cap);
 #define KLOG_EXCALL_PRIVATE_MIN 0xc0000000
 #define KLOG_EXCALL_PRIVATE_MAX 0xffffffff
 
-__packed_begin
+PB_PACKED_BEGIN
 
-	typedef struct __packed _klog_color_exarg_t {
+	typedef struct PB_PACKED _klog_color_exarg_t {
 	uint8_t fg;
 	uint8_t bg;
 } klog_color_exarg_t;
 
-__packed_end
+PB_PACKED_END
 
 	/// @brief Call an extra function with current kernel logger.
 	///
@@ -81,8 +81,8 @@ __packed_end
 	void
 	klog_excall(uint32_t id, ...);
 
-void kvprintf(const char *str, va_list args) __format(printf, 1, 0);
-void kprintf(const char *str, ...) __format(printf, 1, 2);
+void kvprintf(const char *str, va_list args) PB_FMTARG(printf, 1, 0);
+void kprintf(const char *str, ...) PB_FMTARG(printf, 1, 2);
 void kputc(char ch);
 void kputs(const char *str);
 

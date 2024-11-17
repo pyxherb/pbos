@@ -13,6 +13,6 @@ bool km_ispanicked();
 ///
 /// @param fmt Formatted panic message to display.
 /// @param ... Arguments for the formatted message.
-void __noreturn km_panic(const char* fmt, ...);
+PB_NORETURN void km_panic(const char* fmt, ...);
 
 #endif

@@ -6,14 +6,14 @@ mm_context_t *mm_kernel_context = &hn_kernel_mmctxt;
 mm_context_t **mm_current_contexts;
 
 bool hn_vpd_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	mm_vpd_t *_x = CONTAINER_OF(mm_vpd_t, node_header, x),
-			 *_y = CONTAINER_OF(mm_vpd_t, node_header, y);
+	mm_vpd_t *_x = PB_CONTAINER_OF(mm_vpd_t, node_header, x),
+			 *_y = PB_CONTAINER_OF(mm_vpd_t, node_header, y);
 
 	return _x->addr < _y->addr;
 }
 
 void hn_vpd_nodefree(kf_rbtree_node_t *p) {
-	mm_vpd_t *_p = CONTAINER_OF(mm_vpd_t, node_header, p);
+	mm_vpd_t *_p = PB_CONTAINER_OF(mm_vpd_t, node_header, p);
 
 	_p->flags &= ~MM_VPD_ALLOC;
 }
@@ -50,14 +50,14 @@ mm_vpd_t *hn_mm_lookup_vpd(mm_context_t *context, const void *addr) {
 		return NULL;
 	}
 
-	return CONTAINER_OF(mm_vpd_t, node_header, node);
+	return PB_CONTAINER_OF(mm_vpd_t, node_header, node);
 }
 
 mm_vpd_t *hn_mm_alloc_vpd_slot(mm_context_t *context) {
 	for (mm_vpdpool_t *i = context->vpd_pools; i; i = i->header.next) {
-		if (i->header.used_num == ARRAYLEN(i->descs))
+		if (i->header.used_num == PB_ARRAYSIZE(i->descs))
 			continue;
-		for (size_t j = 0; j < ARRAYLEN(i->descs); ++j) {
+		for (size_t j = 0; j < PB_ARRAYSIZE(i->descs); ++j) {
 			mm_vpd_t *cur_vpd = &i->descs[j];
 
 			if (cur_vpd->flags & MM_VPD_ALLOC) {
@@ -157,7 +157,7 @@ void hn_mm_free_vpd(mm_context_t *context, const void *addr) {
 
 	kf_rbtree_node_t *target_node = kf_rbtree_find(&context->vpd_rbtree, &query_desc.node_header);
 	assert(target_node);
-	target_desc = CONTAINER_OF(mm_vpd_t, node_header, target_node);
+	target_desc = PB_CONTAINER_OF(mm_vpd_t, node_header, target_node);
 
 	assert(target_desc);
 

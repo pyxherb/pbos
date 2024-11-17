@@ -29,7 +29,7 @@ km_result_t km_exec(
 	om_handle_t file_handle,
 	proc_id_t *pid_out) {
 	kf_rbtree_foreach(i, &kn_registered_binldrs) {
-		kn_binldr_reg_t *binldr = CONTAINER_OF(kn_binldr_reg_t, tree_header, i);
+		kn_binldr_reg_t *binldr = PB_CONTAINER_OF(kn_binldr_reg_t, tree_header, i);
 
 		ps_pcb_t *pcb = kn_alloc_pcb();
 		if (!pcb)

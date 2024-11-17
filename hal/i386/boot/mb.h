@@ -10,7 +10,7 @@
 
 #define MB_BOOTLDR_MAGIC 0x36d76289
 
-typedef struct __packed _mb_info_hdr_t {
+typedef struct PB_PACKED _mb_info_hdr_t {
 	uint32_t sz_total;
 	uint32_t reserved;
 } mb_info_hdr_t;
@@ -50,7 +50,7 @@ typedef struct __packed _mb_info_hdr_t {
 // The header data before every boot information tag's body.
 // The size should be header size plus body size.
 //
-typedef struct __packed _mbtaghdr_t {
+typedef struct PB_PACKED _mbtaghdr_t {
 	uint32_t type;
 	uint32_t size;
 } mbtaghdr_t;
@@ -63,7 +63,7 @@ typedef struct __packed _mbtaghdr_t {
 // Type = 1
 // Boot Command Line
 //
-typedef struct __packed _mbtag_cmdline_t {
+typedef struct PB_PACKED _mbtag_cmdline_t {
 	// First character of the null-terminated string.
 	char string;
 } mbtag_cmdline_t;
@@ -72,7 +72,7 @@ typedef struct __packed _mbtag_cmdline_t {
 // Type = 2
 // Boot Loader Name
 //
-typedef struct __packed _mbtag_loader_name_t {
+typedef struct PB_PACKED _mbtag_loader_name_t {
 	// First character of the null-terminated string.
 	char string;
 } mbtag_loader_name_t;
@@ -81,7 +81,7 @@ typedef struct __packed _mbtag_loader_name_t {
 // Type = 3
 // Modules
 //
-typedef struct __packed _mbtag_mod_t {
+typedef struct PB_PACKED _mbtag_mod_t {
 	uint32_t mod_start;
 	uint32_t mod_end;
 	// First character of the null-terminated string.
@@ -92,7 +92,7 @@ typedef struct __packed _mbtag_mod_t {
 // Type = 4
 // Basic Memory Information
 //
-typedef struct __packed _mbtag_basicmem_info_t {
+typedef struct PB_PACKED _mbtag_basicmem_info_t {
 	uint32_t lower;
 	uint32_t upper;
 } mbtag_basicmem_info_t;
@@ -101,7 +101,7 @@ typedef struct __packed _mbtag_basicmem_info_t {
 // Type = 5
 // BIOS Boot Device
 //
-typedef struct __packed _mbtag_bootdev_t {
+typedef struct PB_PACKED _mbtag_bootdev_t {
 	uint32_t bios_dev;
 	uint32_t part;
 	uint32_t subpart;
@@ -112,13 +112,13 @@ typedef struct __packed _mbtag_bootdev_t {
 // Memory Map
 // !: There are [sz_entry] entries after this structure.
 //
-typedef struct __packed _mbtag_mmap_t {
+typedef struct PB_PACKED _mbtag_mmap_t {
 	uint32_t sz_entry;
 	uint32_t ver_entry;
 } mbtag_mmap_t;
 
 // Memory Map Entry
-typedef struct __packed _mb_mmap_entry_t {
+typedef struct PB_PACKED _mb_mmap_entry_t {
 	uint64_t base;
 	uint64_t length;
 	uint32_t type;
@@ -129,7 +129,7 @@ typedef struct __packed _mb_mmap_entry_t {
 // Type = 7
 // VBE Information
 //
-typedef struct __packed _mbtag_vbeinfo_t {
+typedef struct PB_PACKED _mbtag_vbeinfo_t {
 	uint16_t mode;
 	uint16_t interface_seg;
 	uint16_t interface_off;
@@ -143,7 +143,7 @@ typedef struct __packed _mbtag_vbeinfo_t {
 // Framebuffer Information
 // ! There's color information data after this structure and the data type is decided by the framebuffer type.
 //
-typedef struct __packed _mbtag_framebuf_info_t {
+typedef struct PB_PACKED _mbtag_framebuf_info_t {
 	uint64_t addr;
 	uint32_t pitch;
 	uint32_t width;
@@ -155,19 +155,19 @@ typedef struct __packed _mbtag_framebuf_info_t {
 
 // Framebuffer Type = 0
 // ! There are [framebuffer_palette_num_colors] framebuffer palettes after this structure.
-typedef struct __packed _mb_framebuf_colorinfo_hdr_t {
+typedef struct PB_PACKED _mb_framebuf_colorinfo_hdr_t {
 	uint32_t color_num;
 } mb_framebuf_colorinfo_hdr_t;
 
 // Framebuffer palettes after the header.
-typedef struct __packed _mb_framebuf_pal_hdr_t {
+typedef struct PB_PACKED _mb_framebuf_pal_hdr_t {
 	uint8_t red;
 	uint8_t green;
 	uint8_t blue;
 } mb_framebuf_pal_hdr_t;
 
 // Framebuffer Type = 1
-typedef struct __packed _mb_framebuf_direct_rgb_colorinfo_t {
+typedef struct PB_PACKED _mb_framebuf_direct_rgb_colorinfo_t {
 	uint8_t rfield_pos;
 	uint8_t rmask_size;
 	uint8_t gfield_pos;
@@ -180,7 +180,7 @@ typedef struct __packed _mb_framebuf_direct_rgb_colorinfo_t {
 // Type = 9
 // ELF Symbols
 //
-typedef struct __packed _mbtag_elf_symbols_t {
+typedef struct PB_PACKED _mbtag_elf_symbols_t {
 	uint32_t size;
 	uint16_t num;
 	uint16_t entsize;
@@ -192,7 +192,7 @@ typedef struct __packed _mbtag_elf_symbols_t {
 // Type = 10
 // APM Table
 //
-typedef struct __packed _mbtag_apmtab_t {
+typedef struct PB_PACKED _mbtag_apmtab_t {
 	uint16_t version;
 	uint16_t cseg;
 	uint32_t offset;
@@ -208,7 +208,7 @@ typedef struct __packed _mbtag_apmtab_t {
 // Type = 11
 // EFI 32-bit System Table Pointer
 //
-typedef struct __packed _mbtag_efi_systab32_t {
+typedef struct PB_PACKED _mbtag_efi_systab32_t {
 	uint32_t ptr;
 } MultibootTagEFISysTable32;
 
@@ -216,7 +216,7 @@ typedef struct __packed _mbtag_efi_systab32_t {
 // Type = 12
 // EFI 64-bit System Table Pointer
 //
-typedef struct __packed _mbtag_efi_systab64_t {
+typedef struct PB_PACKED _mbtag_efi_systab64_t {
 	uint64_t ptr;
 } mbtag_efi_systab64_t;
 
@@ -225,7 +225,7 @@ typedef struct __packed _mbtag_efi_systab64_t {
 // SMBIOS Tables
 // ! There are some SMBIOS tables after this structure.
 //
-typedef struct __packed _mbtag_smbios_tab_t {
+typedef struct PB_PACKED _mbtag_smbios_tab_t {
 	uint8_t major;
 	uint8_t minor;
 	uint8_t reserved[6];
@@ -235,7 +235,7 @@ typedef struct __packed _mbtag_smbios_tab_t {
 // Type = 14
 // Old ACPI RSDP
 //
-typedef struct __packed _mbtag_old_rsdp_t {
+typedef struct PB_PACKED _mbtag_old_rsdp_t {
 	acpi_rsdp rsdp;
 } mbtag_old_rsdp_t;
 
@@ -254,7 +254,7 @@ typedef struct __packed _mbtag_old_rsdp_t {
 // EFI Memory Map
 // ! There are some EFI memory maps after this structure.
 //
-typedef struct __packed _mbtag_efi_mmap_t {
+typedef struct PB_PACKED _mbtag_efi_mmap_t {
 	uint32_t desc_size;
 	uint32_t desc_version;
 } mbtag_efi_mmap_t;
@@ -263,14 +263,14 @@ typedef struct __packed _mbtag_efi_mmap_t {
 // Type = 18
 // EFI Boot Service Not Terminated Indicator
 //
-typedef struct __packed _mbtag_efiserv_unterm_t {
+typedef struct PB_PACKED _mbtag_efiserv_unterm_t {
 } mbtag_efiserv_unterm_t;
 
 //
 // Type = 19
 // EFI 32-bit Image Handle Pointer
 //
-typedef struct __packed _mbtag_efi_himg32_t {
+typedef struct PB_PACKED _mbtag_efi_himg32_t {
 	uint32_t ptr;
 } mbtag_efi_himg32_t;
 
@@ -278,7 +278,7 @@ typedef struct __packed _mbtag_efi_himg32_t {
 // Type = 20
 // EFI 64-bit Image Handle Pointer
 //
-typedef struct __packed _mbtag_efi_himg64_t {
+typedef struct PB_PACKED _mbtag_efi_himg64_t {
 	uint32_t ptr;
 } mbtag_efi_himg64_t;
 
@@ -286,7 +286,7 @@ typedef struct __packed _mbtag_efi_himg64_t {
 // Type = 21
 // Image Load Base Physical Address
 //
-typedef struct __packed _mbtag_imgbase_t {
+typedef struct PB_PACKED _mbtag_imgbase_t {
 	uint32_t addr;
 } mbtag_imgbase_t;
 

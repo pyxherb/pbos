@@ -90,7 +90,7 @@ enum {
 	EM_SNP1K,			  // Trebia SNP 1000
 	EM_ST200,			  // STMicroelectronics ST200
 	EM_IP2K,			  // Ubicom IP2000 Series
-	EM_MAX,				  // MAX Processor
+	EM_MAX,				  // PB_MAX Processor
 	EM_CR,				  // Compact RISC
 	EM_F2MC16,			  // Fujitsu F2MC16
 	EM_MSP430,			  // Texas Instruments MSP430

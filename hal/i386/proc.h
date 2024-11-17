@@ -61,6 +61,6 @@ extern ps_pcb_t *hn_proc_list;
 void hn_proc_cleanup(ps_pcb_t *proc);
 void hn_thread_cleanup(ps_tcb_t *thread);
 void ps_save_context(ps_user_context_t *ctxt);
-__noreturn void ps_load_user_context(ps_user_context_t *ctxt);
+PB_NORETURN void ps_load_user_context(ps_user_context_t *ctxt);
 
 #endif

@@ -41,7 +41,7 @@ void hn_proc_cleanup(ps_pcb_t *proc) {
 	mm_free_context(&proc->mmctxt);
 	proc->flags &= ~PROC_A;
 
-	for (ps_tcb_t *i = proc->threads; i; i = CONTAINER_OF(ps_tcb_t, list_header, kf_list_next(&(i->list_header)))) {
+	for (ps_tcb_t *i = proc->threads; i; i = PB_CONTAINER_OF(ps_tcb_t, list_header, kf_list_next(&(i->list_header)))) {
 		om_decref(&(i->object_header));
 	}
 

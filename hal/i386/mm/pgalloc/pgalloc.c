@@ -34,7 +34,7 @@ void mm_refpg(void *ptr) {
 /// @return Found MAD. NULL if not found.
 ///
 hn_mad_t *hn_find_mad(hn_madpool_t *pool, uint32_t pgaddr) {
-	for (uint16_t i = 0; i < ARRAYLEN(pool->descs); ++i) {
+	for (uint16_t i = 0; i < PB_ARRAYSIZE(pool->descs); ++i) {
 		// There's no more MAD once we found that a MAD does not present.
 		if (!(pool->descs[i].flags & MAD_P))
 			break;

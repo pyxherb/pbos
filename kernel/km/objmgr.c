@@ -15,7 +15,7 @@ static bool _kn_object_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t
 }
 
 static void _kn_unused_object_nodefree(kf_rbtree_node_t *p) {
-	om_object_t *_p = CONTAINER_OF(om_object_t, tree_header, p);
+	om_object_t *_p = PB_CONTAINER_OF(om_object_t, tree_header, p);
 	_p->p_class->destructor(_p);
 }
 
@@ -86,13 +86,13 @@ void om_decref(om_object_t *obj) {
 }
 
 static bool _kn_handle_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	const kn_handle_registry_t *_x = CONTAINER_OF(kn_handle_registry_t, tree_header, x),
-							   *_y = CONTAINER_OF(kn_handle_registry_t, tree_header, y);
+	const kn_handle_registry_t *_x = PB_CONTAINER_OF(kn_handle_registry_t, tree_header, x),
+							   *_y = PB_CONTAINER_OF(kn_handle_registry_t, tree_header, y);
 	return _x->handle < _y->handle;
 }
 
 static void _kn_handle_nodefree(kf_rbtree_node_t *p) {
-	kn_handle_registry_t *_p = CONTAINER_OF(kn_handle_registry_t, tree_header, p);
+	kn_handle_registry_t *_p = PB_CONTAINER_OF(kn_handle_registry_t, tree_header, p);
 	--_p->object->ref_num;
 	mm_kfree(_p);
 }
@@ -103,7 +103,7 @@ kn_handle_registry_t *kn_lookup_handle_registry(om_handle_t handle) {
 	};
 	kf_rbtree_node_t *node = kf_rbtree_find(&kn_global_handles, &(find_node.tree_header));
 	if (node)
-		return CONTAINER_OF(kn_handle_registry_t, tree_header, node);
+		return PB_CONTAINER_OF(kn_handle_registry_t, tree_header, node);
 	return NULL;
 }
 

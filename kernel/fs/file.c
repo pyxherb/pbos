@@ -21,7 +21,7 @@ km_result_t fs_deref_file_handle(
 	km_result_t result;
 	if (KM_FAILED(result = om_deref_handle(file_handle, &object)))
 		return result;
-	*file_out = CONTAINER_OF(fs_file_t, object_header, object);
+	*file_out = PB_CONTAINER_OF(fs_file_t, object_header, object);
 	return result;
 }
 
@@ -106,7 +106,7 @@ static size_t _kn_file_hasher(size_t bucket_num, const void *target, bool is_tar
 		return kf_hash_djb(key->filename, key->filename_len) % bucket_num;
 	}
 
-	kn_child_file_entry_t *registry = CONTAINER_OF(kn_child_file_entry_t, hashmap_header, target);
+	kn_child_file_entry_t *registry = PB_CONTAINER_OF(kn_child_file_entry_t, hashmap_header, target);
 	fs_file_t *file;
 	if (KM_FAILED(fs_deref_file_handle(registry->file_handle, &file)))
 		km_panic("Error deferencing the file handle");
@@ -114,13 +114,13 @@ static size_t _kn_file_hasher(size_t bucket_num, const void *target, bool is_tar
 }
 
 static void _kn_file_nodefree(kf_hashmap_node_t *node) {
-	kn_child_file_entry_t *registry = CONTAINER_OF(kn_child_file_entry_t, hashmap_header, node);
+	kn_child_file_entry_t *registry = PB_CONTAINER_OF(kn_child_file_entry_t, hashmap_header, node);
 	om_close_handle(registry->file_handle);
 }
 
 static bool _kn_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs) {
-	kn_child_file_entry_t *_lhs = CONTAINER_OF(kn_child_file_entry_t, hashmap_header, lhs),
-						  *_rhs = CONTAINER_OF(kn_child_file_entry_t, hashmap_header, rhs);
+	kn_child_file_entry_t *_lhs = PB_CONTAINER_OF(kn_child_file_entry_t, hashmap_header, lhs),
+						  *_rhs = PB_CONTAINER_OF(kn_child_file_entry_t, hashmap_header, rhs);
 
 	fs_file_t *lhs_file, *rhs_file;
 	if (KM_FAILED(fs_deref_file_handle(_lhs->file_handle, &lhs_file)))
@@ -134,7 +134,7 @@ static bool _kn_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node
 	return lhs_hash == rhs_hash;
 }
 static bool _kn_file_keycmp(const kf_hashmap_node_t *lhs, const void *key) {
-	kn_child_file_entry_t *_lhs = CONTAINER_OF(kn_child_file_entry_t, hashmap_header, lhs);
+	kn_child_file_entry_t *_lhs = PB_CONTAINER_OF(kn_child_file_entry_t, hashmap_header, lhs);
 
 	fs_file_t *lhs_file;
 	if (KM_FAILED(fs_deref_file_handle(_lhs->file_handle, &lhs_file)))
@@ -228,7 +228,7 @@ km_result_t fs_child_of(om_handle_t file_handle, const char *name, size_t filena
 			if (!node)
 				return KM_MAKEERROR(KM_RESULT_NOT_FOUND);
 
-			*handle_out = CONTAINER_OF(kn_child_file_entry_t, hashmap_header, node)->file_handle;
+			*handle_out = PB_CONTAINER_OF(kn_child_file_entry_t, hashmap_header, node)->file_handle;
 			break;
 		}
 		case FS_FILETYPE_LINK:
@@ -249,7 +249,7 @@ km_result_t fs_resolve_path(om_handle_t cur_dir, const char *path, size_t path_l
 		switch (*i) {
 			case '/': {
 				size_t filename_len = i - last_divider;
-				
+
 				if (!filename_len) {
 					if (last_divider == path)
 						file = fs_abs_root_dir;
@@ -331,7 +331,7 @@ km_result_t fs_size(om_handle_t file_handle, size_t *size_out) {
 }
 
 void kn_file_destructor(om_object_t *obj) {
-	mm_kfree(CONTAINER_OF(fs_file_t, object_header, obj));
+	mm_kfree(PB_CONTAINER_OF(fs_file_t, object_header, obj));
 }
 
 km_result_t fs_find_file(om_handle_t file_handle, fs_finddata_t *finddata, om_handle_t *file_handle_out) {
@@ -349,7 +349,7 @@ km_result_t fs_find_file(om_handle_t file_handle, fs_finddata_t *finddata, om_ha
 	finddata->node = node;
 
 	if (node) {
-		kn_child_file_entry_t *registry = CONTAINER_OF(kn_child_file_entry_t, hashmap_header, node);
+		kn_child_file_entry_t *registry = PB_CONTAINER_OF(kn_child_file_entry_t, hashmap_header, node);
 		*file_handle_out = registry->file_handle;
 	} else {
 		*file_handle_out = OM_INVALID_HANDLE;
@@ -363,7 +363,7 @@ void fs_find_next_file(fs_finddata_t *finddata, om_handle_t *file_handle_out) {
 	finddata->node = node;
 
 	if (node) {
-		kn_child_file_entry_t *registry = CONTAINER_OF(kn_child_file_entry_t, hashmap_header, node);
+		kn_child_file_entry_t *registry = PB_CONTAINER_OF(kn_child_file_entry_t, hashmap_header, node);
 		*file_handle_out = registry->file_handle;
 	} else {
 		*file_handle_out = OM_INVALID_HANDLE;

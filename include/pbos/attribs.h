@@ -3,165 +3,137 @@
 
 // The function will never return
 #if defined(__GNUC__) || defined(__clang__)
-	#define __noreturn __attribute__((__noreturn__))
+	#define PB_NORETURN __attribute__((__noreturn__))
 #else
-	#define __noreturn
+	#define PB_NORETURN
 #endif
 
 // Should not discard the return value
 #ifdef __cplusplus
 	#if __cplusplus >= 202002L
-		#define __nodiscard [[nodiscard("Should not discard the result")]]
+		#define PB_NODISCARD [[nodiscard("Should not discard the result")]]
 	#elif __cplusplus >= 201703L
-		#define __nodiscard [[nodiscard]]
+		#define PB_NODISCARD [[nodiscard]]
 	#endif
 #elif defined(__GNUC__) || defined(__clang__)
-	#define __nodiscard __attribute__((__warn_unused_result__))
+	#define PB_NODISCARD __attribute__((__warn_unused_result__))
 #else
-	#define __nodiscard
+	#define PB_NODISCARD
 #endif
 
 // Always inline
-#ifndef FORCEINLINE
+#ifndef PB_FORCEINLINE
 	#if defined(__GNUC__) || defined(__clang__)
-		#define FORCEINLINE __attribute__((__always_inline__)) inline
+		#define PB_FORCEINLINE __attribute__((__always_inline__)) inline
 	#else
-		#define FORCEINLINE
+		#define PB_FORCEINLINE
 	#endif
 #endif
 
 // No inline
 #if defined(__GNUC__) || defined(__clang__)
-	#define __noinline __attribute__((__noinline__))
+	#define PB_NOINLINE __attribute__((PB_NOINLINE__))
 #else
-	#define __noinline
+	#define PB_NOINLINE
 #endif
 
-// Indicates that the function acts like several functions that have formatted parameters.
+// Indicates that the function behaves like several functions that takes formatted parameters.
 #if defined(__GNUC__) || defined(__clang__)
-	#define __format(type, idx_fmt, idx_args) __attribute__((__format__(type, idx_fmt, idx_args)))
+	#define PB_FMTARG(type, idx_fmt, idx_args) __attribute__((__format__(type, idx_fmt, idx_args)))
 #else
-	#define __format(type, idx_fmt, idx_args)
-#endif
-
-// Returns non-null
-#ifndef __returns_nonnull
-	#if defined(__GNUC__) || defined(__clang__)
-		#define __returns_nonnull __attribute__((__noreturns_nonnull__))
-	#else
-		#define __returns_nonnull
-	#endif
+	#define PB_FMTARG(type, idx_fmt, idx_args)
 #endif
 
 // Use `stdcall` calling convention
 #if defined(__GNUC__) || defined(__clang__)
-	#define __stdcall __attribute__((__stdcall__))
+	#define PB_STDCALL __attribute__((__stdcall__))
 #else
-	#define __stdcall
+	#define PB_STDCALL
 #endif
 
 // Use `cdecl` calling convention
 #if defined(__GNUC__) || defined(__clang__)
-	#define __cdecl __attribute__((__cdecl__))
+	#define PB_CDECL __attribute__((__cdecl__))
 #else
-	#define __cdecl
+	#define PB_CDECL
 #endif
 
 // Use `fastcall` calling convention
 #if defined(__GNUC__) || defined(__clang__)
-	#define __fastcall __attribute__((__fastcall__))
+	#define PB_FASTCALL __attribute__((__fastcall__))
 #else
-	#define __fastcall
+	#define PB_FASTCALL
 #endif
 
 // Use `naked` calling convention
 #if defined(__GNUC__) || defined(__clang__)
-	#define __naked __attribute__((__naked__))
+	#define PB_NAKED __attribute__((__naked__))
 #else
-	#define __naked
+	#define PB_NAKED
 #endif
 
 // Packed
 #if defined(__GNUC__) || defined(__clang__)
-	#define __packed __attribute__((__packed__))
+	#define PB_PACKED __attribute__((__packed__))
 #else
-	#define __packed
+	#define PB_PACKED
 #endif
 
 // Weak
 #if defined(__GNUC__) || defined(__clang__)
-	#define __weak __attribute__((__weak__))
+	#define PB_WEAK __attribute__((__weak__))
 #else
-	#define __weak
+	#define PB_WEAK
 #endif
 
 // Weak reference
 #if defined(__GNUC__) || defined(__clang__)
-	#define __weakref __attribute__((__weakref__))
+	#define PB_WEAKREF __attribute__((__weakref__))
 #else
-	#define __weakref
+	#define PB_WEAKREF
 #endif
 
 // Put in a named section
 #if defined(__GNUC__) || defined(__clang__)
-	#define __in_section(s) __attribute__((__section__(s)))
+	#define PB_IN_SECTION(s) __attribute__((__section__(s)))
 #else
-	#define __in_section(s)
+	#define PB_IN_SECTION(s)
 #endif
 
 // Shared library exported
 #if defined(__GNUC__) || defined(__clang__)
 	#ifdef _WIN32
-		#define __exported __attribute__((dllexport))
+		#define PB_EXPORTED __attribute__((dllexport))
 	#else
-		#define __exported __attribute__((__visibility__("default")))
+		#define PB_EXPORTED __attribute__((__visibility__("default")))
 	#endif
 #else
-	#define __exported
+	#define PB_EXPORTED
 #endif
 
 // Imported from shared library
 #if defined(__GNUC__) || defined(__clang__)
 	#ifdef _WIN32
-		#define __imported __attribute__((dllimport))
+		#define PB_IMPORTED __attribute__((dllimport))
 	#else
-		#define __imported
+		#define PB_IMPORTED
 	#endif
 #else
-	#define __imported
+	#define PB_IMPORTED
 #endif
 
 // Deprecated
 #if defined(__GNUC__) || defined(__clang__)
-	#define __deprecated __attribute__((__deprecated__))
+	#define PB_DEPRECATED __attribute__((__deprecated__))
 #else
-	#define __deprecated
-#endif
-
-// `malloc'-like function
-#if defined(__GNUC__) || defined(__clang__)
-	#define __malloc __attribute__((__malloc__))
-#else
-	#define __malloc
-#endif
-
-#if defined(__GNUC__) || defined(__clang__)
-	#define __allocsize(idx_size_param) __attribute__((__alloc_size__(idx_size_param)))
-#else
-	#define __allocsize(idx_size_param)
-#endif
-
-#if defined(__GNUC__) || defined(__clang__)
-	#define __callocsize(idx_size_param, idx_blknum_param) __attribute__((__alloc_size__(idx_size_param, ##idx_blknum_param)))
-#else
-	#define __callocsize(idx_size_param, idx_blknum_param)
+	#define PB_DEPRECATED
 #endif
 
 // Used
 #if defined(__GNUC__) || defined(__clang__)
-	#define __used __attribute__((used))
+	#define PB_USED __attribute__((used))
 #else
-	#define __used
+	#define PB_USED
 #endif
 
 #endif

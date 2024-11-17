@@ -340,9 +340,9 @@ pgaddr_t hn_tmpmap(pgaddr_t pgpaddr, pgsize_t pg_num, uint16_t mask) {
 	for (pgaddr_t i = PGROUNDDOWN(KTMPMAP_VBASE); i < PGROUNDUP(KTMPMAP_VTOP) - pg_num; ++i) {
 		bool succeeded = true;
 
-		for (uint8_t j = 0; j < ARRAYLEN(_tmpmap_slots); j++) {
+		for (uint8_t j = 0; j < PB_ARRAYSIZE(_tmpmap_slots); j++) {
 			if (_tmpmap_slots[j].addr &&
-				ISOVERLAPPED(i, pg_num, _tmpmap_slots[j].addr, _tmpmap_slots[j].size)) {
+				PB_ISOVERLAPPED(i, pg_num, _tmpmap_slots[j].addr, _tmpmap_slots[j].size)) {
 				i = _tmpmap_slots[j].addr + _tmpmap_slots[j].size;
 				succeeded = false;
 				break;
@@ -368,7 +368,7 @@ alloc_succeeded:
 	for (pgsize_t i = 0; i < pg_num; ++i)
 		arch_invlpg(UNPGADDR(vaddr) + (i << 12));
 
-	for (uint8_t i = 0; i < ARRAYLEN(_tmpmap_slots); ++i) {
+	for (uint8_t i = 0; i < PB_ARRAYSIZE(_tmpmap_slots); ++i) {
 		if (!_tmpmap_slots[i].addr) {
 			_tmpmap_slots[i].addr = vaddr;
 			_tmpmap_slots[i].size = pg_num;
@@ -383,7 +383,7 @@ void hn_tmpunmap(pgaddr_t addr) {
 	kd_dbgcheck(ISVALIDPG(addr), "Unmapping with an invalid TMPMAP address");
 
 	tmpmap_info_t *i = NULL;
-	for (uint8_t i = 0; i < ARRAYLEN(_tmpmap_slots); ++i) {
+	for (uint8_t i = 0; i < PB_ARRAYSIZE(_tmpmap_slots); ++i) {
 		if (_tmpmap_slots[i].addr == addr) {
 			for (uint16_t j = 0; j < _tmpmap_slots[i].size; ++j) {
 				arch_pte_t *cur_pte = &hn_kernel_pgt[PGROUNDDOWN(((char *)UNPGADDR(addr)) - CRITICAL_VBASE) + j];

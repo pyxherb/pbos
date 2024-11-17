@@ -4,7 +4,7 @@
 #include <pbos/common.h>
 #include <pbos/attribs.h>
 
-typedef void __noreturn (*hal_isr_t)();
+typedef PB_NORETURN void (*hal_isr_t)();
 
 size_t irq_getmax();
 void irq_setisr(hal_isr_t isr, size_t irq);

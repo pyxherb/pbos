@@ -4,14 +4,14 @@ kima_vpgdesc_poolpg_t *kima_vpgdesc_poolpg_list = NULL;
 kf_rbtree_t kima_vpgdesc_query_tree;
 
 bool kima_vpgdesc_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	kima_vpgdesc_t *_x = CONTAINER_OF(kima_vpgdesc_t, node_header, x),
-				   *_y = CONTAINER_OF(kima_vpgdesc_t, node_header, y);
+	kima_vpgdesc_t *_x = PB_CONTAINER_OF(kima_vpgdesc_t, node_header, x),
+				   *_y = PB_CONTAINER_OF(kima_vpgdesc_t, node_header, y);
 
 	return _x->ptr < _y->ptr;
 }
 
 void kima_vpgdesc_nodefree(kf_rbtree_node_t *p) {
-	kima_vpgdesc_t *_p = CONTAINER_OF(kima_vpgdesc_t, node_header, p);
+	kima_vpgdesc_t *_p = PB_CONTAINER_OF(kima_vpgdesc_t, node_header, p);
 
 	_p->ptr = NULL;
 }
@@ -26,7 +26,7 @@ kima_vpgdesc_t *kima_lookup_vpgdesc(void *ptr) {
 	if (!node)
 		return NULL;
 
-	return CONTAINER_OF(kima_vpgdesc_t, node_header, node);
+	return PB_CONTAINER_OF(kima_vpgdesc_t, node_header, node);
 }
 
 void kima_free_vpgdesc(kima_vpgdesc_t *vpgdesc) {
@@ -47,13 +47,13 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(void *ptr) {
 	for (kima_vpgdesc_poolpg_t *pg = kima_vpgdesc_poolpg_list;
 		 pg;
 		 pg = pg->header.next) {
-		if (pg->header.used_num >= ARRAYLEN(pg->slots)) {
+		if (pg->header.used_num >= PB_ARRAYSIZE(pg->slots)) {
 			continue;
 		}
-		for (size_t i = 0; i < ARRAYLEN(pg->slots); ++i) {
+		for (size_t i = 0; i < PB_ARRAYSIZE(pg->slots); ++i) {
 			if (!pg->slots[i].ptr) {
 				++pg->header.used_num;
-				
+
 				pg->slots[i].ptr = ptr;
 				pg->slots[i].ref_count = 0;
 				memset(&pg->slots[i].node_header, 0, sizeof(pg->slots[i].node_header));
@@ -76,7 +76,7 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(void *ptr) {
 	kima_vpgdesc_poolpg_list = pg;
 
 	pg->header.used_num = 1;
-	
+
 	pg->slots[0].ptr = ptr;
 	pg->slots[0].ref_count = 0;
 	memset(&pg->slots[0].node_header, 0, sizeof(pg->slots[0].node_header));

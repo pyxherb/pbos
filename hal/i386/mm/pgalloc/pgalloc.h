@@ -39,7 +39,7 @@ enum {
 ///
 /// @brief Memory Allocation Descriptor (MAD), manages a single ordered block.
 ///
-typedef struct __packed _hn_mad_t {
+typedef struct PB_PACKED _hn_mad_t {
 	uint8_t flags : 8;
 	uint8_t type : 4;
 	uint32_t pgaddr : 20;
@@ -59,17 +59,17 @@ typedef struct __packed _hn_mad_t {
 
 #define ISINRANGE(min, size, n) ((((n) >= (min))) && (n < ((min) + (size))))
 
-typedef struct __packed _hn_madpool_t {
+typedef struct PB_PACKED _hn_madpool_t {
 	hn_mad_t descs[256];
 	struct _hn_madpool_t *next;
 } hn_madpool_t;
 
-static_assert(sizeof(hn_madpool_t) <= PAGESIZE);
+PB_STATIC_ASSERT(sizeof(hn_madpool_t) <= PAGESIZE);
 
 ///
 /// @brief Physical Memory Region Descriptor
 ///
-typedef struct __packed _hn_pmad_t {
+typedef struct PB_PACKED _hn_pmad_t {
 	struct {
 		pgaddr_t base : 20;	 // Paged base address
 		pgsize_t len : 20;	 // Length in pages

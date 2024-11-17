@@ -6,7 +6,7 @@ void *mm_kmalloc(size_t size) {
 	void *filter_base = NULL;
 
 	kf_rbtree_foreach(i, &kima_vpgdesc_query_tree) {
-		kima_vpgdesc_t *cur_desc = CONTAINER_OF(kima_vpgdesc_t, node_header, i);
+		kima_vpgdesc_t *cur_desc = PB_CONTAINER_OF(kima_vpgdesc_t, node_header, i);
 
 		if (cur_desc->ptr < filter_base)
 			continue;
@@ -27,13 +27,13 @@ void *mm_kmalloc(size_t size) {
 				 cur_base <= limit;) {
 				kima_ublk_t *nearest_ublk;
 				if ((nearest_ublk = kima_lookup_nearest_ublk(cur_base))) {
-					if (ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->ptr, nearest_ublk->size)) {
+					if (PB_ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->ptr, nearest_ublk->size)) {
 						cur_base = ((char *)nearest_ublk->ptr) + nearest_ublk->size;
 						continue;
 					}
 				}
 				if ((nearest_ublk = kima_lookup_nearest_ublk(((char *)cur_base) + size - 1))) {
-					if (ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->ptr, nearest_ublk->size)) {
+					if (PB_ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->ptr, nearest_ublk->size)) {
 						cur_base = ((char *)nearest_ublk->ptr) + nearest_ublk->size;
 						continue;
 					}
