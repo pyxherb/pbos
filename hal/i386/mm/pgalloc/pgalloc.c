@@ -3,6 +3,8 @@
 #include <math.h>
 #include <pbos/km/logger.h>
 
+hn_madpool_t *hn_global_mad_pool_list = NULL;
+
 void *mm_pgalloc(uint8_t memtype) {
 	uint8_t pmemtype;
 	if ((pmemtype = hn_to_kn_pmem_type(memtype)) == KN_PMEM_END)
@@ -25,25 +27,14 @@ void mm_refpg(void *ptr) {
 	hn_set_pgblk_used(PGROUNDDOWN(ptr), MAD_ALLOC_KERNEL);
 }
 
-///
-/// @brief Find a MAD with specified order which manages the address.
-///
-/// @param pool Target pool.
-/// @param pgaddr Target paged address.
-/// @param order Target order.
-/// @return Found MAD. NULL if not found.
-///
-hn_mad_t *hn_find_mad(hn_madpool_t *pool, uint32_t pgaddr) {
-	for (uint16_t i = 0; i < PB_ARRAYSIZE(pool->descs); ++i) {
-		// There's no more MAD once we found that a MAD does not present.
-		if (!(pool->descs[i].flags & MAD_P))
-			break;
-		if (ISINRANGE(pool->descs[i].pgaddr, 1, pgaddr)) {
-			return &(pool->descs[i]);
-		}
-	}
+bool hn_mad_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
+	const hn_mad_t *_x = (const hn_mad_t *)x,
+				   *_y = (const hn_mad_t *)y;
 
-	return NULL;
+	return _x->pgaddr < _y->pgaddr;
+}
+
+void hn_mad_nodefree(kf_rbtree_node_t *p) {
 }
 
 ///
@@ -57,45 +48,47 @@ void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type) {
 	hn_pmad_t *pmad = hn_pmad_get(pgaddr);
 	assert(pmad);
 
-	hn_madpool_t *pool = pmad->madpools;
-	while (pool) {
-		hn_mad_t *mad = hn_find_mad(pool, pgaddr);
-		if (mad) {
-			pgaddr_t addr = mad->pgaddr;
+	for (hn_madpool_t *pool = hn_global_mad_pool_list; pool; pool = pool->header.next) {
+		hn_mad_t query_mad = {
+			.pgaddr = pgaddr
+		};
 
-			mad->flags = MAD_P;
-			mad->type = type;
-			++mad->ref_count;
+		kf_rbtree_node_t *mad_node = kf_rbtree_find(&pmad->mad_query_tree, &query_mad.node_header);
+		if (!mad_node)
+			continue;
 
-			return;
-		}
+		hn_mad_t *mad = PB_CONTAINER_OF(hn_mad_t, node_header, mad_node);
 
-		assert(pool != pool->next);
-		pool = pool->next;
+		mad->flags = MAD_P;
+		mad->type = type;
+		++mad->ref_count;
+
+		return;
 	}
 
 	assert(false);
 }
 
 void hn_set_pgblk_free(pgaddr_t addr) {
-	hn_pmad_t *const pmad = hn_pmad_get(addr);
+	hn_pmad_t *pmad = hn_pmad_get(addr);
 	assert(pmad);
 
-	hn_madpool_t *pool = pmad->madpools;
-	while (pool) {
-		hn_mad_t *mad = hn_find_mad(pool, addr);
-		if (mad) {
-			assert(mad->ref_count);
-			if (!(--mad->ref_count)) {
-				mad->flags = MAD_P;
-				mad->type = MAD_ALLOC_FREE;
-			}
-			return;
+	for (hn_madpool_t *pool = hn_global_mad_pool_list; pool; pool = pool->header.next) {
+		hn_mad_t query_mad = {
+			.pgaddr = addr
+		};
+
+		kf_rbtree_node_t *mad_node = kf_rbtree_find(&pmad->mad_query_tree, &query_mad.node_header);
+		if (!mad_node)
+			continue;
+
+		hn_mad_t *mad = PB_CONTAINER_OF(hn_mad_t, node_header, mad_node);
+
+		assert(mad->ref_count);
+		if (!(--mad->ref_count)) {
+			mad->flags = MAD_P;
+			mad->type = MAD_ALLOC_FREE;
 		}
-
-		assert(pool != pool->next);
-		pool = pool->next;
+		return;
 	}
-
-	assert(false);
 }

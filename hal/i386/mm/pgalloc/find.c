@@ -20,23 +20,13 @@ hn_pmad_t *hn_pmad_get(pgaddr_t addr) {
 }
 
 pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area) {
-	hn_madpool_t *pool = area->madpools;
-
-	while (pool) {
-		for (uint16_t i = 0; i < PB_ARRAYSIZE(pool->descs); ++i) {
-			hn_mad_t *mad = &(pool->descs[i]);
-			// There's no more MAD once we found that a MAD does not present.
-			if (!(mad->flags & MAD_P))
-				break;
-			// kprintf("PGADDR: %p, type = %d\n", UNPGADDR(mad->pgaddr), (int)mad->type);
-			if (mad->type == MAD_ALLOC_FREE) {
-				pgaddr_t pgaddr = mad->pgaddr;
-				return pgaddr;
-			}
+	kf_rbtree_foreach(i, &area->mad_query_tree) {
+		hn_mad_t *mad = PB_CONTAINER_OF(hn_mad_t, node_header, i);
+		assert(mad->flags & MAD_P);
+		if (mad->type == MAD_ALLOC_FREE) {
+			pgaddr_t pgaddr = mad->pgaddr;
+			return pgaddr;
 		}
-
-		assert(pool != pool->next);
-		pool = pool->next;
 	}
 
 	return NULLPG;

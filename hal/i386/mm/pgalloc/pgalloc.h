@@ -6,6 +6,7 @@
 #include <arch/i386/mlayout.h>
 #include <arch/i386/paging.h>
 #include <pbos/km/mm.h>
+#include <pbos/kf/rbtree.h>
 #include <stdint.h>
 
 //
@@ -39,7 +40,8 @@ enum {
 ///
 /// @brief Memory Allocation Descriptor (MAD), manages a single ordered block.
 ///
-typedef struct PB_PACKED _hn_mad_t {
+typedef struct _hn_mad_t {
+	kf_rbtree_node_t node_header;
 	uint8_t flags : 8;
 	uint8_t type : 4;
 	uint32_t pgaddr : 20;
@@ -59,9 +61,16 @@ typedef struct PB_PACKED _hn_mad_t {
 
 #define ISINRANGE(min, size, n) ((((n) >= (min))) && (n < ((min) + (size))))
 
-typedef struct PB_PACKED _hn_madpool_t {
-	hn_mad_t descs[256];
-	struct _hn_madpool_t *next;
+typedef struct _hn_madpool_t hn_madpool_t;
+
+typedef struct _hn_madpool_header_t {
+	hn_madpool_t *prev, *next;
+	size_t used_num;
+} hn_madpool_header_t;
+
+typedef struct _hn_madpool_t {
+	hn_madpool_header_t header;
+	hn_mad_t descs[(PAGESIZE - sizeof(hn_madpool_header_t)) / sizeof(hn_mad_t)];
 } hn_madpool_t;
 
 PB_STATIC_ASSERT(sizeof(hn_madpool_t) <= PAGESIZE);
@@ -69,23 +78,27 @@ PB_STATIC_ASSERT(sizeof(hn_madpool_t) <= PAGESIZE);
 ///
 /// @brief Physical Memory Region Descriptor
 ///
-typedef struct PB_PACKED _hn_pmad_t {
+typedef struct _hn_pmad_t {
 	struct {
 		pgaddr_t base : 20;	 // Paged base address
 		pgsize_t len : 20;	 // Length in pages
 		uint8_t type : 8;	 // Type
 	} attribs;
 	// MAD pages were all preallocated at initializing stage.
-	hn_madpool_t *madpools;
+	kf_rbtree_t mad_query_tree;
 } hn_pmad_t;
 
 extern hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1];
 
+extern hn_madpool_t *hn_global_mad_pool_list;
+
 #define PMAD_FOREACH(i) \
 	for (hn_pmad_t *i = hn_pmad_list; i->attribs.type != KN_PMEM_END; ++i)
 
+bool hn_mad_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
+void hn_mad_nodefree(kf_rbtree_node_t *p);
+
 hn_pmad_t *hn_pmad_get(pgaddr_t addr);
-hn_mad_t *hn_find_mad(hn_madpool_t *pool, uint32_t pgaddr);
 
 pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area);
 pgaddr_t hn_alloc_freeblk(uint8_t type);
