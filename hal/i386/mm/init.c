@@ -74,11 +74,11 @@ static void hn_init_tss() {
 
 static void hn_mm_init_areas() {
 	{
-		pgaddr_t init_madpool_addr = NULLPG;
+		pgaddr_t init_madpool_paddr = NULLPG;
 		hn_pmad_t *init_madpool_pmad;
-		pgaddr_t init_pgtab_addr = NULLPG;
+		pgaddr_t init_pgtab_paddr = NULLPG;
 		hn_pmad_t *init_pgtab_pmad;
-		size_t cur_madpool_index = 0;
+		size_t cur_madpool_slot_index = 0;
 		hn_madpool_t *last_madpool = NULL;
 		{
 			bool need_pgtab = false;
@@ -98,64 +98,64 @@ static void hn_mm_init_areas() {
 
 				pgaddr_t addr_cur = i->attribs.base;
 
-				if (init_madpool_addr == NULLPG) {
+				if (init_madpool_paddr == NULLPG) {
 					if (addr_cur < i->attribs.base + i->attribs.len) {
-						init_madpool_addr = addr_cur++;
+						init_madpool_paddr = addr_cur++;
 						init_madpool_pmad = i;
 					}
 				}
 
-				if (need_pgtab && (init_pgtab_addr == NULLPG)) {
+				if (need_pgtab && (init_pgtab_paddr == NULLPG)) {
 					if (addr_cur < i->attribs.base + i->attribs.len) {
-						init_pgtab_addr = addr_cur++;
+						init_pgtab_paddr = addr_cur++;
 						init_pgtab_pmad = i;
 					}
 				}
 
-				if ((init_madpool_addr != NULLPG) &&
-					((!need_pgtab) || (init_pgtab_addr != NULLPG)))
+				if ((init_madpool_paddr != NULLPG) &&
+					((!need_pgtab) || (init_pgtab_paddr != NULLPG)))
 					break;
 			}
 
-			if (init_madpool_addr == NULLPG) {
-				km_panic("Cannot allocate initial MAD pool");
+			if (init_madpool_paddr == NULLPG) {
+				km_panic("Cannot allocate memory for initial MAD pool");
 			}
 
 			if (need_pgtab) {
-				if (init_pgtab_addr == NULLPG) {
+				if (init_pgtab_paddr == NULLPG) {
 					km_panic("Cannot allocate page table for initial MAD pool");
 				}
 
 				{
-					pgaddr_t init_pgtab_tmpmap_vaddr = hn_tmpmap(init_pgtab_addr, 1, PTE_P | PTE_RW);
+					pgaddr_t init_pgtab_tmpmap_vaddr = hn_tmpmap(init_pgtab_paddr, 1, PTE_P | PTE_RW);
 					memset(UNPGADDR(init_pgtab_tmpmap_vaddr), 0, PAGESIZE);
 					hn_tmpunmap(init_pgtab_tmpmap_vaddr);
 				}
 				mm_kernel_context->pdt[PDX(init_madpool_vaddr)].mask = PDE_P | PDE_RW;
-				mm_kernel_context->pdt[PDX(init_madpool_vaddr)].address = init_pgtab_addr;
+				mm_kernel_context->pdt[PDX(init_madpool_vaddr)].address = init_pgtab_paddr;
 			}
 
-			km_result_t result = mm_mmap(mm_kernel_context, init_madpool_vaddr, UNPGADDR(init_madpool_addr), PAGESIZE, PAGE_READ | PAGE_WRITE, MMAP_NORC);
+			km_result_t result = mm_mmap(mm_kernel_context, init_madpool_vaddr, UNPGADDR(init_madpool_paddr), PAGESIZE, PAGE_READ | PAGE_WRITE, MMAP_NORC);
 			assert(KM_SUCCEEDED(result));
 
 			hn_global_mad_pool_list = (hn_madpool_t*)init_madpool_vaddr;
 
 			memset(hn_global_mad_pool_list, 0, PAGESIZE);
 
-			hn_global_mad_pool_list->descs[cur_madpool_index].flags = MAD_P;
-			hn_global_mad_pool_list->descs[cur_madpool_index].pgaddr = init_madpool_addr;
-			hn_global_mad_pool_list->descs[cur_madpool_index].type = MAD_ALLOC_KERNEL;
+			hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
+			hn_global_mad_pool_list->descs[cur_madpool_slot_index].pgaddr = init_madpool_paddr;
+			hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
 			++hn_global_mad_pool_list->header.used_num;
-			kf_rbtree_insert(&init_madpool_pmad->mad_query_tree, &hn_global_mad_pool_list->descs[cur_madpool_index].node_header);
-			++cur_madpool_index;
+			kf_rbtree_insert(&init_madpool_pmad->mad_query_tree, &hn_global_mad_pool_list->descs[cur_madpool_slot_index].node_header);
+			++cur_madpool_slot_index;
 
 			if (need_pgtab) {
-				hn_global_mad_pool_list->descs[cur_madpool_index].flags = MAD_P;
-				hn_global_mad_pool_list->descs[cur_madpool_index].pgaddr = init_madpool_addr;
-				hn_global_mad_pool_list->descs[cur_madpool_index].type = MAD_ALLOC_KERNEL;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].pgaddr = init_madpool_paddr;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
 				++hn_global_mad_pool_list->header.used_num;
-				kf_rbtree_insert(&init_pgtab_pmad->mad_query_tree, &hn_global_mad_pool_list->descs[cur_madpool_index].node_header);
-				++cur_madpool_index;
+				kf_rbtree_insert(&init_pgtab_pmad->mad_query_tree, &hn_global_mad_pool_list->descs[cur_madpool_slot_index].node_header);
+				++cur_madpool_slot_index;
 			}
 		}
 
@@ -164,12 +164,12 @@ static void hn_mm_init_areas() {
 				continue;
 
 			for (pgaddr_t j = i->attribs.base; j < i->attribs.base + i->attribs.len; ++j) {
-				if (j == init_madpool_addr)
+				if (j == init_madpool_paddr)
 					continue;
-				if (j == init_pgtab_addr)
+				if (j == init_pgtab_paddr)
 					continue;
 
-				if (cur_madpool_index >= PB_ARRAYSIZE(hn_global_mad_pool_list->descs)) {
+				if (cur_madpool_slot_index >= PB_ARRAYSIZE(hn_global_mad_pool_list->descs)) {
 					void *new_poolpg_paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
 					if (!new_poolpg_paddr)
 						km_panic("No enough physical memory for new MAD pool page");
@@ -190,7 +190,7 @@ static void hn_mm_init_areas() {
 					km_result_t result = mm_mmap(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
 					assert(KM_SUCCEEDED(result));
 
-					cur_madpool_index = 0;
+					cur_madpool_slot_index = 0;
 
 					last_madpool = hn_global_mad_pool_list;
 					hn_global_mad_pool_list->header.next = (hn_madpool_t*)new_poolpg_vaddr;
@@ -198,13 +198,13 @@ static void hn_mm_init_areas() {
 					hn_global_mad_pool_list->header.prev = last_madpool;
 				}
 
-				hn_global_mad_pool_list->descs[cur_madpool_index].flags = MAD_P;
-				hn_global_mad_pool_list->descs[cur_madpool_index].pgaddr = j;
-				hn_global_mad_pool_list->descs[cur_madpool_index].type = MAD_ALLOC_FREE;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].pgaddr = j;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_FREE;
 				++hn_global_mad_pool_list->header.used_num;
-				kf_rbtree_insert(&i->mad_query_tree, &hn_global_mad_pool_list->descs[cur_madpool_index].node_header);
+				kf_rbtree_insert(&i->mad_query_tree, &hn_global_mad_pool_list->descs[cur_madpool_slot_index].node_header);
 
-				++cur_madpool_index;
+				++cur_madpool_slot_index;
 			}
 		}
 
@@ -213,12 +213,12 @@ static void hn_mm_init_areas() {
 				continue;
 
 			for (pgaddr_t j = i->attribs.base; j < i->attribs.base + i->attribs.len; ++j) {
-				if (j == init_madpool_addr)
+				if (j == init_madpool_paddr)
 					continue;
-				if (j == init_pgtab_addr)
+				if (j == init_pgtab_paddr)
 					continue;
 
-				if (cur_madpool_index >= PB_ARRAYSIZE(hn_global_mad_pool_list->descs)) {
+				if (cur_madpool_slot_index >= PB_ARRAYSIZE(hn_global_mad_pool_list->descs)) {
 					void *new_poolpg_paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
 					if (!new_poolpg_paddr)
 						km_panic("No enough physical memory for new MAD pool page");
@@ -239,7 +239,7 @@ static void hn_mm_init_areas() {
 					km_result_t result = mm_mmap(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
 					assert(KM_SUCCEEDED(result));
 
-					cur_madpool_index = 0;
+					cur_madpool_slot_index = 0;
 
 					hn_global_mad_pool_list = (hn_madpool_t*)new_poolpg_vaddr;
 
@@ -249,13 +249,13 @@ static void hn_mm_init_areas() {
 					hn_global_mad_pool_list->header.prev = last_madpool;
 				}
 
-				hn_global_mad_pool_list->descs[cur_madpool_index].flags = MAD_P;
-				hn_global_mad_pool_list->descs[cur_madpool_index].pgaddr = j;
-				hn_global_mad_pool_list->descs[cur_madpool_index].type = MAD_ALLOC_FREE;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].pgaddr = j;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_FREE;
 				++hn_global_mad_pool_list->header.used_num;
-				kf_rbtree_insert(&i->mad_query_tree, &hn_global_mad_pool_list->descs[cur_madpool_index].node_header);
+				kf_rbtree_insert(&i->mad_query_tree, &hn_global_mad_pool_list->descs[cur_madpool_slot_index].node_header);
 
-				++cur_madpool_index;
+				++cur_madpool_slot_index;
 			}
 		}
 	}

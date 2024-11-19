@@ -7,23 +7,13 @@
 isr_syscall:
 	pushal
 
-	movw %ds, %ax
-	pushw %ax
+	pushw %ds
 
-	movw %es, %ax
-	pushw %ax
+	pushw %es
 
-	movw %fs, %ax
-	pushw %ax
+	pushw %fs
 
-	movw %gs, %ax
-	pushw %ax
-
-	movw %ss, %ax
-	movw %ax, %ds
-	movw %ax, %es
-	movw %ax, %fs
-	movw %ax, %gs
+	pushw %gs
 
 	pushl %edi
 	pushl %esi
@@ -31,6 +21,12 @@ isr_syscall:
 	pushl %ecx
 	pushl %ebx
 	pushl %eax
+
+	movw %ss, %ax
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %fs
+	movw %ax, %gs
 
 	cld
 
