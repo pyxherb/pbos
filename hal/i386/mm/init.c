@@ -24,6 +24,12 @@ void hn_mm_init() {
 	hn_init_gdt();
 	hn_mm_init_pmadlist();
 	hn_mm_init_paging();
+
+	kf_rbtree_init(
+		&hn_kspace_vpm_query_tree,
+		hn_vpm_nodecmp,
+		hn_vpm_nodefree);
+
 	hn_mm_init_areas();
 
 	kima_init();
@@ -92,6 +98,7 @@ static void hn_mm_init_areas() {
 				kf_rbtree_init(&i->mad_query_tree, hn_mad_nodecmp, hn_mad_nodefree);
 			}
 
+			// Find proper initial pages for further initialization.
 			PMAD_FOREACH(i) {
 				if (i->attribs.type != KN_PMEM_AVAILABLE)
 					continue;
@@ -135,13 +142,20 @@ static void hn_mm_init_areas() {
 				mm_kernel_context->pdt[PDX(init_madpool_vaddr)].address = init_pgtab_paddr;
 			}
 
-			km_result_t result = mm_mmap(mm_kernel_context, init_madpool_vaddr, UNPGADDR(init_madpool_paddr), PAGESIZE, PAGE_READ | PAGE_WRITE, MMAP_NORC);
+			km_result_t result = mm_mmap(
+				mm_kernel_context,
+				init_madpool_vaddr,
+				UNPGADDR(init_madpool_paddr),
+				PAGESIZE,
+				PAGE_READ | PAGE_WRITE,
+				MMAP_NORC | MMAP_NOSETVPM);
 			assert(KM_SUCCEEDED(result));
 
-			hn_global_mad_pool_list = (hn_madpool_t*)init_madpool_vaddr;
+			hn_global_mad_pool_list = (hn_madpool_t *)init_madpool_vaddr;
 
 			memset(hn_global_mad_pool_list, 0, PAGESIZE);
 
+			// Mark the initial pages as allocated.
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].pgaddr = init_madpool_paddr;
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
@@ -170,10 +184,19 @@ static void hn_mm_init_areas() {
 					continue;
 
 				if (cur_madpool_slot_index >= PB_ARRAYSIZE(hn_global_mad_pool_list->descs)) {
+					if (!last_madpool) {
+						km_result_t result = hn_mm_insert_vpm(mm_kernel_context, hn_global_mad_pool_list);
+						assert(KM_SUCCEEDED(result));
+					}
+
 					void *new_poolpg_paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
 					if (!new_poolpg_paddr)
 						km_panic("No enough physical memory for new MAD pool page");
-					void *new_poolpg_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE);
+					void *new_poolpg_vaddr = mm_kvmalloc(
+						mm_kernel_context,
+						PAGESIZE,
+						PAGE_READ | PAGE_WRITE,
+						VMALLOC_NORESERVE);
 					bool new_poolpg_need_pgtab = false;
 
 					if (!(mm_kernel_context->pdt[PDX(new_poolpg_vaddr)].mask & PDE_P)) {
@@ -192,10 +215,12 @@ static void hn_mm_init_areas() {
 
 					cur_madpool_slot_index = 0;
 
+					memset((hn_madpool_t*)new_poolpg_vaddr, 0, PAGESIZE);
+
 					last_madpool = hn_global_mad_pool_list;
-					hn_global_mad_pool_list->header.next = (hn_madpool_t*)new_poolpg_vaddr;
-					hn_global_mad_pool_list = (hn_madpool_t*)new_poolpg_vaddr;
+					hn_global_mad_pool_list->header.next = (hn_madpool_t *)new_poolpg_vaddr;
 					hn_global_mad_pool_list->header.prev = last_madpool;
+					hn_global_mad_pool_list = (hn_madpool_t *)new_poolpg_vaddr;
 				}
 
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
@@ -222,7 +247,7 @@ static void hn_mm_init_areas() {
 					void *new_poolpg_paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
 					if (!new_poolpg_paddr)
 						km_panic("No enough physical memory for new MAD pool page");
-					void *new_poolpg_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE);
+					void *new_poolpg_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
 					bool new_poolpg_need_pgtab = false;
 
 					if (!(mm_kernel_context->pdt[PDX(new_poolpg_vaddr)].mask & PDE_P)) {
@@ -238,14 +263,16 @@ static void hn_mm_init_areas() {
 
 					km_result_t result = mm_mmap(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
 					assert(KM_SUCCEEDED(result));
+					
+					memset((hn_madpool_t*)new_poolpg_vaddr, 0, PAGESIZE);
 
 					cur_madpool_slot_index = 0;
 
-					hn_global_mad_pool_list = (hn_madpool_t*)new_poolpg_vaddr;
+					hn_global_mad_pool_list = (hn_madpool_t *)new_poolpg_vaddr;
 
 					last_madpool = hn_global_mad_pool_list;
-					hn_global_mad_pool_list->header.next = (hn_madpool_t*)new_poolpg_vaddr;
-					hn_global_mad_pool_list = (hn_madpool_t*)new_poolpg_vaddr;
+					hn_global_mad_pool_list->header.next = (hn_madpool_t *)new_poolpg_vaddr;
+					hn_global_mad_pool_list = (hn_madpool_t *)new_poolpg_vaddr;
 					hn_global_mad_pool_list->header.prev = last_madpool;
 				}
 

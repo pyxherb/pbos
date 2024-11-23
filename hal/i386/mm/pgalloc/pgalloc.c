@@ -48,25 +48,22 @@ void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type) {
 	hn_pmad_t *pmad = hn_pmad_get(pgaddr);
 	assert(pmad);
 
-	for (hn_madpool_t *pool = hn_global_mad_pool_list; pool; pool = pool->header.next) {
-		hn_mad_t query_mad = {
-			.pgaddr = pgaddr
-		};
+	hn_mad_t query_mad = {
+		.pgaddr = pgaddr
+	};
 
-		kf_rbtree_node_t *mad_node = kf_rbtree_find(&pmad->mad_query_tree, &query_mad.node_header);
-		if (!mad_node)
-			continue;
-
-		hn_mad_t *mad = PB_CONTAINER_OF(hn_mad_t, node_header, mad_node);
-
-		mad->flags = MAD_P;
-		mad->type = type;
-		++mad->ref_count;
-
-		return;
+	kf_rbtree_node_t *mad_node = kf_rbtree_find(&pmad->mad_query_tree, &query_mad.node_header);
+	if (!mad_node) {
+		km_panic("Physical memory block not found: %p", UNPGADDR(pgaddr));
 	}
 
-	assert(false);
+	hn_mad_t *mad = PB_CONTAINER_OF(hn_mad_t, node_header, mad_node);
+
+	mad->flags = MAD_P;
+	mad->type = type;
+	++mad->ref_count;
+
+	return;
 }
 
 void hn_set_pgblk_free(pgaddr_t addr) {

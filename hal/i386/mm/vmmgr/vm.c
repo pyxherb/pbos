@@ -32,7 +32,7 @@ void mm_vmfree(mm_context_t *ctxt, void *addr, size_t size) {
 km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_walker walker, void *exargs) {
 	km_result_t result;
 
-	for (uint16_t di = PDX(vaddr); di <= (PDX(vaddr) + PDX(size));
+	for (uint16_t di = PDX(vaddr); di <= (PDX(((char*)vaddr) + size));
 		 di++) {
 		arch_pde_t *const pde = &pdt[di];
 		assert(pde->mask & PDE_P);
@@ -60,6 +60,7 @@ km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_wal
 }
 
 typedef struct _hn_mmap_walker_args {
+	mm_context_t *context;
 	char *paddr;
 	uint16_t mask;
 	bool is_curpgtab;
@@ -70,19 +71,26 @@ typedef struct _hn_mmap_walker_args {
 km_result_t hn_mmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs) {
 	hn_mmap_walker_args *args = (hn_mmap_walker_args *)exargs;
 
-	if (!(args->flags & MMAP_NORC)) {
-		if (pte->mask & PTE_P) {
-			if (pte->address) {
+	if (pte->mask & PTE_P) {
+		if (pte->address) {
+			if (!(args->flags & MMAP_NORC)) {
 				mm_pgfree(UNPGADDR(pte->address));
 			}
+		}
+		if (!(args->flags & MMAP_NOSETVPM)) {
+			hn_mm_free_vpm(args->context, VADDR(pdx, ptx, 0));
 		}
 	}
 
 	pte->address = PGROUNDDOWN(args->paddr);
 	pte->mask = args->mask;
 
-	if (args->paddr)
+	if (args->paddr) {
+		if (!(args->flags & MMAP_NORC)) {
+			mm_refpg(args->paddr);
+		}
 		args->paddr += PAGESIZE;
+	}
 
 	if (args->is_curpgtab)
 		arch_invlpg((void *)VADDR(pdx, ptx, 0));
@@ -96,6 +104,8 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	size_t size,
 	mm_pgaccess_t access,
 	mmap_flags_t flags) {
+	km_result_t result;
+
 	const void *vaddr_limit = ((const char *)vaddr) + size;
 
 	for (uint16_t i = PDX(vaddr); i <= PDX(vaddr_limit); ++i) {
@@ -117,12 +127,30 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	}
 
 	hn_mmap_walker_args args = {
+		.context = ctxt,
 		.paddr = (char *)paddr,
 		.mask = hn_pgaccess_to_pgmask(access),
 		.is_curpgtab = ctxt == mm_current_contexts[ps_get_current_euid()],
 		.flags = flags
 	};
-	return hn_walkpgtab(ctxt->pdt, vaddr, size, hn_mmap_walker, &args);
+	if (KM_FAILED(result = hn_walkpgtab(ctxt->pdt, vaddr, size, hn_mmap_walker, &args))) {
+		mm_unmmap(ctxt, vaddr, (size_t)(args.paddr - (char *)paddr), flags);
+		return result;
+	}
+
+	if (!(flags & MMAP_NOSETVPM)) {
+		void *rounded_vaddr = (void *)PGFLOOR(vaddr), *rounded_paddr = (void *)PGFLOOR(paddr);
+		size_t rounded_size = PGCEIL(size);
+		for (size_t i = 0; i < rounded_size; i += PAGESIZE) {
+			void *cur_ptr = ((char *)rounded_vaddr) + i;
+			if (!(flags & MMAP_NOSETVPM)) {
+				km_result_t result = hn_mm_insert_vpm(ctxt, cur_ptr);
+				assert(KM_SUCCEEDED(result));
+			}
+		}
+	}
+
+	return KM_RESULT_OK;
 }
 
 km_result_t mm_mrawmap(
@@ -135,6 +163,7 @@ km_result_t mm_mrawmap(
 }
 
 typedef struct _hn_unmmap_walker_args {
+	mm_context_t *context;
 	bool is_curpgtab;
 	mmap_flags_t flags;
 	bool rawmap;
@@ -143,11 +172,14 @@ typedef struct _hn_unmmap_walker_args {
 km_result_t hn_unmmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs) {
 	hn_unmmap_walker_args *args = (hn_unmmap_walker_args *)exargs;
 
-	if (!(args->flags & MMAP_NORC)) {
-		if (pte->mask & PTE_P) {
-			if (pte->address) {
+	if (pte->mask & PTE_P) {
+		if (pte->address) {
+			if (!(args->flags & MMAP_NORC)) {
 				mm_pgfree(UNPGADDR(pte->address));
 			}
+		}
+		if (!(args->flags & MMAP_NOSETVPM)) {
+			hn_mm_free_vpm(args->context, VADDR(pdx, ptx, 0));
 		}
 	}
 
@@ -162,10 +194,11 @@ km_result_t hn_unmmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uin
 void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
 	const void *vaddr_limit = ((const char *)vaddr) + size;
 	hn_unmmap_walker_args args = {
+		.context = ctxt,
 		.is_curpgtab = ctxt == mm_current_contexts[ps_get_current_euid()],
 		.flags = flags
 	};
-	km_result_t result = hn_walkpgtab(ctxt->pdt, vaddr, size, hn_mmap_walker, &args);
+	km_result_t result = hn_walkpgtab(ctxt->pdt, vaddr, size, hn_unmmap_walker, &args);
 	assert(KM_SUCCEEDED(result));
 
 	for (uint16_t i = PDX(vaddr); i < PDX(vaddr_limit) + 1; ++i) {

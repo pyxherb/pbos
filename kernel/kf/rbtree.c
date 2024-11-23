@@ -27,10 +27,10 @@ km_result_t kf_rbtree_insert(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
 	kf_rbtree_node_t *x = tree->root, *y = NULL;
 	while (x) {
 		y = x;
-		if (tree->node_cmp(node, x))
-			x = x->l;
-		else if (tree->node_cmp(x, node))
+		if (tree->node_cmp(x, node))
 			x = x->r;
+		else if (tree->node_cmp(node, x))
+			x = x->l;
 		else
 			return KM_MAKEERROR(KM_RESULT_EXISTED);
 	}
@@ -51,6 +51,7 @@ void kf_rbtree_remove(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
 	kf_rbtree_node_t *y = kf_rbtree_remove_fixup(tree, node);
 	y->r = NULL;
 	y->l = NULL;
+	y->p = NULL;
 
 	tree->node_free(y);
 }

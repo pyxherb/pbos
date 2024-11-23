@@ -71,6 +71,7 @@ PB_NODISCARD void *mm_kvmalloc(mm_context_t *context, size_t size, mm_pgaccess_t
 /// @param size Previous allocated size.
 void mm_vmfree(mm_context_t *context, void *addr, size_t size);
 
+#define MMAP_NOSETVPM 0x40000000
 #define MMAP_NORC 0x80000000
 
 typedef uint32_t mmap_flags_t;
