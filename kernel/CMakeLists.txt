@@ -1,6 +1,6 @@
 project(kernel)
 
-file(GLOB_RECURSE SRC *.c *.h *.S)
+file(GLOB SRC *.c *.h *.S)
 add_executable(pbkern ${SRC})
 
 get_property(FREESTDC_INCLUDE_DIR GLOBAL PROPERTY FREESTDC_INCLUDE_DIR)
@@ -29,3 +29,4 @@ add_subdirectory("exec")
 add_subdirectory("io")
 add_subdirectory("kf")
 add_subdirectory("km")
+add_subdirectory("fs")

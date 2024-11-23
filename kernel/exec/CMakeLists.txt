@@ -1,4 +1,4 @@
-set(_LOADER_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/loader/${PBOS_ARCH}")
+set(_LOADER_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/loader/${CMAKE_SYSTEM_PROCESSOR}")
 file(GLOB _children RELATIVE ${_LOADER_SOURCE_DIR} ${_LOADER_SOURCE_DIR}/*)
 set(_binldrs "")
 
@@ -12,4 +12,8 @@ set(PBOS_BINLDRS "${_binldrs}" CACHE STRING "Found built-in binary loaders" FORC
 
 foreach(i ${PBOS_BINLDRS})
     message("Found binary loader: ${i}")
+    add_subdirectory(${_LOADER_SOURCE_DIR}/${i})
 endforeach()
+
+file(GLOB SRC *.h *.c *.S)
+target_sources(pbkern PRIVATE ${SRC})
