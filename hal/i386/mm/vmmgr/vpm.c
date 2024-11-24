@@ -2,7 +2,19 @@
 #include "../../mm.h"
 
 hn_vpm_poolpg_t *hn_kspace_vpm_poolpg_list;
-kf_rbtree_t hn_kspace_vpm_query_tree;
+kf_rbtree_t hn_kspace_vpm_query_tree[HN_VPM_LEVEL_MAX + 1];
+size_t hn_vpm_level_size[HN_VPM_LEVEL_MAX + 1] = {
+	(size_t)VADDR(1, 0, 0),
+	(size_t)VADDR(0, 1, 0)
+};
+uintptr_t hn_vpm_level_rounddown_bits[HN_VPM_LEVEL_MAX + 1] = {
+	(uintptr_t)VADDR(PDX_MAX, 0, 0),
+	(uintptr_t)VADDR(PDX_MAX, PTX_MAX, 0)
+};
+
+void *hn_rounddown_to_level_aligned_address(const void *const addr, int level) {
+	return (void *)(((uintptr_t)addr) & hn_vpm_level_rounddown_bits[level]);
+}
 
 bool hn_vpm_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
 	hn_vpm_t *_x = PB_CONTAINER_OF(hn_vpm_t, node_header, x),
@@ -15,25 +27,29 @@ void hn_vpm_nodefree(kf_rbtree_node_t *p) {
 	hn_vpm_t *_p = PB_CONTAINER_OF(hn_vpm_t, node_header, p);
 }
 
+hn_vpm_t *hn_mm_lookup_vpm(mm_context_t *context, const void *addr, int level) {
+	kf_rbtree_t *query_tree =
+		addr >= (void *)KSPACE_VBASE
+			? &hn_kspace_vpm_query_tree[level]
+			: &context->uspace_vpm_query_tree[level];
 
-hn_vpm_t *hn_mm_lookup_vpm(mm_context_t *context, const void *addr) {
 	hn_vpm_t query_desc;
 
 	query_desc.addr = (void *)addr;
 
 	kf_rbtree_node_t *node;
-	if (!(node = kf_rbtree_find(&context->uspace_vpm_query_tree, &query_desc.node_header))) {
+	if (!(node = kf_rbtree_find(query_tree, &query_desc.node_header))) {
 		return NULL;
 	}
 
 	return PB_CONTAINER_OF(hn_vpm_t, node_header, node);
 }
 
-hn_vpm_t *hn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr) {
+hn_vpm_t *hn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr, int level) {
 	kf_rbtree_t *query_tree =
 		addr >= (void *)KSPACE_VBASE
-			? &hn_kspace_vpm_query_tree
-			: &context->uspace_vpm_query_tree;
+			? &hn_kspace_vpm_query_tree[level]
+			: &context->uspace_vpm_query_tree[level];
 	hn_vpm_poolpg_t **pool_list =
 		addr >= (void *)KSPACE_VBASE
 			? &hn_kspace_vpm_poolpg_list
@@ -51,15 +67,6 @@ hn_vpm_t *hn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr) {
 			}
 
 			++i->header.used_num;
-			if (cur_vpm->node_header.l)
-				kprintf("l: %p", cur_vpm->node_header.l);
-			if (cur_vpm->node_header.r)
-				kprintf("r: %p", cur_vpm->node_header.r);
-			if (cur_vpm->node_header.p)
-				;
-			assert(!cur_vpm->node_header.l);
-			assert(!cur_vpm->node_header.r);
-			assert(!cur_vpm->node_header.p);
 			memset(cur_vpm, 0, sizeof(*cur_vpm));
 			cur_vpm->flags = HN_VPM_ALLOC;
 			cur_vpm->addr = (void *)0xcdcdcdcd;
@@ -72,52 +79,57 @@ hn_vpm_t *hn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr) {
 }
 
 km_result_t hn_mm_insert_vpm(mm_context_t *context, const void *addr) {
-	hn_vpm_t query_desc;
-
-	if (addr == 0x82000000)
-		kputs("Caution");
-
-	query_desc.addr = (void *)addr;
-
-	if (kf_rbtree_find(
-			addr >= (void *)KSPACE_VBASE
-				? &hn_kspace_vpm_query_tree
-				: &context->uspace_vpm_query_tree,
-			&query_desc.node_header)) {
-		return KM_RESULT_EXISTED;
+	if (hn_mm_lookup_vpm(context, addr, HN_VPM_LEVEL_MAX)) {
+		return KM_MAKEERROR(KM_RESULT_EXISTED);
 	}
 
-	return hn_mm_insert_vpm_unchecked(context, addr);
+	bool inserted_flags_per_level[HN_VPM_LEVEL_MAX + 1];
+	memset(inserted_flags_per_level, 0, sizeof(inserted_flags_per_level));
+	for (int i = 0; i <= HN_VPM_LEVEL_MAX; ++i) {
+		void *aligned_addr = hn_rounddown_to_level_aligned_address(addr, i);
+
+		hn_vpm_t *cur_level_vpm = hn_mm_lookup_vpm(context, aligned_addr, i);
+		if (!cur_level_vpm) {
+			km_result_t result = hn_mm_insert_vpm_unchecked(context, aligned_addr, i);
+
+			if (KM_FAILED(result)) {
+				for (int j = 0; j < i; ++j) {
+					if (inserted_flags_per_level[j]) {
+						hn_mm_free_vpm_unchecked(context, hn_rounddown_to_level_aligned_address(addr, j), j);
+					}
+				}
+				return result;
+			}
+
+			inserted_flags_per_level[i] = true;
+			cur_level_vpm = hn_mm_lookup_vpm(context, aligned_addr, i);
+			assert(cur_level_vpm);
+		}
+
+		++cur_level_vpm->subref_count;
+	}
+
+	return KM_RESULT_OK;
 }
 
-km_result_t hn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const addr) {
+km_result_t hn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const addr, int level) {
 	// Check if the address is page-aligned.
-	assert(!(((uintptr_t)addr) & PGOFF_MAX));
+	assert(!(((uintptr_t)addr) % hn_vpm_level_size[level]));
 
 	kf_rbtree_t *query_tree =
 		addr >= (void *)KSPACE_VBASE
-			? &hn_kspace_vpm_query_tree
-			: &context->uspace_vpm_query_tree;
+			? &hn_kspace_vpm_query_tree[level]
+			: &context->uspace_vpm_query_tree[level];
 	hn_vpm_poolpg_t **pool_list =
 		addr >= (void *)KSPACE_VBASE
 			? &hn_kspace_vpm_poolpg_list
 			: &context->uspace_vpm_poolpg_list;
 
 	km_result_t result;
-	hn_vpm_t *vpm = hn_mm_alloc_vpm_slot(context, addr);
+	hn_vpm_t *vpm = hn_mm_alloc_vpm_slot(context, addr, level);
 
 	if (vpm) {
-		// kprintf("VPM: %p\n", vpm->addr);
 		vpm->addr = (void *)addr;
-		kf_rbtree_node_t *r;
-		if ((r = kf_rbtree_find(query_tree, &vpm->node_header))) {
-			kputs("Warning");
-			kprintf("%p\n", addr);
-			kprintf("%p\n", vpm->addr);
-			hn_vpm_t *rr = PB_CONTAINER_OF(hn_vpm_t, node_header, r);
-			assert(rr != vpm);
-			kprintf("%p\n", rr->addr);
-		}
 		result = kf_rbtree_insert(
 			query_tree,
 			&vpm->node_header);
@@ -158,18 +170,12 @@ km_result_t hn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 		result = kf_rbtree_insert(query_tree, &vpm->node_header);
 		assert(KM_SUCCEEDED(result));
 
-		if (vpm->addr == 0x82000000)
-			kputs("Caution");
-
 		// Initialize the target VPM.
 		vpm = &newpool->descs[1];
 		vpm->addr = (void *)addr;
 		vpm->flags = HN_VPM_ALLOC;
 		result = kf_rbtree_insert(query_tree, &vpm->node_header);
 		assert(KM_SUCCEEDED(result));
-
-		if (vpm->addr == 0x82000000)
-			kputs("Caution");
 
 		if (*pool_list)
 			(*pool_list)->header.prev = newpool;
@@ -188,10 +194,23 @@ fail:
 		mm_vmfree(mm_kernel_context, new_vpmpool_vaddr, PAGESIZE);
 	}
 
-	return result;
+	return KM_MAKEERROR(result);
 }
 
 void hn_mm_free_vpm(mm_context_t *context, const void *addr) {
+	for (int i = 0; i <= HN_VPM_LEVEL_MAX; ++i) {
+		void *aligned_addr = hn_rounddown_to_level_aligned_address(addr, i);
+
+#ifndef _NDEBUG
+		hn_vpm_t *cur_level_vpm = hn_mm_lookup_vpm(context, aligned_addr, i);
+		assert(cur_level_vpm);
+#endif
+
+		hn_mm_free_vpm_unchecked(context, aligned_addr, i);
+	}
+}
+
+void hn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level) {
 	hn_vpm_t query_desc,
 		*target_desc;
 
@@ -199,8 +218,8 @@ void hn_mm_free_vpm(mm_context_t *context, const void *addr) {
 
 	kf_rbtree_t *query_tree =
 		addr >= (void *)KSPACE_VBASE
-			? &hn_kspace_vpm_query_tree
-			: &context->uspace_vpm_query_tree;
+			? &hn_kspace_vpm_query_tree[level]
+			: &context->uspace_vpm_query_tree[level];
 	hn_vpm_poolpg_t **pool_list =
 		addr >= (void *)KSPACE_VBASE
 			? &hn_kspace_vpm_poolpg_list
@@ -210,30 +229,28 @@ void hn_mm_free_vpm(mm_context_t *context, const void *addr) {
 	assert(target_node);
 	target_desc = PB_CONTAINER_OF(hn_vpm_t, node_header, target_node);
 
-	assert(target_desc);
+	if (!(--target_desc->subref_count)) {
+		kf_rbtree_remove(query_tree, &target_desc->node_header);
 
-	kf_rbtree_remove(query_tree, &target_desc->node_header);
+		target_desc->flags &= ~HN_VPM_ALLOC;
 
-	target_desc->flags &= ~HN_VPM_ALLOC;
+		hn_vpm_poolpg_t *pool = (hn_vpm_poolpg_t *)PGFLOOR(target_desc);
 
-	hn_vpm_poolpg_t *pool = (hn_vpm_poolpg_t *)PGFLOOR(target_desc);
+		if (!(--pool->header.used_num)) {
+			query_desc.addr = pool;
+			kf_rbtree_remove(query_tree, kf_rbtree_find(query_tree, &query_desc.node_header));
 
-	if (!(--pool->header.used_num)) {
-		query_desc.addr = pool;
-		if (query_desc.addr == 0x82000000)
-			kputs("Caution");
-		kf_rbtree_remove(query_tree, kf_rbtree_find(query_tree, &query_desc.node_header));
+			if (pool == *pool_list) {
+				*pool_list = pool->header.next;
+			}
 
-		if (pool == *pool_list) {
-			*pool_list = pool->header.next;
+			if (pool->header.prev)
+				pool->header.prev->header.next = pool->header.next;
+			if (pool->header.next)
+				pool->header.next->header.prev = pool->header.prev;
+
+			mm_pgfree(mm_getmap(context, pool));
+			mm_unmmap(context, pool, PAGESIZE, MMAP_NOSETVPM);
 		}
-
-		if (pool->header.prev)
-			pool->header.prev->header.next = pool->header.next;
-		if (pool->header.next)
-			pool->header.next->header.prev = pool->header.prev;
-
-		mm_pgfree(mm_getmap(context, pool));
-		mm_unmmap(context, pool, PAGESIZE, MMAP_NOSETVPM);
 	}
 }

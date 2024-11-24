@@ -40,10 +40,12 @@ km_result_t mm_create_context(mm_context_t *context) {
 		goto fail;
 	}
 
-	kf_rbtree_init(
-		&context->uspace_vpm_query_tree,
-		hn_vpm_nodecmp,
-		hn_vpm_nodefree);
+	for (size_t i = 0; i < PB_ARRAYSIZE(context->uspace_vpm_query_tree); ++i) {
+		kf_rbtree_init(
+			&context->uspace_vpm_query_tree[i],
+			hn_vpm_nodecmp,
+			hn_vpm_nodefree);
+	}
 	if (KM_FAILED(result = mm_mmap(mm_kernel_context, pdt_vaddr, pdt_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, 0))) {
 		goto fail;
 	}
@@ -69,7 +71,9 @@ void mm_free_context(mm_context_t *context) {
 	}
 
 	// Free VPD query tree and pools.
-	kf_rbtree_free(&context->uspace_vpm_query_tree);
+	for (size_t i = 0; i < PB_ARRAYSIZE(context->uspace_vpm_query_tree); ++i) {
+		kf_rbtree_free(&context->uspace_vpm_query_tree[i]);
+	}
 	for (hn_vpm_poolpg_t *i = context->uspace_vpm_poolpg_list; i; i = i->header.next) {
 		void *paddr = mm_getmap(mm_kernel_context, i);
 		mm_unmmap(mm_kernel_context, i, PAGESIZE, 0);

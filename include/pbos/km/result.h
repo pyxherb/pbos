@@ -32,7 +32,8 @@ enum {
 
 typedef uint32_t km_result_t;
 
-#define KM_RESULT_TYPE(result) ((result)&0xe0000000)
+#define KM_RESULT_TYPE(result) ((result) & 0xe0000000)
+#define KM_RESULT_CODE(result) ((result) & 0x1fffffff)
 
 #define KM_SUCCEEDED(result) (!(result))
 #define KM_NOTICED(result) (KM_RESULT_TYPE(result) == KM_RESULT_TYPE_INFO)

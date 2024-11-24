@@ -25,10 +25,12 @@ void hn_mm_init() {
 	hn_mm_init_pmadlist();
 	hn_mm_init_paging();
 
-	kf_rbtree_init(
-		&hn_kspace_vpm_query_tree,
-		hn_vpm_nodecmp,
-		hn_vpm_nodefree);
+	for (size_t i = 0; i < PB_ARRAYSIZE(hn_kspace_vpm_query_tree); ++i) {
+		kf_rbtree_init(
+			&hn_kspace_vpm_query_tree[i],
+			hn_vpm_nodecmp,
+			hn_vpm_nodefree);
+	}
 
 	hn_mm_init_areas();
 
@@ -215,7 +217,7 @@ static void hn_mm_init_areas() {
 
 					cur_madpool_slot_index = 0;
 
-					memset((hn_madpool_t*)new_poolpg_vaddr, 0, PAGESIZE);
+					memset((hn_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
 
 					last_madpool = hn_global_mad_pool_list;
 					hn_global_mad_pool_list->header.next = (hn_madpool_t *)new_poolpg_vaddr;
@@ -263,8 +265,8 @@ static void hn_mm_init_areas() {
 
 					km_result_t result = mm_mmap(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
 					assert(KM_SUCCEEDED(result));
-					
-					memset((hn_madpool_t*)new_poolpg_vaddr, 0, PAGESIZE);
+
+					memset((hn_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
 
 					cur_madpool_slot_index = 0;
 

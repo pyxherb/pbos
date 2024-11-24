@@ -14,6 +14,8 @@
 
 #define HN_MAX_PGTAB_LEVEL 2
 
+#define HN_VPM_LEVEL_MAX 1
+
 #define HN_VPM_ALLOC 0x00000001
 
 typedef uint32_t hn_vpm_flags_t;
@@ -21,7 +23,7 @@ typedef uint32_t hn_vpm_flags_t;
 typedef struct _hn_vpm_t {
 	kf_rbtree_node_t node_header;
 	void *addr;
-	size_t ref_count;
+	size_t subref_count;
 	hn_vpm_flags_t flags;
 } hn_vpm_t;
 
@@ -38,13 +40,16 @@ typedef struct _hn_vpm_poolpg_t {
 } hn_vpm_poolpg_t;
 
 extern hn_vpm_poolpg_t *hn_kspace_vpm_poolpg_list;
-extern kf_rbtree_t hn_kspace_vpm_query_tree;
+extern kf_rbtree_t hn_kspace_vpm_query_tree[HN_VPM_LEVEL_MAX + 1];
 
 typedef struct _mm_context_t {
 	arch_pde_t *pdt;
 	hn_vpm_poolpg_t *uspace_vpm_poolpg_list;
-	kf_rbtree_t uspace_vpm_query_tree;
+	kf_rbtree_t uspace_vpm_query_tree[HN_VPM_LEVEL_MAX + 1];
 } mm_context_t;
+
+extern size_t hn_vpm_level_size[HN_VPM_LEVEL_MAX + 1];
+extern uintptr_t hn_vpm_level_rounddown_bits[HN_VPM_LEVEL_MAX + 1];
 
 bool hn_vpm_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 void hn_vpm_nodefree(kf_rbtree_node_t *p);
@@ -52,11 +57,14 @@ void hn_vpm_nodefree(kf_rbtree_node_t *p);
 void mm_sync_global_mappings(const mm_context_t *src);
 void mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src);
 
-hn_vpm_t *hn_mm_lookup_vpm(mm_context_t *context, const void* addr);
-hn_vpm_t *hn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr);
+void *hn_rounddown_to_level_aligned_address(const void *const addr, int level);
+
+hn_vpm_t *hn_mm_lookup_vpm(mm_context_t *context, const void* addr, int level);
+hn_vpm_t *hn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr, int level);
 km_result_t hn_mm_insert_vpm(mm_context_t *context, const void *addr);
-km_result_t hn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const addr);
+km_result_t hn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const addr, int level);
 void hn_mm_free_vpm(mm_context_t *context, const void *addr);
+void hn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level);
 void hn_mm_init();
 
 #endif

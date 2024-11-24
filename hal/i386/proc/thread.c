@@ -77,7 +77,7 @@ km_result_t kn_thread_allocstack(ps_tcb_t *tcb, size_t size) {
 				mm_pgfree(mm_getmap(&pcb->mmctxt, UNPGADDR(tcb->stack + i)));
 			} while (--i);
 			mm_vmfree(&pcb->mmctxt, UNPGADDR(tcb->stack), size);
-			return KM_RESULT_NO_MEM;
+			return KM_MAKEERROR(KM_RESULT_NO_MEM);
 		}
 
 		if (KM_FAILED(result = mm_mmap(&pcb->mmctxt, UNPGADDR(tcb->stack + i), (void *)PGFLOOR(pg), PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_USER, 0))) {

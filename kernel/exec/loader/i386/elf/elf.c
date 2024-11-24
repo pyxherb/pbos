@@ -34,22 +34,22 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle) {
 	{
 		if (ehdr.e_ident[EI_MAG0] != ELFMAG0 || ehdr.e_ident[EI_MAG1] != ELFMAG1 || ehdr.e_ident[EI_MAG2] != ELFMAG2 ||
 			ehdr.e_ident[EI_MAG3] != ELFMAG3)
-			return KM_RESULT_INVALID_FMT;
+			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
 
 		if (ehdr.e_ident[EI_VERSION] != EV_CURRENT)
-			return KM_RESULT_INVALID_FMT;
+			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
 
 		if (ehdr.e_ident[EI_DATA] != ELFDATA2LSB)
-			return KM_RESULT_INVALID_FMT;
+			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
 
 		if (ehdr.e_ident[EI_OSABI] != ELFOSABI_NONE)
-			return KM_RESULT_INVALID_FMT;
+			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
 
 		if (ehdr.e_type != ET_EXEC)
-			return KM_RESULT_INVALID_FMT;
+			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
 
 		if (ehdr.e_ident[EI_CLASS] != ELFCLASS32)
-			return KM_RESULT_INVALID_FMT;
+			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
 	}
 
 	Elf32_Half phdr_num = ehdr.e_phnum;
@@ -67,7 +67,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle) {
 			continue;
 
 		if ((((uint64_t)ph.p_vaddr) + ph.p_memsz) >= KERNEL_VBASE) {
-			return KM_RESULT_INVALID_ADDR;
+			return KM_MAKEERROR(KM_RESULT_INVALID_ADDR);
 		}
 
 		if (ph.p_filesz > ph.p_memsz)
