@@ -51,6 +51,8 @@ km_result_t mm_create_context(mm_context_t *context) {
 	}
 	context->pdt = pdt_vaddr;
 
+	mm_copy_global_mappings(context, mm_kernel_context);
+
 	// mm_copy_global_mappings(context, mm_kernel_context);
 	return KM_RESULT_OK;
 

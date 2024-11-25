@@ -32,12 +32,27 @@ void mm_vmfree(mm_context_t *ctxt, void *addr, size_t size) {
 km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_walker walker, void *exargs) {
 	km_result_t result;
 
-	for (uint16_t di = PDX(vaddr); di <= (PDX(((char*)vaddr) + size));
+	for (uint16_t di = PDX(vaddr); di <= (PDX(((char *)vaddr) + size));
 		 di++) {
 		arch_pde_t *const pde = &pdt[di];
 		assert(pde->mask & PDE_P);
 
-		pgaddr_t tmapaddr = hn_tmpmap(pde->address, 1, PTE_P | PTE_RW);
+		void *tmpaddr;
+		bool is_tmpmap = false;
+
+		if (hn_mm_init_stage < HN_MM_INIT_STAGE_AREAS_INITED) {
+			goto use_tmpmap;
+		} else {
+			hn_mad_t *mad = hn_get_mad(pde->address);
+			assert(mad);
+			if (mad->exdata.mapped_pgtab_addr) {
+				tmpaddr = UNPGADDR(mad->exdata.mapped_pgtab_addr);
+			} else {
+			use_tmpmap:
+				tmpaddr = UNPGADDR(hn_tmpmap(pde->address, 1, PTE_P | PTE_RW));
+				is_tmpmap = true;
+			}
+		}
 
 		for (uint16_t ti = VADDR(di, 0, 0) >= vaddr ? 0 : PTX(vaddr);
 			 (ti <= PTX_MAX);
@@ -47,13 +62,15 @@ km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_wal
 			}
 
 			// The page table will be mapped temporarily.
-			arch_pte_t *const pte = &(((arch_pte_t *)UNPGADDR(tmapaddr))[ti]);
+			arch_pte_t *const pte = &(((arch_pte_t *)tmpaddr)[ti]);
 
 			if (KM_FAILED(result = walker(pde, pte, di, ti, exargs)))
 				return result;
 		}
 
-		hn_tmpunmap(tmapaddr);
+		if (is_tmpmap) {
+			hn_tmpunmap(PGROUNDDOWN(tmpaddr));
+		}
 	}
 
 	return KM_RESULT_OK;
@@ -110,19 +127,55 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 	for (uint16_t i = PDX(vaddr); i <= PDX(vaddr_limit); ++i) {
 		if (!(ctxt->pdt[i].mask & PDE_P)) {
-			pgaddr_t pgdir = hn_mmctxt_pgtaballoc(ctxt, i);
-			if (!pgdir) {
-				mm_unmmap(ctxt, vaddr, size, flags);
-				return KM_RESULT_NO_MEM;
+			if (hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED) {
+				pgaddr_t pgdir = hn_mmctxt_pgtaballoc(ctxt, i);
+				if (!pgdir) {
+					mm_unmmap(ctxt, vaddr, size, flags);
+					return KM_RESULT_NO_MEM;
+				} else {
+					{
+						pgaddr_t mapped_pgdir = hn_tmpmap(pgdir, 1, PTE_P | PTE_RW);
+						arch_pte_t *pgdir_entries = (arch_pte_t *)UNPGADDR(mapped_pgdir);
+
+						memset(pgdir_entries, 0, sizeof(arch_pte_t) * (PTX_MAX + 1));
+
+						hn_tmpunmap(mapped_pgdir);
+					}
+
+					void *map_addr;
+
+					if (vaddr >= KSPACE_VBASE) {
+						if ((map_addr = mm_vmalloc(ctxt, (void *)KSPACE_VBASE, vaddr, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
+							goto vmalloc_succeeded;
+						}
+					}
+					if (((char *)vaddr) + size > KSPACE_VBASE) {
+						if ((map_addr = mm_vmalloc(ctxt, ((char *)vaddr) + size, (void *)KSPACE_VTOP, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
+							goto vmalloc_succeeded;
+						}
+					} else {
+						if((map_addr = mm_kvmalloc(ctxt, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
+							goto vmalloc_succeeded;
+						}
+					}
+					mm_unmmap(ctxt, vaddr, size, flags);
+					return KM_RESULT_NO_MEM;
+
+				vmalloc_succeeded:
+					ctxt->pdt[i].mask = PDE_P | PDE_RW | PDE_U;
+
+					hn_mad_t *mad = hn_get_mad(pgdir);
+					mad->type = MAD_ALLOC_KERNEL;
+					mad->exdata.mapped_pgtab_addr = (pgaddr_t)NULL;
+
+					result = mm_mmap(ctxt, map_addr, UNPGADDR(pgdir), PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
+					assert(KM_SUCCEEDED(result));
+
+					mad->exdata.mapped_pgtab_addr = PGROUNDDOWN(map_addr);
+				}
 			} else {
-				pgaddr_t mapped_pgdir = hn_tmpmap(pgdir, 1, PTE_P | PTE_RW);
-				arch_pte_t *pgdir_entries = (arch_pte_t *)UNPGADDR(mapped_pgdir);
-
-				memset(pgdir_entries, 0, sizeof(arch_pte_t) * (PTX_MAX + 1));
-
-				hn_tmpunmap(mapped_pgdir);
+				assert(false);
 			}
-			ctxt->pdt[i].mask = PDE_P | PDE_RW | PDE_U;
 		}
 	}
 
@@ -133,7 +186,12 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 		.is_curpgtab = ctxt == mm_current_contexts[ps_get_current_euid()],
 		.flags = flags
 	};
-	if (KM_FAILED(result = hn_walkpgtab(ctxt->pdt, vaddr, size, hn_mmap_walker, &args))) {
+	if (KM_FAILED(result = hn_walkpgtab(
+					  ctxt->pdt,
+					  vaddr,
+					  size,
+					  hn_mmap_walker,
+					  &args))) {
 		mm_unmmap(ctxt, vaddr, (size_t)(args.paddr - (char *)paddr), flags);
 		return result;
 	}

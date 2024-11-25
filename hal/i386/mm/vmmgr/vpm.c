@@ -1,19 +1,39 @@
 #include <pbos/km/logger.h>
 #include "../../mm.h"
 
+static uintptr_t hn_level0_rounddowner(uintptr_t addr) {
+	return addr & (uintptr_t)VADDR(PDX_MAX, 0, 0);
+}
+
+static uintptr_t hn_level1_rounddowner(uintptr_t addr) {
+	return addr & (uintptr_t)VADDR(PDX_MAX, PTX_MAX, 0);
+}
+
 hn_vpm_poolpg_t *hn_kspace_vpm_poolpg_list;
 kf_rbtree_t hn_kspace_vpm_query_tree[HN_VPM_LEVEL_MAX + 1];
 size_t hn_vpm_level_size[HN_VPM_LEVEL_MAX + 1] = {
 	(size_t)VADDR(1, 0, 0),
 	(size_t)VADDR(0, 1, 0)
 };
-uintptr_t hn_vpm_level_rounddown_bits[HN_VPM_LEVEL_MAX + 1] = {
-	(uintptr_t)VADDR(PDX_MAX, 0, 0),
-	(uintptr_t)VADDR(PDX_MAX, PTX_MAX, 0)
+hn_vpm_level_rounddowner_t hn_vpm_level_rounddowners[HN_VPM_LEVEL_MAX + 1] = {
+	hn_level0_rounddowner,
+	hn_level1_rounddowner
 };
 
 void *hn_rounddown_to_level_aligned_address(const void *const addr, int level) {
-	return (void *)(((uintptr_t)addr) & hn_vpm_level_rounddown_bits[level]);
+	return (void *)hn_vpm_level_rounddowners[level]((uintptr_t)addr);
+}
+
+kf_rbtree_t *hn_mm_get_vpm_lookup_tree(mm_context_t *context, const void *addr, int level) {
+	return ISINRANGE(USPACE_VBASE, USPACE_SIZE, addr)
+			   ? &context->uspace_vpm_query_tree[level]
+			   : &hn_kspace_vpm_query_tree[level];
+}
+
+hn_vpm_poolpg_t **hn_mm_get_vpm_pool_list(mm_context_t *context, const void *addr, int level) {
+	return ISINRANGE(USPACE_VBASE, USPACE_SIZE, addr)
+			   ? &context->uspace_vpm_poolpg_list
+			   : &hn_kspace_vpm_poolpg_list;
 }
 
 bool hn_vpm_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
@@ -28,10 +48,7 @@ void hn_vpm_nodefree(kf_rbtree_node_t *p) {
 }
 
 hn_vpm_t *hn_mm_lookup_vpm(mm_context_t *context, const void *addr, int level) {
-	kf_rbtree_t *query_tree =
-		addr >= (void *)KSPACE_VBASE
-			? &hn_kspace_vpm_query_tree[level]
-			: &context->uspace_vpm_query_tree[level];
+	kf_rbtree_t *query_tree = hn_mm_get_vpm_lookup_tree(context, addr, level);
 
 	hn_vpm_t query_desc;
 
@@ -46,14 +63,8 @@ hn_vpm_t *hn_mm_lookup_vpm(mm_context_t *context, const void *addr, int level) {
 }
 
 hn_vpm_t *hn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr, int level) {
-	kf_rbtree_t *query_tree =
-		addr >= (void *)KSPACE_VBASE
-			? &hn_kspace_vpm_query_tree[level]
-			: &context->uspace_vpm_query_tree[level];
-	hn_vpm_poolpg_t **pool_list =
-		addr >= (void *)KSPACE_VBASE
-			? &hn_kspace_vpm_poolpg_list
-			: &context->uspace_vpm_poolpg_list;
+	kf_rbtree_t *query_tree = hn_mm_get_vpm_lookup_tree(context, addr, level);
+	hn_vpm_poolpg_t **pool_list = hn_mm_get_vpm_pool_list(context, addr, level);
 
 	for (hn_vpm_poolpg_t *i = *pool_list;
 		 i; i = i->header.next) {
@@ -116,14 +127,8 @@ km_result_t hn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 	// Check if the address is page-aligned.
 	assert(!(((uintptr_t)addr) % hn_vpm_level_size[level]));
 
-	kf_rbtree_t *query_tree =
-		addr >= (void *)KSPACE_VBASE
-			? &hn_kspace_vpm_query_tree[level]
-			: &context->uspace_vpm_query_tree[level];
-	hn_vpm_poolpg_t **pool_list =
-		addr >= (void *)KSPACE_VBASE
-			? &hn_kspace_vpm_poolpg_list
-			: &context->uspace_vpm_poolpg_list;
+	kf_rbtree_t *query_tree = hn_mm_get_vpm_lookup_tree(context, addr, level);
+	hn_vpm_poolpg_t **pool_list = hn_mm_get_vpm_pool_list(context, addr, level);
 
 	km_result_t result;
 	hn_vpm_t *vpm = hn_mm_alloc_vpm_slot(context, addr, level);
@@ -211,25 +216,33 @@ void hn_mm_free_vpm(mm_context_t *context, const void *addr) {
 }
 
 void hn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level) {
+	kf_rbtree_t *query_tree = hn_mm_get_vpm_lookup_tree(context, addr, level);
+	hn_vpm_poolpg_t **pool_list = hn_mm_get_vpm_pool_list(context, addr, level);
+
 	hn_vpm_t query_desc,
 		*target_desc;
 
 	query_desc.addr = (void *)addr;
-
-	kf_rbtree_t *query_tree =
-		addr >= (void *)KSPACE_VBASE
-			? &hn_kspace_vpm_query_tree[level]
-			: &context->uspace_vpm_query_tree[level];
-	hn_vpm_poolpg_t **pool_list =
-		addr >= (void *)KSPACE_VBASE
-			? &hn_kspace_vpm_poolpg_list
-			: &context->uspace_vpm_poolpg_list;
 
 	kf_rbtree_node_t *target_node = kf_rbtree_find(query_tree, &query_desc.node_header);
 	assert(target_node);
 	target_desc = PB_CONTAINER_OF(hn_vpm_t, node_header, target_node);
 
 	if (!(--target_desc->subref_count)) {
+		switch(level) {
+			case 0: {
+				hn_mad_t *mad = hn_get_mad(context->pdt[PDX(addr)].address);
+				assert(mad);
+				assert(mad->exdata.mapped_pgtab_addr);
+				mm_unmmap(context, UNPGADDR(mad->exdata.mapped_pgtab_addr), PAGESIZE, 0);
+				hn_mmctxt_pgtabfree(context, PDX(addr));
+				break;
+			}
+			case 1:
+				break;
+			default:
+				km_panic("Invalid page level: %d\n", level);
+		}
 		kf_rbtree_remove(query_tree, &target_desc->node_header);
 
 		target_desc->flags &= ~HN_VPM_ALLOC;

@@ -20,10 +20,22 @@
 
 typedef uint32_t hn_vpm_flags_t;
 
+enum {
+	HN_MM_INIT_STAGE_INITIAL = 0,
+	HN_MM_INIT_STAGE_AREAS_INITIAL,
+	HN_MM_INIT_STAGE_INITIAL_AREAS_INITED,
+	HN_MM_INIT_STAGE_AREAS_INITED
+};
+
+extern uint8_t hn_mm_init_stage;
+
 typedef struct _hn_vpm_t {
 	kf_rbtree_node_t node_header;
 	void *addr;
-	size_t subref_count;
+	union {
+		size_t subref_count;
+		void *map_addr;
+	};
 	hn_vpm_flags_t flags;
 } hn_vpm_t;
 
@@ -49,7 +61,12 @@ typedef struct _mm_context_t {
 } mm_context_t;
 
 extern size_t hn_vpm_level_size[HN_VPM_LEVEL_MAX + 1];
-extern uintptr_t hn_vpm_level_rounddown_bits[HN_VPM_LEVEL_MAX + 1];
+
+typedef uintptr_t (*hn_vpm_level_rounddowner_t)(uintptr_t addr);
+extern hn_vpm_level_rounddowner_t hn_vpm_level_rounddowners[HN_VPM_LEVEL_MAX + 1];
+
+kf_rbtree_t *hn_mm_get_vpm_lookup_tree(mm_context_t *context, const void *addr, int level);
+hn_vpm_poolpg_t **hn_mm_get_vpm_pool_list(mm_context_t *context, const void *addr, int level);
 
 bool hn_vpm_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 void hn_vpm_nodefree(kf_rbtree_node_t *p);

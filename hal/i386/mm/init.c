@@ -2,6 +2,8 @@
 #include <pbos/km/proc.h>
 #include "../mm.h"
 
+uint8_t hn_mm_init_stage = HN_MM_INIT_STAGE_INITIAL;
+
 hn_kgdt_t hn_kgdt;
 hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1] = {
 	{ .attribs = { .base = 0, .len = 0, .type = KN_PMEM_END } }
@@ -20,6 +22,7 @@ static void hn_init_tss();
 
 void hn_mm_init() {
 	mm_kernel_context->pdt = hn_kernel_pdt;
+	hn_mm_init_stage = HN_MM_INIT_STAGE_INITIAL;
 
 	hn_init_gdt();
 	hn_mm_init_pmadlist();
@@ -32,7 +35,11 @@ void hn_mm_init() {
 			hn_vpm_nodefree);
 	}
 
+	hn_mm_init_stage = HN_MM_INIT_STAGE_AREAS_INITIAL;
+
 	hn_mm_init_areas();
+
+	hn_mm_init_stage = HN_MM_INIT_STAGE_AREAS_INITED;
 
 	kima_init();
 
@@ -167,13 +174,16 @@ static void hn_mm_init_areas() {
 
 			if (need_pgtab) {
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].pgaddr = init_madpool_paddr;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].pgaddr = init_pgtab_paddr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].exdata.mapped_pgtab_addr = (pgaddr_t)NULL;
 				++hn_global_mad_pool_list->header.used_num;
 				kf_rbtree_insert(&init_pgtab_pmad->mad_query_tree, &hn_global_mad_pool_list->descs[cur_madpool_slot_index].node_header);
 				++cur_madpool_slot_index;
 			}
 		}
+
+		hn_mm_init_stage = HN_MM_INIT_STAGE_INITIAL_AREAS_INITED;
 
 		PMAD_FOREACH(i) {
 			if (i->attribs.type != KN_PMEM_AVAILABLE)
@@ -287,6 +297,18 @@ static void hn_mm_init_areas() {
 				++cur_madpool_slot_index;
 			}
 		}
+	}
+
+	for (uint16_t i = 0; i < PDX_MAX; ++i) {
+		if (mm_kernel_context->pdt[i].mask & PDE_P) {
+			hn_mad_t *mad = hn_get_mad(mm_kernel_context->pdt[i].address);
+
+			mad->exdata.mapped_pgtab_addr = (pgaddr_t)NULL;
+		}
+	}
+
+	for (uintptr_t i = INIT_CRITICAL_PBASE; i <= INIT_CRITICAL_PTOP; i += PAGESIZE) {
+		mm_refpg((void*)i);
 	}
 
 	kdprintf("Initialized memory areas\n");

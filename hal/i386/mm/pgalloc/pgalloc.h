@@ -46,6 +46,9 @@ typedef struct _hn_mad_t {
 	uint8_t type : 4;
 	uint32_t pgaddr : 20;
 	uint32_t ref_count;
+	union {
+		uint32_t mapped_pgtab_addr : 20;
+	} exdata;
 } hn_mad_t;
 
 #define _mm_isvalidmad(mad) (((hn_mad_t *)mad)->flags & MAD_P)
@@ -94,6 +97,8 @@ extern hn_madpool_t *hn_global_mad_pool_list;
 
 #define PMAD_FOREACH(i) \
 	for (hn_pmad_t *i = hn_pmad_list; i->attribs.type != KN_PMEM_END; ++i)
+
+hn_mad_t *hn_get_mad(pgaddr_t pgaddr);
 
 bool hn_mad_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 void hn_mad_nodefree(kf_rbtree_node_t *p);
