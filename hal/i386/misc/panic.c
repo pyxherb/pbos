@@ -6,7 +6,7 @@
 PB_NORETURN void _km_panic_halt();
 
 static bool _panicked = false;
-bool km_ispanicked() {
+bool km_is_panicked() {
 	return _panicked;
 }
 

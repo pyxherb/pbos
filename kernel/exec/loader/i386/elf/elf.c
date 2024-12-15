@@ -25,7 +25,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle) {
 		return result;
 
 	Elf32_Ehdr ehdr;
-	if (!KM_SUCCEEDED(result = fs_read(file_handle, &ehdr, sizeof(ehdr), off, &bytes_read))) {
+	if (KM_FAILED(result = fs_read(file_handle, &ehdr, sizeof(ehdr), off, &bytes_read))) {
 		// TODO: free allocated resources here.
 		return result;
 	}

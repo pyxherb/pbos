@@ -5,8 +5,9 @@
 #include <pbos/kn/km/objmgr.h>
 
 om_class_t *kn_class_list = NULL;
-kf_rbtree_t kn_global_handles;
 om_handle_t kn_last_handle = 0;
+
+kf_rbtree_t kn_global_handle_set;
 
 static kf_rbtree_t kn_unused_objects;
 
@@ -70,13 +71,14 @@ om_class_t *om_lookup_class(uuid_t *uuid) {
 
 void om_init_object(om_object_t *obj, om_class_t *cls) {
 	obj->ref_num = 0;
-	obj->handle_num = 0;
 	obj->p_class = cls;
+	obj->flags = OM_OBJECT_KERNEL;
+	obj->handle = OM_INVALID_HANDLE;
 	cls->obj_num++;
 }
 
 void om_incref(om_object_t *obj) {
-	if ((!obj->ref_num++) && (!obj->handle_num))
+	if (!obj->ref_num++)
 		kf_rbtree_remove(&kn_unused_objects, &obj->tree_header);
 }
 
@@ -85,15 +87,15 @@ void om_decref(om_object_t *obj) {
 		obj->p_class->destructor(obj);
 }
 
-static bool _kn_handle_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	const kn_handle_registry_t *_x = PB_CONTAINER_OF(kn_handle_registry_t, tree_header, x),
-							   *_y = PB_CONTAINER_OF(kn_handle_registry_t, tree_header, y);
+static bool _kn_handle_set_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
+	const kn_handle_registry_t *_x = PB_CONTAINER_OF(kn_handle_registry_t, handle_tree_header, x),
+							   *_y = PB_CONTAINER_OF(kn_handle_registry_t, handle_tree_header, y);
 	return _x->handle < _y->handle;
 }
 
-static void _kn_handle_nodefree(kf_rbtree_node_t *p) {
-	kn_handle_registry_t *_p = PB_CONTAINER_OF(kn_handle_registry_t, tree_header, p);
-	--_p->object->ref_num;
+static void _kn_handle_set_nodefree(kf_rbtree_node_t *p) {
+	kn_handle_registry_t *_p = PB_CONTAINER_OF(kn_handle_registry_t, handle_tree_header, p);
+	_p->object->handle = OM_INVALID_HANDLE;
 	mm_kfree(_p);
 }
 
@@ -101,43 +103,61 @@ kn_handle_registry_t *kn_lookup_handle_registry(om_handle_t handle) {
 	kn_handle_registry_t find_node = {
 		.handle = handle
 	};
-	kf_rbtree_node_t *node = kf_rbtree_find(&kn_global_handles, &(find_node.tree_header));
+	kf_rbtree_node_t *node = kf_rbtree_find(&kn_global_handle_set, &(find_node.handle_tree_header));
 	if (node)
-		return PB_CONTAINER_OF(kn_handle_registry_t, tree_header, node);
+		return PB_CONTAINER_OF(kn_handle_registry_t, handle_tree_header, node);
 	return NULL;
 }
 
 km_result_t om_create_handle(om_object_t *obj, om_handle_t *handle_out) {
+	if (obj->handle != OM_INVALID_HANDLE) {
+		kn_handle_registry_t *registry = kn_lookup_handle_registry(obj->handle);
+		assert(registry);
+		++registry->ref_num;
+		*handle_out = obj->handle;
+		return KM_RESULT_OK;
+	}
+
 	// Find a free handle.
-	om_handle_t initial_handle = kn_last_handle;
-	while (kn_lookup_handle_registry(++kn_last_handle)) {
-		if (kn_last_handle == initial_handle)
+	om_handle_t initial_handle = kn_last_handle,
+				cur_handle = kn_last_handle;
+	while ((kn_lookup_handle_registry(cur_handle)) || (cur_handle == OM_INVALID_HANDLE)) {
+		++cur_handle;
+		if (cur_handle == initial_handle)
 			return KM_MAKEERROR(KM_RESULT_NO_SLOT);
 	}
 
 	kn_handle_registry_t *registry = mm_kmalloc(sizeof(kn_handle_registry_t));
+	if (!registry)
+		return KM_RESULT_NO_MEM;
 
 	memset(registry, 0, sizeof(kn_handle_registry_t));
 
-	registry->handle = kn_last_handle;
+	registry->handle = cur_handle;
 	registry->object = obj;
+	registry->ref_num = 1;
 
 	km_result_t result;
 
-	if (KM_FAILED(result = kf_rbtree_insert(&kn_global_handles, &registry->tree_header))) {
+	if (KM_FAILED(result = kf_rbtree_insert(&kn_global_handle_set, &registry->handle_tree_header))) {
 		mm_kfree(registry);
 		return result;
 	}
 
-	++obj->handle_num;
-	if (!obj->ref_num && (!obj->handle_num))
-		kf_rbtree_remove(&kn_unused_objects, &obj->tree_header);
+	obj->handle = cur_handle;
 
-	*handle_out = kn_last_handle;
+	*handle_out = obj->handle;
 
-	if (kn_last_handle == OM_HANDLE_MAX)
-		++kn_last_handle;
+	kn_last_handle = cur_handle + 1;
 
+	return KM_RESULT_OK;
+}
+
+km_result_t om_ref_handle(om_handle_t handle) {
+	kn_handle_registry_t *registry = kn_lookup_handle_registry(handle);
+	if (!registry)
+		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
+	++registry->ref_num;
 	return KM_RESULT_OK;
 }
 
@@ -145,15 +165,11 @@ km_result_t om_close_handle(om_handle_t handle) {
 	kn_handle_registry_t *registry = kn_lookup_handle_registry(handle);
 	if (!registry)
 		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
-	kf_rbtree_remove(&kn_global_handles, &registry->tree_header);
+	assert(registry->ref_num);
+	if (!--registry->ref_num) {
+		kf_rbtree_remove(&kn_global_handle_set, &registry->handle_tree_header);
+	}
 	return KM_RESULT_OK;
-}
-
-km_result_t om_duplicate_handle(om_handle_t handle, om_handle_t *handle_out) {
-	kn_handle_registry_t *registry = kn_lookup_handle_registry(handle);
-	if (!registry)
-		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
-	return om_create_handle(registry->object, handle_out);
 }
 
 void om_gc() {
@@ -172,9 +188,9 @@ km_result_t om_deref_handle(om_handle_t handle, om_object_t **obj_out) {
 
 void om_init() {
 	kf_rbtree_init(
-		&kn_global_handles,
-		_kn_handle_nodecmp,
-		_kn_handle_nodefree);
+		&kn_global_handle_set,
+		_kn_handle_set_nodecmp,
+		_kn_handle_set_nodefree);
 	kf_rbtree_init(
 		&kn_unused_objects,
 		_kn_object_nodecmp,

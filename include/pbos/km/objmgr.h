@@ -24,12 +24,17 @@ typedef struct _om_class_t {
 	struct _om_class_t *next, *last;
 } om_class_t;
 
+#define OM_OBJECT_KERNEL 0x00000001
+
+typedef uint32_t om_object_flags_t;
+
 /// @brief Object header.
 typedef struct _om_object_t {
 	kf_rbtree_node_t tree_header;
 	om_class_t *p_class;
 	size_t ref_num;
-	size_t handle_num;
+	om_object_flags_t flags;
+	om_handle_t handle;
 } om_object_t;
 
 om_class_t *om_register_class(uuid_t *uuid, om_destructor_t destructor);
@@ -66,13 +71,13 @@ void om_decref(om_object_t *obj);
 #define om_getrefcount(o) (const size_t)((o)->ref_num)
 #define om_classof(o) ((o)->p_class)
 
-#define OM_INVALID_HANDLE 0
+#define OM_INVALID_HANDLE UINT32_MAX
 
 typedef uint32_t om_handle_t;
 
 km_result_t om_create_handle(om_object_t *obj, om_handle_t *handle_out);
+km_result_t om_ref_handle(om_handle_t handle);
 km_result_t om_close_handle(om_handle_t handle);
-km_result_t om_duplicate_handle(om_handle_t handle, om_handle_t *handle_out);
 km_result_t om_deref_handle(om_handle_t handle, om_object_t **obj_out);
 
 #define om_is_cachable(obj) ((obj)->ref_num == 0)

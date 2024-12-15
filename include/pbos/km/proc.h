@@ -19,6 +19,20 @@ typedef struct _ps_pcb_t ps_pcb_t;	// Process Environment Descriptor (PED)
 typedef struct _ps_tcb_t ps_tcb_t;	// Thread Environment Descriptor (TED)
 typedef struct _ps_user_context_t ps_user_context_t;
 
+typedef uint32_t ps_uhandle_t;
+
+#define PS_INVALID_UHANDLE_VALUE UINT32_MAX
+
+/// @brief User Handle Registry (UHR)
+typedef struct _ps_uhr_t {
+	om_object_t object_header;
+	
+	kf_rbtree_node_t node_header;
+	om_handle_t khandle;
+	ps_uhandle_t uhandle;
+	size_t ref_num;
+} ps_uhr_t;
+
 typedef uint32_t ps_proc_access_t;
 
 #define PM_PROC_ID_MAX PROC_MAX
@@ -71,5 +85,8 @@ void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread);
 
 ps_euid_t ps_get_current_euid();
 void kn_set_current_euid(ps_euid_t euid);
+
+km_result_t ps_create_uhandle(ps_pcb_t *proc, om_handle_t khandle, ps_uhandle_t *uhandle_out);
+void ps_close_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle);
 
 #endif

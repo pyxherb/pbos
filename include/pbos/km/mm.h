@@ -98,7 +98,9 @@ PB_NODISCARD km_result_t mm_create_context(mm_context_t *context);
 void mm_free_context(mm_context_t *context);
 void mm_switch_context(mm_context_t *context);
 
+/// @brief The kernel MM context.
 extern mm_context_t *mm_kernel_context;
+/// @brief An array that contains current MM contexts of each EU.
 extern mm_context_t **mm_current_contexts;
 
 #endif

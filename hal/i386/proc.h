@@ -40,6 +40,9 @@ typedef struct _ps_pcb_t {
 	mm_context_t mmctxt;
 	ps_tcb_t *threads;
 	uint8_t priority, flags;
+
+	kf_rbtree_t uhandle_map;
+	ps_uhandle_t last_allocated_uhandle_value;
 } ps_pcb_t;
 
 /// @brief Thread Information Block (TIB)

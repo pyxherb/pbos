@@ -154,7 +154,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 							goto vmalloc_succeeded;
 						}
 					} else {
-						if((map_addr = mm_kvmalloc(ctxt, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
+						if ((map_addr = mm_kvmalloc(ctxt, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
 							goto vmalloc_succeeded;
 						}
 					}
@@ -258,31 +258,6 @@ void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 	};
 	km_result_t result = hn_walkpgtab(ctxt->pdt, vaddr, size, hn_unmmap_walker, &args);
 	assert(KM_SUCCEEDED(result));
-
-	for (uint16_t i = PDX(vaddr); i < PDX(vaddr_limit) + 1; ++i) {
-		if (ctxt->pdt[i].mask & PDE_P) {
-			if ((VADDR(i, 0, 0) >= vaddr) &&
-				(VADDR(i, PTX_MAX, PGOFF_MAX) <= vaddr_limit)) {
-				hn_mmctxt_pgtabfree(ctxt, i);
-			} else {
-				pgaddr_t pgtab_tmpmap_addr = hn_tmpmap(ctxt->pdt[i].address, 1, PTE_P);
-				arch_pte_t *pgtab = UNPGADDR(pgtab_tmpmap_addr);
-
-				for (uint16_t j = 0; j < PTX_MAX; ++j) {
-					if (pgtab[j].mask & PTE_P) {
-						goto keep_pgtab;
-					}
-				}
-
-				hn_mmctxt_pgtabfree(ctxt, i);
-
-			keep_pgtab:;
-			}
-		}
-	}
-}
-
-void mm_mrawunmap(mm_context_t *context, void *vaddr, size_t size, mmap_flags_t flags) {
 }
 
 void mm_chpgmod(

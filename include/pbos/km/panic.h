@@ -3,11 +3,11 @@
 
 #include <pbos/common.h>
 
-/// @brief Check if the system was panicked.
+/// @brief Check if the system is panicked.
 ///
-/// @return true The system was panicked.
-/// @return false The system did not panic.
-bool km_ispanicked();
+/// @return true The system is panicked.
+/// @return false The system did is not panicked.
+bool km_is_panicked();
 
 /// @brief Panic and shutdown the system.
 ///
