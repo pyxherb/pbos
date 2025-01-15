@@ -16,10 +16,15 @@ typedef struct _om_object_t om_object_t;
 /// @note The destructor should release the object.
 typedef void (*om_destructor_t)(om_object_t *obj);
 
+typedef km_result_t (*om_serializer_t)(om_object_t *object, om_handle_t archive_handle);
+typedef km_result_t (*om_deserializer_t)(om_handle_t archive, om_object_t **object_out);
+
 /// @brief Class registry.
 typedef struct _om_class_t {
 	uuid_t uuid;
 	om_destructor_t destructor;
+	om_serializer_t serializer;
+	om_deserializer_t deserializer;
 	size_t obj_num;
 	struct _om_class_t *next, *last;
 } om_class_t;
@@ -28,12 +33,16 @@ typedef struct _om_class_t {
 
 typedef uint32_t om_object_flags_t;
 
+typedef struct _om_object_prop_t {
+	om_class_t *p_class;
+	om_object_flags_t flags;
+} om_object_prop_t;
+
 /// @brief Object header.
 typedef struct _om_object_t {
 	kf_rbtree_node_t tree_header;
-	om_class_t *p_class;
 	size_t ref_num;
-	om_object_flags_t flags;
+	om_object_prop_t prop;
 	om_handle_t handle;
 } om_object_t;
 
@@ -76,8 +85,8 @@ void om_decref(om_object_t *obj);
 typedef uint32_t om_handle_t;
 
 km_result_t om_create_handle(om_object_t *obj, om_handle_t *handle_out);
-km_result_t om_ref_handle(om_handle_t handle);
-km_result_t om_close_handle(om_handle_t handle);
+void om_ref_handle(om_handle_t handle);
+void om_close_handle(om_handle_t handle);
 km_result_t om_deref_handle(om_handle_t handle, om_object_t **obj_out);
 
 #define om_is_cachable(obj) ((obj)->ref_num == 0)

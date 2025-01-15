@@ -127,54 +127,51 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 	for (uint16_t i = PDX(vaddr); i <= PDX(vaddr_limit); ++i) {
 		if (!(ctxt->pdt[i].mask & PDE_P)) {
-			if (hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED) {
-				pgaddr_t pgdir = hn_mmctxt_pgtaballoc(ctxt, i);
-				if (!pgdir) {
-					mm_unmmap(ctxt, vaddr, size, flags);
-					return KM_RESULT_NO_MEM;
-				} else {
-					{
-						pgaddr_t mapped_pgdir = hn_tmpmap(pgdir, 1, PTE_P | PTE_RW);
-						arch_pte_t *pgdir_entries = (arch_pte_t *)UNPGADDR(mapped_pgdir);
-
-						memset(pgdir_entries, 0, sizeof(arch_pte_t) * (PTX_MAX + 1));
-
-						hn_tmpunmap(mapped_pgdir);
-					}
-
-					void *map_addr;
-
-					if (vaddr >= KSPACE_VBASE) {
-						if ((map_addr = mm_vmalloc(ctxt, (void *)KSPACE_VBASE, vaddr, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
-							goto vmalloc_succeeded;
-						}
-					}
-					if (((char *)vaddr) + size > KSPACE_VBASE) {
-						if ((map_addr = mm_vmalloc(ctxt, ((char *)vaddr) + size, (void *)KSPACE_VTOP, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
-							goto vmalloc_succeeded;
-						}
-					} else {
-						if ((map_addr = mm_kvmalloc(ctxt, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
-							goto vmalloc_succeeded;
-						}
-					}
-					mm_unmmap(ctxt, vaddr, size, flags);
-					return KM_RESULT_NO_MEM;
-
-				vmalloc_succeeded:
-					ctxt->pdt[i].mask = PDE_P | PDE_RW | PDE_U;
-
-					hn_mad_t *mad = hn_get_mad(pgdir);
-					mad->type = MAD_ALLOC_KERNEL;
-					mad->exdata.mapped_pgtab_addr = (pgaddr_t)NULL;
-
-					result = mm_mmap(ctxt, map_addr, UNPGADDR(pgdir), PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
-					assert(KM_SUCCEEDED(result));
-
-					mad->exdata.mapped_pgtab_addr = PGROUNDDOWN(map_addr);
-				}
+			assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
+			pgaddr_t pgdir = hn_mmctxt_pgtaballoc(ctxt, i);
+			if (!pgdir) {
+				mm_unmmap(ctxt, vaddr, size, flags);
+				return KM_RESULT_NO_MEM;
 			} else {
-				assert(false);
+				{
+					pgaddr_t mapped_pgdir = hn_tmpmap(pgdir, 1, PTE_P | PTE_RW);
+					arch_pte_t *pgdir_entries = (arch_pte_t *)UNPGADDR(mapped_pgdir);
+
+					memset(pgdir_entries, 0, sizeof(arch_pte_t) * (PTX_MAX + 1));
+
+					hn_tmpunmap(mapped_pgdir);
+				}
+
+				void *map_addr;
+
+				if (vaddr >= KSPACE_VBASE) {
+					if ((map_addr = mm_vmalloc(ctxt, (void *)KSPACE_VBASE, vaddr, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
+						goto vmalloc_succeeded;
+					}
+				}
+				if (((char *)vaddr) + size > KSPACE_VBASE) {
+					if ((map_addr = mm_vmalloc(ctxt, ((char *)vaddr) + size, (void *)KSPACE_VTOP, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
+						goto vmalloc_succeeded;
+					}
+				} else {
+					if ((map_addr = mm_kvmalloc(ctxt, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
+						goto vmalloc_succeeded;
+					}
+				}
+				mm_unmmap(ctxt, vaddr, size, flags);
+				return KM_RESULT_NO_MEM;
+
+			vmalloc_succeeded:
+				ctxt->pdt[i].mask = PDE_P | PDE_RW | PDE_U;
+
+				hn_mad_t *mad = hn_get_mad(pgdir);
+				mad->type = MAD_ALLOC_KERNEL;
+				mad->exdata.mapped_pgtab_addr = (pgaddr_t)NULL;
+
+				result = mm_mmap(ctxt, map_addr, UNPGADDR(pgdir), PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
+				assert(KM_SUCCEEDED(result));
+
+				mad->exdata.mapped_pgtab_addr = PGROUNDDOWN(map_addr);
 			}
 		}
 	}

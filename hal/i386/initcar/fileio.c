@@ -1,34 +1,73 @@
-#include <pbos/kn/fs/initcar.h>
 #include <pbos/km/panic.h>
+#include <pbos/kn/fs/initcar.h>
 #include <string.h>
 
-km_result_t initcar_open(fs_file_t *file, om_handle_t *handle_out) {
-	return om_create_handle(&file->object_header, handle_out);
+km_result_t initcar_open(om_handle_t handle, fs_fcontext_t **fcontext_out) {
+	km_result_t result;
+	fs_file_t *file;
+
+	fs_fcontext_t *fcontext = mm_kmalloc(sizeof(fs_fcontext_t));
+	if (!fcontext)
+		return KM_MAKEERROR(KM_RESULT_NO_MEM);
+	fcontext->filesys = initcar_fs;
+	fcontext->file_handle = handle;
+	om_ref_handle(handle);
+
+	*fcontext_out = fcontext;
+
+	return KM_RESULT_OK;
 }
 
-km_result_t initcar_close(om_handle_t handle) {
-	return om_close_handle(handle);
+km_result_t initcar_close(fs_fcontext_t *fcontext) {
+	om_close_handle(fcontext->file_handle);
+	mm_kfree(fcontext);
+	return KM_RESULT_OK;
 }
 
-km_result_t initcar_read(fs_file_t *file, char *dest, size_t size, size_t off, size_t *bytes_read_out) {
+km_result_t initcar_read(fs_fcontext_t *fcontext, char *dest, size_t size, size_t off, size_t *bytes_read_out) {
+	km_result_t result;
+	fs_file_t *file = NULL;
+
+	if (KM_FAILED(result = fs_deref_file_handle(fcontext->file_handle, &file)))
+		goto cleanup;
+
 	initcar_file_exdata_t *exdata = (initcar_file_exdata_t *)fs_file_exdata(file);
 	if (size + off > exdata->sz_total) {
 		memcpy(dest, exdata->ptr + off, exdata->sz_total - off);
 		*bytes_read_out = exdata->sz_total - off;
-		return KM_MAKEERROR(KM_RESULT_EOF);
+		result = KM_MAKEERROR(KM_RESULT_EOF);
+		goto cleanup;
 	}
 	memcpy(dest, exdata->ptr + off, size);
 	*bytes_read_out = size;
-	return KM_RESULT_OK;
+	result = KM_RESULT_OK;
+
+cleanup:
+	if (file) {
+		om_decref(file);
+	}
+	return result;
 }
 
-km_result_t initcar_write(fs_file_t *file, const char *src, size_t size, size_t off, size_t *bytes_written_out) {
+km_result_t initcar_write(fs_fcontext_t *fcontext, const char *src, size_t size, size_t off, size_t *bytes_written_out) {
 	*bytes_written_out = 0;
 	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_OPERATION);
 }
 
-km_result_t initcar_size(fs_file_t *file, size_t *size_out) {
+km_result_t initcar_size(fs_fcontext_t *fcontext, size_t *size_out) {
+	km_result_t result;
+	fs_file_t *file = NULL;
+	
+	if (KM_FAILED(result = fs_deref_file_handle(fcontext->file_handle, &file)))
+		goto cleanup;
+
 	initcar_file_exdata_t *exdata = (initcar_file_exdata_t *)file->exdata;
 	*size_out = exdata->sz_total;
-	return KM_RESULT_OK;
+	result = KM_RESULT_OK;
+
+cleanup:
+	if (file) {
+		om_decref(file);
+	}
+	return result;
 }

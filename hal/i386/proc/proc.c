@@ -95,10 +95,7 @@ km_result_t ps_create_uhandle(ps_pcb_t *proc, om_handle_t khandle, ps_uhandle_t 
 
 	memset(uhr, 0, sizeof(ps_uhr_t));
 
-	if (KM_FAILED(result = om_ref_handle(khandle))) {
-		mm_kfree(uhr);
-		return result;
-	}
+	om_ref_handle(khandle);
 	uhr->khandle = khandle;
 
 	ps_uhandle_t initial_uhandle = proc->last_allocated_uhandle_value;

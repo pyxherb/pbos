@@ -12,10 +12,12 @@ typedef struct _kn_handle_registry_t {
 
 	om_handle_t handle;
 	om_object_t *object;
+	om_object_prop_t prop;
 	size_t ref_num;
 } kn_handle_registry_t;
 
 kn_handle_registry_t *kn_lookup_handle_registry(om_handle_t handle);
+km_result_t kn_alloc_handle(om_handle_t *handle_out);
 
 void om_init();
 

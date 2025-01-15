@@ -7,14 +7,14 @@
 
 typedef struct _km_binldr_t {
 	uuid_t uuid;
-	km_result_t (*load_exec)(ps_pcb_t *proc, om_handle_t file_handle);
-	km_result_t (*load_mod)(ps_pcb_t *proc, om_handle_t file_handle);
+	km_result_t (*load_exec)(ps_pcb_t *proc, fs_fcontext_t *file_fp);
+	km_result_t (*load_mod)(ps_pcb_t *proc, fs_fcontext_t *file_fp);
 } km_binldr_t;
 
 km_result_t km_exec(
 	proc_id_t parent,
 	se_uid_t uid,
-	om_handle_t file_handle,
+	fs_fcontext_t *file_fp,
 	proc_id_t *pid_out);
 km_result_t km_register_binldr(km_binldr_t *binldr);
 

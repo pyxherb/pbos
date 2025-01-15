@@ -44,18 +44,18 @@ km_result_t initcar_destructor() {
 	return KM_RESULT_OK;
 }
 
-km_result_t initcar_premount(fs_file_t *parent, fs_file_t *file_handle) {
+km_result_t initcar_premount(om_handle_t parent, om_handle_t file_handle) {
 	return KM_RESULT_OK;
 }
 
-km_result_t initcar_postmount(fs_file_t *parent, fs_file_t *file_handle) {
+km_result_t initcar_postmount(om_handle_t parent, om_handle_t file_handle) {
 	return KM_RESULT_OK;
 }
 
-void initcar_mountfail(fs_file_t *parent, fs_file_t *file_handle) {
+void initcar_mountfail(om_handle_t parent, om_handle_t file_handle) {
 }
 
-km_result_t initcar_unmount(fs_file_t *file_handle) {
+km_result_t initcar_unmount(om_handle_t file_handle) {
 	return KM_RESULT_OK;
 }
 

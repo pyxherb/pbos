@@ -26,7 +26,7 @@ km_result_t km_register_binldr(km_binldr_t *binldr) {
 km_result_t km_exec(
 	proc_id_t parent,
 	se_uid_t uid,
-	om_handle_t file_handle,
+	fs_fcontext_t *file_fp,
 	proc_id_t *pid_out) {
 	kf_rbtree_foreach(i, &kn_registered_binldrs) {
 		kn_binldr_reg_t *binldr = PB_CONTAINER_OF(kn_binldr_reg_t, tree_header, i);
@@ -35,7 +35,7 @@ km_result_t km_exec(
 		if (!pcb)
 			return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
-		if (KM_SUCCEEDED(binldr->binldr.load_exec(pcb, file_handle))) {
+		if (KM_SUCCEEDED(binldr->binldr.load_exec(pcb, file_fp))) {
 			kn_start_user_process(pcb);
 		}
 	}

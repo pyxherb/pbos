@@ -6,15 +6,15 @@
 #include <pbos/kn/km/exec.h>
 #include <string.h>
 
-km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle);
-km_result_t kn_elf_load_mod(ps_pcb_t *proc, om_handle_t file_handle);
+km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcontext_t *file_fp);
+km_result_t kn_elf_load_mod(ps_pcb_t *proc, fs_fcontext_t *file_fp);
 
 km_binldr_t kn_binldr_elf = {
 	.load_exec = kn_elf_load_exec,
 	.load_mod = kn_elf_load_mod
 };
 
-km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle) {
+km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcontext_t *file_fp) {
 	km_result_t result;
 	size_t off = 0, bytes_read;
 
@@ -25,7 +25,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle) {
 		return result;
 
 	Elf32_Ehdr ehdr;
-	if (KM_FAILED(result = fs_read(file_handle, &ehdr, sizeof(ehdr), off, &bytes_read))) {
+	if (KM_FAILED(result = fs_read(file_fp, &ehdr, sizeof(ehdr), off, &bytes_read))) {
 		// TODO: free allocated resources here.
 		return result;
 	}
@@ -58,7 +58,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle) {
 	for (Elf32_Half i = 0; i < phdr_num; ++i) {
 		// Current program header.
 		Elf32_Phdr ph;
-		if (!KM_SUCCEEDED(result = fs_read(file_handle, &ph, sizeof(ph), ehdr.e_phoff + ehdr.e_phentsize * i, &bytes_read))) {
+		if (!KM_SUCCEEDED(result = fs_read(file_fp, &ph, sizeof(ph), ehdr.e_phoff + ehdr.e_phentsize * i, &bytes_read))) {
 			// TODO: free allocated resources here.
 			return result;
 		}
@@ -89,7 +89,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle) {
 
 			// Read the whole segment into the memory.
 			memset((void *)ph.p_vaddr, 0, ph.p_memsz);
-			if (!KM_SUCCEEDED(result = fs_read(file_handle, (void *)ph.p_vaddr, ph.p_filesz, ph.p_offset, &bytes_read))) {
+			if (!KM_SUCCEEDED(result = fs_read(file_fp, (void *)ph.p_vaddr, ph.p_filesz, ph.p_offset, &bytes_read))) {
 				// TODO: free allocated resources here.
 				return result;
 			}
@@ -109,4 +109,4 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, om_handle_t file_handle) {
 	return KM_RESULT_OK;
 }
 
-km_result_t kn_elf_load_mod(ps_pcb_t *proc, om_handle_t file_handle) {}
+km_result_t kn_elf_load_mod(ps_pcb_t *proc, fs_fcontext_t *file_fp) {}

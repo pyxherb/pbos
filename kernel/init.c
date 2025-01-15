@@ -4,8 +4,8 @@
 #define INIT_PATH "/initcar/init"
 
 void kn_load_init() {
-	om_handle_t init_handle;
-	if(KM_FAILED(fs_open(INIT_PATH, sizeof(INIT_PATH)-1,&init_handle)))
+	fs_fcontext_t *init_fp;
+	if(KM_FAILED(fs_open(INIT_PATH, sizeof(INIT_PATH)-1,&init_fp)))
 		km_panic("Error loading init from path: " INIT_PATH);
-	fs_close_file(init_handle);
+	fs_close(init_fp);
 }

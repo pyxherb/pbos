@@ -149,20 +149,17 @@ static bool _kn_file_keycmp(const kf_hashmap_node_t *lhs, const void *key) {
 #include <pbos/km/logger.h>
 
 km_result_t fs_mount_file(om_handle_t parent, om_handle_t file_handle) {
-	fs_file_t *parent_file, *file;
+	fs_file_t *parent_file;
 	km_result_t result;
 
 	if (KM_FAILED(result = fs_deref_file_handle(parent, &parent_file)))
 		return result;
 
-	if (KM_FAILED(result = fs_deref_file_handle(file_handle, &file)))
-		return result;
-
 	if (parent_file->filetype != FS_FILETYPE_DIR)
 		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
 
-	if (KM_FAILED(result = parent_file->fs->ops.premount(parent_file, file))) {
-		parent_file->fs->ops.mountfail(parent_file, file);
+	if (KM_FAILED(result = parent_file->fs->ops.premount(parent, file_handle))) {
+		parent_file->fs->ops.mountfail(parent, file_handle);
 		return result;
 	}
 
@@ -171,7 +168,7 @@ km_result_t fs_mount_file(om_handle_t parent, om_handle_t file_handle) {
 
 	kn_child_file_entry_t *cfe = mm_kmalloc(sizeof(kn_child_file_entry_t));
 	if (!cfe) {
-		parent_file->fs->ops.mountfail(parent_file, file);
+		parent_file->fs->ops.mountfail(parent, file_handle);
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	}
 	cfe->file_handle = file_handle;
@@ -179,7 +176,7 @@ km_result_t fs_mount_file(om_handle_t parent, om_handle_t file_handle) {
 	if (KM_FAILED(result = kf_hashmap_insert(hm, &cfe->hashmap_header)))
 		return result;
 
-	if (KM_FAILED(result = parent_file->fs->ops.postmount(parent_file, file))) {
+	if (KM_FAILED(result = parent_file->fs->ops.postmount(parent, file_handle))) {
 		km_result_t remove_result = kf_hashmap_remove(hm, &cfe->hashmap_header);
 		assert(KM_SUCCEEDED(remove_result));
 
@@ -214,7 +211,7 @@ km_result_t fs_child_of(om_handle_t file_handle, const char *name, size_t filena
 	fs_file_t *file;
 	km_result_t result;
 	if (KM_FAILED(result = fs_deref_file_handle(file_handle, &file)))
-		return result;
+		goto cleanup;
 
 	switch (file->filetype) {
 		case FS_FILETYPE_DIR: {
@@ -225,8 +222,10 @@ km_result_t fs_child_of(om_handle_t file_handle, const char *name, size_t filena
 			};
 
 			kf_hashmap_node_t *node = kf_hashmap_find(&((fs_dir_exdata_t *)(file->exdata))->children, &k);
-			if (!node)
-				return KM_MAKEERROR(KM_RESULT_NOT_FOUND);
+			if (!node) {
+				result = KM_MAKEERROR(KM_RESULT_NOT_FOUND);
+				goto cleanup;
+			}
 
 			*handle_out = PB_CONTAINER_OF(kn_child_file_entry_t, hashmap_header, node)->file_handle;
 			break;
@@ -237,7 +236,13 @@ km_result_t fs_child_of(om_handle_t file_handle, const char *name, size_t filena
 			return KM_MAKEERROR(KM_RESULT_NOT_FOUND);
 	}
 
-	return KM_RESULT_OK;
+	result = KM_RESULT_OK;
+
+cleanup:
+	if(file) {
+		om_decref(&file->object_header);
+	}
+	return result;
 }
 
 km_result_t fs_resolve_path(om_handle_t cur_dir, const char *path, size_t path_len, om_handle_t *file_out) {
@@ -276,7 +281,7 @@ end:;
 	return KM_RESULT_OK;
 }
 
-km_result_t fs_open(const char *path, size_t path_len, om_handle_t *handle_out) {
+km_result_t fs_open(const char *path, size_t path_len, fs_fcontext_t **fcontext_out) {
 	om_handle_t file_handle;
 	fs_file_t *file;
 	km_result_t result;
@@ -287,47 +292,30 @@ km_result_t fs_open(const char *path, size_t path_len, om_handle_t *handle_out) 
 	if (KM_FAILED(result = fs_deref_file_handle(file_handle, &file)))
 		return result;
 
-	return file->fs->ops.open(file, handle_out);
+	if(KM_FAILED(result = file->fs->ops.open(file_handle, fcontext_out))) {
+		om_decref(&file->object_header);
+		return result;
+	}
+
+	om_decref(&file->object_header);
+
+	return KM_RESULT_OK;
 }
 
-km_result_t fs_close_file(om_handle_t file_handle) {
-	fs_file_t *file;
-	km_result_t result;
-
-	if (KM_FAILED(result = fs_deref_file_handle(file_handle, &file)))
-		return result;
-
-	return file->fs->ops.close(file_handle);
+km_result_t fs_close(fs_fcontext_t *fcontext) {
+	return fcontext->filesys->ops.close(fcontext);
 }
 
-km_result_t fs_read(om_handle_t file_handle, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
-	fs_file_t *file;
-	km_result_t result;
-
-	if (KM_FAILED(result = fs_deref_file_handle(file_handle, &file)))
-		return result;
-
-	return file->fs->ops.read(file, (char *)dest, size, off, bytes_read_out);
+km_result_t fs_read(fs_fcontext_t *fcontext, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
+	return fcontext->filesys->ops.read(fcontext, (char *)dest, size, off, bytes_read_out);
 }
 
-km_result_t fs_write(om_handle_t file_handle, const char *src, size_t size, size_t off, size_t *bytes_written_out) {
-	fs_file_t *file;
-	km_result_t result;
-
-	if (KM_FAILED(result = fs_deref_file_handle(file_handle, &file)))
-		return result;
-
-	return file->fs->ops.write(file, src, size, off, bytes_written_out);
+km_result_t fs_write(fs_fcontext_t *fcontext, const char *src, size_t size, size_t off, size_t *bytes_written_out) {
+	return fcontext->filesys->ops.write(fcontext, src, size, off, bytes_written_out);
 }
 
-km_result_t fs_size(om_handle_t file_handle, size_t *size_out) {
-	fs_file_t *file;
-	km_result_t result;
-
-	if (KM_FAILED(result = fs_deref_file_handle(file_handle, &file)))
-		return result;
-
-	return file->fs->ops.size(file, size_out);
+km_result_t fs_size(fs_fcontext_t *fcontext, size_t *size_out) {
+	return fcontext->filesys->ops.size(fcontext, size_out);
 }
 
 void kn_file_destructor(om_object_t *obj) {

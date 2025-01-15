@@ -17,7 +17,7 @@ static bool _kn_object_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t
 
 static void _kn_unused_object_nodefree(kf_rbtree_node_t *p) {
 	om_object_t *_p = PB_CONTAINER_OF(om_object_t, tree_header, p);
-	_p->p_class->destructor(_p);
+	_p->prop.p_class->destructor(_p);
 }
 
 om_class_t *om_register_class(uuid_t *uuid, om_destructor_t destructor) {
@@ -71,8 +71,8 @@ om_class_t *om_lookup_class(uuid_t *uuid) {
 
 void om_init_object(om_object_t *obj, om_class_t *cls) {
 	obj->ref_num = 0;
-	obj->p_class = cls;
-	obj->flags = OM_OBJECT_KERNEL;
+	obj->prop.p_class = cls;
+	obj->prop.flags = OM_OBJECT_KERNEL;
 	obj->handle = OM_INVALID_HANDLE;
 	cls->obj_num++;
 }
@@ -83,8 +83,8 @@ void om_incref(om_object_t *obj) {
 }
 
 void om_decref(om_object_t *obj) {
-	if (--obj->ref_num)
-		obj->p_class->destructor(obj);
+	if (--obj->ref_num && obj->handle == OM_INVALID_HANDLE)
+		obj->prop.p_class->destructor(obj);
 }
 
 static bool _kn_handle_set_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
@@ -109,16 +109,7 @@ kn_handle_registry_t *kn_lookup_handle_registry(om_handle_t handle) {
 	return NULL;
 }
 
-km_result_t om_create_handle(om_object_t *obj, om_handle_t *handle_out) {
-	if (obj->handle != OM_INVALID_HANDLE) {
-		kn_handle_registry_t *registry = kn_lookup_handle_registry(obj->handle);
-		assert(registry);
-		++registry->ref_num;
-		*handle_out = obj->handle;
-		return KM_RESULT_OK;
-	}
-
-	// Find a free handle.
+km_result_t kn_alloc_handle(om_handle_t *handle_out) {
 	om_handle_t initial_handle = kn_last_handle,
 				cur_handle = kn_last_handle;
 	while ((kn_lookup_handle_registry(cur_handle)) || (cur_handle == OM_INVALID_HANDLE)) {
@@ -127,49 +118,63 @@ km_result_t om_create_handle(om_object_t *obj, om_handle_t *handle_out) {
 			return KM_MAKEERROR(KM_RESULT_NO_SLOT);
 	}
 
+	kn_last_handle = cur_handle + 1;
+	*handle_out = cur_handle;
+	return KM_RESULT_OK;
+}
+
+km_result_t om_create_handle(om_object_t *obj, om_handle_t *handle_out) {
+	km_result_t result;
+	
+	if (obj->handle != OM_INVALID_HANDLE) {
+		kn_handle_registry_t *registry = kn_lookup_handle_registry(obj->handle);
+		assert(registry);
+		++registry->ref_num;
+		*handle_out = obj->handle;
+		return KM_RESULT_OK;
+	}
+
+	om_handle_t handle;
+	// Find a free handle.
+	if(KM_FAILED(result = kn_alloc_handle(&handle))) {
+		return KM_MAKEERROR(result);
+	}
+
 	kn_handle_registry_t *registry = mm_kmalloc(sizeof(kn_handle_registry_t));
 	if (!registry)
-		return KM_RESULT_NO_MEM;
+		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
 	memset(registry, 0, sizeof(kn_handle_registry_t));
 
-	registry->handle = cur_handle;
+	registry->handle = handle;
 	registry->object = obj;
 	registry->ref_num = 1;
-
-	km_result_t result;
 
 	if (KM_FAILED(result = kf_rbtree_insert(&kn_global_handle_set, &registry->handle_tree_header))) {
 		mm_kfree(registry);
 		return result;
 	}
 
-	obj->handle = cur_handle;
-
-	*handle_out = obj->handle;
-
-	kn_last_handle = cur_handle + 1;
+	*handle_out = (obj->handle = handle);
 
 	return KM_RESULT_OK;
 }
 
-km_result_t om_ref_handle(om_handle_t handle) {
+void om_ref_handle(om_handle_t handle) {
 	kn_handle_registry_t *registry = kn_lookup_handle_registry(handle);
 	if (!registry)
-		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
+		km_panic("Trying to reference an invalid handle");
 	++registry->ref_num;
-	return KM_RESULT_OK;
 }
 
-km_result_t om_close_handle(om_handle_t handle) {
+void om_close_handle(om_handle_t handle) {
 	kn_handle_registry_t *registry = kn_lookup_handle_registry(handle);
 	if (!registry)
-		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
+		km_panic("Trying to close a invalid handle");
 	assert(registry->ref_num);
 	if (!--registry->ref_num) {
 		kf_rbtree_remove(&kn_global_handle_set, &registry->handle_tree_header);
 	}
-	return KM_RESULT_OK;
 }
 
 void om_gc() {
@@ -179,9 +184,9 @@ void om_gc() {
 km_result_t om_deref_handle(om_handle_t handle, om_object_t **obj_out) {
 	kn_handle_registry_t *registry = kn_lookup_handle_registry(handle);
 	if (!registry) {
-		kdprintf("Dereferencing an invalid handle: %u\n", handle);
-		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
+		km_panic("Dereferencing an invalid handle");
 	}
+	++registry->object->ref_num;
 	*obj_out = registry->object;
 	return KM_RESULT_OK;
 }

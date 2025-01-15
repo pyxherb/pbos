@@ -53,6 +53,12 @@ typedef struct _fs_finddata_t {
 	kf_hashmap_node_t *node;
 } fs_finddata_t;
 
+typedef struct _fs_fcontext_t {
+	fs_filesys_t *filesys;
+	om_handle_t file_handle;
+	char exdata[];
+} fs_fcontext_t;
+
 typedef struct _fs_finddata_t fs_finddata_t;
 
 #define fs_file_exdata(file) ((file)->exdata)
@@ -81,12 +87,12 @@ km_result_t fs_create_dir(
 km_result_t fs_mount_file(om_handle_t parent, om_handle_t file_handle);
 km_result_t fs_unmount_file(om_handle_t file_handle);
 
-km_result_t fs_close_file(om_handle_t file_handle);
+km_result_t fs_close(fs_fcontext_t *fcontext);
 
-km_result_t fs_open(const char *path, size_t path_len, om_handle_t *handle_out);
-km_result_t fs_read(om_handle_t file_handle, void *dest, size_t size, size_t off, size_t *bytes_read_out);
-km_result_t fs_write(om_handle_t file_handle, const char *src, size_t size, size_t off, size_t *bytes_written_out);
-km_result_t fs_size(om_handle_t file_handle, size_t *size_out);
+km_result_t fs_open(const char *path, size_t path_len, fs_fcontext_t **fcontext_out);
+km_result_t fs_read(fs_fcontext_t *fcontext, void *dest, size_t size, size_t off, size_t *bytes_read_out);
+km_result_t fs_write(fs_fcontext_t *fcontext, const char *src, size_t size, size_t off, size_t *bytes_written_out);
+km_result_t fs_size(fs_fcontext_t *fcontext, size_t *size_out);
 
 km_result_t fs_child_of(om_handle_t file_handle, const char *filename, size_t filename_len, om_handle_t *handle_out);
 
