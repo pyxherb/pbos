@@ -101,6 +101,6 @@ void mm_switch_context(mm_context_t *context);
 /// @brief The kernel MM context.
 extern mm_context_t *mm_kernel_context;
 /// @brief An array that contains current MM contexts of each EU.
-extern mm_context_t **mm_current_contexts;
+extern mm_context_t **mm_cur_contexts;
 
 #endif

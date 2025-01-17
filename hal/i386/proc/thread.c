@@ -28,17 +28,11 @@ thread_id_t ps_create_thread(
 	if ((!t) || (!pcb))
 		return -1;
 
-	kf_list_init((kf_list_node_t *)t, NULL, NULL);
-	if (pcb->threads)
-		kf_list_append((kf_list_node_t *)t, &(pcb->threads->list_header));
-	pcb->threads = t;
+	kf_rbtree_insert(&pcb->thread_set, &t->node_header);
 }
 
 void hn_thread_cleanup(ps_tcb_t *thread) {
-	if (thread == thread->parent->threads)
-		thread->parent->threads = PB_CONTAINER_OF(ps_tcb_t, list_header, kf_list_next((kf_list_node_t *)thread));
-	kf_list_remove((kf_list_node_t *)thread);
-
+	kf_rbtree_remove(&thread->parent->thread_set, &thread->node_header);
 	while (thread->stacksize) {
 		mm_pgfree(mm_getmap(&thread->parent->mmctxt, UNPGADDR(thread->stack++)));
 		thread->stacksize--;

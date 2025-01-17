@@ -180,7 +180,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 		.context = ctxt,
 		.paddr = (char *)paddr,
 		.mask = hn_pgaccess_to_pgmask(access),
-		.is_curpgtab = ctxt == mm_current_contexts[ps_get_current_euid()],
+		.is_curpgtab = ctxt == mm_cur_contexts[ps_get_cur_euid()],
 		.flags = flags
 	};
 	if (KM_FAILED(result = hn_walkpgtab(
@@ -250,7 +250,7 @@ void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 	const void *vaddr_limit = ((const char *)vaddr) + size;
 	hn_unmmap_walker_args args = {
 		.context = ctxt,
-		.is_curpgtab = ctxt == mm_current_contexts[ps_get_current_euid()],
+		.is_curpgtab = ctxt == mm_cur_contexts[ps_get_cur_euid()],
 		.flags = flags
 	};
 	km_result_t result = hn_walkpgtab(ctxt->pdt, vaddr, size, hn_unmmap_walker, &args);

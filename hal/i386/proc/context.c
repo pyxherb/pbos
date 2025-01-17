@@ -36,7 +36,7 @@ PB_NORETURN void ps_load_user_context(ps_user_context_t *ctxt) {
 	hn_ctxtsw_tmp_area->cs = SELECTOR_UCODE;
 	hn_ctxtsw_tmp_area->ds = SELECTOR_UDATA;
 	hn_ctxtsw_tmp_area->es = SELECTOR_UDATA;
-	hn_ctxtsw_tmp_area->fs = ps_get_current_euid();
+	hn_ctxtsw_tmp_area->fs = ps_get_cur_euid();
 	hn_ctxtsw_tmp_area->gs = SELECTOR_UDATA;
 	memcpy(&hn_ctxtsw_tmp_area->context, ctxt, sizeof(ps_user_context_t));
 	hn_load_user_context();

@@ -1,4 +1,5 @@
 #include <pbos/kn/km/exec.h>
+#include <hal/i386/proc.h>
 #include <string.h>
 
 typedef struct _kn_binldr_reg_t {
@@ -28,19 +29,35 @@ km_result_t km_exec(
 	se_uid_t uid,
 	fs_fcontext_t *file_fp,
 	proc_id_t *pid_out) {
+	km_result_t result;
+
+	ps_pcb_t *pcb = kn_alloc_pcb();
+	if (!pcb) {
+		result = KM_MAKEERROR(KM_RESULT_NO_MEM);
+		goto failed;
+	}
+
 	kf_rbtree_foreach(i, &kn_registered_binldrs) {
 		kn_binldr_reg_t *binldr = PB_CONTAINER_OF(kn_binldr_reg_t, tree_header, i);
 
-		ps_pcb_t *pcb = kn_alloc_pcb();
-		if (!pcb)
-			return KM_MAKEERROR(KM_RESULT_NO_MEM);
+		if (KM_SUCCEEDED(result = binldr->binldr.load_exec(pcb, file_fp))) {
+			pcb->proc_id = 1;
+			kf_rbtree_insert(&ps_global_proc_set, &pcb->node_header);
+			return KM_RESULT_OK;
+		}
 
-		if (KM_SUCCEEDED(binldr->binldr.load_exec(pcb, file_fp))) {
-			kn_start_user_process(pcb);
+		if(result != KM_RESULT_UNSUPPORTED_EXECFMT) {
+			goto failed;
 		}
 	}
 
 	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_EXECFMT);
+failed:
+	if(pcb) {
+		// TODO: Release PCB.
+	}
+
+	return result;
 }
 
 bool kn_binldr_reg_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {

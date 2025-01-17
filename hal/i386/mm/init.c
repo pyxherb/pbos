@@ -44,12 +44,12 @@ void hn_mm_init() {
 	kima_init();
 
 	ps_eu_num = 1;
-	if (!(mm_current_contexts = mm_kmalloc(ps_eu_num * sizeof(mm_context_t *)))) {
+	if (!(mm_cur_contexts = mm_kmalloc(ps_eu_num * sizeof(mm_context_t *)))) {
 		km_panic("Unable to allocate memory context for all CPUs");
 	}
 
 	for (ps_euid_t i = 0; i < ps_eu_num; ++i) {
-		mm_current_contexts[i] = mm_kernel_context;
+		mm_cur_contexts[i] = mm_kernel_context;
 	}
 
 	hn_init_tss();

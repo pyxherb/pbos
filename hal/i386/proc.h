@@ -34,22 +34,28 @@ typedef struct _hn_parp_t {
 
 /// @brief Process Context Block (PCB)
 typedef struct _ps_pcb_t {
+	kf_rbtree_node_t node_header;
 	om_object_t object_header;
 
+	proc_id_t proc_id;
+	thread_id_t last_thread_id;
 	kf_rbtree_t parp_list;
 	mm_context_t mmctxt;
-	ps_tcb_t *threads;
+	kf_rbtree_t thread_set;
 	uint8_t priority, flags;
 
 	kf_rbtree_t uhandle_map;
 	ps_uhandle_t last_allocated_uhandle_value;
 } ps_pcb_t;
 
+#define PS_TCB_SCHEDULED 0x01
+
 /// @brief Thread Information Block (TIB)
 typedef struct _ps_tcb_t {
-	kf_list_node_t list_header;
+	kf_rbtree_node_t node_header;
 	om_object_t object_header;
 
+	thread_id_t thread_id;
 	ps_pcb_t *parent;
 
 	uint8_t priority, flags;
@@ -59,7 +65,7 @@ typedef struct _ps_tcb_t {
 	pgsize_t stacksize : 20;
 } ps_tcb_t;
 
-extern ps_pcb_t *hn_proc_list;
+extern kf_rbtree_t ps_global_proc_set;
 
 void hn_proc_cleanup(ps_pcb_t *proc);
 void hn_thread_cleanup(ps_tcb_t *thread);

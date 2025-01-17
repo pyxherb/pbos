@@ -17,7 +17,7 @@ void kn_thread_setstack(ps_tcb_t *tcb, void *ptr, size_t size);
 void kn_proc_addparp(ps_pcb_t *pcb, void *paddr, uint8_t order);
 void kn_proc_delparp(ps_pcb_t *pcb, void *paddr, uint8_t order);
 
-void kn_start_user_process(ps_pcb_t* pcb);
-void kn_start_user_thread(ps_tcb_t* tcb);
+void kn_switch_to_user_process(ps_pcb_t* pcb);
+void kn_switch_to_user_thread(ps_tcb_t* tcb);
 
 #endif

@@ -75,4 +75,8 @@ static inline void arch_out32(uint16_t port, uint32_t data) {
 	__asm__ __volatile__("outl %0,%1" ::"a"(data), "d"(port));
 }
 
+static inline void arch_io_wait() {
+	arch_out8(0x80, 0);
+}
+
 #endif

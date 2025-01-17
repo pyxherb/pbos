@@ -3,7 +3,7 @@
 
 mm_context_t hn_kernel_mmctxt;
 mm_context_t *mm_kernel_context = &hn_kernel_mmctxt;
-mm_context_t **mm_current_contexts;
+mm_context_t **mm_cur_contexts;
 
 void mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 	memcpy(
@@ -18,7 +18,7 @@ void mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 
 void mm_sync_global_mappings(const mm_context_t *src) {
 	for (ps_euid_t i = 0; i < ps_eu_num; ++i) {
-		mm_context_t *cur_context = mm_current_contexts[i];
+		mm_context_t *cur_context = mm_cur_contexts[i];
 
 		if (cur_context == src)
 			continue;
@@ -86,8 +86,8 @@ void mm_free_context(mm_context_t *context) {
 }
 
 void mm_switch_context(mm_context_t *context) {
-	mm_context_t *prev_context = mm_current_contexts[ps_get_current_euid()];
-	mm_current_contexts[ps_get_current_euid()] = context;
+	mm_context_t *prev_context = mm_cur_contexts[ps_get_cur_euid()];
+	mm_cur_contexts[ps_get_cur_euid()] = context;
 	mm_sync_global_mappings(prev_context);
 	arch_lpdt(PGROUNDDOWN(hn_getmap(mm_kernel_context->pdt, context->pdt)));
 }

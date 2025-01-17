@@ -1,6 +1,9 @@
 #include <hal/i386/proc.h>
 #include <pbos/km/logger.h>
 
+ps_pcb_t **ps_cur_procs;
+ps_tcb_t **ps_cur_threads;
+
 static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 static void _parp_nodefree(kf_rbtree_node_t *p);
 
@@ -36,21 +39,29 @@ ps_pcb_t *kn_alloc_pcb() {
 		_uhr_uhandle_nodecmp,
 		_uhr_uhandle_nodefree);
 
+	proc->last_thread_id = 0;
+
 	proc->flags = PROC_P;
 
 	return proc;
 }
 
 ps_pcb_t *ps_getpcb(proc_id_t pid) {
-	return &hn_proc_list[pid];
+	ps_pcb_t query_node = {
+		.proc_id = pid
+	};
+	kf_rbtree_node_t *node = kf_rbtree_find(&ps_global_proc_set, &query_node);
+	if (!node)
+		return NULL;
+	return PB_CONTAINER_OF(ps_pcb_t, node_header, node);
 }
 
 void hn_proc_cleanup(ps_pcb_t *proc) {
 	mm_free_context(&proc->mmctxt);
 	proc->flags &= ~PROC_A;
 
-	for (ps_tcb_t *i = proc->threads; i; i = PB_CONTAINER_OF(ps_tcb_t, list_header, kf_list_next(&(i->list_header)))) {
-		om_decref(&(i->object_header));
+	kf_rbtree_foreach(i, &proc->thread_set) {
+		om_decref(&(PB_CONTAINER_OF(ps_tcb_t, node_header, i)->object_header));
 	}
 
 	kf_rbtree_free(&(proc->parp_list));
@@ -61,27 +72,28 @@ mm_context_t *ps_mmcontext_of(ps_pcb_t *proc) {
 }
 
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
-	if (proc->threads) {
-		kf_list_append(&proc->threads->list_header, &thread->list_header);
-	} else
-		proc->threads = thread;
+	// stub: do some checks with the new thread id, such as checking if a thread with the id exists.
+	thread->thread_id = ++proc->last_thread_id;
+	kf_rbtree_insert(&proc->thread_set, &thread->node_header);
 }
 
-void kn_start_user_process(ps_pcb_t *pcb) {
+void kn_switch_to_user_process(ps_pcb_t *pcb) {
 	mm_switch_context(&pcb->mmctxt);
 
-	kn_start_user_thread(pcb->threads);
+	ps_tcb_t *tcb = PB_CONTAINER_OF(ps_tcb_t, node_header, kf_rbtree_begin(&pcb->thread_set));
+
+	kn_switch_to_user_thread(tcb);
 }
 
-void kn_start_user_thread(ps_tcb_t *tcb) {
+void kn_switch_to_user_thread(ps_tcb_t *tcb) {
 	ps_load_user_context(&tcb->context);
 }
 
-ps_euid_t ps_get_current_euid() {
+ps_euid_t ps_get_cur_euid() {
 	return arch_storefs();
 }
 
-void kn_set_current_euid(ps_euid_t euid) {
+void kn_set_cur_euid(ps_euid_t euid) {
 	arch_loadfs(euid);
 }
 
@@ -107,7 +119,7 @@ km_result_t ps_create_uhandle(ps_pcb_t *proc, om_handle_t khandle, ps_uhandle_t 
 
 		query_uhr.uhandle = uhandle;
 
-		if (!kf_rbtree_find(&proc->uhandle_map, &query_uhr)) {
+		if (!kf_rbtree_find(&proc->uhandle_map, &query_uhr.node_header)) {
 			break;
 		}
 
@@ -134,7 +146,7 @@ void ps_close_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle) {
 	assert(node);
 
 	ps_uhr_t *uhr = PB_CONTAINER_OF(ps_uhr_t, node_header, node);
-	
+
 	om_close_handle(uhr->khandle);
 
 	if (!--uhr->ref_num) {

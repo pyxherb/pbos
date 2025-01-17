@@ -27,6 +27,9 @@ PB_NORETURN void isr_hverr(); // 0x1c Hypervisor Injection Exception
 PB_NORETURN void isr_vmmerr(); // 0x1d VMM Communication Exception
 PB_NORETURN void isr_securityerr(); // 0x1e Security Exception
 
+PB_NORETURN void isr_irq0(); // IRQ0
+void isr_irq0_impl();
+
 PB_NORETURN void isr_syscall();
 
 PB_NORETURN void isr_stub();
