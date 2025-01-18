@@ -3,7 +3,18 @@
 #include <hal/i386/syscall.h>
 #include <pbos/km/logger.h>
 
-void isr_irq0_impl() {
+PB_NORETURN void isr_irq0_impl(
+	const uint32_t eax,
+	const uint32_t ebx,
+	const uint32_t ecx,
+	const uint32_t edx,
+	const uint32_t esi,
+	const uint32_t edi,
+	const uint32_t ebp,
+	const uint32_t eip,
+	const uint32_t cs,
+	const uint32_t eflags,
+	const uint32_t esp) {
 	ps_euid_t cur_euid = ps_get_cur_euid();
 	ps_pcb_t *cur_proc = ps_cur_procs[cur_euid];
 	ps_tcb_t *cur_thread = ps_cur_threads[cur_euid];
@@ -46,38 +57,26 @@ void isr_irq0_impl() {
 
 	ps_cur_threads[cur_euid] = next_thread;
 
-	if (next_thread != cur_thread) {
-		next_thread->flags |= PS_TCB_SCHEDULED;
+	next_thread->flags |= PS_TCB_SCHEDULED;
 
-		if (cur_thread)
-			ps_save_context(&cur_thread->context);
-
-		if (next_thread->flags & PS_TCB_SCHEDULED) {
-			next_thread->flags &= ~PS_TCB_SCHEDULED;
-			arch_sti();
-
-			static uint16_t COUNT_RATE = 11931;
-			arch_out8(0x40, (COUNT_RATE) & 0xff);
-			arch_out8(0x40, (COUNT_RATE >> 8) & 0xff);
-
-			arch_out8(0x20, 0x20);
-
-			kn_switch_to_user_thread(next_thread);
-		}
-
-		arch_sti();
-
-		static uint16_t COUNT_RATE = 11931;
-		arch_out8(0x40, (COUNT_RATE) & 0xff);
-		arch_out8(0x40, (COUNT_RATE >> 8) & 0xff);
-
-		arch_out8(0x20, 0x20);
-
-	} else {
-		static uint16_t COUNT_RATE = 11931;
-		arch_out8(0x40, (COUNT_RATE) & 0xff);
-		arch_out8(0x40, (COUNT_RATE >> 8) & 0xff);
-
-		arch_out8(0x20, 0x20);
+	if (cur_thread) {
+		cur_thread->context.eax = eax;
+		cur_thread->context.ebx = ebx;
+		cur_thread->context.ecx = ecx;
+		cur_thread->context.edx = edx;
+		cur_thread->context.esi = esi;
+		cur_thread->context.edi = edi;
+		cur_thread->context.esp = esp;
+		cur_thread->context.ebp = ebp;
+		cur_thread->context.eip = (void *)eip;
+		cur_thread->context.eflags = eflags;
 	}
+
+	static uint16_t COUNT_RATE = 11931;
+	arch_out8(0x40, (COUNT_RATE) & 0xff);
+	arch_out8(0x40, (COUNT_RATE >> 8) & 0xff);
+
+	arch_out8(0x20, 0x20);
+
+	kn_switch_to_user_thread(next_thread);
 }

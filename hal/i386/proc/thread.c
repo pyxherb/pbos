@@ -11,6 +11,7 @@ ps_tcb_t *kn_alloc_tcb(ps_pcb_t *pcb) {
 	memset(t, 0, sizeof(ps_tcb_t));
 	om_init_object(&(t->object_header), ps_thread_class);
 	t->parent = pcb;
+	t->context.eflags |= 0x00000200; // IF
 
 	return t;
 }
