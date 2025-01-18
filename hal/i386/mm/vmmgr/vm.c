@@ -121,6 +121,8 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	size_t size,
 	mm_pgaccess_t access,
 	mmap_flags_t flags) {
+	assert(ctxt);
+
 	km_result_t result;
 
 	const void *vaddr_limit = ((const char *)vaddr) + size;
@@ -128,7 +130,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	for (uint16_t i = PDX(vaddr); i <= PDX(vaddr_limit); ++i) {
 		if (!(ctxt->pdt[i].mask & PDE_P)) {
 			assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
-			pgaddr_t pgdir = hn_mmctxt_pgtaballoc(ctxt, i);
+			pgaddr_t pgdir = hn_mm_context_pgtaballoc(ctxt, i);
 			if (!pgdir) {
 				mm_unmmap(ctxt, vaddr, size, flags);
 				return KM_RESULT_NO_MEM;
@@ -247,6 +249,8 @@ km_result_t hn_unmmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uin
 }
 
 void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
+	assert(ctxt);
+
 	const void *vaddr_limit = ((const char *)vaddr) + size;
 	hn_unmmap_walker_args args = {
 		.context = ctxt,
@@ -297,6 +301,7 @@ void *mm_vmalloc(mm_context_t *ctxt,
 	size_t size,
 	mm_pgaccess_t access,
 	mm_vmalloc_flags_t flags) {
+	assert(ctxt);
 	assert(size);
 	pgaddr_t pgminaddr = PGROUNDDOWN(minaddr), pgmaxaddr = PGROUNDUP(maxaddr),
 			 pgsize = PGROUNDUP(size);
@@ -378,6 +383,7 @@ void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr) {
 }
 
 void *mm_getmap(mm_context_t *ctxt, const void *vaddr) {
+	assert(ctxt);
 	return hn_getmap(ctxt->pdt, vaddr);
 }
 
@@ -503,7 +509,8 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 	return NULLPG;
 }
 
-pgaddr_t hn_mmctxt_pgtaballoc(mm_context_t *ctxt, uint16_t pdx) {
+pgaddr_t hn_mm_context_pgtaballoc(mm_context_t *ctxt, uint16_t pdx) {
+	assert(ctxt);
 	kdprintf("Allocating page table for context %p at PDX %hu: \n", ctxt, pdx);
 	assert(pdx <= PDX_MAX);
 	arch_pde_t *pde = &(ctxt->pdt[pdx]);
@@ -517,7 +524,8 @@ pgaddr_t hn_mmctxt_pgtaballoc(mm_context_t *ctxt, uint16_t pdx) {
 	return ctxt->pdt[pdx].address;
 }
 
-void hn_mmctxt_pgtabfree(mm_context_t *ctxt, uint16_t pdx) {
+void hn_mm_context_pgtabfree(mm_context_t *ctxt, uint16_t pdx) {
+	assert(ctxt);
 	kdprintf("Freeing page table for context %p at PDX %hu: \n", ctxt, pdx);
 	assert(pdx <= PDX_MAX);
 	assert(ctxt->pdt[pdx].mask & PDE_P);

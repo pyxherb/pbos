@@ -94,9 +94,11 @@ void mm_unmmap(mm_context_t *context, void *vaddr, size_t size, mmap_flags_t fla
 
 void *mm_getmap(mm_context_t *context, const void *vaddr);
 
-PB_NODISCARD km_result_t mm_create_context(mm_context_t *context);
+PB_NODISCARD km_result_t kn_mm_init_context(mm_context_t *context);
 void mm_free_context(mm_context_t *context);
 void mm_switch_context(mm_context_t *context);
+
+void kn_invlpg(void *ptr);
 
 /// @brief The kernel MM context.
 extern mm_context_t *mm_kernel_context;

@@ -1,5 +1,7 @@
 #include <hal/i386/proc.h>
 #include <pbos/kn/km/exec.h>
+#include <arch/i386/port.h>
+#include <arch/i386/int.h>
 
 om_class_t *ps_proc_class = NULL, *ps_thread_class = NULL;
 kf_rbtree_t ps_global_proc_set;
@@ -50,4 +52,14 @@ void ps_init() {
 	memset(ps_cur_threads, 0, ps_eu_num * sizeof(ps_tcb_t *));
 
 	kn_init_exec();
+}
+
+PB_NORETURN void kn_enter_sched_halt();
+
+PB_NORETURN void kn_enter_sched() {
+	arch_sti();
+	static uint16_t COUNT_RATE = 11931;
+	arch_out8(0x40, (COUNT_RATE) & 0xff);
+	arch_out8(0x40, (COUNT_RATE >> 8) & 0xff);
+	kn_enter_sched_halt();
 }

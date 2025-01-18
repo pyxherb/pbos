@@ -1,8 +1,8 @@
 #include "../mm.h"
 #include "../proc.h"
 
-mm_context_t hn_kernel_mmctxt;
-mm_context_t *mm_kernel_context = &hn_kernel_mmctxt;
+mm_context_t hn_kernel_mm_context;
+mm_context_t *mm_kernel_context = &hn_kernel_mm_context;
 mm_context_t **mm_cur_contexts;
 
 void mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
@@ -27,7 +27,7 @@ void mm_sync_global_mappings(const mm_context_t *src) {
 	}
 }
 
-km_result_t mm_create_context(mm_context_t *context) {
+km_result_t kn_mm_init_context(mm_context_t *context) {
 	km_result_t result;
 	void *pdt_paddr = NULL,
 		 *pdt_vaddr = NULL;
@@ -49,6 +49,7 @@ km_result_t mm_create_context(mm_context_t *context) {
 	if (KM_FAILED(result = mm_mmap(mm_kernel_context, pdt_vaddr, pdt_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, 0))) {
 		goto fail;
 	}
+	memset(pdt_vaddr, 0, PAGESIZE);
 	context->pdt = pdt_vaddr;
 
 	mm_copy_global_mappings(context, mm_kernel_context);

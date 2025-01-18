@@ -9,8 +9,6 @@
 #include <pbos/kn/fs/initcar.h>
 #include <pbos/kn/km/exec.h>
 #include <pbos/kn/km/objmgr.h>
-#include <arch/i386/int.h>
-#include <arch/i386/port.h>
 #include <string.h>
 
 PB_NORETURN void _start() {
@@ -34,14 +32,5 @@ PB_NORETURN void _start() {
 	if (KM_FAILED(result = km_exec(0, 0, init_fp, &pid)))
 		km_panic("Error starting the init process");
 
-	arch_sti();
-	static uint16_t COUNT_RATE = 11931;
-	arch_out8(0x40, (COUNT_RATE) & 0xff);
-	arch_out8(0x40, (COUNT_RATE >> 8) & 0xff);
-
-	__asm__ __volatile__("hlt");
-
-	initcar_deinit();
-
-	__asm__ __volatile__("hlt");
+	kn_enter_sched();
 }

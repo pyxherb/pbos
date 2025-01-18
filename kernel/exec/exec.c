@@ -10,6 +10,12 @@ typedef struct _kn_binldr_reg_t {
 
 kf_rbtree_t kn_registered_binldrs;
 
+static proc_id_t _last_proc_id = 0;
+
+proc_id_t kn_alloc_proc_id() {
+	return _last_proc_id++;
+}
+
 km_result_t km_register_binldr(km_binldr_t *binldr) {
 	kn_binldr_reg_t *reg = mm_kmalloc(sizeof(kn_binldr_reg_t));
 	if (!reg)
@@ -41,7 +47,7 @@ km_result_t km_exec(
 		kn_binldr_reg_t *binldr = PB_CONTAINER_OF(kn_binldr_reg_t, tree_header, i);
 
 		if (KM_SUCCEEDED(result = binldr->binldr.load_exec(pcb, file_fp))) {
-			pcb->proc_id = 1;
+			pcb->proc_id = kn_alloc_proc_id();
 			kf_rbtree_insert(&ps_global_proc_set, &pcb->node_header);
 			return KM_RESULT_OK;
 		}

@@ -235,7 +235,7 @@ void hn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 				assert(mad);
 				assert(mad->exdata.mapped_pgtab_addr);
 				mm_unmmap(context, UNPGADDR(mad->exdata.mapped_pgtab_addr), PAGESIZE, 0);
-				hn_mmctxt_pgtabfree(context, PDX(addr));
+				hn_mm_context_pgtabfree(context, PDX(addr));
 				break;
 			}
 			case 1:

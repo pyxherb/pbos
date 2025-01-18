@@ -14,11 +14,6 @@
 #define PROC_ACCESS_SESSION 0x00000040	 // Session
 #define PROC_ACCESS_NET 0x00000080		 // Network
 
-typedef struct _ps_mod_t ps_mod_t;
-typedef struct _ps_pcb_t ps_pcb_t;	// Process Environment Descriptor (PED)
-typedef struct _ps_tcb_t ps_tcb_t;	// Thread Environment Descriptor (TED)
-typedef struct _ps_user_context_t ps_user_context_t;
-
 typedef uint32_t ps_uhandle_t;
 
 #define PS_INVALID_UHANDLE_VALUE UINT32_MAX
@@ -35,12 +30,45 @@ typedef struct _ps_uhr_t {
 
 typedef uint32_t ps_proc_access_t;
 
-#define PM_PROC_ID_MAX PROC_MAX
-#define PM_THREAD_ID_MAX UINT32_MAX
-
 typedef int32_t proc_id_t;
 typedef int32_t thread_id_t;
 typedef uint32_t ps_euid_t;
+
+// Process Control Block (PCB)
+typedef struct _ps_pcb_t {
+	kf_rbtree_node_t node_header;
+	om_object_t object_header;
+
+	proc_id_t proc_id;
+	thread_id_t last_thread_id;
+	kf_rbtree_t parp_list;
+	mm_context_t *mm_context;
+	kf_rbtree_t thread_set;
+	uint8_t priority, flags;
+
+	kf_rbtree_t uhandle_map;
+	ps_uhandle_t last_allocated_uhandle_value;
+} ps_pcb_t;
+
+typedef struct _ps_user_context_t ps_user_context_t;
+
+// Thread Control Block (TCB)
+typedef struct _ps_tcb_t {
+	kf_rbtree_node_t node_header;
+	om_object_t object_header;
+
+	thread_id_t thread_id;
+	ps_pcb_t *parent;
+
+	uint8_t priority, flags;
+
+	ps_user_context_t *context;
+	void *stack;
+	size_t stacksize;
+}ps_tcb_t;
+
+#define PM_PROC_ID_MAX PROC_MAX
+#define PM_THREAD_ID_MAX UINT32_MAX
 
 typedef void (*thread_proc_t)(void *args);
 
@@ -57,7 +85,7 @@ proc_id_t ps_create_proc(
 	proc_id_t parent);
 thread_id_t ps_create_thread(
 	ps_proc_access_t access,
-	ps_pcb_t* pcb,
+	ps_pcb_t *pcb,
 	size_t stacksize);
 
 uint16_t ps_maxproc();
@@ -69,12 +97,6 @@ proc_id_t *ps_getpid(ps_pcb_t *pcb);
 ///
 /// @return Current process object.
 ps_pcb_t *ps_curproc();
-
-/// @brief Get memory context of a process.
-///
-/// @param proc Target process object.
-/// @return Memory context of the process.
-mm_context_t *ps_mmcontext_of(ps_pcb_t *proc);
 
 /// @brief Get current executing thread.
 ///

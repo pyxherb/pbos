@@ -44,7 +44,7 @@ km_result_t initcar_read(fs_fcontext_t *fcontext, char *dest, size_t size, size_
 
 cleanup:
 	if (file) {
-		om_decref(file);
+		om_decref(&file->object_header);
 	}
 	return result;
 }
@@ -57,7 +57,7 @@ km_result_t initcar_write(fs_fcontext_t *fcontext, const char *src, size_t size,
 km_result_t initcar_size(fs_fcontext_t *fcontext, size_t *size_out) {
 	km_result_t result;
 	fs_file_t *file = NULL;
-	
+
 	if (KM_FAILED(result = fs_deref_file_handle(fcontext->file_handle, &file)))
 		goto cleanup;
 
@@ -67,7 +67,7 @@ km_result_t initcar_size(fs_fcontext_t *fcontext, size_t *size_out) {
 
 cleanup:
 	if (file) {
-		om_decref(file);
+		om_decref(&file->object_header);
 	}
 	return result;
 }

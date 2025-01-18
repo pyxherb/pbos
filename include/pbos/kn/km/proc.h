@@ -3,8 +3,12 @@
 
 #include <pbos/km/proc.h>
 
+PB_NORETURN void kn_enter_sched();
+
 void kn_proc_destructor(om_object_t *obj);
 void kn_thread_destructor(om_object_t *obj);
+
+proc_id_t kn_alloc_proc_id();
 
 ps_pcb_t *kn_alloc_pcb();
 ps_tcb_t *kn_alloc_tcb(ps_pcb_t* pcb);

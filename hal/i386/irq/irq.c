@@ -21,36 +21,29 @@ PB_NORETURN void isr_irq0_impl(
 	ps_tcb_t *next_thread;
 
 	if (!cur_thread) {
-		kprintf("Initial scheduling\n");
-
 		ps_pcb_t *next_proc;
 		next_proc = PB_CONTAINER_OF(ps_pcb_t, node_header, kf_rbtree_begin(&ps_global_proc_set));
 		next_thread = PB_CONTAINER_OF(ps_tcb_t, node_header, kf_rbtree_begin(&next_proc->thread_set));
 		ps_cur_procs[cur_euid] = next_proc;
 
-		mm_switch_context(&next_proc->mmctxt);
+		kn_switch_to_user_process(next_proc);
 	} else {
 		kf_rbtree_node_t *next_thread_node = kf_rbtree_next(&cur_thread->node_header);
-
-		kprintf("Scheduled EUID=%d\n", (int)cur_euid);
 
 		if (!next_thread_node) {
 			kf_rbtree_node_t *next_proc_node = kf_rbtree_next(&cur_proc->node_header);
 			ps_pcb_t *next_proc;
 			if (!next_proc_node) {
-				kprintf("Rescheduling to the first process\n");
 				next_proc = PB_CONTAINER_OF(ps_pcb_t, node_header, kf_rbtree_begin(&ps_global_proc_set));
 			} else {
-				kprintf("Rescheduling to the next process\n");
 				next_proc = PB_CONTAINER_OF(ps_pcb_t, node_header, next_proc_node);
 			}
 
-			mm_switch_context(&next_proc->mmctxt);
+			kn_switch_to_user_process(next_proc);
 
 			ps_cur_procs[cur_euid] = next_proc;
 			next_thread = PB_CONTAINER_OF(ps_tcb_t, node_header, kf_rbtree_begin(&next_proc->thread_set));
 		} else {
-			kprintf("Rescheduling to the next thread\n");
 			next_thread = PB_CONTAINER_OF(ps_tcb_t, node_header, next_thread_node);
 		}
 	}
@@ -60,16 +53,16 @@ PB_NORETURN void isr_irq0_impl(
 	next_thread->flags |= PS_TCB_SCHEDULED;
 
 	if (cur_thread) {
-		cur_thread->context.eax = eax;
-		cur_thread->context.ebx = ebx;
-		cur_thread->context.ecx = ecx;
-		cur_thread->context.edx = edx;
-		cur_thread->context.esi = esi;
-		cur_thread->context.edi = edi;
-		cur_thread->context.esp = esp;
-		cur_thread->context.ebp = ebp;
-		cur_thread->context.eip = (void *)eip;
-		cur_thread->context.eflags = eflags;
+		cur_thread->context->eax = eax;
+		cur_thread->context->ebx = ebx;
+		cur_thread->context->ecx = ecx;
+		cur_thread->context->edx = edx;
+		cur_thread->context->esi = esi;
+		cur_thread->context->edi = edi;
+		cur_thread->context->esp = esp;
+		cur_thread->context->ebp = ebp;
+		cur_thread->context->eip = (void *)eip;
+		cur_thread->context->eflags = eflags;
 	}
 
 	static uint16_t COUNT_RATE = 11931;

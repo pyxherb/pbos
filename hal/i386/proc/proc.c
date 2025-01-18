@@ -22,7 +22,13 @@ ps_pcb_t *kn_alloc_pcb() {
 
 	memset(proc, 0, sizeof(ps_pcb_t));
 
-	if (KM_FAILED(mm_create_context(&proc->mmctxt))) {
+	if(!(proc->mm_context = mm_kmalloc(sizeof(mm_context_t)))) {
+		mm_kfree(proc);
+		return NULL;
+	}
+
+	if (KM_FAILED(kn_mm_init_context(proc->mm_context))) {
+		mm_kfree(proc->mm_context);
 		mm_kfree(proc);
 		return NULL;
 	}
@@ -57,7 +63,8 @@ ps_pcb_t *ps_getpcb(proc_id_t pid) {
 }
 
 void hn_proc_cleanup(ps_pcb_t *proc) {
-	mm_free_context(&proc->mmctxt);
+	mm_free_context(proc->mm_context);
+	mm_kfree(proc->mm_context);
 	proc->flags &= ~PROC_A;
 
 	kf_rbtree_foreach(i, &proc->thread_set) {
@@ -67,10 +74,6 @@ void hn_proc_cleanup(ps_pcb_t *proc) {
 	kf_rbtree_free(&(proc->parp_list));
 }
 
-mm_context_t *ps_mmcontext_of(ps_pcb_t *proc) {
-	return &proc->mmctxt;
-}
-
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
 	// stub: do some checks with the new thread id, such as checking if a thread with the id exists.
 	thread->thread_id = ++proc->last_thread_id;
@@ -78,15 +81,11 @@ void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
 }
 
 void kn_switch_to_user_process(ps_pcb_t *pcb) {
-	mm_switch_context(&pcb->mmctxt);
-
-	ps_tcb_t *tcb = PB_CONTAINER_OF(ps_tcb_t, node_header, kf_rbtree_begin(&pcb->thread_set));
-
-	kn_switch_to_user_thread(tcb);
+	mm_switch_context(pcb->mm_context);
 }
 
 void kn_switch_to_user_thread(ps_tcb_t *tcb) {
-	ps_load_user_context(&tcb->context);
+	ps_load_user_context(tcb->context);
 }
 
 ps_euid_t ps_get_cur_euid() {

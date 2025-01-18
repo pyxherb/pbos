@@ -32,38 +32,7 @@ typedef struct _hn_parp_t {
 	uint8_t flags : 8;
 } hn_parp_t;
 
-/// @brief Process Context Block (PCB)
-typedef struct _ps_pcb_t {
-	kf_rbtree_node_t node_header;
-	om_object_t object_header;
-
-	proc_id_t proc_id;
-	thread_id_t last_thread_id;
-	kf_rbtree_t parp_list;
-	mm_context_t mmctxt;
-	kf_rbtree_t thread_set;
-	uint8_t priority, flags;
-
-	kf_rbtree_t uhandle_map;
-	ps_uhandle_t last_allocated_uhandle_value;
-} ps_pcb_t;
-
 #define PS_TCB_SCHEDULED 0x01
-
-/// @brief Thread Information Block (TIB)
-typedef struct _ps_tcb_t {
-	kf_rbtree_node_t node_header;
-	om_object_t object_header;
-
-	thread_id_t thread_id;
-	ps_pcb_t *parent;
-
-	uint8_t priority, flags;
-
-	ps_user_context_t context;
-	pgaddr_t stack : 20;
-	pgsize_t stacksize : 20;
-} ps_tcb_t;
 
 extern kf_rbtree_t ps_global_proc_set;
 

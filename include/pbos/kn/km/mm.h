@@ -3,6 +3,4 @@
 
 #include <pbos/km/mm.h>
 
-void kn_invlpg(void *ptr);
-
 #endif
