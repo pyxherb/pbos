@@ -98,7 +98,7 @@ PB_NODISCARD km_result_t kn_mm_init_context(mm_context_t *context);
 void mm_free_context(mm_context_t *context);
 void mm_switch_context(mm_context_t *context);
 
-void kn_invlpg(void *ptr);
+void mm_invlpg(void *ptr);
 
 /// @brief The kernel MM context.
 extern mm_context_t *mm_kernel_context;

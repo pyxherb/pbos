@@ -87,6 +87,7 @@ void mm_free_context(mm_context_t *context) {
 }
 
 void mm_switch_context(mm_context_t *context) {
+	assert(context);
 	mm_context_t *prev_context = mm_cur_contexts[ps_get_cur_euid()];
 	mm_cur_contexts[ps_get_cur_euid()] = context;
 	mm_sync_global_mappings(prev_context);

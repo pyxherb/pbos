@@ -1,6 +1,6 @@
 #include "../mm.h"
 
-void kn_invlpg(void *ptr) {
+void mm_invlpg(void *ptr) {
 	arch_invlpg(ptr);
 }
 
