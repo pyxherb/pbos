@@ -1,8 +1,8 @@
 #ifndef _PBOS_KM_PROC_H_
 #define _PBOS_KM_PROC_H_
 
-#include <pbos/generated/km.h>
 #include <pbos/fs/fs.h>
+#include <pbos/generated/km.h>
 #include "mm.h"
 #include "objmgr.h"
 
@@ -35,6 +35,8 @@ typedef int32_t proc_id_t;
 typedef int32_t thread_id_t;
 typedef uint32_t ps_euid_t;
 
+typedef int ps_ufd_t;
+
 // Process Control Block (PCB)
 typedef struct _ps_pcb_t {
 	kf_rbtree_node_t node_header;
@@ -51,7 +53,22 @@ typedef struct _ps_pcb_t {
 
 	kf_rbtree_t uhandle_map;
 	ps_uhandle_t last_allocated_uhandle_value;
+
+	kf_rbtree_t ufcontext_set;
+	ps_ufd_t last_fd;
 } ps_pcb_t;
+
+typedef struct _ps_ufcontext_t {
+	kf_rbtree_node_t node_header;
+	fs_fcontext_t *kernel_fcontext;
+	ps_ufd_t fd;
+} ps_ufcontext_t;
+
+ps_ufd_t ps_alloc_fd(ps_pcb_t *pcb);
+ps_ufcontext_t *ps_alloc_ufcontext(ps_pcb_t *pcb, fs_fcontext_t *kernel_fcontext, ps_ufd_t fd);
+void ps_add_ufcontext(ps_pcb_t *pcb, ps_ufcontext_t *ufcontext);
+void ps_remove_ufcontext(ps_pcb_t *pcb, ps_ufcontext_t *ufcontext);
+ps_ufcontext_t *ps_lookup_ufcontext(ps_pcb_t *pcb, ps_ufd_t fd);
 
 typedef struct _ps_user_context_t ps_user_context_t;
 
@@ -68,12 +85,7 @@ typedef struct _ps_tcb_t {
 	ps_user_context_t *context;
 	void *stack;
 	size_t stacksize;
-}ps_tcb_t;
-
-typedef struct _ps_ufcontext_t {
-	om_object_t object_header;
-	fs_fcontext_t *fcontext;
-} ps_ufcontext_t;
+} ps_tcb_t;
 
 #define PM_PROC_ID_MAX PROC_MAX
 #define PM_THREAD_ID_MAX UINT32_MAX

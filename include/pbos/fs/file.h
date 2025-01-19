@@ -54,15 +54,11 @@ typedef struct _fs_finddata_t {
 } fs_finddata_t;
 
 typedef struct _fs_fcontext_t {
-	om_object_t object_header;
+	kf_rbtree_node_t node_header; // Node header for process's opened fcontext set.
 	fs_filesys_t *filesys;
 	om_handle_t file_handle;
 	char exdata[];
 } fs_fcontext_t;
-
-#define FS_FCONTEXT_CLASS_UUID UUID(b75995f4, 9c51, 4b7f, 97f0, 490c240a4e96)
-extern om_class_t *fs_fcontext_class;
-void kn_fcontext_destructor(om_object_t *obj);
 
 typedef struct _fs_finddata_t fs_finddata_t;
 
@@ -92,7 +88,7 @@ km_result_t fs_create_dir(
 km_result_t fs_mount_file(om_handle_t parent, om_handle_t file_handle);
 km_result_t fs_unmount_file(om_handle_t file_handle);
 
-void fs_close(fs_fcontext_t *fcontext);
+km_result_t fs_close(fs_fcontext_t *fcontext);
 
 km_result_t fs_open(om_handle_t base_dir, const char *path, size_t path_len, fs_fcontext_t **fcontext_out);
 km_result_t fs_read(fs_fcontext_t *fcontext, void *dest, size_t size, size_t off, size_t *bytes_read_out);

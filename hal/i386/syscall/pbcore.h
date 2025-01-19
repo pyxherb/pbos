@@ -3,6 +3,7 @@
 
 #include <hal/i386/proc.h>
 #include <hal/i386/syscall.h>
+#include <pbos/syscall/pbcore.h>
 
 typedef enum _pbcore_sysent_id {
 	SYSENT_PBCORE_EXIT = 0,

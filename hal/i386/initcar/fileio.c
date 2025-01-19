@@ -9,7 +9,7 @@ km_result_t initcar_open(om_handle_t handle, fs_fcontext_t **fcontext_out) {
 	fs_fcontext_t *fcontext = mm_kmalloc(sizeof(fs_fcontext_t));
 	if (!fcontext)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
-	om_init_object(&fcontext->object_header, fs_fcontext_class);
+	memset(fcontext, 0, sizeof(fs_fcontext_t));
 	fcontext->filesys = initcar_fs;
 	fcontext->file_handle = handle;
 	om_ref_handle(handle);
@@ -19,9 +19,11 @@ km_result_t initcar_open(om_handle_t handle, fs_fcontext_t **fcontext_out) {
 	return KM_RESULT_OK;
 }
 
-void initcar_close(fs_fcontext_t *fcontext) {
+km_result_t initcar_close(fs_fcontext_t *fcontext) {
+	// TODO: Do some checks.
 	om_close_handle(fcontext->file_handle);
 	mm_kfree(fcontext);
+	return KM_RESULT_OK;
 }
 
 km_result_t initcar_read(fs_fcontext_t *fcontext, char *dest, size_t size, size_t off, size_t *bytes_read_out) {

@@ -69,10 +69,10 @@ om_class_t *om_lookup_class(uuid_t *uuid) {
 	return NULL;
 }
 
-void om_init_object(om_object_t *obj, om_class_t *cls) {
+void om_init_object(om_object_t *obj, om_class_t *cls, om_object_flags_t flags) {
 	obj->ref_num = 0;
 	obj->prop.p_class = cls;
-	obj->prop.flags = OM_OBJECT_KERNEL;
+	obj->prop.flags = OM_OBJECT_KERNEL | flags;
 	obj->handle = OM_INVALID_HANDLE;
 	cls->obj_num++;
 }
@@ -83,8 +83,15 @@ void om_incref(om_object_t *obj) {
 }
 
 void om_decref(om_object_t *obj) {
-	if (--obj->ref_num && obj->handle == OM_INVALID_HANDLE)
+	if (--obj->ref_num && obj->handle == OM_INVALID_HANDLE) {
+		--obj->prop.p_class->obj_num;
 		obj->prop.p_class->destructor(obj);
+	}
+}
+
+void om_deinit_object(om_object_t *obj) {
+	--obj->prop.p_class->obj_num;
+	obj->ref_num = 0;
 }
 
 static bool _kn_handle_set_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
@@ -125,7 +132,7 @@ km_result_t kn_alloc_handle(om_handle_t *handle_out) {
 
 km_result_t om_create_handle(om_object_t *obj, om_handle_t *handle_out) {
 	km_result_t result;
-	
+
 	if (obj->handle != OM_INVALID_HANDLE) {
 		kn_handle_registry_t *registry = kn_lookup_handle_registry(obj->handle);
 		assert(registry);

@@ -54,7 +54,7 @@ km_result_t kn_create_file(
 	if (file_out)
 		*file_out = file;
 
-	om_init_object(&file->object_header, fs_file_class);
+	om_init_object(&file->object_header, fs_file_class, 0);
 
 	km_result_t result = om_create_handle(&file->object_header, handle_out);
 	if (KM_FAILED(result))
@@ -302,8 +302,8 @@ km_result_t fs_open(om_handle_t base_dir, const char *path, size_t path_len, fs_
 	return KM_RESULT_OK;
 }
 
-void fs_close(fs_fcontext_t *fcontext) {
-	fcontext->filesys->ops.close(fcontext);
+km_result_t fs_close(fs_fcontext_t *fcontext) {
+	return fcontext->filesys->ops.close(fcontext);
 }
 
 km_result_t fs_read(fs_fcontext_t *fcontext, void *dest, size_t size, size_t off, size_t *bytes_read_out) {

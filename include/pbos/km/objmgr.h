@@ -20,6 +20,8 @@ typedef void (*om_destructor_t)(om_object_t *obj);
 typedef km_result_t (*om_serializer_t)(om_object_t *object, om_handle_t archive_handle);
 typedef km_result_t (*om_deserializer_t)(om_handle_t archive, om_object_t **object_out);
 
+typedef uint32_t om_class_flags_t;
+
 /// @brief Class registry.
 typedef struct _om_class_t {
 	uuid_t uuid;
@@ -66,7 +68,7 @@ om_class_t *om_lookup_class(uuid_t *uuid);
 ///
 /// @param cls Class of new object.
 /// @return Pointer to the new object.
-void om_init_object(om_object_t *obj, om_class_t *cls);
+void om_init_object(om_object_t *obj, om_class_t *cls, om_object_flags_t flags);
 
 /// @brief Increase reference count of an object.
 ///
@@ -77,6 +79,8 @@ void om_incref(om_object_t *obj);
 ///
 /// @param obj Target object.
 void om_decref(om_object_t *obj);
+
+void om_deinit_object(om_object_t *obj);
 
 #define om_getrefcount(o) (const size_t)((o)->ref_num)
 #define om_classof(o) ((o)->p_class)

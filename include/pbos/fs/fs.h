@@ -11,7 +11,7 @@ typedef struct _fs_fsops_t {
 	/// @brief Open a file.
 	km_result_t (*open)(om_handle_t file, fs_fcontext_t **fcontext_out);
 	/// @brief Close a FCB.
-	void (*close)(fs_fcontext_t *fcontext);
+	km_result_t (*close)(fs_fcontext_t *fcontext);
 	/// @brief Read data from a file.
 	km_result_t (*read)(fs_fcontext_t *fcontext, char *dest, size_t size, size_t off, size_t *bytes_read_out);
 	/// @brief Write data into a file.
