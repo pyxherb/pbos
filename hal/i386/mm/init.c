@@ -97,7 +97,7 @@ static void hn_mm_init_areas() {
 		hn_madpool_t *last_madpool = NULL;
 		{
 			bool need_pgtab = false;
-			void *init_madpool_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE);
+			void *init_madpool_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE);
 
 			if (!(mm_kernel_context->pdt[PDX(init_madpool_vaddr)].mask & PDE_P)) {
 				need_pgtab = true;
@@ -156,7 +156,7 @@ static void hn_mm_init_areas() {
 				init_madpool_vaddr,
 				UNPGADDR(init_madpool_paddr),
 				PAGESIZE,
-				PAGE_READ | PAGE_WRITE,
+				PAGE_MAPPED | PAGE_READ | PAGE_WRITE,
 				MMAP_NORC | MMAP_NOSETVPM);
 			assert(KM_SUCCEEDED(result));
 
@@ -207,7 +207,7 @@ static void hn_mm_init_areas() {
 					void *new_poolpg_vaddr = mm_kvmalloc(
 						mm_kernel_context,
 						PAGESIZE,
-						PAGE_READ | PAGE_WRITE,
+						PAGE_MAPPED | PAGE_READ | PAGE_WRITE,
 						VMALLOC_NORESERVE);
 					bool new_poolpg_need_pgtab = false;
 
@@ -222,7 +222,7 @@ static void hn_mm_init_areas() {
 						}
 					}
 
-					km_result_t result = mm_mmap(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
+					km_result_t result = mm_mmap(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
 					assert(KM_SUCCEEDED(result));
 
 					cur_madpool_slot_index = 0;
@@ -259,7 +259,7 @@ static void hn_mm_init_areas() {
 					void *new_poolpg_paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
 					if (!new_poolpg_paddr)
 						km_panic("No enough physical memory for new MAD pool page");
-					void *new_poolpg_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
+					void *new_poolpg_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
 					bool new_poolpg_need_pgtab = false;
 
 					if (!(mm_kernel_context->pdt[PDX(new_poolpg_vaddr)].mask & PDE_P)) {
@@ -273,7 +273,7 @@ static void hn_mm_init_areas() {
 						}
 					}
 
-					km_result_t result = mm_mmap(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
+					km_result_t result = mm_mmap(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
 					assert(KM_SUCCEEDED(result));
 
 					memset((hn_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);

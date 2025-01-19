@@ -16,15 +16,15 @@ PB_NORETURN void isr_irq0_impl(
 	const uint32_t eflags,
 	const uint32_t esp) {
 	ps_euid_t cur_euid = ps_get_cur_euid();
-	ps_pcb_t *cur_proc = ps_cur_procs[cur_euid];
-	ps_tcb_t *cur_thread = ps_cur_threads[cur_euid];
+	ps_pcb_t *cur_proc = ps_get_cur_proc();
+	ps_tcb_t *cur_thread = ps_get_cur_thread();
 	ps_tcb_t *next_thread;
 
 	if (!cur_thread) {
 		ps_pcb_t *next_proc;
 		next_proc = PB_CONTAINER_OF(ps_pcb_t, node_header, kf_rbtree_begin(&ps_global_proc_set));
 		next_thread = PB_CONTAINER_OF(ps_tcb_t, node_header, kf_rbtree_begin(&next_proc->thread_set));
-		ps_cur_procs[cur_euid] = next_proc;
+		ps_cur_proc_per_eu[cur_euid] = next_proc;
 
 		kn_switch_to_user_process(next_proc);
 	} else {
@@ -41,14 +41,14 @@ PB_NORETURN void isr_irq0_impl(
 
 			kn_switch_to_user_process(next_proc);
 
-			ps_cur_procs[cur_euid] = next_proc;
+			ps_cur_proc_per_eu[cur_euid] = next_proc;
 			next_thread = PB_CONTAINER_OF(ps_tcb_t, node_header, kf_rbtree_begin(&next_proc->thread_set));
 		} else {
 			next_thread = PB_CONTAINER_OF(ps_tcb_t, node_header, next_thread_node);
 		}
 	}
 
-	ps_cur_threads[cur_euid] = next_thread;
+	ps_cur_thread_per_eu[cur_euid] = next_thread;
 
 	next_thread->flags |= PS_TCB_SCHEDULED;
 

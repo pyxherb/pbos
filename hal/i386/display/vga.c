@@ -1,6 +1,6 @@
 #include "vga.h"
 
-#include <arch/i386/port.h>
+#include <arch/i386/io.h>
 #include <common/format.h>
 #include <common/mathex.h>
 #include <stdint.h>

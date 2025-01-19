@@ -2,6 +2,7 @@
 #define _PBOS_KM_PROC_H_
 
 #include <pbos/generated/km.h>
+#include <pbos/fs/fs.h>
 #include "mm.h"
 #include "objmgr.h"
 
@@ -46,6 +47,8 @@ typedef struct _ps_pcb_t {
 	kf_rbtree_t thread_set;
 	uint8_t priority, flags;
 
+	om_handle_t cur_dir;
+
 	kf_rbtree_t uhandle_map;
 	ps_uhandle_t last_allocated_uhandle_value;
 } ps_pcb_t;
@@ -67,6 +70,11 @@ typedef struct _ps_tcb_t {
 	size_t stacksize;
 }ps_tcb_t;
 
+typedef struct _ps_ufcontext_t {
+	om_object_t object_header;
+	fs_fcontext_t *fcontext;
+} ps_ufcontext_t;
+
 #define PM_PROC_ID_MAX PROC_MAX
 #define PM_THREAD_ID_MAX UINT32_MAX
 
@@ -74,14 +82,14 @@ typedef void (*thread_proc_t)(void *args);
 
 extern om_class_t *ps_proc_class, *ps_thread_class;
 extern uint32_t ps_eu_num;
-extern ps_pcb_t **ps_cur_procs;
-extern ps_tcb_t **ps_cur_threads;
+extern ps_pcb_t **ps_cur_proc_per_eu;
+extern ps_tcb_t **ps_cur_thread_per_eu;
 
 #define PROC_CLASSID UUID(88e8f612, 0b0c, 4f75, 921b, 88110ca3b116)
 #define THREAD_CLASSID UUID(5dd4ece1, 89a0, 4bec, b14b, 62e11312723d)
 
-proc_id_t ps_create_proc(
-	ps_proc_access_t access,
+void ps_create_proc(
+	ps_pcb_t *pcb,
 	proc_id_t parent);
 thread_id_t ps_create_thread(
 	ps_proc_access_t access,
@@ -110,7 +118,11 @@ void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread);
 ps_euid_t ps_get_cur_euid();
 void kn_set_cur_euid(ps_euid_t euid);
 
+#define ps_get_cur_proc() (ps_cur_proc_per_eu[ps_get_cur_euid()])
+#define ps_get_cur_thread() (ps_cur_thread_per_eu[ps_get_cur_euid()])
+
 km_result_t ps_create_uhandle(ps_pcb_t *proc, om_handle_t khandle, ps_uhandle_t *uhandle_out);
 void ps_close_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle);
+om_handle_t ps_lookup_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle);
 
 #endif

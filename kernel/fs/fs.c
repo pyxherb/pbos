@@ -11,6 +11,7 @@ static void _filesys_nodefree(kf_rbtree_node_t *p);
 kf_rbtree_t kn_registered_fs;
 om_handle_t fs_abs_root_dir;
 om_class_t *fs_file_class;
+om_class_t *fs_fcontext_class;
 fs_filesys_t *fs_rootfs;
 
 fs_filesys_t *fs_register_filesys(
@@ -31,6 +32,11 @@ fs_filesys_t *fs_register_filesys(
 	return fs;
 }
 
+void kn_fcontext_destructor(om_object_t *obj) {
+	fs_fcontext_t *fcontext = PB_CONTAINER_OF(fs_fcontext_t, object_header, obj);
+	fcontext->filesys->ops.close(fcontext);
+}
+
 void fs_init() {
 	km_result_t result;
 
@@ -41,6 +47,10 @@ void fs_init() {
 
 	uuid_t uuid = FILE_CLASS_UUID;
 	if (!(fs_file_class = om_register_class(&uuid, kn_file_destructor)))
+		km_panic("Error registering file class");
+
+	uuid = FS_FCONTEXT_CLASS_UUID;
+	if (!(fs_fcontext_class = om_register_class(&uuid, NULL)))
 		km_panic("Error registering file class");
 
 	uuid = UUID(ffffffff, ffff, ffff, ffff, ffffffff);

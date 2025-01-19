@@ -5,6 +5,7 @@
 #include <pbos/common.h>
 #include <pbos/kf/rbtree.h>
 #include <pbos/kf/uuid.h>
+#include "result.h"
 
 #define OM_HANDLE_MIN 1
 #define OM_HANDLE_MAX UINT32_MAX

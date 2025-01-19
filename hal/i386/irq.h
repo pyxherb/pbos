@@ -1,7 +1,7 @@
 #ifndef _HAL_I386_IRQ_H_
 #define _HAL_I386_IRQ_H_
 
-#include <arch/i386/int.h>
+#include <arch/i386/irq.h>
 #include <pbos/hal/irq.h>
 #include "mm.h"
 

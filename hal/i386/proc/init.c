@@ -1,7 +1,7 @@
 #include <hal/i386/proc.h>
 #include <pbos/kn/km/exec.h>
-#include <arch/i386/port.h>
-#include <arch/i386/int.h>
+#include <arch/i386/io.h>
+#include <arch/i386/irq.h>
 
 om_class_t *ps_proc_class = NULL, *ps_thread_class = NULL;
 kf_rbtree_t ps_global_proc_set;
@@ -11,7 +11,7 @@ static bool _ps_pcb_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y
 	return PB_CONTAINER_OF(ps_pcb_t, node_header, x)->proc_id < PB_CONTAINER_OF(ps_pcb_t, node_header, y)->proc_id;
 }
 
-static bool _ps_pcb_nodefree() {
+static void _ps_pcb_nodefree(kf_rbtree_node_t *x) {
 	// stub
 }
 
@@ -35,21 +35,21 @@ void ps_init() {
 		void *paddr = mm_pgalloc(KN_PMEM_AVAILABLE);
 		if (!paddr)
 			km_panic("Error allocating memory for user context area");
-		if (KM_FAILED(mm_mmap(mm_kernel_context, (void *)(KCTXTSWTMP_VBASE + i), paddr, PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_USER, 0)))
+		if (KM_FAILED(mm_mmap(mm_kernel_context, (void *)(KCTXTSWTMP_VBASE + i), paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, 0)))
 			km_panic("Error mapping the user context area");
 	}
 
-	if (!(ps_cur_procs = mm_kmalloc(ps_eu_num * sizeof(ps_pcb_t *)))) {
+	if (!(ps_cur_proc_per_eu = mm_kmalloc(ps_eu_num * sizeof(ps_pcb_t *)))) {
 		km_panic("Unable to allocate current PCB pointer storage for all CPUs");
 	}
 
-	memset(ps_cur_procs, 0, ps_eu_num * sizeof(ps_pcb_t *));
+	memset(ps_cur_proc_per_eu, 0, ps_eu_num * sizeof(ps_pcb_t *));
 
-	if (!(ps_cur_threads = mm_kmalloc(ps_eu_num * sizeof(ps_tcb_t *)))) {
+	if (!(ps_cur_thread_per_eu = mm_kmalloc(ps_eu_num * sizeof(ps_tcb_t *)))) {
 		km_panic("Unable to allocate current TCB pointer storage for all CPUs");
 	}
 
-	memset(ps_cur_threads, 0, ps_eu_num * sizeof(ps_tcb_t *));
+	memset(ps_cur_thread_per_eu, 0, ps_eu_num * sizeof(ps_tcb_t *));
 
 	kn_init_exec();
 }

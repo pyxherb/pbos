@@ -77,11 +77,11 @@ void initcar_init() {
 			  (const void *)CRITICAL_VTOP + 1,
 			  (const void *)UINTPTR_MAX,
 			  ARCH_KARGS_PTR->initcar_size,
-			  PAGE_READ,
+			  PAGE_MAPPED | PAGE_READ,
 			  0)))
 		km_panic("Error allocating virtual memory space for INITCAR");
 
-	mm_mmap(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_ptr, ARCH_KARGS_PTR->initcar_size, PAGE_READ, 0);
+	mm_mmap(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_ptr, ARCH_KARGS_PTR->initcar_size, PAGE_MAPPED | PAGE_READ, 0);
 
 	pbcar_metadata_t *md = initcar_ptr;
 	if (md->magic[0] != PBCAR_MAGIC_0 ||

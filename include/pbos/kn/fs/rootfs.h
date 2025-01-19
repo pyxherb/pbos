@@ -10,7 +10,7 @@ extern fs_fsops_t kn_rootfs_ops;
 extern fs_filesys_t *fs_rootfs;
 
 km_result_t kn_rootfs_open(om_handle_t file, fs_fcontext_t **fcontext_out);
-km_result_t kn_rootfs_close(fs_fcontext_t *fcontext);
+void kn_rootfs_close(fs_fcontext_t *fcontext);
 km_result_t kn_rootfs_read(fs_fcontext_t *fcontext, char *dest, size_t size, size_t off, size_t *bytes_read_out);
 km_result_t kn_rootfs_write(fs_fcontext_t *fcontext, const char *src, size_t size, size_t off, size_t *bytes_written_out);
 km_result_t kn_rootfs_size(fs_fcontext_t *fcontext, size_t *size_out);

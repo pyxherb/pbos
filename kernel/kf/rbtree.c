@@ -3,7 +3,7 @@
 static void kf_rbtree_lrot(kf_rbtree_t *tree, kf_rbtree_node_t *x);
 static void kf_rbtree_rrot(kf_rbtree_t *tree, kf_rbtree_node_t *x);
 static void kf_rbtree_insert_fixup(kf_rbtree_t *tree, kf_rbtree_node_t *node);
-static kf_rbtree_node_t* kf_rbtree_remove_fixup(kf_rbtree_t *tree, kf_rbtree_node_t *node);
+static kf_rbtree_node_t *kf_rbtree_remove_fixup(kf_rbtree_t *tree, kf_rbtree_node_t *node);
 static void kf_rbtree_walk_nodes_for_freeing(kf_rbtree_t *tree, kf_rbtree_node_t *node);
 
 void kf_rbtree_init(kf_rbtree_t *dest,
@@ -11,6 +11,7 @@ void kf_rbtree_init(kf_rbtree_t *dest,
 	kf_rbtree_nodefree_t node_free) {
 	dest->node_cmp = node_cmp;
 	dest->node_free = node_free;
+	dest->node_num = 0;
 	dest->root = NULL;
 }
 
@@ -44,6 +45,8 @@ km_result_t kf_rbtree_insert(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
 
 	kf_rbtree_insert_fixup(tree, node);
 
+	++tree->node_num;
+
 	return KM_RESULT_OK;
 }
 
@@ -52,6 +55,8 @@ void kf_rbtree_remove(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
 	y->r = NULL;
 	y->l = NULL;
 	y->p = NULL;
+
+	--tree->node_num;
 
 	tree->node_free(y);
 }
@@ -94,7 +99,7 @@ kf_rbtree_node_t *kf_rbtree_find_max_lteq_node(kf_rbtree_t *tree, kf_rbtree_node
 		if (tree->node_cmp(cur_node, node)) {
 			max_node = cur_node;
 			cur_node = cur_node->r;
-		} else if(tree->node_cmp(node, cur_node)) {
+		} else if (tree->node_cmp(node, cur_node)) {
 			cur_node = cur_node->l;
 		} else
 			return cur_node;
@@ -236,7 +241,7 @@ static void kf_rbtree_insert_fixup(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
 	kf_rbtree_setcolor(tree->root, KF_RBTREE_BLACK);
 }
 
-static kf_rbtree_node_t* kf_rbtree_remove_fixup(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
+static kf_rbtree_node_t *kf_rbtree_remove_fixup(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
 	// The algorithm was from SGI STL's stl_tree, with minor improvements.
 	kf_rbtree_node_t *y = node, *x, *p;
 
@@ -364,9 +369,26 @@ static kf_rbtree_node_t* kf_rbtree_remove_fixup(kf_rbtree_t *tree, kf_rbtree_nod
 }
 
 static void kf_rbtree_walk_nodes_for_freeing(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
-	if (node->l)
-		kf_rbtree_walk_nodes_for_freeing(tree, node->l);
-	if (node->r)
-		kf_rbtree_walk_nodes_for_freeing(tree, node->r);
-	tree->node_free(node);
+	kf_rbtree_node_t *max_node = kf_rbtree_maxnode(node);
+	kf_rbtree_node_t *cur_node = kf_rbtree_minnode(node);
+	kf_rbtree_node_t *parent = node->p;
+	bool walkedRootNode = false;
+
+	while (cur_node != parent) {
+		if (cur_node->r) {
+			cur_node = kf_rbtree_minnode(cur_node->r);
+		} else {
+			kf_rbtree_node_t *node_to_be_deleted = cur_node;
+
+			while (cur_node->p && (cur_node == cur_node->p->r)) {
+				node_to_be_deleted = cur_node;
+				cur_node = cur_node->p;
+				tree->node_free(node_to_be_deleted);
+			}
+
+			node_to_be_deleted = cur_node;
+			cur_node = cur_node->p;
+			tree->node_free(node_to_be_deleted);
+		}
+	}
 }

@@ -1,5 +1,5 @@
-#ifndef _ARCH_I386_PORT_H_
-#define _ARCH_I386_PORT_H_
+#ifndef _ARCH_I386_IO_H_
+#define _ARCH_I386_IO_H_
 
 #include <pbos/common.h>
 

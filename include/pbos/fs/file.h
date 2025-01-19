@@ -54,10 +54,15 @@ typedef struct _fs_finddata_t {
 } fs_finddata_t;
 
 typedef struct _fs_fcontext_t {
+	om_object_t object_header;
 	fs_filesys_t *filesys;
 	om_handle_t file_handle;
 	char exdata[];
 } fs_fcontext_t;
+
+#define FS_FCONTEXT_CLASS_UUID UUID(b75995f4, 9c51, 4b7f, 97f0, 490c240a4e96)
+extern om_class_t *fs_fcontext_class;
+void kn_fcontext_destructor(om_object_t *obj);
 
 typedef struct _fs_finddata_t fs_finddata_t;
 
@@ -87,16 +92,16 @@ km_result_t fs_create_dir(
 km_result_t fs_mount_file(om_handle_t parent, om_handle_t file_handle);
 km_result_t fs_unmount_file(om_handle_t file_handle);
 
-km_result_t fs_close(fs_fcontext_t *fcontext);
+void fs_close(fs_fcontext_t *fcontext);
 
-km_result_t fs_open(const char *path, size_t path_len, fs_fcontext_t **fcontext_out);
+km_result_t fs_open(om_handle_t base_dir, const char *path, size_t path_len, fs_fcontext_t **fcontext_out);
 km_result_t fs_read(fs_fcontext_t *fcontext, void *dest, size_t size, size_t off, size_t *bytes_read_out);
 km_result_t fs_write(fs_fcontext_t *fcontext, const char *src, size_t size, size_t off, size_t *bytes_written_out);
 km_result_t fs_size(fs_fcontext_t *fcontext, size_t *size_out);
 
 km_result_t fs_child_of(om_handle_t file_handle, const char *filename, size_t filename_len, om_handle_t *handle_out);
 
-km_result_t fs_resolve_path(om_handle_t file_handle, const char *path, size_t path_len, om_handle_t *handle_out);
+km_result_t fs_resolve_path(om_handle_t cur_dir, const char *path, size_t path_len, om_handle_t *handle_out);
 
 km_result_t fs_find_file(om_handle_t file_handle, fs_finddata_t *finddata, om_handle_t *file_handle_out);
 void fs_find_next_file(fs_finddata_t *finddata, om_handle_t *file_handle_out);

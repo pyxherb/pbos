@@ -35,7 +35,7 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 		result = KM_RESULT_NO_MEM;
 		goto fail;
 	}
-	if (!(pdt_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_READ | PAGE_WRITE, 0))) {
+	if (!(pdt_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
 		result = KM_RESULT_NO_MEM;
 		goto fail;
 	}
@@ -46,7 +46,7 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 			hn_vpm_nodecmp,
 			hn_vpm_nodefree);
 	}
-	if (KM_FAILED(result = mm_mmap(mm_kernel_context, pdt_vaddr, pdt_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, 0))) {
+	if (KM_FAILED(result = mm_mmap(mm_kernel_context, pdt_vaddr, pdt_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
 		goto fail;
 	}
 	memset(pdt_vaddr, 0, PAGESIZE);
@@ -78,7 +78,7 @@ void mm_free_context(mm_context_t *context) {
 		kf_rbtree_free(&context->uspace_vpm_query_tree[i]);
 	}
 	for (hn_vpm_poolpg_t *i = context->uspace_vpm_poolpg_list; i; i = i->header.next) {
-		void *paddr = mm_getmap(mm_kernel_context, i);
+		void *paddr = mm_getmap(mm_kernel_context, i, NULL);
 		mm_unmmap(mm_kernel_context, i, PAGESIZE, 0);
 		mm_pgfree(paddr);
 	}
@@ -91,5 +91,5 @@ void mm_switch_context(mm_context_t *context) {
 	mm_context_t *prev_context = mm_cur_contexts[ps_get_cur_euid()];
 	mm_cur_contexts[ps_get_cur_euid()] = context;
 	mm_sync_global_mappings(prev_context);
-	arch_lpdt(PGROUNDDOWN(hn_getmap(mm_kernel_context->pdt, context->pdt)));
+	arch_lpdt(PGROUNDDOWN(hn_getmap(mm_kernel_context->pdt, context->pdt, NULL)));
 }

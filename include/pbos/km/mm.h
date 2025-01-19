@@ -1,5 +1,5 @@
-#ifndef _KM_MM_H_
-#define _KM_MM_H_
+#ifndef _PBOS_KM_MM_H_
+#define _PBOS_KM_MM_H_
 
 #include <pbos/common.h>
 #include <pbos/generated/km.h>
@@ -12,11 +12,12 @@ enum {
 	MM_PMEM_ACPI
 };
 
-#define PAGE_READ 0x01	   // Read
-#define PAGE_WRITE 0x02	   // Write
-#define PAGE_EXEC 0x04	   // Execute
-#define PAGE_NOCACHE 0x08  // Non-cached
-#define PAGE_USER 0x10	   // User
+#define PAGE_MAPPED 0x01   // Mapped
+#define PAGE_READ 0x02	   // Read
+#define PAGE_WRITE 0x04	   // Write
+#define PAGE_EXEC 0x08	   // Execute
+#define PAGE_NOCACHE 0x10  // Non-cached
+#define PAGE_USER 0x20	   // User
 
 typedef uint8_t mm_pgaccess_t;
 typedef uint8_t mm_order_t;
@@ -92,13 +93,15 @@ void mm_chpgmod(
 
 void mm_unmmap(mm_context_t *context, void *vaddr, size_t size, mmap_flags_t flags);
 
-void *mm_getmap(mm_context_t *context, const void *vaddr);
+void *mm_getmap(mm_context_t *context, const void *vaddr, mm_pgaccess_t *pgaccess_out);
 
 PB_NODISCARD km_result_t kn_mm_init_context(mm_context_t *context);
 void mm_free_context(mm_context_t *context);
 void mm_switch_context(mm_context_t *context);
 
 void mm_invlpg(void *ptr);
+
+bool mm_is_user_access_violated(mm_context_t *mm_context, const void *ptr, size_t size);
 
 /// @brief The kernel MM context.
 extern mm_context_t *mm_kernel_context;

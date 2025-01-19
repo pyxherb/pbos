@@ -40,7 +40,7 @@ thread_id_t ps_create_thread(
 void hn_thread_cleanup(ps_tcb_t *thread) {
 	kf_rbtree_remove(&thread->parent->thread_set, &thread->node_header);
 	while (thread->stacksize) {
-		mm_pgfree(mm_getmap(thread->parent->mm_context, thread->stack));
+		mm_pgfree(mm_getmap(thread->parent->mm_context, thread->stack, NULL));
 		thread->stack += PAGESIZE;
 		thread->stacksize -= PAGESIZE;
 	}
@@ -67,7 +67,7 @@ km_result_t kn_thread_allocstack(ps_tcb_t *tcb, size_t size) {
 			  (void *)UFREE_VBASE,
 			  (void *)UFREE_VTOP,
 			  tcb->stacksize,
-			  PAGE_READ | PAGE_WRITE | PAGE_USER,
+			  PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER,
 			  0))) {
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	}
@@ -77,15 +77,15 @@ km_result_t kn_thread_allocstack(ps_tcb_t *tcb, size_t size) {
 
 		if (!pg) {
 			do {
-				mm_pgfree(mm_getmap(pcb->mm_context, ((char *)tcb->stack) + i));
+				mm_pgfree(mm_getmap(pcb->mm_context, ((char *)tcb->stack) + i, NULL));
 			} while (--i);
 			mm_vmfree(pcb->mm_context, tcb->stack, size);
 			return KM_MAKEERROR(KM_RESULT_NO_MEM);
 		}
 
-		if (KM_FAILED(result = mm_mmap(pcb->mm_context, ((char *)tcb->stack) + i, pg, PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_USER, 0))) {
+		if (KM_FAILED(result = mm_mmap(pcb->mm_context, ((char *)tcb->stack) + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, 0))) {
 			do {
-				mm_pgfree(mm_getmap(pcb->mm_context, ((char *)tcb->stack) + i));
+				mm_pgfree(mm_getmap(pcb->mm_context, ((char *)tcb->stack) + i, NULL));
 			} while (--i);
 			mm_vmfree(pcb->mm_context, tcb->stack, size);
 			return result;

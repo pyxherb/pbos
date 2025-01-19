@@ -1,8 +1,8 @@
-#ifndef _ARCH_I386_INT_H_
-#define _ARCH_I386_INT_H_
+#ifndef _ARCH_I386_IRQ_H_
+#define _ARCH_I386_IRQ_H_
 
 #include "gate.h"
-#include "port.h"
+#include "io.h"
 
 #define arch_iret() __asm__ __volatile__("iret")
 

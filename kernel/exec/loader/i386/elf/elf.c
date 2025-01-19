@@ -83,9 +83,9 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcontext_t *file_fp) {
 		{
 			// Allocate pages for current segment.
 			for (Elf32_Word j = 0; j < ph.p_memsz; j += PAGESIZE) {
-				if (!mm_getmap(proc->mm_context, vaddr + PAGESIZE * j)) {
+				if (!mm_getmap(proc->mm_context, vaddr + PAGESIZE * j, NULL)) {
 					void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
-					mm_mmap(proc->mm_context, vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0);
+					mm_mmap(proc->mm_context, vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0);
 				}
 			}
 

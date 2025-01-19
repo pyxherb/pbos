@@ -1,4 +1,4 @@
-#include "int.h"
+#include "irq.h"
 
 void arch_lidt(void *idt, uint16_t size)
 {

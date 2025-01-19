@@ -1,8 +1,8 @@
 #include <hal/i386/proc.h>
 #include <pbos/km/logger.h>
 
-ps_pcb_t **ps_cur_procs;
-ps_tcb_t **ps_cur_threads;
+ps_pcb_t **ps_cur_proc_per_eu;
+ps_tcb_t **ps_cur_thread_per_eu;
 
 static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 static void _parp_nodefree(kf_rbtree_node_t *p);
@@ -14,6 +14,17 @@ void kn_proc_destructor(om_object_t *obj) {
 	hn_proc_cleanup((ps_pcb_t *)obj);
 }
 
+void ps_create_proc(
+	ps_pcb_t *pcb,
+	proc_id_t parent) {
+	kf_rbtree_node_t *node = kf_rbtree_find(&ps_global_proc_set, &pcb->node_header);
+	if(node)
+		km_panic("Trying to create a new process with PCB with PID that is already used by a process");
+
+	km_result_t result = kf_rbtree_insert(&ps_global_proc_set, &pcb->node_header);
+	assert(KM_SUCCEEDED(result));
+}
+
 ps_pcb_t *kn_alloc_pcb() {
 	ps_pcb_t *proc = mm_kmalloc(sizeof(ps_pcb_t));
 
@@ -22,7 +33,7 @@ ps_pcb_t *kn_alloc_pcb() {
 
 	memset(proc, 0, sizeof(ps_pcb_t));
 
-	if(!(proc->mm_context = mm_kmalloc(sizeof(mm_context_t)))) {
+	if (!(proc->mm_context = mm_kmalloc(sizeof(mm_context_t)))) {
 		mm_kfree(proc);
 		return NULL;
 	}
@@ -104,11 +115,6 @@ km_result_t ps_create_uhandle(ps_pcb_t *proc, om_handle_t khandle, ps_uhandle_t 
 		return KM_RESULT_NO_MEM;
 	}
 
-	memset(uhr, 0, sizeof(ps_uhr_t));
-
-	om_ref_handle(khandle);
-	uhr->khandle = khandle;
-
 	ps_uhandle_t initial_uhandle = proc->last_allocated_uhandle_value;
 	ps_uhandle_t uhandle;
 
@@ -127,6 +133,11 @@ km_result_t ps_create_uhandle(ps_pcb_t *proc, om_handle_t khandle, ps_uhandle_t 
 			return KM_RESULT_NO_SLOT;
 		}
 	}
+
+	memset(uhr, 0, sizeof(ps_uhr_t));
+
+	om_ref_handle(khandle);
+	uhr->khandle = khandle;
 
 	result = kf_rbtree_insert(&proc->uhandle_map, &uhr->node_header);
 
@@ -151,6 +162,18 @@ void ps_close_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle) {
 	if (!--uhr->ref_num) {
 		kf_rbtree_remove(&proc->uhandle_map, node);
 	}
+}
+
+om_handle_t ps_lookup_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle) {
+	ps_uhr_t query_uhr;
+	query_uhr.uhandle = uhandle;
+
+	kf_rbtree_node_t *result;
+	if (!(result = kf_rbtree_find(&proc->uhandle_map, &query_uhr.node_header))) {
+		return OM_INVALID_HANDLE;
+	}
+
+	return PB_CONTAINER_OF(ps_uhr_t, node_header, result)->khandle;
 }
 
 static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {

@@ -281,12 +281,12 @@ end:;
 	return KM_RESULT_OK;
 }
 
-km_result_t fs_open(const char *path, size_t path_len, fs_fcontext_t **fcontext_out) {
+km_result_t fs_open(om_handle_t base_dir, const char *path, size_t path_len, fs_fcontext_t **fcontext_out) {
 	om_handle_t file_handle;
 	fs_file_t *file;
 	km_result_t result;
 
-	if (KM_FAILED(result = fs_resolve_path(fs_abs_root_dir, path, path_len, &file_handle)))
+	if (KM_FAILED(result = fs_resolve_path(base_dir, path, path_len, &file_handle)))
 		return result;
 
 	if (KM_FAILED(result = fs_deref_file_handle(file_handle, &file)))
@@ -302,8 +302,8 @@ km_result_t fs_open(const char *path, size_t path_len, fs_fcontext_t **fcontext_
 	return KM_RESULT_OK;
 }
 
-km_result_t fs_close(fs_fcontext_t *fcontext) {
-	return fcontext->filesys->ops.close(fcontext);
+void fs_close(fs_fcontext_t *fcontext) {
+	fcontext->filesys->ops.close(fcontext);
 }
 
 km_result_t fs_read(fs_fcontext_t *fcontext, void *dest, size_t size, size_t off, size_t *bytes_read_out) {

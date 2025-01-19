@@ -9,7 +9,7 @@
 #define KM_RESULT_TYPE_ERROR 0x60000000	   // Error
 #define KM_RESULT_TYPE_FATAL 0x80000000	   // Fatal error
 
-enum {
+typedef enum _km_results {
 	KM_RESULT_OK = 0,  // Success
 
 	KM_RESULT_FAILED,				  // Failed due to unknown errors
@@ -28,7 +28,8 @@ enum {
 	KM_RESULT_NO_SLOT,				  // No free slot
 	KM_RESULT_UNSUPPORTED_OPERATION,  // Unsupported operation
 	KM_RESULT_UNSUPPORTED_EXECFMT,	  // Unsupport executable format
-};
+	KM_RESULT_ACCESS_VIOLATION,		  // Access violation
+} km_results;
 
 typedef uint32_t km_result_t;
 

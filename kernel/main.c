@@ -24,7 +24,7 @@ PB_NORETURN void _start() {
 	initcar_init();
 
 	fs_fcontext_t *init_fp;
-	if (KM_FAILED(fs_open("/initcar/pbinit", sizeof("/initcar/pbinit") - 1, &init_fp)))
+	if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pbinit", sizeof("/initcar/pbinit") - 1, &init_fp)))
 		km_panic("Error opening the init executable");
 
 	proc_id_t pid;

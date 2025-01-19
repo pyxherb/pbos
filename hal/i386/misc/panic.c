@@ -1,4 +1,4 @@
-#include <arch/i386/int.h>
+#include <arch/i386/irq.h>
 #include <arch/i386/misc.h>
 #include <hal/i386/display/vga.h>
 #include <pbos/km/panic.h>

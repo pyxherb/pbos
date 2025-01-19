@@ -4,8 +4,10 @@
 #include <pbos/km/proc.h>
 
 static uint16_t hn_pgaccess_to_pgmask(mm_pgaccess_t access) {
-	uint16_t mask = PTE_P;
+	uint16_t mask = 0;
 
+	if (access & PAGE_MAPPED)
+		mask |= PTE_P;
 	// We cannot set if a page frame is read-only on x86  :(
 	if (access & PAGE_WRITE)
 		mask |= PTE_RW;
@@ -18,6 +20,24 @@ static uint16_t hn_pgaccess_to_pgmask(mm_pgaccess_t access) {
 		mask |= PTE_XD;
 
 	return mask;
+}
+
+static mm_pgaccess_t hn_pgmask_to_pgaccess(uint16_t mask) {
+	mm_pgaccess_t access;
+
+	// We cannot set if a page frame is read-only on x86  :(
+	if(mask & PTE_P)
+		access |= PAGE_MAPPED;
+	if (mask & PTE_RW)
+		access |= PAGE_WRITE;
+	if (mask & PTE_CD)
+		access |= PAGE_NOCACHE;
+	if (mask & PTE_U)
+		access |= PAGE_USER;
+	if (!(mask & PTE_XD))
+		access |= PAGE_EXEC;
+
+	return access;
 }
 
 void *mm_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags) {
@@ -147,16 +167,16 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 				void *map_addr;
 
 				if (vaddr >= KSPACE_VBASE) {
-					if ((map_addr = mm_vmalloc(ctxt, (void *)KSPACE_VBASE, vaddr, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
+					if ((map_addr = mm_vmalloc(ctxt, (void *)KSPACE_VBASE, vaddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
 						goto vmalloc_succeeded;
 					}
 				}
 				if (((char *)vaddr) + size > KSPACE_VBASE) {
-					if ((map_addr = mm_vmalloc(ctxt, ((char *)vaddr) + size, (void *)KSPACE_VTOP, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
+					if ((map_addr = mm_vmalloc(ctxt, ((char *)vaddr) + size, (void *)KSPACE_VTOP, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
 						goto vmalloc_succeeded;
 					}
 				} else {
-					if ((map_addr = mm_kvmalloc(ctxt, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
+					if ((map_addr = mm_kvmalloc(ctxt, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
 						goto vmalloc_succeeded;
 					}
 				}
@@ -170,7 +190,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 				mad->type = MAD_ALLOC_KERNEL;
 				mad->exdata.mapped_pgtab_addr = (pgaddr_t)NULL;
 
-				result = mm_mmap(ctxt, map_addr, UNPGADDR(pgdir), PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
+				result = mm_mmap(ctxt, map_addr, UNPGADDR(pgdir), PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
 				assert(KM_SUCCEEDED(result));
 
 				mad->exdata.mapped_pgtab_addr = PGROUNDDOWN(map_addr);
@@ -360,7 +380,7 @@ succeeded:
 	return p_found;
 }
 
-void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr) {
+void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr, uint16_t *mask_out) {
 	const arch_pde_t *pde = &pgdir[PDX(vaddr)];
 	if (!(pde->mask & PDE_P))
 		return NULL;
@@ -368,6 +388,10 @@ void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr) {
 	pgaddr_t tmapaddr = hn_tmpmap(pde->address, 1, PTE_P);
 
 	const arch_pte_t *pte = &((arch_pte_t *)UNPGADDR(tmapaddr))[PTX(vaddr)];
+
+	if(mask_out)
+		*mask_out = pte->mask;
+
 	if (!(pte->mask & PTE_P)) {
 		hn_tmpunmap(tmapaddr);
 		return NULL;
@@ -382,9 +406,16 @@ void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr) {
 	return paddr;
 }
 
-void *mm_getmap(mm_context_t *ctxt, const void *vaddr) {
+void *mm_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
 	assert(ctxt);
-	return hn_getmap(ctxt->pdt, vaddr);
+	uint16_t mask;
+	void *mapped_addr = hn_getmap(ctxt->pdt, vaddr, &mask);
+
+	if (pgaccess_out) {
+		*pgaccess_out = hn_pgmask_to_pgaccess(mask);
+	}
+
+	return mapped_addr;
 }
 
 typedef struct _tmpmap_info_t {

@@ -1,5 +1,5 @@
-#include <pbos/kn/km/exec.h>
 #include <hal/i386/proc.h>
+#include <pbos/kn/km/exec.h>
 #include <string.h>
 
 typedef struct _kn_binldr_reg_t {
@@ -37,6 +37,10 @@ km_result_t km_exec(
 	proc_id_t *pid_out) {
 	km_result_t result;
 
+	proc_id_t new_proc_id = kn_alloc_proc_id();
+	if(new_proc_id < 0)
+		return KM_MAKEERROR(KM_RESULT_NO_SLOT);
+
 	ps_pcb_t *pcb = kn_alloc_pcb();
 	if (!pcb) {
 		result = KM_MAKEERROR(KM_RESULT_NO_MEM);
@@ -48,18 +52,18 @@ km_result_t km_exec(
 
 		if (KM_SUCCEEDED(result = binldr->binldr.load_exec(pcb, file_fp))) {
 			pcb->proc_id = kn_alloc_proc_id();
-			kf_rbtree_insert(&ps_global_proc_set, &pcb->node_header);
+			ps_create_proc(pcb, parent);
 			return KM_RESULT_OK;
 		}
 
-		if(result != KM_RESULT_UNSUPPORTED_EXECFMT) {
+		if (result != KM_RESULT_UNSUPPORTED_EXECFMT) {
 			goto failed;
 		}
 	}
 
 	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_EXECFMT);
 failed:
-	if(pcb) {
+	if (pcb) {
 		// TODO: Release PCB.
 	}
 
@@ -74,5 +78,5 @@ bool kn_binldr_reg_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y)
 }
 
 void kn_binldr_reg_nodefree(kf_rbtree_node_t *p) {
-	mm_kfree(p);
+	// TODO: Do some freeing operations?
 }

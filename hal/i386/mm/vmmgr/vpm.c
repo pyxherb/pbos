@@ -45,6 +45,7 @@ bool hn_vpm_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
 
 void hn_vpm_nodefree(kf_rbtree_node_t *p) {
 	hn_vpm_t *_p = PB_CONTAINER_OF(hn_vpm_t, node_header, p);
+	// No need to release here, the VPMs is managed by `hn_mm_free_vpm` and `hn_mm_free_vpm_unchecked`.
 }
 
 hn_vpm_t *hn_mm_lookup_vpm(mm_context_t *context, const void *addr, int level) {
@@ -145,7 +146,7 @@ km_result_t hn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 	void *new_vpmpool_paddr = NULL,
 		 *new_vpmpool_vaddr = NULL;
 
-	if ((!(new_vpmpool_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE)))) {
+	if ((!(new_vpmpool_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE)))) {
 		result = KM_RESULT_NO_MEM;
 		goto fail;
 	}
@@ -155,7 +156,7 @@ km_result_t hn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 		goto fail;
 	}
 
-	if (KM_FAILED(result = mm_mmap(mm_kernel_context, new_vpmpool_vaddr, new_vpmpool_paddr, PAGESIZE, PAGE_READ | PAGE_WRITE, MMAP_NOSETVPM))) {
+	if (KM_FAILED(result = mm_mmap(mm_kernel_context, new_vpmpool_vaddr, new_vpmpool_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_NOSETVPM))) {
 		goto fail;
 	}
 
@@ -262,7 +263,7 @@ void hn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 			if (pool->header.next)
 				pool->header.next->header.prev = pool->header.prev;
 
-			mm_pgfree(mm_getmap(context, pool));
+			mm_pgfree(mm_getmap(context, pool, NULL));
 			mm_unmmap(context, pool, PAGESIZE, MMAP_NOSETVPM);
 		}
 	}

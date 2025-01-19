@@ -31,6 +31,7 @@ typedef struct _kf_rbtree_t {
 	kf_rbtree_node_t *root;
 	kf_rbtree_nodecmp_t node_cmp;
 	kf_rbtree_nodefree_t node_free;
+	size_t node_num;
 } kf_rbtree_t;
 
 kf_rbtree_node_t *kf_rbtree_minnode(kf_rbtree_node_t *node);
@@ -56,5 +57,7 @@ kf_rbtree_node_t* kf_rbtree_next(kf_rbtree_node_t* node);
 #define kf_rbtree_foreach(i, tree) for (kf_rbtree_node_t *i = kf_rbtree_begin(tree); i; i = kf_rbtree_next(i))
 
 #define kf_rbtree_isempty(tree) ((tree)->root == NULL)
+
+#define kf_rbtree_size(tree) ((tree)->node_num)
 
 #endif
