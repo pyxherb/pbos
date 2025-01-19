@@ -4,7 +4,7 @@
 #include <pbos/km/result.h>
 #include <pbos/km/proc.h>
 
-void *sysent_exit(int exitcode);
+void sysent_exit(int exitcode);
 km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint32_t mode, ps_ufd_t *ufd_out);
 km_result_t sysent_close(ps_ufd_t ufd, uint32_t flags);
 void *sysent_read(ps_ufd_t ufd, void *buf, uint32_t size);

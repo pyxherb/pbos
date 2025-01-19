@@ -65,7 +65,7 @@ PB_NORETURN void isr_irq0_impl(
 		cur_thread->context->eflags = eflags;
 	}
 
-	static uint16_t COUNT_RATE = 11931;
+	static uint16_t COUNT_RATE = 65535;
 	arch_out8(0x40, (COUNT_RATE) & 0xff);
 	arch_out8(0x40, (COUNT_RATE >> 8) & 0xff);
 

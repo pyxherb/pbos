@@ -33,7 +33,7 @@ typedef uint32_t ps_proc_access_t;
 
 typedef int32_t proc_id_t;
 typedef int32_t thread_id_t;
-typedef uint32_t ps_euid_t;
+typedef uint16_t ps_euid_t;
 
 typedef int ps_ufd_t;
 

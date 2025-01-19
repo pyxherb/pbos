@@ -3,7 +3,7 @@
 
 #include <pbos/km/proc.h>
 
-PB_NORETURN void kn_enter_sched();
+PB_NORETURN void kn_enter_sched(ps_euid_t euid);
 
 void kn_proc_destructor(om_object_t *obj);
 void kn_thread_destructor(om_object_t *obj);

@@ -20,7 +20,7 @@ bool mm_is_user_access_violated(mm_context_t *mm_context, const void *ptr, size_
 
 	for (size_t i = 0; i < PGCEIL(size); ++i) {
 		mm_getmap(mm_context, p, &pgaccess);
-		if(!(pgaccess & PAGE_USER))
+		if((!(pgaccess & PAGE_MAPPED)) || (!(pgaccess & PAGE_USER)))
 			return true;
 	}
 

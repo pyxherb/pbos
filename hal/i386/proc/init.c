@@ -56,7 +56,8 @@ void ps_init() {
 
 PB_NORETURN void kn_enter_sched_halt();
 
-PB_NORETURN void kn_enter_sched() {
+PB_NORETURN void kn_enter_sched(ps_euid_t euid) {
+	arch_loadfs(euid);
 	arch_sti();
 	static uint16_t COUNT_RATE = 11931;
 	arch_out8(0x40, (COUNT_RATE) & 0xff);

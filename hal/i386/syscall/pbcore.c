@@ -2,11 +2,12 @@
 #include <pbos/fs/file.h>
 #include <pbos/km/exec.h>
 
-void *sysent_exit(uint32_t exitcode) {
+void sysent_exit(int exitcode) {
 }
 
 km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint32_t mode, ps_ufd_t *ufd_out) {
 	km_result_t result;
+	ps_euid_t euid = ps_get_cur_euid();
 	ps_pcb_t *pcb = ps_get_cur_proc();
 
 	if (mm_is_user_access_violated(pcb->mm_context, path, path_len))
@@ -14,14 +15,20 @@ km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint3
 	if (mm_is_user_access_violated(pcb->mm_context, ufd_out, sizeof(*ufd_out)))
 		return KM_RESULT_ACCESS_VIOLATION;
 
+	asm volatile("xchg %bx, %bx");
+
 	ps_ufd_t fd = ps_alloc_fd(pcb);
 	if(fd < 0)
 		return KM_RESULT_NO_SLOT;
+
+	asm volatile("xchg %bx, %bx");
 
 	fs_fcontext_t *fcontext;
 	if (KM_FAILED(result = fs_open(pcb->cur_dir, path, path_len, &fcontext))) {
 		return result;
 	}
+
+	asm volatile("xchg %bx, %bx");
 
 	ps_ufcontext_t *ufcontext;
 	if(!(ufcontext = ps_alloc_ufcontext(pcb, fcontext, fd))) {
@@ -29,7 +36,7 @@ km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint3
 		return KM_RESULT_NO_MEM;
 	}
 
-	*fcontext_out = fcontext;
+	*ufd_out = fd;
 
 	return KM_RESULT_OK;
 }

@@ -32,5 +32,5 @@ PB_NORETURN void _start() {
 	if (KM_FAILED(result = km_exec(0, 0, init_fp, &pid)))
 		km_panic("Error starting the init process");
 
-	kn_enter_sched();
+	kn_enter_sched(0);
 }

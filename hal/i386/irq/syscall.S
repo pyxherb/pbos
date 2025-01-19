@@ -5,13 +5,16 @@
 // e[a-d]x: Arguments
 //
 isr_syscall:
-	pushal
+	cli
+
+	pushl %ebx
+	pushl %ecx
+	pushl %esi
+	pushl %edi
 
 	pushw %ds
 
 	pushw %es
-
-	pushw %fs
 
 	pushw %gs
 
@@ -25,7 +28,6 @@ isr_syscall:
 	movw %ss, %ax
 	movw %ax, %ds
 	movw %ax, %es
-	movw %ax, %fs
 	movw %ax, %gs
 
 	cld
@@ -34,11 +36,10 @@ isr_syscall:
 
 	addl $24, %esp
 
-	popw %ax
-	movw %ax, %gs
+	movl %eax, %edx
 
 	popw %ax
-	movw %ax, %fs
+	movw %ax, %gs
 
 	popw %ax
 	movw %ax, %es
@@ -46,5 +47,10 @@ isr_syscall:
 	popw %ax
 	movw %ax, %ds
 
-	popal
+	movl %edx, %eax
+
+	popl %edi
+	popl %esi
+	popl %ecx
+	popl %ebx
 	iret

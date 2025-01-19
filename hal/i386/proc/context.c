@@ -22,7 +22,7 @@ void ps_save_context(ps_user_context_t *ctxt) {
 }
 
 PB_NORETURN void ps_load_user_context(ps_user_context_t *ctxt) {
-	kdprintf("Switching context:\n"
+	/*kdprintf("Switching context:\n"
 			"EAX=%.8x EBX=%.8x\n"
 			"ECX=%.8x EDX=%.8x\n"
 			"ESP=%.8x EBP=%.8x\n"
@@ -32,7 +32,7 @@ PB_NORETURN void ps_load_user_context(ps_user_context_t *ctxt) {
 			ctxt->ecx, ctxt->edx,
 			ctxt->esp, ctxt->ebp,
 			ctxt->esi, ctxt->edi,
-			ctxt->eip, ctxt->eflags);
+			ctxt->eip, ctxt->eflags);*/
 	hn_ctxtsw_tmp_area->cs = SELECTOR_UCODE;
 	hn_ctxtsw_tmp_area->ds = SELECTOR_UDATA;
 	hn_ctxtsw_tmp_area->es = SELECTOR_UDATA;
