@@ -88,7 +88,9 @@ config.h
 # Development Artifacts
 .vscode/
 .vs/
+.cache/
 *.diff
 *.patch
 *.swp
 .gdbinit
+.clangd

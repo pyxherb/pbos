@@ -26,7 +26,7 @@ static mm_pgaccess_t hn_pgmask_to_pgaccess(uint16_t mask) {
 	mm_pgaccess_t access;
 
 	// We cannot set if a page frame is read-only on x86  :(
-	if(mask & PTE_P)
+	if (mask & PTE_P)
 		access |= PAGE_MAPPED;
 	if (mask & PTE_RW)
 		access |= PAGE_WRITE;
@@ -389,7 +389,7 @@ void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr, uint16_t *mask_out) 
 
 	const arch_pte_t *pte = &((arch_pte_t *)UNPGADDR(tmapaddr))[PTX(vaddr)];
 
-	if(mask_out)
+	if (mask_out)
 		*mask_out = pte->mask;
 
 	if (!(pte->mask & PTE_P)) {
@@ -514,9 +514,23 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 		if (!(pgdir[i].mask & PDE_P))
 			return PGADDR(i, 0);
 
-		pgaddr_t tmapaddr = hn_tmpmap(pgdir[i].address, PGROUNDUP(sizeof(arch_pte_t) * (PTX_MAX + 1)),
-			PTE_P | PTE_RW);
-		const arch_pte_t *pgtab = (arch_pte_t *)UNPGADDR(tmapaddr);
+		arch_pte_t *pgtab;
+		pgaddr_t tmapaddr = NULLPG;
+
+		{
+			hn_vpm_t *vpm;
+			if ((vpm = hn_mm_lookup_vpm(mm_cur_contexts[ps_get_cur_euid()], UNPGADDR(pgdir[i].address), HN_VPM_LEVEL_MAX))) {
+				if (vpm->map_addr) {
+					pgtab = vpm->map_addr;
+					goto already_mapped;
+				}
+			}
+
+			tmapaddr = hn_tmpmap(pgdir[i].address, PGROUNDUP(sizeof(arch_pte_t) * (PTX_MAX + 1)),
+				PTE_P | PTE_RW);
+			pgtab = (arch_pte_t *)UNPGADDR(tmapaddr);
+		}
+	already_mapped:
 
 		//
 		// Scan for each PTEs.
@@ -534,7 +548,10 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 				return PGADDR(i, j);
 			}
 		}
-		hn_tmpunmap(tmapaddr);
+
+		if (tmapaddr != NULLPG) {
+			hn_tmpunmap(tmapaddr);
+		}
 	}
 
 	return NULLPG;
