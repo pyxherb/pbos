@@ -115,7 +115,7 @@ km_result_t hn_mmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint1
 			}
 		}
 		if (!(args->flags & MMAP_NOSETVPM)) {
-			hn_mm_free_vpm(args->context, VADDR(pdx, ptx, 0));
+			kn_mm_free_vpm(args->context, VADDR(pdx, ptx, 0));
 		}
 	}
 
@@ -221,7 +221,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 		for (size_t i = 0; i < rounded_size; i += PAGESIZE) {
 			void *cur_ptr = ((char *)rounded_vaddr) + i;
 			if (!(flags & MMAP_NOSETVPM)) {
-				km_result_t result = hn_mm_insert_vpm(ctxt, cur_ptr);
+				km_result_t result = kn_mm_insert_vpm(ctxt, cur_ptr);
 				kd_assert(KM_SUCCEEDED(result));
 			}
 		}
@@ -256,7 +256,7 @@ km_result_t hn_unmmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uin
 			}
 		}
 		if (!(args->flags & MMAP_NOSETVPM)) {
-			hn_mm_free_vpm(args->context, VADDR(pdx, ptx, 0));
+			kn_mm_free_vpm(args->context, VADDR(pdx, ptx, 0));
 		}
 	}
 
@@ -519,7 +519,7 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 
 		{
 			hn_vpm_t *vpm;
-			if ((vpm = hn_mm_lookup_vpm(mm_cur_contexts[ps_get_cur_euid()], UNPGADDR(pgdir[i].address), HN_VPM_LEVEL_MAX))) {
+			if ((vpm = kn_mm_lookup_vpm(mm_cur_contexts[ps_get_cur_euid()], UNPGADDR(pgdir[i].address), HN_VPM_LEVEL_MAX))) {
 				if (vpm->map_addr) {
 					pgtab = vpm->map_addr;
 					goto already_mapped;

@@ -6,6 +6,8 @@
 
 #define PAGESIZE 4096
 
+#define KN_MM_VPM_LEVEL_MAX 1
+
 #define PGADDR_MAX 0xfffff
 #define PGADDR_MIN 0
 

@@ -43,8 +43,8 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 	for (size_t i = 0; i < PB_ARRAYSIZE(context->uspace_vpm_query_tree); ++i) {
 		kf_rbtree_init(
 			&context->uspace_vpm_query_tree[i],
-			hn_vpm_nodecmp,
-			hn_vpm_nodefree);
+			kn_vpm_nodecmp,
+			kn_vpm_nodefree);
 	}
 	if (KM_FAILED(result = mm_mmap(mm_kernel_context, pdt_vaddr, pdt_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
 		goto fail;
@@ -77,7 +77,7 @@ void mm_free_context(mm_context_t *context) {
 	for (size_t i = 0; i < PB_ARRAYSIZE(context->uspace_vpm_query_tree); ++i) {
 		kf_rbtree_free(&context->uspace_vpm_query_tree[i]);
 	}
-	for (hn_vpm_poolpg_t *i = context->uspace_vpm_poolpg_list; i; i = i->header.next) {
+	for (kn_mm_vpm_poolpg_t *i = context->uspace_vpm_poolpg_list; i; i = i->header.next) {
 		void *paddr = mm_getmap(mm_kernel_context, i, NULL);
 		mm_unmmap(mm_kernel_context, i, PAGESIZE, 0);
 		mm_pgfree(paddr);

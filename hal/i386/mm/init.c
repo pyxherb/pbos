@@ -31,8 +31,8 @@ void hn_mm_init() {
 	for (size_t i = 0; i < PB_ARRAYSIZE(hn_kspace_vpm_query_tree); ++i) {
 		kf_rbtree_init(
 			&hn_kspace_vpm_query_tree[i],
-			hn_vpm_nodecmp,
-			hn_vpm_nodefree);
+			kn_vpm_nodecmp,
+			kn_vpm_nodefree);
 	}
 
 	hn_mm_init_stage = HN_MM_INIT_STAGE_AREAS_INITIAL;
@@ -197,7 +197,7 @@ static void hn_mm_init_areas() {
 
 				if (cur_madpool_slot_index >= PB_ARRAYSIZE(hn_global_mad_pool_list->descs)) {
 					if (!last_madpool) {
-						km_result_t result = hn_mm_insert_vpm(mm_kernel_context, hn_global_mad_pool_list);
+						km_result_t result = kn_mm_insert_vpm(mm_kernel_context, hn_global_mad_pool_list);
 						kd_assert(KM_SUCCEEDED(result));
 					}
 
