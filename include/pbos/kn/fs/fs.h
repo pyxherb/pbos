@@ -7,10 +7,10 @@
 #include <pbos/km/objmgr.h>
 
 typedef struct _fs_context_t {
-	om_handle_t root_dir, cur_dir;
+	fs_file_t *root_dir, *cur_dir;
 } fs_context_t;
 
-extern om_handle_t fs_abs_root_dir;
+extern fs_file_t *fs_abs_root_dir;
 
 /// @brief Initialize the file system facilities.
 void fs_init();

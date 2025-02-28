@@ -5,7 +5,6 @@
 #include <pbos/kn/km/objmgr.h>
 
 om_class_t *kn_class_list = NULL;
-om_handle_t kn_last_handle = 0;
 
 kf_rbtree_t kn_global_handle_set;
 
@@ -73,17 +72,15 @@ void om_init_object(om_object_t *obj, om_class_t *cls, om_object_flags_t flags) 
 	obj->ref_num = 0;
 	obj->prop.p_class = cls;
 	obj->prop.flags = OM_OBJECT_KERNEL | flags;
-	obj->handle = OM_INVALID_HANDLE;
 	cls->obj_num++;
 }
 
 void om_incref(om_object_t *obj) {
-	if (!obj->ref_num++)
-		kf_rbtree_remove(&kn_unused_objects, &obj->tree_header);
+	++obj->ref_num;
 }
 
 void om_decref(om_object_t *obj) {
-	if (--obj->ref_num && obj->handle == OM_INVALID_HANDLE) {
+	if (!(--obj->ref_num)) {
 		--obj->prop.p_class->obj_num;
 		obj->prop.p_class->destructor(obj);
 	}
@@ -94,115 +91,11 @@ void om_deinit_object(om_object_t *obj) {
 	obj->ref_num = 0;
 }
 
-static bool _kn_handle_set_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	const kn_handle_registry_t *_x = PB_CONTAINER_OF(kn_handle_registry_t, handle_tree_header, x),
-							   *_y = PB_CONTAINER_OF(kn_handle_registry_t, handle_tree_header, y);
-	return _x->handle < _y->handle;
-}
-
-static void _kn_handle_set_nodefree(kf_rbtree_node_t *p) {
-	kn_handle_registry_t *_p = PB_CONTAINER_OF(kn_handle_registry_t, handle_tree_header, p);
-	_p->object->handle = OM_INVALID_HANDLE;
-	mm_kfree(_p);
-}
-
-kn_handle_registry_t *kn_lookup_handle_registry(om_handle_t handle) {
-	kn_handle_registry_t find_node = {
-		.handle = handle
-	};
-	kf_rbtree_node_t *node = kf_rbtree_find(&kn_global_handle_set, &(find_node.handle_tree_header));
-	if (node)
-		return PB_CONTAINER_OF(kn_handle_registry_t, handle_tree_header, node);
-	return NULL;
-}
-
-km_result_t kn_alloc_handle(om_handle_t *handle_out) {
-	om_handle_t initial_handle = kn_last_handle,
-				cur_handle = kn_last_handle;
-	while ((kn_lookup_handle_registry(cur_handle)) || (cur_handle == OM_INVALID_HANDLE)) {
-		++cur_handle;
-		if (cur_handle == initial_handle)
-			return KM_MAKEERROR(KM_RESULT_NO_SLOT);
-	}
-
-	kn_last_handle = cur_handle + 1;
-	*handle_out = cur_handle;
-	return KM_RESULT_OK;
-}
-
-km_result_t om_create_handle(om_object_t *obj, om_handle_t *handle_out) {
-	km_result_t result;
-
-	if (obj->handle != OM_INVALID_HANDLE) {
-		kn_handle_registry_t *registry = kn_lookup_handle_registry(obj->handle);
-		kd_assert(registry);
-		++registry->ref_num;
-		*handle_out = obj->handle;
-		return KM_RESULT_OK;
-	}
-
-	om_handle_t handle;
-	// Find a free handle.
-	if(KM_FAILED(result = kn_alloc_handle(&handle))) {
-		return KM_MAKEERROR(result);
-	}
-
-	kn_handle_registry_t *registry = mm_kmalloc(sizeof(kn_handle_registry_t));
-	if (!registry)
-		return KM_MAKEERROR(KM_RESULT_NO_MEM);
-
-	memset(registry, 0, sizeof(kn_handle_registry_t));
-
-	registry->handle = handle;
-	registry->object = obj;
-	registry->ref_num = 1;
-
-	if (KM_FAILED(result = kf_rbtree_insert(&kn_global_handle_set, &registry->handle_tree_header))) {
-		mm_kfree(registry);
-		return result;
-	}
-
-	*handle_out = (obj->handle = handle);
-
-	return KM_RESULT_OK;
-}
-
-void om_ref_handle(om_handle_t handle) {
-	kn_handle_registry_t *registry = kn_lookup_handle_registry(handle);
-	if (!registry)
-		km_panic("Trying to reference an invalid handle");
-	++registry->ref_num;
-}
-
-void om_close_handle(om_handle_t handle) {
-	kn_handle_registry_t *registry = kn_lookup_handle_registry(handle);
-	if (!registry)
-		km_panic("Trying to close a invalid handle");
-	kd_assert(registry->ref_num);
-	if (!--registry->ref_num) {
-		kf_rbtree_remove(&kn_global_handle_set, &registry->handle_tree_header);
-	}
-}
-
 void om_gc() {
 	kf_rbtree_clear(&kn_unused_objects);
 }
 
-km_result_t om_deref_handle(om_handle_t handle, om_object_t **obj_out) {
-	kn_handle_registry_t *registry = kn_lookup_handle_registry(handle);
-	if (!registry) {
-		km_panic("Dereferencing an invalid handle");
-	}
-	++registry->object->ref_num;
-	*obj_out = registry->object;
-	return KM_RESULT_OK;
-}
-
 void om_init() {
-	kf_rbtree_init(
-		&kn_global_handle_set,
-		_kn_handle_set_nodecmp,
-		_kn_handle_set_nodefree);
 	kf_rbtree_init(
 		&kn_unused_objects,
 		_kn_object_nodecmp,

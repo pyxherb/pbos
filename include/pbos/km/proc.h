@@ -24,7 +24,7 @@ typedef struct _ps_uhr_t {
 	om_object_t object_header;
 
 	kf_rbtree_node_t node_header;
-	om_handle_t khandle;
+	om_object_t *kobject;
 	ps_uhandle_t uhandle;
 	size_t ref_num;
 } ps_uhr_t;
@@ -49,7 +49,7 @@ typedef struct _ps_pcb_t {
 	kf_rbtree_t thread_set;
 	uint8_t priority, flags;
 
-	om_handle_t cur_dir;
+	fs_file_t *cur_dir;
 
 	kf_rbtree_t uhandle_map;
 	ps_uhandle_t last_allocated_uhandle_value;
@@ -133,8 +133,8 @@ void kn_set_cur_euid(ps_euid_t euid);
 #define ps_get_cur_proc() (ps_cur_proc_per_eu[ps_get_cur_euid()])
 #define ps_get_cur_thread() (ps_cur_thread_per_eu[ps_get_cur_euid()])
 
-km_result_t ps_create_uhandle(ps_pcb_t *proc, om_handle_t khandle, ps_uhandle_t *uhandle_out);
+km_result_t ps_create_uhandle(ps_pcb_t *proc, om_object_t *kobject, ps_uhandle_t *uhandle_out);
 void ps_close_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle);
-om_handle_t ps_lookup_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle);
+om_object_t *ps_lookup_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle);
 
 #endif

@@ -8,8 +8,16 @@ typedef struct _fs_file_t fs_file_t;
 typedef struct _fs_fcontext_t fs_fcontext_t;
 
 typedef struct _fs_fsops_t {
+	/// @brief Access subnode.
+	km_result_t (*subnode)(fs_file_t *parent, const char *name, size_t name_len, fs_file_t **file_out);
+	/// @brief Offload a file node from the memory.
+	void (*offload)(fs_file_t *file);
+	/// @brief Create a new file.
+	km_result_t (*create_file)(fs_file_t *parent, const char *name, size_t name_len, fs_file_t **file_out);
+	/// @brief Create a new directory.
+	km_result_t (*create_dir)(fs_file_t *parent, const char *name, size_t name_len, fs_file_t **file_out);
 	/// @brief Open a file.
-	km_result_t (*open)(om_handle_t file, fs_fcontext_t **fcontext_out);
+	km_result_t (*open)(fs_file_t *file, fs_fcontext_t **fcontext_out);
 	/// @brief Close a FCB.
 	km_result_t (*close)(fs_fcontext_t *fcontext);
 	/// @brief Read data from a file.
@@ -19,10 +27,11 @@ typedef struct _fs_fsops_t {
 	/// @brief Get size of a file.
 	km_result_t (*size)(fs_fcontext_t *fcontext, size_t *size_out);
 
-	km_result_t (*premount)(om_handle_t parent, om_handle_t file_handle);
-	km_result_t (*postmount)(om_handle_t parent, om_handle_t file_handle);
-	void (*mountfail)(om_handle_t parent, om_handle_t file_handle);
-	km_result_t (*unmount)(om_handle_t file_handle);
+	km_result_t (*mount)(fs_file_t *parent, fs_file_t *file);
+	km_result_t (*premount)(fs_file_t *parent, fs_file_t *file);
+	km_result_t (*postmount)(fs_file_t *parent, fs_file_t *file);
+	void (*mountfail)(fs_file_t *parent, fs_file_t *file);
+	km_result_t (*unmount)(fs_file_t *file);
 
 	/// @brief Destructor of the file system.
 	km_result_t (*destructor)();

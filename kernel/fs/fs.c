@@ -9,7 +9,7 @@ static bool _filesys_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *
 static void _filesys_nodefree(kf_rbtree_node_t *p);
 
 kf_rbtree_t kn_registered_fs;
-om_handle_t fs_abs_root_dir;
+fs_file_t *fs_abs_root_dir;
 om_class_t *fs_file_class;
 om_class_t *fs_fcontext_class;
 fs_filesys_t *fs_rootfs;
@@ -45,13 +45,15 @@ void fs_init() {
 		km_panic("Error registering file class");
 
 	uuid = UUID(ffffffff, ffff, ffff, ffff, ffffffff);
-	if (!(fs_rootfs = fs_register_filesys("", &uuid, &kn_rootfs_ops)))
+	if (!(fs_rootfs = fs_register_filesys("rootfs", &uuid, &kn_rootfs_ops)))
 		km_panic("Error registering root file system");
 
 	kdprintf("Registered root file system\n");
 
-	if (KM_FAILED(result = fs_create_dir(fs_rootfs, "/", sizeof("/") - 1, 0, &fs_abs_root_dir)))
+	if (KM_FAILED(result = kn_alloc_file(fs_rootfs, "/", sizeof("/") - 1, FS_FILETYPE_DIR, sizeof(fs_rootfs_dir_exdata_t), &fs_abs_root_dir)))
 		km_panic("Error creating the root directory, error code = %.0x", result);
+
+	kf_hashmap_init(&((fs_rootfs_dir_exdata_t *)fs_abs_root_dir->exdata)->children, kn_fs_rootfs_file_hasher, kn_fs_rootfs_file_nodefree, kn_fs_rootfs_file_nodecmp, NULL);
 
 	kdprintf("Created the root directory\n");
 }

@@ -152,7 +152,7 @@ void kn_set_cur_euid(ps_euid_t euid) {
 	arch_loadfs(euid);
 }
 
-km_result_t ps_create_uhandle(ps_pcb_t *proc, om_handle_t khandle, ps_uhandle_t *uhandle_out) {
+km_result_t ps_create_uhandle(ps_pcb_t *proc, om_object_t *kobject, ps_uhandle_t *uhandle_out) {
 	km_result_t result;
 	ps_uhr_t *uhr = mm_kmalloc(sizeof(ps_uhr_t));
 
@@ -181,8 +181,8 @@ km_result_t ps_create_uhandle(ps_pcb_t *proc, om_handle_t khandle, ps_uhandle_t 
 
 	memset(uhr, 0, sizeof(ps_uhr_t));
 
-	om_ref_handle(khandle);
-	uhr->khandle = khandle;
+	om_incref(kobject);
+	uhr->kobject = kobject;
 
 	result = kf_rbtree_insert(&proc->uhandle_map, &uhr->node_header);
 
@@ -202,23 +202,23 @@ void ps_close_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle) {
 
 	ps_uhr_t *uhr = PB_CONTAINER_OF(ps_uhr_t, node_header, node);
 
-	om_close_handle(uhr->khandle);
+	om_decref(uhr->kobject);
 
 	if (!--uhr->ref_num) {
 		kf_rbtree_remove(&proc->uhandle_map, node);
 	}
 }
 
-om_handle_t ps_lookup_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle) {
+om_object_t *ps_lookup_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle) {
 	ps_uhr_t query_uhr;
 	query_uhr.uhandle = uhandle;
 
 	kf_rbtree_node_t *result;
 	if (!(result = kf_rbtree_find(&proc->uhandle_map, &query_uhr.node_header))) {
-		return OM_INVALID_HANDLE;
+		return NULL;
 	}
 
-	return PB_CONTAINER_OF(ps_uhr_t, node_header, result)->khandle;
+	return PB_CONTAINER_OF(ps_uhr_t, node_header, result)->kobject;
 }
 
 static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
@@ -251,5 +251,5 @@ static bool _uhr_uhandle_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node
 }
 
 static void _uhr_uhandle_nodefree(kf_rbtree_node_t *p) {
-	om_close_handle(((ps_uhr_t *)p)->khandle);
+	om_decref(((ps_uhr_t *)p)->kobject);
 }
