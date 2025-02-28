@@ -16,10 +16,6 @@
 
 #define HN_VPM_LEVEL_MAX 1
 
-#define HN_VPM_ALLOC 0x00000001
-
-typedef uint32_t hn_vpm_flags_t;
-
 enum {
 	HN_MM_INIT_STAGE_INITIAL = 0,
 	HN_MM_INIT_STAGE_AREAS_INITIAL,
@@ -28,16 +24,6 @@ enum {
 };
 
 extern uint8_t hn_mm_init_stage;
-
-typedef struct _hn_vpm_t {
-	kf_rbtree_node_t node_header;
-	void *addr;
-	union {
-		size_t subref_count;
-		void *map_addr;
-	};
-	hn_vpm_flags_t flags;
-} hn_vpm_t;
 
 typedef struct _hn_vpm_poolpg_t hn_vpm_poolpg_t;
 
@@ -62,19 +48,13 @@ typedef struct _mm_context_t {
 
 extern size_t hn_vpm_level_size[HN_VPM_LEVEL_MAX + 1];
 
-typedef uintptr_t (*hn_vpm_level_rounddowner_t)(uintptr_t addr);
-extern hn_vpm_level_rounddowner_t hn_vpm_level_rounddowners[HN_VPM_LEVEL_MAX + 1];
-
 kf_rbtree_t *hn_mm_get_vpm_lookup_tree(mm_context_t *context, const void *addr, int level);
 hn_vpm_poolpg_t **hn_mm_get_vpm_pool_list(mm_context_t *context, const void *addr, int level);
 
 bool hn_vpm_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 void hn_vpm_nodefree(kf_rbtree_node_t *p);
 
-void mm_sync_global_mappings(const mm_context_t *src);
-void mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src);
-
-void *hn_rounddown_to_level_aligned_address(const void *const addr, int level);
+void *kn_rounddown_to_page_leveled_addr(const void *const addr, int level);
 
 hn_vpm_t *hn_mm_lookup_vpm(mm_context_t *context, const void* addr, int level);
 hn_vpm_t *hn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr, int level);

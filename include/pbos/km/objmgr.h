@@ -99,7 +99,7 @@ void om_decref(om_object_t *obj);
 
 void om_deinit_object(om_object_t *obj);
 
-#define om_getrefcount(o) (const size_t)((o)->ref_num)
+#define om_refcountof(o) (const size_t)((o)->ref_num)
 #define om_classof(o) ((o)->p_class)
 
 #define OM_INVALID_HANDLE UINT32_MAX

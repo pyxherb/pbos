@@ -5,7 +5,7 @@ mm_context_t hn_kernel_mm_context;
 mm_context_t *mm_kernel_context = &hn_kernel_mm_context;
 mm_context_t **mm_cur_contexts;
 
-void mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
+void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 	memcpy(
 		dest->pdt + PDX(KBOTTOM_VBASE),
 		src->pdt + PDX(KBOTTOM_VBASE),
@@ -16,14 +16,14 @@ void mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 		sizeof(arch_pde_t) * PDX(KSPACE_SIZE));
 }
 
-void mm_sync_global_mappings(const mm_context_t *src) {
+void kn_mm_sync_global_mappings(const mm_context_t *src) {
 	for (ps_euid_t i = 0; i < ps_eu_num; ++i) {
 		mm_context_t *cur_context = mm_cur_contexts[i];
 
 		if (cur_context == src)
 			continue;
 
-		mm_copy_global_mappings(cur_context, src);
+		kn_mm_copy_global_mappings(cur_context, src);
 	}
 }
 
@@ -52,9 +52,9 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 	memset(pdt_vaddr, 0, PAGESIZE);
 	context->pdt = pdt_vaddr;
 
-	mm_copy_global_mappings(context, mm_kernel_context);
+	kn_mm_copy_global_mappings(context, mm_kernel_context);
 
-	// mm_copy_global_mappings(context, mm_kernel_context);
+	// kn_mm_copy_global_mappings(context, mm_kernel_context);
 	return KM_RESULT_OK;
 
 fail:
@@ -90,6 +90,6 @@ void mm_switch_context(mm_context_t *context) {
 	kd_assert(context);
 	mm_context_t *prev_context = mm_cur_contexts[ps_get_cur_euid()];
 	mm_cur_contexts[ps_get_cur_euid()] = context;
-	mm_sync_global_mappings(prev_context);
+	kn_mm_sync_global_mappings(prev_context);
 	arch_lpdt(PGROUNDDOWN(hn_getmap(mm_kernel_context->pdt, context->pdt, NULL)));
 }

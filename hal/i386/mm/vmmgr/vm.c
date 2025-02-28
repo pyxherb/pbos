@@ -150,13 +150,13 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	for (uint16_t i = PDX(vaddr); i <= PDX(vaddr_limit); ++i) {
 		if (!(ctxt->pdt[i].mask & PDE_P)) {
 			kd_assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
-			pgaddr_t pgdir = hn_mm_context_pgtaballoc(ctxt, i);
+			void *pgdir = kn_mm_alloc_pgdir(ctxt, VADDR(i, 0, 0), 0);
 			if (!pgdir) {
 				mm_unmmap(ctxt, vaddr, size, flags);
 				return KM_RESULT_NO_MEM;
 			} else {
 				{
-					pgaddr_t mapped_pgdir = hn_tmpmap(pgdir, 1, PTE_P | PTE_RW);
+					pgaddr_t mapped_pgdir = hn_tmpmap(PGROUNDDOWN(pgdir), 1, PTE_P | PTE_RW);
 					arch_pte_t *pgdir_entries = (arch_pte_t *)UNPGADDR(mapped_pgdir);
 
 					memset(pgdir_entries, 0, sizeof(arch_pte_t) * (PTX_MAX + 1));
@@ -186,11 +186,11 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 			vmalloc_succeeded:
 				ctxt->pdt[i].mask = PDE_P | PDE_RW | PDE_U;
 
-				hn_mad_t *mad = hn_get_mad(pgdir);
+				hn_mad_t *mad = hn_get_mad(PGROUNDDOWN(pgdir));
 				mad->type = MAD_ALLOC_KERNEL;
 				mad->exdata.mapped_pgtab_addr = (pgaddr_t)NULL;
 
-				result = mm_mmap(ctxt, map_addr, UNPGADDR(pgdir), PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
+				result = mm_mmap(ctxt, map_addr, pgdir, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
 				kd_assert(KM_SUCCEEDED(result));
 
 				mad->exdata.mapped_pgtab_addr = PGROUNDDOWN(map_addr);
@@ -557,26 +557,57 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 	return NULLPG;
 }
 
-pgaddr_t hn_mm_context_pgtaballoc(mm_context_t *ctxt, uint16_t pdx) {
-	kd_assert(ctxt);
-	kdprintf("Allocating page table for context %p at PDX %hu: \n", ctxt, pdx);
-	kd_assert(pdx <= PDX_MAX);
-	arch_pde_t *pde = &(ctxt->pdt[pdx]);
+void *kn_lookup_pgdir(mm_context_t *ctxt, void *addr, int level) {
+	switch (level) {
+		case 0: {
+			kd_assert(ctxt);
+			kdprintf("Looking up page directory for context %p at PDX %hu: \n", ctxt, PDX(addr));
+			kd_assert(PDX(addr) <= PDX_MAX);
+			arch_pde_t *pde = &(ctxt->pdt[PDX(addr)]);
 
-	kd_assert(!(pde->mask & PDE_P));
+			if (!(pde->mask & PDE_P))
+				return NULL;
 
-	if (!(pde->address = PGROUNDDOWN(
-			  mm_pgalloc(MM_PMEM_AVAILABLE))))
-		return (pgaddr_t)NULL;
-
-	return ctxt->pdt[pdx].address;
+			return UNPGADDR(pde->address);
+		}
+		default:
+			km_panic("Invalid page level for page directory: %d", level);
+	}
 }
 
-void hn_mm_context_pgtabfree(mm_context_t *ctxt, uint16_t pdx) {
-	kd_assert(ctxt);
-	kdprintf("Freeing page table for context %p at PDX %hu: \n", ctxt, pdx);
-	kd_assert(pdx <= PDX_MAX);
-	kd_assert(ctxt->pdt[pdx].mask & PDE_P);
-	mm_pgfree(UNPGADDR(ctxt->pdt[pdx].address));
-	ctxt->pdt[pdx].mask = ~PDE_P;
+void *kn_mm_alloc_pgdir(mm_context_t *ctxt, void *ptr, int level) {
+	switch (level) {
+		case 0: {
+			kd_assert(ctxt);
+			kdprintf("Allocating page directory for context %p at PDX %hu: \n", ctxt, PDX(ptr));
+			kd_assert(PDX(ptr) <= PDX_MAX);
+			arch_pde_t *pde = &(ctxt->pdt[PDX(ptr)]);
+
+			kd_assert(!(pde->mask & PDE_P));
+
+			if (!(pde->address = PGROUNDDOWN(
+					  mm_pgalloc(MM_PMEM_AVAILABLE))))
+				return NULL;
+
+			return UNPGADDR(pde->address);
+		}
+		default:
+			km_panic("Invalid page level for page directory: %d", level);
+	}
+}
+
+void kn_mm_free_pgdir(mm_context_t *ctxt, void *ptr, int level) {
+	switch (level) {
+		case 0: {
+			kd_assert(ctxt);
+			kdprintf("Freeing page directory for context %p at PDX %hu: \n", ctxt, PDX(ptr));
+			kd_assert(PDX(ptr) <= PDX_MAX);
+			kd_assert(ctxt->pdt[PDX(ptr)].mask & PDE_P);
+			mm_pgfree(UNPGADDR(ctxt->pdt[PDX(ptr)].address));
+			ctxt->pdt[PDX(ptr)].mask = ~PDE_P;
+			break;
+		}
+		default:
+			km_panic("Invalid page level for page directory: %d", level);
+	}
 }

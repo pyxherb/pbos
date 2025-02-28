@@ -20,17 +20,6 @@ km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_wal
 
 void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr, uint16_t *mask_out);
 
-/// @brief Allocate a page table for a memory context.
-/// @param ctxt Context to be operated.
-/// @param pdx PDX of the page table to be allocated.
-/// @return
-pgaddr_t hn_mm_context_pgtaballoc(mm_context_t *ctxt, uint16_t pdx);
-
-/// @brief Free a page table for a memory context.
-/// @param ctxt Context to be operated.
-/// @param pdx PDX of the page table to be freed.
-void hn_mm_context_pgtabfree(mm_context_t *ctxt, uint16_t pdx);
-
 /// @brief Map a physical page temporarily.
 /// @param pgpaddr Paged address of the physical page.
 /// @param pg_num Number of pages

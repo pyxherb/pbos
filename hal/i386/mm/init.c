@@ -211,13 +211,12 @@ static void hn_mm_init_areas() {
 						VMALLOC_NORESERVE);
 					bool new_poolpg_need_pgtab = false;
 
-					if (!(mm_kernel_context->pdt[PDX(new_poolpg_vaddr)].mask & PDE_P)) {
+					if (!kn_lookup_pgdir(mm_kernel_context, new_poolpg_vaddr, 0)) {
 						new_poolpg_need_pgtab = true;
 					}
 
 					if (new_poolpg_need_pgtab) {
-						pgaddr_t new_poolpg_pgtab_paddr = hn_mm_context_pgtaballoc(mm_kernel_context, PDX(new_poolpg_vaddr));
-						if (!ISVALIDPG(new_poolpg_pgtab_paddr)) {
+						if (!kn_mm_alloc_pgdir(mm_kernel_context, PDX(new_poolpg_vaddr), 0)) {
 							km_panic("No enough memory for new MAD pool page's corresponding page table");
 						}
 					}
@@ -267,8 +266,7 @@ static void hn_mm_init_areas() {
 					}
 
 					if (new_poolpg_need_pgtab) {
-						pgaddr_t new_poolpg_pgtab_paddr = hn_mm_context_pgtaballoc(mm_kernel_context, PDX(new_poolpg_vaddr));
-						if (!ISVALIDPG(new_poolpg_pgtab_paddr)) {
+						if (!kn_mm_alloc_pgdir(mm_kernel_context, PDX(new_poolpg_vaddr), 0)) {
 							km_panic("No enough memory for new MAD pool page's corresponding page table");
 						}
 					}

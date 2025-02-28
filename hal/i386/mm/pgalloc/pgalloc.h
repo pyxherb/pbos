@@ -38,7 +38,7 @@ enum {
 #define MAD_B 0x40	// Busy
 
 ///
-/// @brief Memory Allocation Descriptor (MAD), manages a single ordered block.
+/// @brief Memory Allocation Descriptor (MAD), manages a single page.
 ///
 typedef struct _hn_mad_t {
 	kf_rbtree_node_t node_header;
