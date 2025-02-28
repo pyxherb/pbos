@@ -135,7 +135,7 @@ km_result_t om_create_handle(om_object_t *obj, om_handle_t *handle_out) {
 
 	if (obj->handle != OM_INVALID_HANDLE) {
 		kn_handle_registry_t *registry = kn_lookup_handle_registry(obj->handle);
-		assert(registry);
+		kd_assert(registry);
 		++registry->ref_num;
 		*handle_out = obj->handle;
 		return KM_RESULT_OK;
@@ -178,7 +178,7 @@ void om_close_handle(om_handle_t handle) {
 	kn_handle_registry_t *registry = kn_lookup_handle_registry(handle);
 	if (!registry)
 		km_panic("Trying to close a invalid handle");
-	assert(registry->ref_num);
+	kd_assert(registry->ref_num);
 	if (!--registry->ref_num) {
 		kf_rbtree_remove(&kn_global_handle_set, &registry->handle_tree_header);
 	}

@@ -115,7 +115,7 @@ km_result_t hn_mm_insert_vpm(mm_context_t *context, const void *addr) {
 
 			inserted_flags_per_level[i] = true;
 			cur_level_vpm = hn_mm_lookup_vpm(context, aligned_addr, i);
-			assert(cur_level_vpm);
+			kd_assert(cur_level_vpm);
 		}
 
 		++cur_level_vpm->subref_count;
@@ -126,7 +126,7 @@ km_result_t hn_mm_insert_vpm(mm_context_t *context, const void *addr) {
 
 km_result_t hn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const addr, int level) {
 	// Check if the address is page-aligned.
-	assert(!(((uintptr_t)addr) % hn_vpm_level_size[level]));
+	kd_assert(!(((uintptr_t)addr) % hn_vpm_level_size[level]));
 
 	kf_rbtree_t *query_tree = hn_mm_get_vpm_lookup_tree(context, addr, level);
 	hn_vpm_poolpg_t **pool_list = hn_mm_get_vpm_pool_list(context, addr, level);
@@ -139,7 +139,7 @@ km_result_t hn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 		result = kf_rbtree_insert(
 			query_tree,
 			&vpm->node_header);
-		assert(KM_SUCCEEDED(result));
+		kd_assert(KM_SUCCEEDED(result));
 		return KM_RESULT_OK;
 	}
 
@@ -163,7 +163,7 @@ km_result_t hn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 	{
 		hn_vpm_poolpg_t *newpool = new_vpmpool_vaddr;
 
-		assert(newpool != addr);
+		kd_assert(newpool != addr);
 
 		memset(newpool, 0, PAGESIZE);
 
@@ -174,14 +174,14 @@ km_result_t hn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 		vpm->addr = new_vpmpool_vaddr;
 		vpm->flags = HN_VPM_ALLOC;
 		result = kf_rbtree_insert(query_tree, &vpm->node_header);
-		assert(KM_SUCCEEDED(result));
+		kd_assert(KM_SUCCEEDED(result));
 
 		// Initialize the target VPM.
 		vpm = &newpool->descs[1];
 		vpm->addr = (void *)addr;
 		vpm->flags = HN_VPM_ALLOC;
 		result = kf_rbtree_insert(query_tree, &vpm->node_header);
-		assert(KM_SUCCEEDED(result));
+		kd_assert(KM_SUCCEEDED(result));
 
 		if (*pool_list)
 			(*pool_list)->header.prev = newpool;
@@ -209,7 +209,7 @@ void hn_mm_free_vpm(mm_context_t *context, const void *addr) {
 
 #ifndef _NDEBUG
 		hn_vpm_t *cur_level_vpm = hn_mm_lookup_vpm(context, aligned_addr, i);
-		assert(cur_level_vpm);
+		kd_assert(cur_level_vpm);
 #endif
 
 		hn_mm_free_vpm_unchecked(context, aligned_addr, i);
@@ -226,15 +226,15 @@ void hn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 	query_desc.addr = (void *)addr;
 
 	kf_rbtree_node_t *target_node = kf_rbtree_find(query_tree, &query_desc.node_header);
-	assert(target_node);
+	kd_assert(target_node);
 	target_desc = PB_CONTAINER_OF(hn_vpm_t, node_header, target_node);
 
 	if (!(--target_desc->subref_count)) {
 		switch(level) {
 			case 0: {
 				hn_mad_t *mad = hn_get_mad(context->pdt[PDX(addr)].address);
-				assert(mad);
-				assert(mad->exdata.mapped_pgtab_addr);
+				kd_assert(mad);
+				kd_assert(mad->exdata.mapped_pgtab_addr);
 				mm_unmmap(context, UNPGADDR(mad->exdata.mapped_pgtab_addr), PAGESIZE, 0);
 				hn_mm_context_pgtabfree(context, PDX(addr));
 				break;

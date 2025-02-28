@@ -20,22 +20,48 @@ enum {
 #define PAGE_USER 0x20	   // User
 
 typedef uint8_t mm_pgaccess_t;
-typedef uint8_t mm_order_t;
 
 typedef struct _mm_context_t mm_context_t;
 
-mm_order_t mm_max_order();
-size_t mm_getpgsize();
-
+///
+/// @brief Allocate a single physical page.
+///
+/// @param memtype Type of the page to be allocated.
+/// @return Physical address of allocated page, NULL if failed.
+///
 PB_NODISCARD void *mm_pgalloc(uint8_t memtype);
+///
+/// @brief Free a single physical page.
+/// @details This function decrease the reference count of specified page, when
+/// the reference count become 0, the page will be marked as free.
+///
+/// @param ptr Physical address of page to be freed.
+///
 void mm_pgfree(void *ptr);
 
+///
+/// @brief Increase reference counter of a physical page.
+///
+/// @param ptr Physical address of page to be referenced.
+///
 void mm_refpg(void *ptr);
 
+///
+/// @brief Allocate a memory block from the default pool.
+///
+/// @param size Size of the memory bloc to be allocated.
+/// @return Virtual address to the memory block, NULL if failed.
+///
 PB_NODISCARD void *mm_kmalloc(size_t size);
 
+///
+/// @brief Free a memory block from the default pool.
+///
+/// @param ptr Virtual address to the block to be freed.
+///
 void mm_kfree(void *ptr);
 
+/// @brief Do not mark the virtual pages as reserved after the allocation.
 #define VMALLOC_NORESERVE 0x80000000
 
 typedef uint32_t mm_vmalloc_flags_t;
@@ -77,6 +103,17 @@ void mm_vmfree(mm_context_t *context, void *addr, size_t size);
 
 typedef uint32_t mmap_flags_t;
 
+///
+/// @brief Map a continuous physical memory region to a continuous virtual memory region.
+///
+/// @param context Memory context to be operated.
+/// @param vaddr Base of virtual memory space to be mapped.
+/// @param paddr Base of physical memory space to be mapped.
+/// @param size Size of the region to be mapped.
+/// @param access Page access of mapped virtual pages.
+/// @param flags Flags for mapping.
+/// @return The result code for the mapping operation.
+///
 km_result_t mm_mmap(
 	mm_context_t *context,
 	void *vaddr,
@@ -85,27 +122,82 @@ km_result_t mm_mmap(
 	mm_pgaccess_t access,
 	mmap_flags_t flags);
 
+///
+/// @brief Set page access of virtual pages.
+///
+/// @param context Memory context to be operated.
+/// @param vaddr Base of virtual memory space to be operated.
+/// @param size Size of virtual memory space to be operated.
+/// @param access Page access to be applied to the virtual pages.
+///
 void mm_chpgmod(
 	mm_context_t *context,
 	const void *vaddr,
 	size_t size,
 	mm_pgaccess_t access);
 
+///
+/// @brief Unmap a continuous virtual memory region.
+///
+/// @param context Memory context to be operated.
+/// @param vaddr Base of virtual memory space to be unmapped.
+/// @param size Size of virtual memory space to be unmapped.
+/// @param flags Flags for unmapping, same as mmap's.
+///
 void mm_unmmap(mm_context_t *context, void *vaddr, size_t size, mmap_flags_t flags);
 
+///
+/// @brief Get mapping of a virtual page.
+///
+/// @param context Memory context to be operated.
+/// @param vaddr Virtual address of the virtual page to be queried.
+/// @param pgaccess_out Where to store page access of the page.
+/// @return Corresponding physical address of the mapped virtual page.
+///
 void *mm_getmap(mm_context_t *context, const void *vaddr, mm_pgaccess_t *pgaccess_out);
 
+///
+/// @brief Initialize a memory context.
+///
+/// @param context Pointer to the memory context buffer.
+/// @return The result code for the initialization operation.
+///
 PB_NODISCARD km_result_t kn_mm_init_context(mm_context_t *context);
+///
+/// @brief Free a memory context and its associated resource.
+///
+/// @param context Pointer to the memory context to be freed.
+///
 void mm_free_context(mm_context_t *context);
+///
+/// @brief Switch current memory context.
+///
+/// @param context Context to be switched to.
+///
 void mm_switch_context(mm_context_t *context);
 
+///
+/// @brief Invalidate mapping of a page in the TLB.
+///
+/// @param ptr Pointer to the virtual address to be invalidated.
+///
 void mm_invlpg(void *ptr);
 
+///
+/// @brief Check if accessing a space of memory in user mode violates the memory protection.
+///
+/// @param mm_context Memory context for checking.
+/// @param ptr Address of the space to be accessed.
+/// @param size Size of the space to be accessed.
+/// @return true The accessing violates the memory protection.
+/// @return false The accessing does not violate the memory protection.
+///
 bool mm_is_user_access_violated(mm_context_t *mm_context, const void *ptr, size_t size);
 
-/// @brief The kernel MM context.
+/// @brief The kernel memory context.
 extern mm_context_t *mm_kernel_context;
-/// @brief An array that contains current MM contexts of each EU.
+
+/// @brief An array that contains current memory contexts of each EU.
 extern mm_context_t **mm_cur_contexts;
 
 #endif

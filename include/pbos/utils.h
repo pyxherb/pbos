@@ -12,7 +12,7 @@
 // Static assert
 #ifndef PB_STATIC_ASSERT
 	#ifdef _Static_assert
-		#define PB_STATIC_ASSERT(c) _Static_assert(c);
+		#define PB_STATIC_ASSERT(c) _Static_kd_assert(c);
 	#else
 		#define PB_STATIC_ASSERT(c) typedef int pb_static_assert_##__LINE__##_t[c];
 	#endif

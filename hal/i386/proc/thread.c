@@ -51,7 +51,7 @@ void kn_thread_setentry(ps_tcb_t *tcb, void *ptr) {
 }
 
 void kn_thread_setstack(ps_tcb_t *tcb, void *ptr, size_t size) {
-	assert(tcb->context);
+	kd_assert(tcb->context);
 	const void *sp = ((char *)ptr) + size;
 	tcb->context->esp = (uint32_t)sp;
 	tcb->context->ebp = (uint32_t)sp;

@@ -14,6 +14,8 @@
 		#define PB_NODISCARD [[nodiscard("Should not discard the result")]]
 	#elif __cplusplus >= 201703L
 		#define PB_NODISCARD [[nodiscard]]
+	#else
+		#define PB_NODISCARD
 	#endif
 #elif defined(__GNUC__) || defined(__clang__)
 	#define PB_NODISCARD __attribute__((__warn_unused_result__))

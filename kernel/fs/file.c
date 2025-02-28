@@ -178,7 +178,7 @@ km_result_t fs_mount_file(om_handle_t parent, om_handle_t file_handle) {
 
 	if (KM_FAILED(result = parent_file->fs->ops.postmount(parent, file_handle))) {
 		km_result_t remove_result = kf_hashmap_remove(hm, &cfe->hashmap_header);
-		assert(KM_SUCCEEDED(remove_result));
+		kd_assert(KM_SUCCEEDED(remove_result));
 
 		return result;
 	}

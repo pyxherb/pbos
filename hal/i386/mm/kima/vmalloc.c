@@ -3,10 +3,10 @@
 
 void *kima_vpgalloc(void *addr, size_t size) {
 	char *vaddr = (char *)mm_kvmalloc(mm_kernel_context, size, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
-    assert(vaddr);
+    kd_assert(vaddr);
 	for (size_t i = 0; i < PGCEIL(size); i += PAGESIZE) {
 		void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
-		assert(paddr);
+		kd_assert(paddr);
 		mm_mmap(mm_kernel_context, vaddr + i, paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
 	}
 	return vaddr;

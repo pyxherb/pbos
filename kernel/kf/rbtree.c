@@ -16,8 +16,8 @@ void kf_rbtree_init(kf_rbtree_t *dest,
 }
 
 km_result_t kf_rbtree_insert(kf_rbtree_t *tree, kf_rbtree_node_t *node) {
-	assert(!node->l);
-	assert(!node->r);
+	kd_assert(!node->l);
+	kd_assert(!node->r);
 
 	if (!tree->root) {
 		tree->root = node;
@@ -142,7 +142,7 @@ kf_rbtree_node_t *kf_rbtree_next(kf_rbtree_node_t *node) {
 
 static void kf_rbtree_lrot(kf_rbtree_t *tree, kf_rbtree_node_t *x) {
 	kf_rbtree_node_t *y = x->r;
-	assert(y);
+	kd_assert(y);
 
 	x->r = y->l;
 	if (y->l)
@@ -163,7 +163,7 @@ static void kf_rbtree_lrot(kf_rbtree_t *tree, kf_rbtree_node_t *x) {
 
 static void kf_rbtree_rrot(kf_rbtree_t *tree, kf_rbtree_node_t *x) {
 	kf_rbtree_node_t *y = x->l;
-	assert(y);
+	kd_assert(y);
 
 	x->l = y->r;
 	if (y->r)

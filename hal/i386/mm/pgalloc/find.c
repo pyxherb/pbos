@@ -22,7 +22,7 @@ hn_pmad_t *hn_pmad_get(pgaddr_t addr) {
 pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area) {
 	kf_rbtree_foreach(i, &area->mad_query_tree) {
 		hn_mad_t *mad = PB_CONTAINER_OF(hn_mad_t, node_header, i);
-		assert(mad->flags & MAD_P);
+		kd_assert(mad->flags & MAD_P);
 		if (mad->type == MAD_ALLOC_FREE) {
 			pgaddr_t pgaddr = mad->pgaddr;
 			return pgaddr;

@@ -158,7 +158,7 @@ static void hn_mm_init_areas() {
 				PAGESIZE,
 				PAGE_MAPPED | PAGE_READ | PAGE_WRITE,
 				MMAP_NORC | MMAP_NOSETVPM);
-			assert(KM_SUCCEEDED(result));
+			kd_assert(KM_SUCCEEDED(result));
 
 			hn_global_mad_pool_list = (hn_madpool_t *)init_madpool_vaddr;
 
@@ -198,7 +198,7 @@ static void hn_mm_init_areas() {
 				if (cur_madpool_slot_index >= PB_ARRAYSIZE(hn_global_mad_pool_list->descs)) {
 					if (!last_madpool) {
 						km_result_t result = hn_mm_insert_vpm(mm_kernel_context, hn_global_mad_pool_list);
-						assert(KM_SUCCEEDED(result));
+						kd_assert(KM_SUCCEEDED(result));
 					}
 
 					void *new_poolpg_paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
@@ -223,7 +223,7 @@ static void hn_mm_init_areas() {
 					}
 
 					km_result_t result = mm_mmap(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
-					assert(KM_SUCCEEDED(result));
+					kd_assert(KM_SUCCEEDED(result));
 
 					cur_madpool_slot_index = 0;
 
@@ -274,7 +274,7 @@ static void hn_mm_init_areas() {
 					}
 
 					km_result_t result = mm_mmap(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
-					assert(KM_SUCCEEDED(result));
+					kd_assert(KM_SUCCEEDED(result));
 
 					memset((hn_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
 

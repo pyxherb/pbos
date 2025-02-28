@@ -76,7 +76,7 @@ void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type) {
 void hn_set_pgblk_free(pgaddr_t addr) {
 	hn_mad_t *mad = hn_get_mad(addr);
 
-	assert(mad->ref_count);
+	kd_assert(mad->ref_count);
 	if (!(--mad->ref_count)) {
 		mad->flags = MAD_P;
 		mad->type = MAD_ALLOC_FREE;

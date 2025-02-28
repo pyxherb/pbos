@@ -55,7 +55,7 @@ km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_wal
 	for (uint16_t di = PDX(vaddr); di <= (PDX(((char *)vaddr) + size));
 		 di++) {
 		arch_pde_t *const pde = &pdt[di];
-		assert(pde->mask & PDE_P);
+		kd_assert(pde->mask & PDE_P);
 
 		void *tmpaddr;
 		bool is_tmpmap = false;
@@ -64,7 +64,7 @@ km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_wal
 			goto use_tmpmap;
 		} else {
 			hn_mad_t *mad = hn_get_mad(pde->address);
-			assert(mad);
+			kd_assert(mad);
 			if (mad->exdata.mapped_pgtab_addr) {
 				tmpaddr = UNPGADDR(mad->exdata.mapped_pgtab_addr);
 			} else {
@@ -141,7 +141,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	size_t size,
 	mm_pgaccess_t access,
 	mmap_flags_t flags) {
-	assert(ctxt);
+	kd_assert(ctxt);
 
 	km_result_t result;
 
@@ -149,7 +149,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 	for (uint16_t i = PDX(vaddr); i <= PDX(vaddr_limit); ++i) {
 		if (!(ctxt->pdt[i].mask & PDE_P)) {
-			assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
+			kd_assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
 			pgaddr_t pgdir = hn_mm_context_pgtaballoc(ctxt, i);
 			if (!pgdir) {
 				mm_unmmap(ctxt, vaddr, size, flags);
@@ -191,7 +191,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 				mad->exdata.mapped_pgtab_addr = (pgaddr_t)NULL;
 
 				result = mm_mmap(ctxt, map_addr, UNPGADDR(pgdir), PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
-				assert(KM_SUCCEEDED(result));
+				kd_assert(KM_SUCCEEDED(result));
 
 				mad->exdata.mapped_pgtab_addr = PGROUNDDOWN(map_addr);
 			}
@@ -222,7 +222,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 			void *cur_ptr = ((char *)rounded_vaddr) + i;
 			if (!(flags & MMAP_NOSETVPM)) {
 				km_result_t result = hn_mm_insert_vpm(ctxt, cur_ptr);
-				assert(KM_SUCCEEDED(result));
+				kd_assert(KM_SUCCEEDED(result));
 			}
 		}
 	}
@@ -269,7 +269,7 @@ km_result_t hn_unmmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uin
 }
 
 void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
-	assert(ctxt);
+	kd_assert(ctxt);
 
 	const void *vaddr_limit = ((const char *)vaddr) + size;
 	hn_unmmap_walker_args args = {
@@ -278,7 +278,7 @@ void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 		.flags = flags
 	};
 	km_result_t result = hn_walkpgtab(ctxt->pdt, vaddr, size, hn_unmmap_walker, &args);
-	assert(KM_SUCCEEDED(result));
+	kd_assert(KM_SUCCEEDED(result));
 }
 
 void mm_chpgmod(
@@ -321,8 +321,8 @@ void *mm_vmalloc(mm_context_t *ctxt,
 	size_t size,
 	mm_pgaccess_t access,
 	mm_vmalloc_flags_t flags) {
-	assert(ctxt);
-	assert(size);
+	kd_assert(ctxt);
+	kd_assert(size);
 	pgaddr_t pgminaddr = PGROUNDDOWN(minaddr), pgmaxaddr = PGROUNDUP(maxaddr),
 			 pgsize = PGROUNDUP(size);
 
@@ -407,7 +407,7 @@ void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr, uint16_t *mask_out) 
 }
 
 void *mm_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
-	assert(ctxt);
+	kd_assert(ctxt);
 	uint16_t mask;
 	void *mapped_addr = hn_getmap(ctxt->pdt, vaddr, &mask);
 
@@ -431,7 +431,7 @@ pgaddr_t hn_tmpmap(pgaddr_t pgpaddr, pgsize_t pg_num, uint16_t mask) {
 		"Number of pages (%d pages) to map is bigger than the size of KTMPMAP area (%d pages)",
 		pg_num, PGROUNDDOWN(KTMPMAP_SIZE));
 
-	assert(ISVALIDPG(pgpaddr));
+	kd_assert(ISVALIDPG(pgpaddr));
 
 	pgaddr_t vaddr;
 
@@ -505,9 +505,9 @@ pgaddr_t hn_kvpgalloc(const arch_pde_t *pgdir) {
 }
 
 pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr) {
-	assert(ISVALIDPG(minaddr));
-	assert(ISVALIDPG(maxaddr));
-	assert(minaddr <= maxaddr);
+	kd_assert(ISVALIDPG(minaddr));
+	kd_assert(ISVALIDPG(maxaddr));
+	kd_assert(minaddr <= maxaddr);
 
 	for (uint16_t i = PGDX(minaddr); i < PGDX(maxaddr) + 1; ++i) {
 		// Skip if the directory does not present
@@ -558,12 +558,12 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 }
 
 pgaddr_t hn_mm_context_pgtaballoc(mm_context_t *ctxt, uint16_t pdx) {
-	assert(ctxt);
+	kd_assert(ctxt);
 	kdprintf("Allocating page table for context %p at PDX %hu: \n", ctxt, pdx);
-	assert(pdx <= PDX_MAX);
+	kd_assert(pdx <= PDX_MAX);
 	arch_pde_t *pde = &(ctxt->pdt[pdx]);
 
-	assert(!(pde->mask & PDE_P));
+	kd_assert(!(pde->mask & PDE_P));
 
 	if (!(pde->address = PGROUNDDOWN(
 			  mm_pgalloc(MM_PMEM_AVAILABLE))))
@@ -573,10 +573,10 @@ pgaddr_t hn_mm_context_pgtaballoc(mm_context_t *ctxt, uint16_t pdx) {
 }
 
 void hn_mm_context_pgtabfree(mm_context_t *ctxt, uint16_t pdx) {
-	assert(ctxt);
+	kd_assert(ctxt);
 	kdprintf("Freeing page table for context %p at PDX %hu: \n", ctxt, pdx);
-	assert(pdx <= PDX_MAX);
-	assert(ctxt->pdt[pdx].mask & PDE_P);
+	kd_assert(pdx <= PDX_MAX);
+	kd_assert(ctxt->pdt[pdx].mask & PDE_P);
 	mm_pgfree(UNPGADDR(ctxt->pdt[pdx].address));
 	ctxt->pdt[pdx].mask = ~PDE_P;
 }

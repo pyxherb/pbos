@@ -5,7 +5,7 @@
 
 #ifndef _NDEBUG
 	#undef assert
-	#define assert(c)         \
+	#define kd_assert(c)         \
 		if (!(c)) km_panic(      \
 			"Assertion error!\n" \
 			"File: %s\n"         \
@@ -16,7 +16,7 @@
 	#define kd_dbgcheck(c, fmt, ...) \
 		if (!(c)) km_panic(fmt, ##__VA_ARGS__)
 #else
-	#define assert(c)
+	#define kd_assert(c)
 	#define kd_dbgcheck(c, msg)
 #endif
 

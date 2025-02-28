@@ -61,7 +61,7 @@ void ps_create_proc(
 		km_panic("Trying to create a new process with PCB with PID that is already used by a process");
 
 	km_result_t result = kf_rbtree_insert(&ps_global_proc_set, &pcb->node_header);
-	assert(KM_SUCCEEDED(result));
+	kd_assert(KM_SUCCEEDED(result));
 }
 
 ps_pcb_t *kn_alloc_pcb() {
@@ -186,7 +186,7 @@ km_result_t ps_create_uhandle(ps_pcb_t *proc, om_handle_t khandle, ps_uhandle_t 
 
 	result = kf_rbtree_insert(&proc->uhandle_map, &uhr->node_header);
 
-	assert(KM_SUCCEEDED(result));
+	kd_assert(KM_SUCCEEDED(result));
 
 	*uhandle_out = uhandle;
 
@@ -198,7 +198,7 @@ void ps_close_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle) {
 	query_uhr.uhandle = uhandle;
 
 	kf_rbtree_node_t *node = kf_rbtree_find(&proc->uhandle_map, &query_uhr.node_header);
-	assert(node);
+	kd_assert(node);
 
 	ps_uhr_t *uhr = PB_CONTAINER_OF(ps_uhr_t, node_header, node);
 

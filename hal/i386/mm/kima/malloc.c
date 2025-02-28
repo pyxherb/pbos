@@ -2,7 +2,7 @@
 #include <pbos/km/logger.h>
 
 void *mm_kmalloc(size_t size) {
-	assert(size);
+	kd_assert(size);
 	void *filter_base = NULL;
 
 	kf_rbtree_foreach(i, &kima_vpgdesc_query_tree) {
@@ -40,14 +40,14 @@ void *mm_kmalloc(size_t size) {
 				}
 
 				kima_ublk_t *ublk = kima_alloc_ublk(cur_base, size);
-				assert(ublk);
+				kd_assert(ublk);
 
 				for (size_t j = 0;
 					 j < PGCEIL(size);
 					 j += PAGESIZE) {
 					kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(((char *)cur_desc->ptr) + j);
 
-					assert(vpgdesc);
+					kd_assert(vpgdesc);
 
 					++vpgdesc->ref_count;
 				}
@@ -61,29 +61,29 @@ void *mm_kmalloc(size_t size) {
 
 	void *new_free_pg = kima_vpgalloc(NULL, PGCEIL(size));
 
-	assert(new_free_pg);
+	kd_assert(new_free_pg);
 
 	for (size_t i = 0; i < PGROUNDUP(size); ++i) {
 		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(((char *)new_free_pg) + i * PAGESIZE);
 
-		assert(vpgdesc);
+		kd_assert(vpgdesc);
 	}
 
 	kima_ublk_t *ublk = kima_alloc_ublk(new_free_pg, size);
-	assert(ublk);
+	kd_assert(ublk);
 
 	return new_free_pg;
 }
 
 void mm_kfree(void *ptr) {
 	kima_ublk_t *ublk = kima_lookup_ublk(ptr);
-	assert(ublk);
+	kd_assert(ublk);
 	for (uintptr_t i = PGFLOOR(ublk->ptr);
 		 i < PGCEIL(((char *)ublk->ptr) + ublk->size);
 		 i += PAGESIZE) {
 		kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc((void *)i);
 
-		assert(vpgdesc);
+		kd_assert(vpgdesc);
 
 		if (!(--vpgdesc->ref_count))
 			kima_free_vpgdesc(vpgdesc);
