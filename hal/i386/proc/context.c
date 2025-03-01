@@ -1,5 +1,6 @@
 #include <arch/i386/reg.h>
 #include <hal/i386/proc.h>
+#include <pbos/hal/spinlock.h>
 #include <pbos/km/logger.h>
 
 typedef struct _kn_ctxtsw_tmp_t {
@@ -16,12 +17,15 @@ typedef struct _kn_ctxtsw_tmp_t {
 
 #define hn_ctxtsw_tmp_area ((kn_ctxtsw_tmp_t *)KCTXTSWTMP_VBASE)
 
+hal_spinlock_t hn_load_context_spinlock = HAL_SPINLOCK_DEFAULT_VALUE;
+
 PB_NORETURN void hn_load_user_context();
 
 void ps_save_context(ps_user_context_t *ctxt) {
 }
 
 PB_NORETURN void ps_load_user_context(ps_user_context_t *ctxt) {
+	hal_spinlock_lock(&hn_load_context_spinlock);
 	/*kdprintf("Switching context:\n"
 			"EAX=%.8x EBX=%.8x\n"
 			"ECX=%.8x EDX=%.8x\n"

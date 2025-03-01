@@ -44,4 +44,7 @@ hn_load_user_context:
 
 	movl (KCTXTSWTMP_VBASE + 28), %eax
 
+	// Unlock the spinlock
+	movb $0, (hn_load_context_spinlock)
+
 	iretl

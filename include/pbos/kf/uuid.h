@@ -1,6 +1,7 @@
 #ifndef _PBOS_KF_UUID_H_
 #define _PBOS_KF_UUID_H_
 
+#include <pbos/attribs.h>
 #include <stdint.h>
 
 typedef struct _uuid_t {
@@ -29,7 +30,7 @@ typedef struct _uuid_t {
 		((_a)->e2 == (_b)->e2))
 #define uuid_neq(_a, _b) (!uuid_eq(_a, _b))
 
-static inline bool uuid_gt(const uuid_t* _a, const uuid_t* _b) {
+PB_FORCEINLINE bool uuid_gt(const uuid_t* _a, const uuid_t* _b) {
 	if(_a->a > _b->a)
 		return true;
 	if(_a->b > _b->b)
@@ -45,7 +46,7 @@ static inline bool uuid_gt(const uuid_t* _a, const uuid_t* _b) {
 	return false;
 }
 
-static inline bool uuid_lt(const uuid_t* _a, const uuid_t* _b) {
+PB_FORCEINLINE bool uuid_lt(const uuid_t* _a, const uuid_t* _b) {
 	if(_a->a < _b->a)
 		return true;
 	if(_a->b < _b->b)

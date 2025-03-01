@@ -4,7 +4,7 @@
 #include <pbos/utils.h>
 
 typedef void *(*kf_allocator_alloc_t)(size_t size);
-typedef void *(*kf_allocator_dealloc_t)(void *ptr);
+typedef void *(*kf_allocator_dealloc_t)(void *ptr, size_t size);
 
 typedef struct _kf_allocator_t {
 	kf_allocator_alloc_t alloc;
