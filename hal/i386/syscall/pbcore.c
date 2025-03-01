@@ -23,16 +23,16 @@ km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint3
 
 	asm volatile("xchg %bx, %bx");
 
-	fs_fcontext_t *fcontext;
-	if (KM_FAILED(result = fs_open(pcb->cur_dir, path, path_len, &fcontext))) {
+	fs_fcb_t *fcb;
+	if (KM_FAILED(result = fs_open(pcb->cur_dir, path, path_len, &fcb))) {
 		return result;
 	}
 
 	asm volatile("xchg %bx, %bx");
 
-	ps_ufcontext_t *ufcontext;
-	if(!(ufcontext = ps_alloc_ufcontext(pcb, fcontext, fd))) {
-		fs_close(fcontext);
+	ps_ufcb_t *ufcb;
+	if(!(ufcb = ps_alloc_ufcb(pcb, fcb, fd))) {
+		fs_close(fcb);
 		return KM_RESULT_NO_MEM;
 	}
 
@@ -45,12 +45,12 @@ km_result_t sysent_close(ps_ufd_t ufd, uint32_t flags) {
 	km_result_t result;
 	ps_pcb_t *pcb = ps_get_cur_proc();
 
-	ps_ufcontext_t *ufcontext = ps_lookup_ufcontext(pcb, ufd);
+	ps_ufcb_t *ufcb = ps_lookup_ufcb(pcb, ufd);
 
-	if(!ufcontext)
+	if(!ufcb)
 		return KM_RESULT_INVALID_ARGS;
 
-	ps_remove_ufcontext(pcb, ufcontext);
+	ps_remove_ufcb(pcb, ufcb);
 
 	return KM_RESULT_OK;
 }
@@ -76,10 +76,10 @@ km_result_t sysent_exec_child(
 	if (mm_is_user_access_violated(pcb->mm_context, proc_id_out, sizeof(proc_id_t)))
 		return KM_RESULT_ACCESS_VIOLATION;
 
-	ps_ufcontext_t *ufcontext = ps_lookup_ufcontext(pcb, file_ufd);
+	ps_ufcb_t *ufcb = ps_lookup_ufcb(pcb, file_ufd);
 
-	if(!ufcontext)
+	if(!ufcb)
 		return KM_RESULT_INVALID_ARGS;
 
-	return km_exec(pcb->proc_id, 0, ufcontext->kernel_fcontext, proc_id_out);
+	return km_exec(pcb->proc_id, 0, ufcb->kernel_fcb, proc_id_out);
 }

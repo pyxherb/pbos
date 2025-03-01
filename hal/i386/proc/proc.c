@@ -9,8 +9,8 @@ ps_tcb_t **ps_cur_thread_per_eu;
 static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 static void _parp_nodefree(kf_rbtree_node_t *p);
 
-static bool _ufcontext_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
-static void _ufcontext_nodefree(kf_rbtree_node_t *p);
+static bool _ufcb_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
+static void _ufcb_nodefree(kf_rbtree_node_t *p);
 
 static bool _uhr_uhandle_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 static void _uhr_uhandle_nodefree(kf_rbtree_node_t *p);
@@ -19,34 +19,34 @@ ps_ufd_t ps_alloc_fd(ps_pcb_t *pcb) {
 	return pcb->last_fd++;
 }
 
-ps_ufcontext_t *ps_alloc_ufcontext(ps_pcb_t *pcb, fs_fcontext_t *kernel_fcontext, ps_ufd_t fd) {
-	ps_ufcontext_t *p = mm_kmalloc(sizeof(ps_ufcontext_t));
+ps_ufcb_t *ps_alloc_ufcb(ps_pcb_t *pcb, fs_fcb_t *kernel_fcb, ps_ufd_t fd) {
+	ps_ufcb_t *p = mm_kmalloc(sizeof(ps_ufcb_t));
 	if (!p)
 		return NULL;
 	p->fd = fd;
-	p->kernel_fcontext = kernel_fcontext;
+	p->kernel_fcb = kernel_fcb;
 	memset(&p->node_header, 0, sizeof(kf_rbtree_node_t));
-	ps_add_ufcontext(pcb, p);
+	ps_add_ufcb(pcb, p);
 	return p;
 }
 
-void ps_add_ufcontext(ps_pcb_t *pcb, ps_ufcontext_t *ufcontext) {
-	kf_rbtree_insert(&pcb->ufcontext_set, &ufcontext->node_header);
+void ps_add_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
+	kf_rbtree_insert(&pcb->ufcb_set, &ufcb->node_header);
 }
 
-void ps_remove_ufcontext(ps_pcb_t *pcb, ps_ufcontext_t *ufcontext) {
-	kf_rbtree_remove(&pcb->ufcontext_set, &ufcontext->node_header);
+void ps_remove_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
+	kf_rbtree_remove(&pcb->ufcb_set, &ufcb->node_header);
 }
 
-ps_ufcontext_t *ps_lookup_ufcontext(ps_pcb_t *pcb, ps_ufd_t fd) {
-	ps_ufcontext_t query_ufcontext = {
+ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd) {
+	ps_ufcb_t query_ufcb = {
 		.fd = fd
 	};
-	kf_rbtree_node_t *result = kf_rbtree_find(&pcb->ufcontext_set, &query_ufcontext.node_header);
+	kf_rbtree_node_t *result = kf_rbtree_find(&pcb->ufcb_set, &query_ufcb.node_header);
 	if (!result)
 		return NULL;
 
-	return PB_CONTAINER_OF(ps_ufcontext_t, node_header, result);
+	return PB_CONTAINER_OF(ps_ufcb_t, node_header, result);
 }
 
 void kn_proc_destructor(om_object_t *obj) {
@@ -83,6 +83,12 @@ ps_pcb_t *kn_alloc_pcb() {
 		return NULL;
 	}
 
+	if(KM_FAILED(ps_cur_sched->prepare_proc(ps_cur_sched, proc))) {
+		mm_kfree(proc->mm_context);
+		mm_kfree(proc);
+		return NULL;
+	}
+
 	om_init_object(&(proc->object_header), ps_proc_class, 0);
 
 	kf_rbtree_init(
@@ -91,9 +97,9 @@ ps_pcb_t *kn_alloc_pcb() {
 		_parp_nodefree);
 
 	kf_rbtree_init(
-		&(proc->ufcontext_set),
-		_ufcontext_nodecmp,
-		_ufcontext_nodefree);
+		&(proc->ufcb_set),
+		_ufcb_nodecmp,
+		_ufcb_nodefree);
 
 	kf_rbtree_init(
 		&(proc->uhandle_map),
@@ -119,6 +125,7 @@ ps_pcb_t *ps_getpcb(proc_id_t pid) {
 }
 
 void hn_proc_cleanup(ps_pcb_t *proc) {
+	ps_cur_sched->drop_proc(ps_cur_sched, proc);
 	mm_free_context(proc->mm_context);
 	mm_kfree(proc->mm_context);
 	proc->flags &= ~PROC_A;
@@ -231,17 +238,17 @@ static void _parp_nodefree(kf_rbtree_node_t *p) {
 	mm_kfree(p);
 }
 
-static bool _ufcontext_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	const ps_ufcontext_t *_x = PB_CONTAINER_OF(ps_ufcontext_t, node_header, x),
-						 *_y = PB_CONTAINER_OF(ps_ufcontext_t, node_header, y);
+static bool _ufcb_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
+	const ps_ufcb_t *_x = PB_CONTAINER_OF(ps_ufcb_t, node_header, x),
+						 *_y = PB_CONTAINER_OF(ps_ufcb_t, node_header, y);
 
 	return _x->fd < _y->fd;
 }
 
-static void _ufcontext_nodefree(kf_rbtree_node_t *p) {
-	ps_ufcontext_t *ufcontext = PB_CONTAINER_OF(ps_ufcontext_t, node_header, p);
-	fs_close(ufcontext->kernel_fcontext);
-	mm_kfree(ufcontext);
+static void _ufcb_nodefree(kf_rbtree_node_t *p) {
+	ps_ufcb_t *ufcb = PB_CONTAINER_OF(ps_ufcb_t, node_header, p);
+	fs_close(ufcb->kernel_fcb);
+	mm_kfree(ufcb);
 }
 
 static bool _uhr_uhandle_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {

@@ -12,6 +12,6 @@ bool kn_binldr_reg_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y)
 void kn_binldr_reg_nodefree(kf_rbtree_node_t *p);
 
 void kn_load_init();
-void kn_init_exec();
+void kn_init_binldrs();
 
 #endif

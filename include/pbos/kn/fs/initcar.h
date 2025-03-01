@@ -31,11 +31,11 @@ km_result_t initcar_subnode(fs_file_t *parent, const char *name, size_t name_len
 void initcar_offload(fs_file_t *file);
 km_result_t initcar_create_file(fs_file_t *parent, const char *name, size_t name_len, fs_file_t **file_out);
 km_result_t initcar_create_dir(fs_file_t *parent, const char *name, size_t name_len, fs_file_t **file_out);
-km_result_t initcar_open(fs_file_t *handle, fs_fcontext_t **fcontext_out);
-km_result_t initcar_close(fs_fcontext_t *fcontext);
-km_result_t initcar_read(fs_fcontext_t *fcontext, char *dest, size_t size, size_t off, size_t *bytes_read_out);
-km_result_t initcar_write(fs_fcontext_t *fcontext, const char *src, size_t size, size_t off, size_t *bytes_written_out);
-km_result_t initcar_size(fs_fcontext_t *fcontext, size_t *size_out);
+km_result_t initcar_open(fs_file_t *handle, fs_fcb_t **fcb_out);
+km_result_t initcar_close(fs_fcb_t *fcb);
+km_result_t initcar_read(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
+km_result_t initcar_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out);
+km_result_t initcar_size(fs_fcb_t *fcb, size_t *size_out);
 km_result_t initcar_mount(fs_file_t *parent, fs_file_t *file);
 km_result_t initcar_premount(fs_file_t *parent, fs_file_t *file);
 km_result_t initcar_postmount(fs_file_t *parent, fs_file_t *file);

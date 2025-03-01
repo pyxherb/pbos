@@ -5,7 +5,7 @@
 #include <pbos/km/result.h>
 
 typedef struct _fs_file_t fs_file_t;
-typedef struct _fs_fcontext_t fs_fcontext_t;
+typedef struct _fs_fcb_t fs_fcb_t;
 
 typedef struct _fs_fsops_t {
 	/// @brief Access subnode.
@@ -17,15 +17,15 @@ typedef struct _fs_fsops_t {
 	/// @brief Create a new directory.
 	km_result_t (*create_dir)(fs_file_t *parent, const char *name, size_t name_len, fs_file_t **file_out);
 	/// @brief Open a file.
-	km_result_t (*open)(fs_file_t *file, fs_fcontext_t **fcontext_out);
+	km_result_t (*open)(fs_file_t *file, fs_fcb_t **fcb_out);
 	/// @brief Close a FCB.
-	km_result_t (*close)(fs_fcontext_t *fcontext);
+	km_result_t (*close)(fs_fcb_t *fcb);
 	/// @brief Read data from a file.
-	km_result_t (*read)(fs_fcontext_t *fcontext, char *dest, size_t size, size_t off, size_t *bytes_read_out);
+	km_result_t (*read)(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
 	/// @brief Write data into a file.
-	km_result_t (*write)(fs_fcontext_t *fcontext, const char *src, size_t size, size_t off, size_t *bytes_written_out);
+	km_result_t (*write)(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out);
 	/// @brief Get size of a file.
-	km_result_t (*size)(fs_fcontext_t *fcontext, size_t *size_out);
+	km_result_t (*size)(fs_fcb_t *fcb, size_t *size_out);
 
 	km_result_t (*mount)(fs_file_t *parent, fs_file_t *file);
 	km_result_t (*premount)(fs_file_t *parent, fs_file_t *file);

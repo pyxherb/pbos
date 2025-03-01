@@ -34,10 +34,17 @@ thread_id_t ps_create_thread(
 	if ((!t) || (!pcb))
 		return -1;
 
+	km_result_t result = ps_cur_sched->prepare_thread(ps_cur_sched, t);
+	if(KM_FAILED(result)) {
+		// TODO: Do something to destroy the TCB.
+		return -1;
+	}
+
 	kf_rbtree_insert(&pcb->thread_set, &t->node_header);
 }
 
 void hn_thread_cleanup(ps_tcb_t *thread) {
+	ps_cur_sched->drop_thread(ps_cur_sched, thread);
 	kf_rbtree_remove(&thread->parent->thread_set, &thread->node_header);
 	while (thread->stacksize) {
 		mm_pgfree(mm_getmap(thread->parent->mm_context, thread->stack, NULL));

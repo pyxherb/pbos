@@ -54,21 +54,21 @@ typedef struct _ps_pcb_t {
 	kf_rbtree_t uhandle_map;
 	ps_uhandle_t last_allocated_uhandle_value;
 
-	kf_rbtree_t ufcontext_set;
+	kf_rbtree_t ufcb_set;
 	ps_ufd_t last_fd;
 } ps_pcb_t;
 
-typedef struct _ps_ufcontext_t {
+typedef struct _ps_ufcb_t {
 	kf_rbtree_node_t node_header;
-	fs_fcontext_t *kernel_fcontext;
+	fs_fcb_t *kernel_fcb;
 	ps_ufd_t fd;
-} ps_ufcontext_t;
+} ps_ufcb_t;
 
 ps_ufd_t ps_alloc_fd(ps_pcb_t *pcb);
-ps_ufcontext_t *ps_alloc_ufcontext(ps_pcb_t *pcb, fs_fcontext_t *kernel_fcontext, ps_ufd_t fd);
-void ps_add_ufcontext(ps_pcb_t *pcb, ps_ufcontext_t *ufcontext);
-void ps_remove_ufcontext(ps_pcb_t *pcb, ps_ufcontext_t *ufcontext);
-ps_ufcontext_t *ps_lookup_ufcontext(ps_pcb_t *pcb, ps_ufd_t fd);
+ps_ufcb_t *ps_alloc_ufcb(ps_pcb_t *pcb, fs_fcb_t *kernel_fcb, ps_ufd_t fd);
+void ps_add_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb);
+void ps_remove_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb);
+ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd);
 
 typedef struct _ps_user_context_t ps_user_context_t;
 
@@ -123,8 +123,6 @@ ps_pcb_t *ps_curproc();
 /// @return Current thread object.
 ps_tcb_t *ps_curthread();
 
-void ps_init();
-
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread);
 
 ps_euid_t ps_get_cur_euid();
@@ -136,5 +134,31 @@ void kn_set_cur_euid(ps_euid_t euid);
 km_result_t ps_create_uhandle(ps_pcb_t *proc, om_object_t *kobject, ps_uhandle_t *uhandle_out);
 void ps_close_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle);
 om_object_t *ps_lookup_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle);
+
+extern kf_rbtree_t ps_global_proc_set;
+
+typedef struct _ps_sched_t ps_sched_t;
+
+typedef km_result_t (*ps_sched_init_t)(ps_sched_t *sched);
+typedef void (*ps_sched_deinit_t)(ps_sched_t *sched);
+typedef km_result_t (*ps_sched_prepare_proc_t)(ps_sched_t *sched, ps_pcb_t *proc);
+typedef km_result_t (*ps_sched_prepare_thread_t)(ps_sched_t *sched, ps_tcb_t *thread);
+typedef void (*ps_sched_drop_proc_t)(ps_sched_t *sched, ps_pcb_t *proc);
+typedef void (*ps_sched_drop_thread_t)(ps_sched_t *sched, ps_tcb_t *thread);
+typedef ps_tcb_t *(*ps_sched_next_thread_t)(ps_sched_t *sched, ps_euid_t cur_euid, ps_pcb_t *cur_proc, ps_tcb_t *cur_thread);
+
+typedef struct _ps_sched_t {
+	ps_sched_init_t init;
+	ps_sched_deinit_t deinit;
+	ps_sched_prepare_proc_t prepare_proc;
+	ps_sched_prepare_thread_t prepare_thread;
+	ps_sched_drop_proc_t drop_proc;
+	ps_sched_drop_thread_t drop_thread;
+	ps_sched_next_thread_t next_thread;
+} ps_sched_t;
+
+extern ps_sched_t *ps_cur_sched;
+
+km_result_t ps_set_sched(ps_sched_t *sched);
 
 #endif

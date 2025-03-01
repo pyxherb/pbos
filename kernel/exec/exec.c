@@ -33,7 +33,7 @@ km_result_t km_register_binldr(km_binldr_t *binldr) {
 km_result_t km_exec(
 	proc_id_t parent,
 	se_uid_t uid,
-	fs_fcontext_t *file_fp,
+	fs_fcb_t *file_fp,
 	proc_id_t *pid_out) {
 	km_result_t result;
 

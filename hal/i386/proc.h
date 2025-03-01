@@ -34,8 +34,6 @@ typedef struct _hn_parp_t {
 
 #define PS_TCB_SCHEDULED 0x01
 
-extern kf_rbtree_t ps_global_proc_set;
-
 void hn_proc_cleanup(ps_pcb_t *proc);
 void hn_thread_cleanup(ps_tcb_t *thread);
 void ps_save_context(ps_user_context_t *ctxt);

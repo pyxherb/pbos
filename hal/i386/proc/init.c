@@ -3,34 +3,7 @@
 #include <arch/i386/io.h>
 #include <arch/i386/irq.h>
 
-om_class_t *ps_proc_class = NULL, *ps_thread_class = NULL;
-kf_rbtree_t ps_global_proc_set;
-uint32_t ps_eu_num;
-
-static bool _ps_pcb_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	return PB_CONTAINER_OF(ps_pcb_t, node_header, x)->proc_id < PB_CONTAINER_OF(ps_pcb_t, node_header, y)->proc_id;
-}
-
-static void _ps_pcb_nodefree(kf_rbtree_node_t *x) {
-	// stub
-}
-
-void ps_init() {
-	if (!(ps_proc_class = om_register_class(&PROC_CLASSID, kn_proc_destructor)))
-		km_panic("Error registering process kernel class");
-
-	if (!(ps_thread_class = om_register_class(&THREAD_CLASSID, kn_thread_destructor)))
-		km_panic("Error registering thread kernel class");
-
-	kf_rbtree_init(
-		&ps_global_proc_set,
-		_ps_pcb_nodecmp,
-		_ps_pcb_nodefree);
-
-	// hn_proc_list = mm_kmalloc(sizeof(ps_pcb_t) * PROC_MAX);
-	// if (!hn_proc_list)
-	// km_panic("Error allocating memory space for process list");
-
+void hal_prepare_ps() {
 	for (size_t i = 0; i < KCTXTSWTMP_SIZE; i += PAGESIZE) {
 		void *paddr = mm_pgalloc(KN_PMEM_AVAILABLE);
 		if (!paddr)
@@ -50,8 +23,6 @@ void ps_init() {
 	}
 
 	memset(ps_cur_thread_per_eu, 0, ps_eu_num * sizeof(ps_tcb_t *));
-
-	kn_init_exec();
 }
 
 PB_NORETURN void kn_enter_sched_halt();

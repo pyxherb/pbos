@@ -11,7 +11,7 @@ static void _filesys_nodefree(kf_rbtree_node_t *p);
 kf_rbtree_t kn_registered_fs;
 fs_file_t *fs_abs_root_dir;
 om_class_t *fs_file_class;
-om_class_t *fs_fcontext_class;
+om_class_t *fs_fcb_class;
 fs_filesys_t *fs_rootfs;
 
 fs_filesys_t *fs_register_filesys(

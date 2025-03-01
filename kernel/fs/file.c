@@ -116,14 +116,14 @@ end:;
 	return KM_RESULT_OK;
 }
 
-km_result_t fs_open(fs_file_t *base_dir, const char *path, size_t path_len, fs_fcontext_t **fcontext_out) {
+km_result_t fs_open(fs_file_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out) {
 	fs_file_t *file;
 	km_result_t result;
 
 	if (KM_FAILED(result = fs_resolve_path(base_dir, path, path_len, &file)))
 		return result;
 
-	if (KM_FAILED(result = file->fs->ops.open(file, fcontext_out))) {
+	if (KM_FAILED(result = file->fs->ops.open(file, fcb_out))) {
 		om_decref(&file->object_header);
 		return result;
 	}
@@ -133,20 +133,20 @@ km_result_t fs_open(fs_file_t *base_dir, const char *path, size_t path_len, fs_f
 	return KM_RESULT_OK;
 }
 
-km_result_t fs_close(fs_fcontext_t *fcontext) {
-	return fcontext->file->fs->ops.close(fcontext);
+km_result_t fs_close(fs_fcb_t *fcb) {
+	return fcb->file->fs->ops.close(fcb);
 }
 
-km_result_t fs_read(fs_fcontext_t *fcontext, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
-	return fcontext->file->fs->ops.read(fcontext, (char *)dest, size, off, bytes_read_out);
+km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
+	return fcb->file->fs->ops.read(fcb, (char *)dest, size, off, bytes_read_out);
 }
 
-km_result_t fs_write(fs_fcontext_t *fcontext, const char *src, size_t size, size_t off, size_t *bytes_written_out) {
-	return fcontext->file->fs->ops.write(fcontext, src, size, off, bytes_written_out);
+km_result_t fs_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out) {
+	return fcb->file->fs->ops.write(fcb, src, size, off, bytes_written_out);
 }
 
-km_result_t fs_size(fs_fcontext_t *fcontext, size_t *size_out) {
-	return fcontext->file->fs->ops.size(fcontext, size_out);
+km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {
+	return fcb->file->fs->ops.size(fcb, size_out);
 }
 
 void kn_file_destructor(om_object_t *obj) {

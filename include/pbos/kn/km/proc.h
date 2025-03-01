@@ -3,6 +3,11 @@
 
 #include <pbos/km/proc.h>
 
+extern ps_sched_t ps_simploop_sched;
+
+void hal_prepare_ps();
+void ps_init();
+
 PB_NORETURN void kn_enter_sched(ps_euid_t euid);
 
 void kn_proc_destructor(om_object_t *obj);
