@@ -4,7 +4,7 @@ file(GLOB SRC *.h *.c *.S)
 target_sources(hal PRIVATE ${SRC})
 target_include_directories(hal SYSTEM BEFORE PRIVATE ${FREESTDC_INCLUDE_DIR})
 add_dependencies(hal pbarch freestdc)
-target_link_libraries(hal pbarch freestdc)
+target_link_libraries(hal PUBLIC pbarch freestdc)
 
 add_subdirectory("boot")
 # add_subdirectory("dbg")
