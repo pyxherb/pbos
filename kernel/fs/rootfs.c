@@ -1,6 +1,7 @@
 #include <pbos/km/mm.h>
 #include <pbos/kn/fs/rootfs.h>
 #include <pbos/kf/hash.h>
+#include <string.h>
 
 size_t kn_fs_rootfs_file_hasher(size_t bucket_num, const void *target, bool is_target_key) {
 	fs_rootfs_dir_entry_t *entry = PB_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, target);

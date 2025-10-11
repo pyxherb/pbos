@@ -1,4 +1,5 @@
 #include <pbos/kn/km/mm.h>
+#include <string.h>
 
 kn_mm_vpm_poolpg_t *hn_kspace_vpm_poolpg_list;
 

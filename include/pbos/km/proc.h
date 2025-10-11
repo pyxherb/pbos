@@ -159,6 +159,9 @@ typedef struct _ps_sched_t {
 
 extern ps_sched_t *ps_cur_sched;
 
+PB_FORCEINLINE ps_sched_t *ps_get_sched() {
+	return ps_cur_sched;
+};
 km_result_t ps_set_sched(ps_sched_t *sched);
 
 #endif
