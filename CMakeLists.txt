@@ -22,7 +22,6 @@ include_directories("${PROJECT_SOURCE_DIR}/include")
 
 set(PBOS_ROOT_DIR ${PROJECT_SOURCE_DIR})
 set(PBOS_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM "${PBOS_BINARY_DIR}/tools/bin")
 
 # Subdirectories
 add_subdirectory("arch")

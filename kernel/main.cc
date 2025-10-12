@@ -1,4 +1,3 @@
-extern "C" {
 #include <hal/i386/debug.h>
 #include <hal/i386/initcar.h>
 #include <pbos/hal/init.h>
@@ -11,16 +10,6 @@ extern "C" {
 #include <pbos/kn/km/exec.h>
 #include <pbos/kn/km/objmgr.h>
 #include <string.h>
-}
-
-struct Test {
-	Test() noexcept {
-		kprintf("Hello, test!");
-		asm volatile("xchg %bx, %bx");
-	}
-};
-
-Test g_test;
 
 extern "C" PB_NORETURN void _start() {
 	km_result_t result;

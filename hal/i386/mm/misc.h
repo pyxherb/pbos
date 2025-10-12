@@ -35,16 +35,4 @@ extern char **hn_tss_stacks;
 
 uint8_t hn_to_kn_pmem_type(uint8_t memtype);
 
-PB_FORCEINLINE uint8_t hn_get_alloc_order(size_t size) {
-	// Order of block to allocate.
-	uint16_t order = 0;
-
-	// Get minimum order of block which can contain the whole fragment.
-	while (size > MM_BLKSIZE(order))
-		order++;
-	order = PB_MIN(order, MM_MAXORD);	// Cannot exceed the maximum order.
-
-	return order;
-}
-
 #endif

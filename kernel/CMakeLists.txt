@@ -5,7 +5,7 @@ find_package(kimgen REQUIRED)
 find_package(cargen REQUIRED)
 
 get_property(FREESTDC_INCLUDE_DIR GLOBAL PROPERTY FREESTDC_INCLUDE_DIR)
-target_include_directories(pbkern SYSTEM BEFORE PRIVATE ${FREESTDC_INCLUDE_DIR})
+target_include_directories(pbkern PRIVATE ${FREESTDC_INCLUDE_DIR})
 
 add_dependencies(pbkern pbarch freestdc hal bootldr)
 target_link_libraries(pbkern PRIVATE pbarch freestdc hal)
