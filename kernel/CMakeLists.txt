@@ -1,4 +1,4 @@
-file(GLOB SRC *.c *.h *.S)
+file(GLOB SRC *.c *.cc *.h *.S)
 add_executable(pbkern ${SRC})
 
 find_package(kimgen REQUIRED)

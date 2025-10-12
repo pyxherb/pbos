@@ -60,14 +60,14 @@ set(C_STANDARD 99)
 find_program(CMAKE_C_COMPILER NAMES gcc clang REQUIRED)
 set(CMAKE_C_COMPILER_TARGET i386-elf)
 
-set(CMAKE_C_FLAGS "-m32 -fno-stack-protector -fno-exceptions -mno-stack-arg-probe -mno-red-zone -mno-mmx -mno-sse -fno-builtin -ffreestanding -fno-pic")
+set(CMAKE_C_FLAGS "-m32 -fno-stack-protector -mno-stack-arg-probe -mno-red-zone -mno-mmx -mno-sse -fno-builtin -ffreestanding -fno-pic")
 set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_C_FLAGS_RELWITHDBGINFO "-O2 -g")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 set(CMAKE_C_FLAGS_MINSIZEREL "-Os")
 
 set(CMAKE_C_LINK_FLAGS "-m elf_i386")
-set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> <CMAKE_C_LINK_FLAGS> <CMAKE_C_LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> <CMAKE_C_LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
 
 #
 # C++ setup
@@ -76,14 +76,14 @@ set(CXX_STANDARD 17)
 find_program(CMAKE_CXX_COMPILER NAMES g++ clang++ REQUIRED)
 set(CMAKE_CXX_COMPILER_TARGET i386-elf)
 
-set(CMAKE_CXX_FLAGS "-m32 -fno-stack-protector -mno-stack-arg-probe -mno-mmx -mno-sse -fno-builtin -ffreestanding -fno-pic")
+set(CMAKE_CXX_FLAGS "-m32 -fno-stack-protector -fno-exceptions -fno-rtti -mno-stack-arg-probe -mno-red-zone -mno-mmx -mno-sse -fno-builtin -ffreestanding -fno-pic")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELWITHDBGINFO "-O2 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 set(CMAKE_CXX_FLAGS_MINSIZEREL "-Os")
 
 set(CMAKE_CXX_LINK_FLAGS "-m elf_i386")
-set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_LINKER> <CMAKE_CXX_LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> <CMAKE_CXX_LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
 
 #
 # Assembly setup
@@ -102,4 +102,4 @@ set(CMAKE_ASM_FLAGS_RELEASE "-O2")
 set(CMAKE_ASM_FLAGS_MINSIZEREL "-Os")
 
 set(CMAKE_ASM_LINK_FLAGS "-m elf_i386")
-set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_LINKER> <CMAKE_ASM_LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> <CMAKE_ASM_LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")

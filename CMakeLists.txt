@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 3.23)
 
+# Setup project
+project(PbOS VERSION 0.0.1)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 find_package(PbOSCommon REQUIRED NO_CMAKE_FIND_ROOT_PATH)
 
 # Cache variables
 set(PBOS_ARCH "i386" CACHE STRING "Identifier of target architecture")
-
-# Setup project
-project(PbOS VERSION 0.0.1)
 
 # Setup build environments
 enable_language(ASM)

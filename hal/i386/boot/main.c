@@ -15,7 +15,7 @@ static void boot_init_paging();
 
 /// @brief C main routine of the bootloader.
 void boot_main() {
-	vga_puts("Loading OICKIM...");
+	vga_puts("Loading PBKIM...");
 
 	if (boot_mb_magic != MB_BOOTLDR_MAGIC)
 		boot_panic("Incompatible bootloader");

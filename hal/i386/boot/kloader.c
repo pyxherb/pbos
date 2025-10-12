@@ -15,16 +15,16 @@ PB_NORETURN void (*boot_kentry)();
 bool boot_load_pbkim() {
 	pbkim_ihdr_t *ih = (pbkim_ihdr_t *)KERNEL_IMAGE_BASE;
 	{
-		if (ih->magic[0] != OICKIM_MAGIC_0 ||
-			ih->magic[1] != OICKIM_MAGIC_1 ||
-			ih->magic[2] != OICKIM_MAGIC_2 ||
-			ih->magic[3] != OICKIM_MAGIC_3) {
-			boot_seterr("Bad OICKIM magic number");
+		if (ih->magic[0] != PBKIM_MAGIC_0 ||
+			ih->magic[1] != PBKIM_MAGIC_1 ||
+			ih->magic[2] != PBKIM_MAGIC_2 ||
+			ih->magic[3] != PBKIM_MAGIC_3) {
+			boot_seterr("Bad PBKIM magic number");
 			return false;
 		}
 
-		if (ih->machine != OICKIM_MACHINE_I386) {
-			boot_seterr("Unacceptable OICKIM machine");
+		if (ih->machine != PBKIM_MACHINE_I386) {
+			boot_seterr("Unacceptable PBKIM machine");
 			return false;
 		}
 	}
@@ -63,8 +63,13 @@ bool boot_load_pbkim() {
 			return false;
 		}
 
-		if (ehdr->e_entry < KERNEL_PBASE || ehdr->e_entry >= (KERNEL_VBASE + KERNEL_SIZE)) {
+		if (ehdr->e_entry < KERNEL_PBASE) {
 			boot_seterr("ELF load base is too low");
+			return false;
+		}
+
+		if (ehdr->e_entry >= (KERNEL_VBASE + KERNEL_SIZE)) {
+			boot_seterr("ELF load base is too high");
 			return false;
 		}
 	}

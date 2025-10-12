@@ -54,6 +54,8 @@ out/
 build/
 generated/
 
+.cache/
+
 # Configure Artifacts
 *.tab.c
 *.tab.h
