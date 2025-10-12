@@ -51,11 +51,6 @@ if(CMAKE_HOST_WIN32)
 	list(APPEND CMAKE_SYSTEM_PREFIX_PATH "$ENV{ProgramFiles\(x86\)}")
 	list(APPEND CMAKE_SYSTEM_PREFIX_PATH "$ENV{SystemDrive}/Program Files")
 	list(APPEND CMAKE_SYSTEM_PREFIX_PATH "$ENV{SystemDrive}/Program Files (x86)")
-
-	set(FREESTANDING_CXX_STANDARD_LIBRARY_INCLUDE_PATHS FREESTANDING_CXX_STANDARD_LIBRARY_INCLUDE_PATHS-NOT-FOUND CACHE STRING "Paths to an freestanding C++ STL implement's include directories")
-	foreach(i ${FREESTANDING_CXX_STANDARD_LIBRARY_INCLUDE_PATHS})
-		include_directories(AFTER SYSTEM ${i})
-	endforeach()
 endif()
 
 #
@@ -110,3 +105,12 @@ set(CMAKE_ASM_FLAGS_MINSIZEREL "-Os")
 
 set(CMAKE_ASM_LINK_FLAGS "-m elf_i386")
 set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> <CMAKE_ASM_LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+
+if(CMAKE_HOST_WIN32)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -D_LIBCPP_HAS_THREADS=0")
+
+	set(LIBCXX_INCLUDE_PATHS LIBCXX_INCLUDE_PATHS-NOT-FOUND CACHE STRING "Paths to libcxx's include directories")
+	foreach(i ${LIBCXX_INCLUDE_PATHS})
+		include_directories(BEFORE SYSTEM ${i})
+	endforeach()
+endif()
