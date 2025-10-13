@@ -14,6 +14,9 @@ namespace std {
 	struct remove_reference<T &&> {
 		typedef T type;
 	};
+
+	template<typename T>
+	using remove_reference_t = remove_reference<T>;
 }
 
 #endif

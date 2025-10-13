@@ -1,8 +1,12 @@
 #ifndef _FREESTDC_CXX_TYPE_TRAITS_
 #define _FREESTDC_CXX_TYPE_TRAITS_
 
+#include "_type_traits/add_cv.hh"
+#include "_type_traits/add_pointer.hh"
 #include "_type_traits/add_reference.hh"
+#include "_type_traits/alignment_of.hh"
 #include "_type_traits/conditional.hh"
+#include "_type_traits/extent.hh"
 #include "_type_traits/has_unique_object_representations.hh"
 #include "_type_traits/integral_constant.hh"
 #include "_type_traits/is_abstract.hh"
@@ -42,8 +46,14 @@
 #include "_type_traits/is_unsigned.hh"
 #include "_type_traits/is_void.hh"
 #include "_type_traits/is_volatile.hh"
+#include "_type_traits/make_signed.hh"
+#include "_type_traits/make_unsigned.hh"
+#include "_type_traits/rank.hh"
 #include "_type_traits/remove_cv.hh"
+#include "_type_traits/remove_extent.hh"
+#include "_type_traits/remove_pointer.hh"
 #include "_type_traits/remove_reference.hh"
+#include "_type_traits/underlying_type.hh"
 #include "_type_traits/void_t.hh"
 
 #endif
