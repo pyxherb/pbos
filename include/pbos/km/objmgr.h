@@ -1,11 +1,12 @@
 #ifndef _PBOS_KM_OBJMGR_H_
 #define _PBOS_KM_OBJMGR_H_
 
-#include <pbos/attribs.h>
 #include <pbos/common.h>
 #include <pbos/kf/rbtree.h>
 #include <pbos/kf/uuid.h>
 #include "result.h"
+
+PB_EXTERN_C_BEGIN
 
 #define OM_HANDLE_MIN 1
 #define OM_HANDLE_MAX UINT32_MAX
@@ -98,5 +99,7 @@ void om_deinit_object(om_object_t *obj);
 #define om_is_cachable(obj) ((obj)->ref_num == 0)
 
 void om_gc();
+
+PB_EXTERN_C_END
 
 #endif

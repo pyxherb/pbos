@@ -1,8 +1,6 @@
-set -e
-
-CC=`which gcc`
-CXX=`which g++`
-ASM=`which gcc`
+CC=`which clang`
+CXX=`which clang++`
+ASM=`which clang`
 LD=`which ld`
 
 for ((i=1; i<=$#; i++)); do

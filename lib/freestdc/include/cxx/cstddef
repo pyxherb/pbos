@@ -1,0 +1,14 @@
+#ifndef _FREESTDC_CXX_CSTDDEF_
+#define _FREESTDC_CXX_CSTDDEF_
+
+#include <stddef.h>
+
+namespace std {
+	using ::size_t;
+	using ptrdiff_t = decltype(static_cast<int *>(nullptr) - static_cast<int*>(nullptr));
+	using nullptr_t = decltype(nullptr);
+	using ::max_align_t;
+	// TODO: Implement std::byte type.
+}
+
+#endif

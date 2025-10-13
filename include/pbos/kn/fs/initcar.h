@@ -6,6 +6,8 @@
 #include <pbos/fs/file.h>
 #include <pbos/fs/fs.h>
 
+PB_EXTERN_C_BEGIN
+
 #define INITCAR_UUID UUID(44417a9f, 01be, fd99, 93d2, 010a9fc70042)
 
 typedef struct _initcar_dir_exdata_t {
@@ -53,5 +55,7 @@ bool kn_initcar_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node
 extern fs_filesys_t *initcar_fs;
 extern fs_file_t *initcar_dir;
 extern fs_fsops_t initcar_ops;
+
+PB_EXTERN_C_END
 
 #endif

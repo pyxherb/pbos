@@ -10,8 +10,9 @@ add_executable(bootldx
     "../display/vga.c")
 
 get_property(FREESTDC_INCLUDE_DIR GLOBAL PROPERTY FREESTDC_INCLUDE_DIR)
+get_property(FREESTDC_INCLUDE_DIR_CXX GLOBAL PROPERTY FREESTDC_INCLUDE_DIR_CXX)
 
-target_include_directories(bootldx SYSTEM BEFORE PRIVATE ${FREESTDC_INCLUDE_DIR})
+target_include_directories(bootldx SYSTEM BEFORE PRIVATE ${FREESTDC_INCLUDE_DIR} ${FREESTDC_INCLUDE_DIR_CXX})
 add_dependencies(bootldx pbarch freestdc)
 target_link_libraries(bootldx pbarch freestdc)
 target_link_options(bootldx PRIVATE "-T${CMAKE_CURRENT_SOURCE_DIR}/bootldr.lds")

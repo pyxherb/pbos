@@ -4,6 +4,8 @@
 #include <pbos/km/objmgr.h>
 #include <pbos/km/result.h>
 
+PB_EXTERN_C_BEGIN
+
 typedef struct _fs_file_t fs_file_t;
 typedef struct _fs_fcb_t fs_fcb_t;
 
@@ -49,5 +51,7 @@ fs_filesys_t *fs_register_filesys(
 	const char *name,
 	uuid_t *uuid,
 	fs_fsops_t *ops);
+
+PB_EXTERN_C_END
 
 #endif

@@ -5,6 +5,8 @@
 #include <pbos/km/objmgr.h>
 #include <stdint.h>
 
+PB_EXTERN_C_BEGIN
+
 enum {
 	FS_FILETYPE_FILE = 0,  // Regular file
 	FS_FILETYPE_DIR,	   // Directory Entry
@@ -91,5 +93,7 @@ km_result_t fs_child_of(fs_file_t *file, const char *filename, size_t filename_l
 km_result_t fs_resolve_path(fs_file_t *cur_dir, const char *path, size_t path_len, fs_file_t **file_out);
 
 extern om_class_t *fs_file_class;
+
+PB_EXTERN_C_END
 
 #endif

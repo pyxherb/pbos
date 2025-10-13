@@ -1,0 +1,20 @@
+#ifndef _FREESTDC_CXX_TYPE_TRAITS_IS_MEMBER_FUNCTION_POINTER_
+#define _FREESTDC_CXX_TYPE_TRAITS_IS_MEMBER_FUNCTION_POINTER_
+
+#include "integral_constant.hh"
+#include "is_function.hh"
+#include "remove_cv.hh"
+
+namespace std {
+	template <class T>
+	struct _is_member_function_pointer_impl : std::false_type {};
+
+	template <class T, class U>
+	struct _is_member_function_pointer_impl<T U::*> : std::is_function<T> {};
+
+	template <class T>
+	struct is_member_function_pointer
+		: _is_member_function_pointer_impl<typename std::remove_cv<T>::type> {};
+}
+
+#endif

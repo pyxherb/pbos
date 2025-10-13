@@ -9,7 +9,6 @@
 #include <pbos/kn/fs/initcar.h>
 #include <pbos/kn/km/exec.h>
 #include <pbos/kn/km/objmgr.h>
-#include <string.h>
 
 extern "C" PB_NORETURN void _start() {
 	km_result_t result;

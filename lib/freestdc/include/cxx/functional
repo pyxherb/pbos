@@ -1,0 +1,15 @@
+#ifndef _FREESTDC_CXX_TYPE_TRAITS_
+#define _FREESTDC_CXX_TYPE_TRAITS_
+
+#include "cxx_basedefs.hh"
+#include "utility"
+
+namespace std {
+	template <typename F, typename... Args>
+	FREESTDC_CONSTEXPR_SINCE_CXX20 auto invoke(F &&f, Args &&...args)
+		-> decltype(__builtin_invoke(std::forward<F>(f), std::forward<Args>(args)...)) {
+		return __builtin_invoke(std::forward<F>(f), std::forward<Args>(args)...);
+	}
+}
+
+#endif

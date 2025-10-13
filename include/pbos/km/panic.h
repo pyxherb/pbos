@@ -3,9 +3,7 @@
 
 #include <pbos/common.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+PB_EXTERN_C_BEGIN
 
 /// @brief Check if the system is panicked.
 ///
@@ -19,8 +17,6 @@ bool km_is_panicked();
 /// @param ... Arguments for the formatted message.
 PB_NORETURN void km_panic(const char *fmt, ...);
 
-#ifdef __cplusplus
-}
-#endif
+PB_EXTERN_C_END
 
 #endif

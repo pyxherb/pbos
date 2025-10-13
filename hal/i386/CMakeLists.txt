@@ -1,8 +1,9 @@
 get_property(FREESTDC_INCLUDE_DIR GLOBAL PROPERTY FREESTDC_INCLUDE_DIR)
+get_property(FREESTDC_INCLUDE_DIR_CXX GLOBAL PROPERTY FREESTDC_INCLUDE_DIR_CXX)
 
 file(GLOB SRC *.h *.c *.S)
 target_sources(hal PRIVATE ${SRC})
-target_include_directories(hal SYSTEM BEFORE PRIVATE ${FREESTDC_INCLUDE_DIR})
+target_include_directories(hal SYSTEM BEFORE PRIVATE ${FREESTDC_INCLUDE_DIR} ${FREESTDC_INCLUDE_DIR_CXX})
 add_dependencies(hal pbarch freestdc)
 target_link_libraries(hal PUBLIC pbarch freestdc)
 
