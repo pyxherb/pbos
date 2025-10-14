@@ -12,6 +12,9 @@ namespace std {
 
 	template <typename T, size_t N>
 	struct is_bounded_array<T[N]> : true_type {};
+
+	template <typename T>
+	constexpr bool is_bounded_array_v = is_bounded_array<T>::value;
 #endif
 }
 

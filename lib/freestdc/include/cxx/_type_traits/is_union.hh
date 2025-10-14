@@ -7,6 +7,9 @@ namespace std {
 	template <typename T>
 	struct is_union : std::bool_constant<__is_union(T)> {
 	};
+
+	template <typename T>
+	constexpr bool is_union_v = is_union<T>::value;
 }
 
 #endif

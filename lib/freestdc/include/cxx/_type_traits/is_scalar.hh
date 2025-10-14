@@ -16,6 +16,9 @@ namespace std {
 							   std::is_pointer<T>::value ||
 							   std::is_member_pointer<T>::value ||
 							   std::is_null_pointer<T>::value> {};
+
+	template <typename T>
+	constexpr bool is_scalar_v = is_scalar<T>::value;
 }
 
 #endif

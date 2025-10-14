@@ -11,6 +11,9 @@ namespace std {
 		using type = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
 	};
 
+	template <typename T>
+	using remove_cvref_t = remove_cvref<T>::type;
+
 	#define __cpp_lib_remove_cvref 201711L
 #endif
 }

@@ -8,7 +8,10 @@ namespace std {
 	struct is_aggregate : std::bool_constant<__is_aggregate(T)> {
 	};
 
-	#define __cpp_lib_is_aggregate 201703L
+	template <typename T>
+	constexpr bool is_aggregate_v = is_aggregate<T>::value;
+
+#define __cpp_lib_is_aggregate 201703L
 }
 
 #endif

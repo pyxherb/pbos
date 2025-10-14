@@ -8,6 +8,8 @@ namespace std {
 	struct is_rvalue_reference : std::false_type {};
 	template <typename T>
 	struct is_rvalue_reference<T &&> : std::true_type {};
+	template <typename T>
+	constexpr bool is_rvalue_reference_v = is_rvalue_reference<T>::value;
 }
 
 #endif

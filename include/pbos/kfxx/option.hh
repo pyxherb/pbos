@@ -3,8 +3,9 @@
 
 #include "basedefs.hh"
 #include "utils.hh"
+#include <type_traits>
 
-namespace kf {
+namespace kfxx {
 	struct NullOption {
 	};
 

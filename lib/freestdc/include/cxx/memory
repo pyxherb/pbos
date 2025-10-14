@@ -1,0 +1,27 @@
+#ifndef _FREESTDC_CXX_MEMORY_
+#define _FREESTDC_CXX_MEMORY_
+
+#include "_type_traits/is_array.hh"
+
+namespace std {
+	template <typename T>
+	constexpr T *addressof(T &value) {
+		return __builtin_addressof(value);
+	}
+
+	template <typename T>
+	typename std::enable_if<!std::is_object<T>::value, T *>::type addressof(T &value) noexcept {
+		return &value;
+	}
+
+	template <typename T>
+	constexpr void destroy_at(T *p) {
+		if constexpr (std::is_array<T>::value) {
+			for (auto &e : *p)
+				destroy_at(std::addressof(e));
+		} else
+			p->~T();
+	}
+}
+
+#endif

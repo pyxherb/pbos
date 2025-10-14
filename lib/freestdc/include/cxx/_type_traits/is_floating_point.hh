@@ -14,6 +14,9 @@ namespace std {
 			  std::is_same<float, typename remove_cv<T>::type>::value ||
 				  std::is_same<double, typename remove_cv<T>::type>::value ||
 				  std::is_same<long double, typename remove_cv<T>::type>::value> {};
+
+	template <typename T>
+	constexpr bool is_floating_point_v = is_floating_point<T>::value;
 }
 
 #endif

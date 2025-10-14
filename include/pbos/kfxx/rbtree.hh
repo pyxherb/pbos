@@ -1,13 +1,13 @@
 #ifndef _PBOS_KFXX_RBTREE_H_
 #define _PBOS_KFXX_RBTREE_H_
 
-#include "option.hh"
+#include "fallible_cmp.hh"
 #include <pbos/km/assert.h>
 #include <pbos/km/panic.h>
 #include <pbos/km/result.h>
 
 #ifdef __cplusplus
-namespace kf {
+namespace kfxx {
 	enum class RBColor {
 		Black = 0,
 		Red = 1
@@ -382,14 +382,14 @@ namespace kf {
 			}
 			PB_FORCEINLINE Iterator &operator=(const Iterator &rhs) noexcept {
 				if (direction != rhs.direction)
-					throw std::logic_error("Incompatible iterator direction");
+					km_panic("Incompatible iterator direction");
 				node = rhs.node;
 				tree = rhs.tree;
 				return *this;
 			}
 			PB_FORCEINLINE Iterator &operator=(Iterator &&rhs) noexcept {
 				if (direction != rhs.direction)
-					throw std::logic_error("Incompatible iterator direction");
+					km_panic("Incompatible iterator direction");
 				constructAt<Iterator>(this, std::move(rhs));
 				return *this;
 			}
@@ -401,7 +401,7 @@ namespace kf {
 
 			PB_FORCEINLINE Iterator &operator++() {
 				if (!node)
-					throw std::logic_error("Increasing the end iterator");
+					km_panic("Increasing the end iterator");
 
 				if (direction == IteratorDirection::Forward) {
 					node = ThisType::getNextNode(node, nullptr);
@@ -421,12 +421,12 @@ namespace kf {
 			PB_FORCEINLINE Iterator &operator--() {
 				if (direction == IteratorDirection::Forward) {
 					if (node == tree->_cachedMinNode)
-						throw std::logic_error("Dereasing the begin iterator");
+						km_panic("Dereasing the begin iterator");
 
 					node = ThisType::getNextNode(node, nullptr);
 				} else {
 					if (node == tree->_cachedMaxNode)
-						throw std::logic_error("Dereasing the begin iterator");
+						km_panic("Dereasing the begin iterator");
 
 					node = ThisType::getPrevNode(node, nullptr);
 				}
@@ -446,7 +446,7 @@ namespace kf {
 
 			PB_FORCEINLINE bool operator==(const Iterator &it) const {
 				if (tree != it.tree)
-					throw std::logic_error("Cannot compare iterators from different trees");
+					km_panic("Cannot compare iterators from different trees");
 				return node == it.node;
 			}
 
@@ -461,7 +461,7 @@ namespace kf {
 
 			PB_FORCEINLINE bool operator!=(const Iterator &it) const {
 				if (tree != it.tree)
-					throw std::logic_error("Cannot compare iterators from different trees");
+					km_panic("Cannot compare iterators from different trees");
 				return node != it.node;
 			}
 
@@ -472,25 +472,25 @@ namespace kf {
 
 			PB_FORCEINLINE T &operator*() {
 				if (!node)
-					throw std::logic_error("Deferencing the end iterator");
+					km_panic("Deferencing the end iterator");
 				return node->value;
 			}
 
 			PB_FORCEINLINE T &operator*() const {
 				if (!node)
-					throw std::logic_error("Deferencing the end iterator");
+					km_panic("Deferencing the end iterator");
 				return node->value;
 			}
 
 			PB_FORCEINLINE T *operator->() {
 				if (!node)
-					throw std::logic_error("Deferencing the end iterator");
+					km_panic("Deferencing the end iterator");
 				return &node->value;
 			}
 
 			PB_FORCEINLINE T *operator->() const {
 				if (!node)
-					throw std::logic_error("Deferencing the end iterator");
+					km_panic("Deferencing the end iterator");
 				return &node->value;
 			}
 		};
@@ -609,7 +609,7 @@ namespace kf {
 
 	template <typename T, typename Comparator = std::less<T>>
 	using RBTree = RBTreeImpl<T, Comparator, false>;
-	template <typename T, typename Comparator = peff::FallibleLt<T>>
+	template <typename T, typename Comparator = FallibleLt<T>>
 	using FallibleRBTree = RBTreeImpl<T, Comparator, true>;
 }
 #endif

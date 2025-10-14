@@ -8,6 +8,9 @@ namespace std {
 	struct is_volatile : std::false_type {};
 	template <typename T>
 	struct is_volatile<volatile T> : std::true_type {};
+
+	template <typename T>
+	constexpr bool is_volatile_v = is_volatile<T>::value;
 }
 
 #endif

@@ -8,6 +8,8 @@ namespace std {
 	struct is_const : std::false_type {};
 	template <typename T>
 	struct is_const<const T> : std::true_type {};
+	template <typename T>
+	constexpr bool is_const_v = is_const<T>::value;
 }
 
 #endif

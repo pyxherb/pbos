@@ -22,6 +22,9 @@ namespace std {
 	struct remove_pointer<T *const volatile> {
 		typedef T type;
 	};
+
+	template <typename T>
+	using remove_pointer_t = typename remove_pointer<T>::type;
 }
 
 #endif

@@ -5,6 +5,8 @@
 #include <pbos/common.h>
 #include <stdarg.h>
 
+PB_EXTERN_C_BEGIN
+
 #define KLOG_COLOR_BLACK 0x00
 #define KLOG_COLOR_BLUE 0x01
 #define KLOG_COLOR_GREEN 0x02
@@ -93,5 +95,7 @@ void kputs(const char *str);
 	#define kdvprintf
 	#define kdprintf
 #endif
+
+PB_EXTERN_C_END
 
 #endif

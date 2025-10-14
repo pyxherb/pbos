@@ -12,6 +12,9 @@ namespace std {
 
 	template <typename T>
 	struct is_unsigned : _is_unsigned_impl<T>::type {};
+
+	template <typename T>
+	constexpr bool is_unsigned_v = is_unsigned<T>::value;
 }
 
 #endif

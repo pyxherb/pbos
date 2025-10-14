@@ -13,6 +13,9 @@ namespace std {
 
 	template <typename T>
 	struct is_member_pointer : _is_member_pointer_impl<typename std::remove_cv<T>::type> {};
+
+	template <typename T>
+	constexpr bool is_member_pointer_v = is_member_pointer<T>::value;
 }
 
 #endif

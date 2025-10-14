@@ -12,6 +12,9 @@ namespace std {
 
 	template <typename T>
 	struct is_unbounded_array<T[]> : std::true_type {};
+
+	template <typename T>
+	constexpr bool is_unbounded_array_v = is_unbounded_array<T>::value;
 #endif
 }
 

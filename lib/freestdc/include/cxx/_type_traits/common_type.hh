@@ -49,6 +49,9 @@ namespace std {
 	template <typename T1, typename T2, typename... R>
 	struct common_type<T1, T2, R...>
 		: _common_type_multi_impl<void, T1, T2, R...> {};
+
+	template <typename... T>
+	using common_type_t = typename common_type<T...>::type;
 }
 
 #endif

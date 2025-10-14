@@ -5,10 +5,11 @@
 
 #define PB_KFXX_API
 
-namespace kf {
-	enum class IteratorDirection : bool {
+namespace kfxx {
+	enum class IteratorDirection : uint8_t {
 		Forward = 0,
-		Backward
+		Reversed,
+		Invalid
 	};
 }
 

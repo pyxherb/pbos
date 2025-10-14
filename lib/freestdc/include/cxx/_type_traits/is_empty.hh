@@ -6,6 +6,9 @@
 namespace std {
 	template <typename T>
 	struct is_empty : std::bool_constant<__is_empty(T)> {};
+
+	template <typename T>
+	constexpr bool is_empty_v = is_empty<T>::value;
 }
 
 #endif

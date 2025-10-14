@@ -6,6 +6,9 @@
 namespace std {
 	template <typename T>
 	struct is_standard_layout : std::bool_constant<__is_standard_layout(T)> {};
+
+	template <typename T>
+	constexpr bool is_standard_layout_v = is_standard_layout<T>::value;
 }
 
 #endif

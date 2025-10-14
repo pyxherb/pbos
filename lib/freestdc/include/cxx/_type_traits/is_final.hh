@@ -8,7 +8,10 @@ namespace std {
 	struct is_final : std::bool_constant<__is_final(T)> {
 	};
 
-	#define __cpp_lib_is_final 201402L
+	template <typename T>
+	constexpr bool is_final_v = is_final<T>::value;
+
+#define __cpp_lib_is_final 201402L
 }
 
 #endif

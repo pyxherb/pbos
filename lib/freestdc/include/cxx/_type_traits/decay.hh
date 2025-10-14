@@ -1,13 +1,13 @@
 #ifndef _FREESTDC_CXX_TYPE_TRAITS_DECAY_
 #define _FREESTDC_CXX_TYPE_TRAITS_DECAY_
 
-#include "remove_reference.hh"
+#include "add_pointer.hh"
 #include "conditional.hh"
 #include "is_array.hh"
-#include "add_pointer.hh"
-#include "remove_extent.hh"
 #include "is_function.hh"
 #include "remove_cv.hh"
+#include "remove_extent.hh"
+#include "remove_reference.hh"
 
 namespace std {
 	template <typename T>
@@ -24,6 +24,9 @@ namespace std {
 				typename std::add_pointer<U>::type,
 				typename std::remove_cv<U>::type>::type>::type type;
 	};
+
+	template <typename T>
+	using decay_t = typename decay<T>::type;
 }
 
 #endif

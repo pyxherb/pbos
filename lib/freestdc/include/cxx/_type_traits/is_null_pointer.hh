@@ -8,6 +8,9 @@
 namespace std {
 	template <typename T>
 	struct is_null_pointer : is_same<std::nullptr_t, typename remove_cv<T>::type> {};
+
+	template <typename T>
+	constexpr bool is_null_pointer_v = is_null_pointer<T>::value;
 }
 
 #endif

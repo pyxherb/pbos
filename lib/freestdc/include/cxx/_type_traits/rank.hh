@@ -13,6 +13,9 @@ namespace std {
 
 	template <typename T, size_t N>
 	struct rank<T[N]> : public std::integral_constant<size_t, rank<T>::value + 1> {};
+
+	template <typename T>
+	constexpr std::size_t rank_v = rank<T>::value;
 }
 
 #endif

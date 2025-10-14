@@ -11,6 +11,9 @@ namespace std {
 	struct conditional<false, T, F> {
 		using type = F;
 	};
+
+	template<bool B, typename T, typename F>
+	using conditional_t = typename conditional<B, T, F>::type;
 }
 
 #endif

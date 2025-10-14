@@ -5,7 +5,10 @@
 
 namespace std {
 	template <typename T>
-	struct is_abstract : std::bool_constant<__is_abstract (T)> {};
+	struct is_abstract : std::bool_constant<__is_abstract(T)> {};
+
+	template <typename T>
+	constexpr bool is_abstract_v = is_abstract<T>::value;
 }
 
 #endif

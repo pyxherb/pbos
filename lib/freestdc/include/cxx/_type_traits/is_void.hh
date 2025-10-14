@@ -7,6 +7,9 @@
 namespace std {
 	template <typename T>
 	struct is_void : std::is_same<void, typename std::remove_cv<T>::type> {};
+
+	template <typename T>
+	constexpr bool is_void_v = is_void<T>::value;
 }
 
 #endif

@@ -12,6 +12,9 @@ namespace std {
 
 	template <typename T>
 	struct is_signed : _is_signed_impl<T>::type {};
+
+	template <typename T>
+	constexpr bool is_signed_v = is_signed<T>::value;
 }
 
 #endif

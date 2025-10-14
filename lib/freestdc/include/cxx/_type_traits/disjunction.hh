@@ -14,6 +14,9 @@ namespace std {
 	template <typename B1, typename... Bn>
 	struct disjunction<B1, Bn...>
 		: std::conditional<bool(B1::value), B1, disjunction<Bn...>>::type {};
+
+	template <class... B>
+	constexpr bool disjunction_v = disjunction<B...>::value;
 }
 
 #endif

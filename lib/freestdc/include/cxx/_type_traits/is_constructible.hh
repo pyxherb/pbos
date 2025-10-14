@@ -60,6 +60,34 @@ namespace std {
 
 	template <typename T>
 	struct is_nothrow_move_constructible : is_nothrow_constructible<T, typename add_rvalue_reference<T>::type> {};
+
+	template <typename T, typename... Args>
+	inline constexpr bool is_constructible_v =
+		is_constructible<T, Args...>::value;
+	template <typename T, typename... Args>
+	inline constexpr bool is_trivially_constructible_v =
+		is_trivially_constructible<T, Args...>::value;
+	template <typename T, typename... Args>
+	inline constexpr bool is_nothrow_constructible_v =
+		is_nothrow_constructible<T, Args...>::value;
+	template <typename T>
+	inline constexpr bool is_default_constructible_v =
+		is_default_constructible<T>::value;
+	template <typename T>
+	inline constexpr bool is_trivially_default_constructible_v =
+		is_trivially_default_constructible<T>::value;
+	template <typename T>
+	inline constexpr bool is_nothrow_default_constructible_v =
+		is_nothrow_default_constructible<T>::value;
+	template <typename T>
+	inline constexpr bool is_copy_constructible_v =
+		is_copy_constructible<T>::value;
+	template <typename T>
+	inline constexpr bool is_trivially_copy_constructible_v =
+		is_trivially_copy_constructible<T>::value;
+	template <typename T>
+	inline constexpr bool is_nothrow_copy_constructible_v =
+		is_nothrow_copy_constructible<T>::value;
 }
 
 #endif

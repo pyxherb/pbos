@@ -2,6 +2,7 @@
 #define _PBOS_KFXX_UTILS_HH_
 
 #include "basedefs.hh"
+#include <memory>
 
 namespace kf {
 #if __cplusplus >= 202002L

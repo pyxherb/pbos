@@ -63,6 +63,31 @@ namespace std {
 	struct is_nothrow_move_assignable
 		: std::is_nothrow_assignable<typename std::add_lvalue_reference<T>::type,
 			  typename std::add_rvalue_reference<T>::type> {};
+
+	template <typename T, typename U>
+	constexpr bool is_assignable_v = is_assignable<T, U>::value;
+	template <typename T, typename U>
+	constexpr bool is_trivially_assignable_v = is_trivially_assignable<T, U>::value;
+	template <typename T, typename U>
+	constexpr bool is_nothrow_assignable_v = is_nothrow_assignable<T, U>::value;
+	template <typename T>
+	inline constexpr bool is_copy_assignable_v =
+		is_copy_assignable<T>::value;
+	template <typename T>
+	inline constexpr bool is_trivially_copy_assignable_v =
+		is_trivially_copy_assignable<T>::value;
+	template <typename T>
+	inline constexpr bool is_nothrow_copy_assignable_v =
+		is_nothrow_copy_assignable<T>::value;
+	template <typename T>
+	inline constexpr bool is_move_assignable_v =
+		is_move_assignable<T>::value;
+	template <typename T>
+	inline constexpr bool is_trivially_move_assignable_v =
+		is_trivially_move_assignable<T>::value;
+	template <typename T>
+	inline constexpr bool is_nothrow_move_assignable_v =
+		is_nothrow_move_assignable<T>::value;
 }
 
 #endif

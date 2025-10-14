@@ -1,47 +1,8 @@
 #ifndef _FREESTDC_CXX_UTILITY_
 #define _FREESTDC_CXX_UTILITY_
 
-#include "_type_traits/add_reference.hh"
-#include "_type_traits/is_lvalue_reference.hh"
-#include "_type_traits/remove_reference.hh"
-
-namespace std {
-	template <typename T>
-	constexpr typename std::remove_reference<T>::type &&move(T &&t) noexcept {
-		return static_cast<typename std::remove_reference<T>::type &&>(t);
-	}
-
-	template <typename T>
-	typename std::add_rvalue_reference<T>::type declval() noexcept {
-		static_assert(false, "declval is not allowed in an evaluated context");
-	}
-
-	template <typename T>
-	T &&forward(typename std::remove_reference<T>::type &t) noexcept {
-		return static_cast<T &&>(t);
-	}
-
-	template <typename T>
-	T &&forward(typename std::remove_reference<T>::type &&t) noexcept {
-		static_assert(!std::is_lvalue_reference<T>::value,
-			"Cannot forward an rvalue as an lvalue.");
-		return static_cast<T &&>(t);
-	}
-
-	template <typename T, T I, T N, T... integers>
-	struct _make_integer_sequence_helper {
-		using type = typename make_integer_sequence_helper<T, I + 1, N, integers..., I>::type;
-	};
-
-	template <typename T, T N, T... integers>
-	struct _make_integer_sequence_helper<T, N, N, integers...> {
-		using type = std::integer_sequence<T, integers...>;
-	};
-
-	template <typename T, T N>
-	using make_integer_sequence = _make_integer_sequence_helper<T, 0, N>::type;
-
-#define __cpp_lib_integer_sequence 201304L
-}
+#include "_utility/move.hh"
+#include "_utility/forward.hh"
+#include "_utility/integer_sequence.hh"
 
 #endif

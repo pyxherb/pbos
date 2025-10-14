@@ -6,6 +6,9 @@
 namespace std {
 	template <typename T>
 	struct is_polymorphic : std::bool_constant<__is_polymorphic(T)> {};
+
+	template <typename T>
+	constexpr bool is_polymorphic_v = is_polymorphic<T>::value;
 }
 
 #endif

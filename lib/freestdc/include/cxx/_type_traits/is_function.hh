@@ -109,6 +109,9 @@ namespace std {
 	template <typename Ret, typename... Args>
 	struct is_function<Ret(Args......) const volatile && noexcept> : std::true_type {};
 #endif
+
+	template <typename T>
+	constexpr bool is_function_v = is_function<T>::value;
 }
 
 #endif

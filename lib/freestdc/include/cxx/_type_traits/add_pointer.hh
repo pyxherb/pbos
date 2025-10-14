@@ -20,6 +20,9 @@ namespace std {
 
 	template <typename T>
 	struct add_pointer : decltype(_try_add_pointer<T>(0)) {};
+
+	template <typename T>
+	using add_pointer_t = typename add_pointer<T>::type;
 }
 
 #endif

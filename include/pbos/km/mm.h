@@ -5,6 +5,8 @@
 #include <pbos/generated/km.h>
 #include "result.h"
 
+PB_EXTERN_C_BEGIN
+
 enum {
 	MM_PMEM_AVAILABLE = 0,
 	MM_PMEM_HARDWARE,
@@ -199,5 +201,7 @@ extern mm_context_t *mm_kernel_context;
 
 /// @brief An array that contains current memory contexts of each EU.
 extern mm_context_t **mm_cur_contexts;
+
+PB_EXTERN_C_END
 
 #endif

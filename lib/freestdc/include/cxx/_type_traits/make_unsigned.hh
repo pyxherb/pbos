@@ -101,6 +101,9 @@ namespace std {
 			typename _make_unsigned_impl<T>::type>
 			type;
 	};
+
+	template <typename T>
+	using make_unsigned_t = typename make_unsigned<T>::type;
 }
 
 #endif

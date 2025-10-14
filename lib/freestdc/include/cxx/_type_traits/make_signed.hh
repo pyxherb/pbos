@@ -101,6 +101,9 @@ namespace std {
 			typename _make_signed_impl<T>::type>
 			type;
 	};
+
+	template <typename T>
+	using make_signed_t = typename make_signed<T>::type;
 }
 
 #endif

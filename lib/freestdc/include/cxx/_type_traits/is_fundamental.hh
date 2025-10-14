@@ -13,6 +13,9 @@ namespace std {
 			  std::is_arithmetic<T>::value ||
 				  std::is_void<T>::value ||
 				  std::is_null_pointer<typename std::remove_cv<T>::type>::value> {};
+
+	template <typename T>
+	constexpr bool is_fundamental_v = is_fundamental<T>::value;
 }
 
 #endif

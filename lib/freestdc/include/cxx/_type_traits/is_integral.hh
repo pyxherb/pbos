@@ -28,6 +28,9 @@ namespace std {
 				  std::is_same<unsigned long, typename remove_cv<T>::type>::value ||
 				  std::is_same<unsigned long long, typename remove_cv<T>::type>::value> {
 	};
+
+	template <typename T>
+	constexpr bool is_integral_v = is_integral<T>::value;
 }
 
 #endif

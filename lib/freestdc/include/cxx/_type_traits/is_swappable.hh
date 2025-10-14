@@ -64,6 +64,17 @@ namespace std {
 	template <typename T>
 	struct is_nothrow_swappable : _is_nothrow_swappable_impl<T>::type {
 	};
+
+	template <typename T, typename U>
+	inline constexpr bool is_swappable_with_v = is_swappable_with<T, U>::value;
+	template <typename T>
+	inline constexpr bool is_swappable_v = is_swappable<T>::value;
+	template <typename T, typename U>
+	inline constexpr bool is_nothrow_swappable_with_v =
+		is_nothrow_swappable_with<T, U>::value;
+	template <typename T>
+	inline constexpr bool is_nothrow_swappable_v =
+		is_nothrow_swappable<T>::value;
 }
 
 #endif

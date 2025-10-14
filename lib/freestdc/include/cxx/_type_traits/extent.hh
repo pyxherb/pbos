@@ -19,6 +19,9 @@ namespace std {
 
 	template <typename T, size_t I, unsigned N>
 	struct extent<T[I], N> : std::extent<T, N - 1> {};
+
+	template <typename T, unsigned N = 0>
+	constexpr std::size_t extent_v = extent<T, N>::value;
 }
 
 #endif
