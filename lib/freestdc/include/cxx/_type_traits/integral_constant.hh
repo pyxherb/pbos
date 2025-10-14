@@ -2,7 +2,7 @@
 #define _FREESTDC_CXX_TYPE_TRAITS_INTEGRAL_CONSTANT_
 
 namespace std {
-	template <class T, T v>
+	template <typename T, T v>
 	struct integral_constant {
 		static constexpr T value = v;
 		using value_type = T;

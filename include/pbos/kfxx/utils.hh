@@ -1,10 +1,10 @@
-#ifndef _PBOS_KF_UTILS_HH_
-#define _PBOS_KF_UTILS_HH_
+#ifndef _PBOS_KFXX_UTILS_HH_
+#define _PBOS_KFXX_UTILS_HH_
 
-#include "basedefs.h"
+#include "basedefs.hh"
 
 namespace kf {
-	#if __cplusplus >= 202002L
+#if __cplusplus >= 202002L
 	template <typename T, typename... Args>
 	requires std::constructible_from<T, Args...>
 #else

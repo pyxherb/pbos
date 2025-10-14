@@ -4,10 +4,10 @@
 #include "integral_constant.hh"
 
 namespace std {
-	template <class T, class U>
+	template <typename T, typename U>
 	struct is_same : std::false_type {};
 
-	template <class T>
+	template <typename T>
 	struct is_same<T, T> : std::true_type {};
 }
 

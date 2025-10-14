@@ -5,7 +5,7 @@
 #include "remove_cv.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct is_void : std::is_same<void, typename std::remove_cv<T>::type> {};
 }
 

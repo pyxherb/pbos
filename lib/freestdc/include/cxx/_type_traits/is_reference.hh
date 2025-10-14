@@ -4,11 +4,11 @@
 #include "integral_constant.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct is_reference : std::false_type {};
-	template <class T>
+	template <typename T>
 	struct is_reference<T &> : std::true_type {};
-	template <class T>
+	template <typename T>
 	struct is_reference<T &&> : std::true_type {};
 }
 

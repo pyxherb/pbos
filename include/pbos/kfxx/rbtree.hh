@@ -1,5 +1,5 @@
-#ifndef _PBOS_KF_RBTREE_H_
-#define _PBOS_KF_RBTREE_H_
+#ifndef _PBOS_KFXX_RBTREE_H_
+#define _PBOS_KFXX_RBTREE_H_
 
 #include "option.hh"
 #include <pbos/km/assert.h>

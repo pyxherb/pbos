@@ -6,7 +6,7 @@
 #include "_type_traits/is_lvalue_reference.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	constexpr typename std::remove_reference<T>::type &&move(T &&t) noexcept {
 		return static_cast<typename std::remove_reference<T>::type &&>(t);
 	}

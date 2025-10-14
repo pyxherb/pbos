@@ -5,20 +5,20 @@
 #include "void_t.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct _add_pointer_type_identity {
 		using type = T;
 	};
 
-	template <class T>
+	template <typename T>
 	auto _try_add_pointer(int)
 		-> _add_pointer_type_identity<typename std::remove_reference<T>::type *>;
 
-	template <class T>
+	template <typename T>
 	auto _try_add_pointer(...)
 		-> _add_pointer_type_identity<T>;
 
-	template <class T>
+	template <typename T>
 	struct add_pointer : decltype(_try_add_pointer<T>(0)) {};
 }
 

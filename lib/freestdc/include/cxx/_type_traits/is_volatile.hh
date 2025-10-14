@@ -4,9 +4,9 @@
 #include "integral_constant.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct is_volatile : std::false_type {};
-	template <class T>
+	template <typename T>
 	struct is_volatile<volatile T> : std::true_type {};
 }
 

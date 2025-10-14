@@ -7,7 +7,7 @@
 #include "is_class.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct is_object : std::integral_constant<bool,
 						   is_scalar<T>::value ||
 							   is_array<T>::value ||

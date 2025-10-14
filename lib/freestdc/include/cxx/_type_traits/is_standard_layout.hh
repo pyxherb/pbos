@@ -4,7 +4,7 @@
 #include "integral_constant.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct is_standard_layout : std::bool_constant<__is_standard_layout(T)> {};
 }
 

@@ -6,7 +6,7 @@
 #include "is_integral.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct is_arithmetic : std::integral_constant<bool,
 							   std::is_integral<T>::value ||
 								   std::is_floating_point<T>::value> {};

@@ -6,7 +6,7 @@
 #include "is_void.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct is_fundamental
 		: std::integral_constant<
 			  bool,

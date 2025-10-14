@@ -8,7 +8,7 @@
 #include "is_pointer.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct is_scalar : std::integral_constant<
 						   bool,
 						   std::is_arithmetic<T>::value ||

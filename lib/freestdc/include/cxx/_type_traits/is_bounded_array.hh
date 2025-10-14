@@ -7,10 +7,10 @@
 
 namespace std {
 #if __cplusplus >= 202002L
-	template <class T>
+	template <typename T>
 	struct is_bounded_array : false_type {};
 
-	template <class T, size_t N>
+	template <typename T, size_t N>
 	struct is_bounded_array<T[N]> : true_type {};
 #endif
 }

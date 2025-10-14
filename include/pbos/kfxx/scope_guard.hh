@@ -1,5 +1,5 @@
-#ifndef _PBOS_KF_SCOPE_GUARD_HH_
-#define _PBOS_KF_SCOPE_GUARD_HH_
+#ifndef _PBOS_KFXX_SCOPE_GUARD_HH_
+#define _PBOS_KFXX_SCOPE_GUARD_HH_
 
 #include "basedefs.h"
 

@@ -5,7 +5,7 @@
 #include "integral_constant.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct alignment_of : std::integral_constant<size_t, alignof(T)> {};
 }
 

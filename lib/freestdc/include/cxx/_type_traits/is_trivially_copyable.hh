@@ -4,7 +4,7 @@
 #include "integral_constant.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct is_trivially_copyable : std::bool_constant<__is_trivially_copyable(T)> {};
 }
 

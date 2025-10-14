@@ -5,13 +5,4 @@
 
 #define PB_KF_API
 
-#ifdef __cplusplus
-namespace kf {
-	enum class IteratorDirection : bool {
-		Forward = 0,
-		Backward
-	}
-}
-#endif
-
 #endif

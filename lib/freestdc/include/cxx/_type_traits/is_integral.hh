@@ -6,7 +6,7 @@
 #include "remove_cv.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct is_integral
 		: std::integral_constant<
 			  bool,

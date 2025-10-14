@@ -5,7 +5,7 @@
 
 namespace std {
 	#if defined(__GNUC__) || defined(__clang__)
-	template <class T>
+	template <typename T>
 	struct has_unique_object_representations : std::bool_constant<__has_unique_object_representations(T)> {};
 
 	#define __cpp_lib_has_unique_object_representations 201606L

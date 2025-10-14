@@ -6,7 +6,7 @@
 #include "remove_cv.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct is_null_pointer : is_same<std::nullptr_t, typename remove_cv<T>::type> {};
 }
 

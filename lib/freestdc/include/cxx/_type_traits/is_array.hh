@@ -5,13 +5,13 @@
 #include <cstddef>
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct is_array : std::false_type {};
 
-	template <class T>
+	template <typename T>
 	struct is_array<T[]> : std::true_type {};
 
-	template <class T, size_t N>
+	template <typename T, size_t N>
 	struct is_array<T[N]> : std::true_type {};
 }
 

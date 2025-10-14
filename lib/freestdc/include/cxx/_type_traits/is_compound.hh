@@ -4,7 +4,7 @@
 #include "is_fundamental.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct is_compound : std::integral_constant<bool, !std::is_fundamental<T>::value> {};
 }
 

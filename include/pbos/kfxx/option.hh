@@ -1,7 +1,7 @@
-#ifndef _PEFF_UTILS_OPTION_H_
-#define _PEFF_UTILS_OPTION_H_
+#ifndef _PBOS_KFXX_OPTION_H_
+#define _PBOS_KFXX_OPTION_H_
 
-#include "basedefs.h"
+#include "basedefs.hh"
 #include "utils.hh"
 
 namespace kf {

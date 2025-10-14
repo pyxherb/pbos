@@ -5,13 +5,13 @@
 #include "remove_cv.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct _is_member_pointer_impl : std::false_type {};
 
-	template <class T, class U>
+	template <typename T, typename U>
 	struct _is_member_pointer_impl<T U::*> : std::true_type {};
 
-	template <class T>
+	template <typename T>
 	struct is_member_pointer : _is_member_pointer_impl<typename std::remove_cv<T>::type> {};
 }
 

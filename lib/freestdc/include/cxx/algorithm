@@ -1,0 +1,18 @@
+#ifndef _FREESTDC_CXX_ALGORITHM_
+#define _FREESTDC_CXX_ALGORITHM_
+
+#include "cxx_basedefs.hh"
+#include "utility"
+
+namespace std {
+	template<typename T>
+	void swap(T &a, T &b) {
+		T tmp = std::move(a);
+		a = std::move(b);
+		b = std::move(tmp);
+	}
+
+	// TODO: Implement the array version.
+}
+
+#endif
