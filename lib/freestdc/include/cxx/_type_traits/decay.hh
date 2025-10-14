@@ -10,7 +10,7 @@
 #include "remove_cv.hh"
 
 namespace std {
-	template <class T>
+	template <typename T>
 	struct decay {
 	private:
 		typedef typename std::remove_reference<T>::type U;
