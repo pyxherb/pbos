@@ -1,7 +1,7 @@
 #ifndef _PBOS_KFXX_SCOPE_GUARD_HH_
 #define _PBOS_KFXX_SCOPE_GUARD_HH_
 
-#include "basedefs.h"
+#include "basedefs.hh"
 
 namespace kf {
 	template<typename T>

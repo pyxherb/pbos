@@ -28,16 +28,17 @@ namespace std {
 	template <typename T>
 	struct is_destructible<T[]> : false_type {};
 
-	template <typename T, typename... Args>
-	struct is_destructible<T(Args...)> : false_type {};
-
-	template <typename, typename T, typename U = void>
-	struct _is_trivially_destructible_impl : true_type {};
+	template <typename T, size_t N>
+	struct is_destructible<T[N]> : is_destructible<T> {};
 
 	template <typename T>
-	struct _is_trivially_destructible_impl<
-		void_t<_has_destructor<T>>,
-		T> : false_type {};
+	struct is_destructible<T &> : true_type {};
+
+	template <typename T>
+	struct is_destructible<T &&> : true_type {};
+
+	template <typename T, typename... Args>
+	struct is_destructible<T(Args...)> : false_type {};
 
 #if defined(__clang__)
 	#define _freestdc_has_trivial_destructor __is_trivially_destructible
@@ -53,6 +54,12 @@ namespace std {
 
 	template <typename T>
 	struct is_trivially_destructible<T[]> : false_type {};
+
+	template <typename T, size_t N>
+	struct is_trivially_destructible<T[N]> : is_trivially_destructible<T> {};
+
+	template <typename T>
+	struct is_trivially_destructible<T &> : true_type {};
 
 	template <typename T, typename... Args>
 	struct is_trivially_destructible<T(Args...)> : false_type {};
@@ -76,6 +83,12 @@ namespace std {
 
 	template <typename T>
 	struct is_nothrow_destructible<T[]> : false_type {};
+
+	template <typename T, size_t N>
+	struct is_nothrow_destructible<T[N]> : is_nothrow_destructible<T> {};
+
+	template <typename T>
+	struct is_nothrow_destructible<T &> : false_type {};
 
 	template <typename T, typename... Args>
 	struct is_nothrow_destructible<T(Args...)> : false_type {};
