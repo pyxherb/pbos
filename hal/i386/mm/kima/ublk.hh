@@ -1,14 +1,17 @@
 #ifndef _KIMA_UBLK_H_
 #define _KIMA_UBLK_H_
 
-#include "vmalloc.h"
-#include <pbos/kf/rbtree.h>
+#include <pbos/kfxx/rbtree.hh>
+#include "vmalloc.hh"
 
+#ifdef __cplusplus
 typedef struct _kima_ublk_t {
-	kf_rbtree_node_t node_header;
-	void *ptr;
+	kfxx::RBTree<void *>::Node node_header;
 	size_t size;
 } kima_ublk_t;
+#else
+typedef struct _kima_ublk_t kima_ublk_t;
+#endif
 
 typedef struct _kima_ublk_poolpg_t kima_ublk_poolpg_t;
 
@@ -23,10 +26,9 @@ typedef struct _kima_ublk_poolpg_t {
 } kima_ublk_poolpg_t;
 
 extern kima_ublk_poolpg_t *kima_ublk_poolpg_list;
-extern kf_rbtree_t kima_ublk_query_tree;
+extern kfxx::RBTree<void *> kima_ublk_query_tree, kima_ublk_free_tree;
 
-bool kima_ublk_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
-void kima_ublk_nodefree(kf_rbtree_node_t *p);
+void kima_ublk_free(kima_ublk_t *p);
 
 kima_ublk_t *kima_lookup_ublk(void *ptr);
 kima_ublk_t *kima_lookup_nearest_ublk(void *ptr);

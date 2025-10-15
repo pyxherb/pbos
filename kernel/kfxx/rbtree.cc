@@ -1,8 +1,8 @@
-#include <pbos/kf/rbtree.hh>
+#include <pbos/kfxx/rbtree.hh>
 
-using namespace kf;
+using namespace kfxx;
 
-PB_KF_API RBTreeBase::NodeBase* RBTreeBase::_getMinNode(NodeBase* node) {
+PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_getMinNode(NodeBase* node) {
 	if (!node)
 		return nullptr;
 
@@ -11,7 +11,7 @@ PB_KF_API RBTreeBase::NodeBase* RBTreeBase::_getMinNode(NodeBase* node) {
 	return node;
 }
 
-PB_KF_API RBTreeBase::NodeBase* RBTreeBase::_getMaxNode(NodeBase* node) {
+PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_getMaxNode(NodeBase* node) {
 	if (!node)
 		return nullptr;
 
@@ -20,7 +20,7 @@ PB_KF_API RBTreeBase::NodeBase* RBTreeBase::_getMaxNode(NodeBase* node) {
 	return node;
 }
 
-PB_KF_API void RBTreeBase::_lRot(NodeBase* x) {
+PB_KFXX_API void RBTreeBase::_lRot(NodeBase* x) {
 	NodeBase* y = x->r;
 	kd_assert(y);
 
@@ -41,7 +41,7 @@ PB_KF_API void RBTreeBase::_lRot(NodeBase* x) {
 	x->p = y;
 }
 
-PB_KF_API void RBTreeBase::_rRot(NodeBase* x) {
+PB_KFXX_API void RBTreeBase::_rRot(NodeBase* x) {
 	NodeBase* y = x->l;
 	kd_assert(y);
 
@@ -61,7 +61,7 @@ PB_KF_API void RBTreeBase::_rRot(NodeBase* x) {
 	x->p = y;
 }
 
-PB_KF_API void RBTreeBase::_insertFixUp(NodeBase* node) {
+PB_KFXX_API void RBTreeBase::_insertFixUp(NodeBase* node) {
 	NodeBase* p, * gp = node, * u;  // Parent, grandparent and uncle
 
 	while ((p = gp->p) && _isRed(p)) {
@@ -112,7 +112,7 @@ PB_KF_API void RBTreeBase::_insertFixUp(NodeBase* node) {
 	_root->color = RBColor::Black;
 }
 
-PB_KF_API RBTreeBase::NodeBase* RBTreeBase::_removeFixUp(NodeBase* node) {
+PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_removeFixUp(NodeBase* node) {
 	// Adopted from SGI STL's stl_tree, with some minor improvements.
 	NodeBase* y = node, * x, * p;
 
@@ -240,7 +240,7 @@ PB_KF_API RBTreeBase::NodeBase* RBTreeBase::_removeFixUp(NodeBase* node) {
 	return y;
 }
 
-PB_KF_API RBTreeBase::NodeBase* RBTreeBase::_getNextNode(const NodeBase* node, const NodeBase* lastNode) noexcept {
+PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_getNextNode(const NodeBase* node, const NodeBase* lastNode) noexcept {
 	kd_assert(node);
 
 	if (node != lastNode) {
@@ -257,7 +257,7 @@ PB_KF_API RBTreeBase::NodeBase* RBTreeBase::_getNextNode(const NodeBase* node, c
 	return nullptr;
 }
 
-PB_KF_API RBTreeBase::NodeBase* RBTreeBase::_getPrevNode(const NodeBase* node, const NodeBase* firstNode) noexcept {
+PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_getPrevNode(const NodeBase* node, const NodeBase* firstNode) noexcept {
 	kd_assert(node);
 
 	if (node != firstNode) {
@@ -274,9 +274,9 @@ PB_KF_API RBTreeBase::NodeBase* RBTreeBase::_getPrevNode(const NodeBase* node, c
 	return nullptr;
 }
 
-PB_KF_API RBTreeBase::RBTreeBase() {
+PB_KFXX_API RBTreeBase::RBTreeBase() {
 }
 
-PB_KF_API RBTreeBase::~RBTreeBase() {
+PB_KFXX_API RBTreeBase::~RBTreeBase() {
 	kd_assert(!_root);
 }

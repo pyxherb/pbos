@@ -78,7 +78,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_program(CMAKE_CXX_COMPILER NAMES g++ clang++ REQUIRED)
 set(CMAKE_CXX_COMPILER_TARGET i386-elf)
 
-set(CMAKE_CXX_FLAGS "-m32 -fno-stack-protector -fno-exceptions -fno-rtti -mno-stack-arg-probe -mno-red-zone -mno-mmx -mno-sse -fno-builtin -ffreestanding -fno-pic")
+set(CMAKE_CXX_FLAGS "-m32 -fno-stack-protector -fno-exceptions -fno-rtti -fno-use-cxa-atexit -mno-stack-arg-probe -mno-red-zone -mno-mmx -mno-sse -fno-builtin -ffreestanding -fno-pic")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELWITHDBGINFO "-O2 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")

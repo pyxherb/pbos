@@ -4,7 +4,7 @@
 #include "basedefs.hh"
 #include <memory>
 
-namespace kf {
+namespace kfxx {
 #if __cplusplus >= 202002L
 	template <typename T, typename... Args>
 	requires std::constructible_from<T, Args...>

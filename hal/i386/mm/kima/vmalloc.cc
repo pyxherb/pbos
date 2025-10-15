@@ -1,4 +1,4 @@
-#include "vmalloc.h"
+#include "vmalloc.hh"
 #include <pbos/km/logger.h>
 
 void *kima_vpgalloc(void *addr, size_t size) {

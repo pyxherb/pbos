@@ -8,7 +8,7 @@
 #include <pbos/kn/km/mm.h>
 #include <stdalign.h>
 #include <string.h>
-#include "mm/kima/init.h"
+#include "mm/kima/init.hh"
 #include "mm/misc.h"
 #include "mm/vmmgr/vm.h"
 

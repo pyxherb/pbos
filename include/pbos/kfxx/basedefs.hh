@@ -5,6 +5,7 @@
 
 #define PB_KFXX_API
 
+#ifdef __cplusplus
 namespace kfxx {
 	enum class IteratorDirection : uint8_t {
 		Forward = 0,
@@ -12,5 +13,6 @@ namespace kfxx {
 		Invalid
 	};
 }
+#endif
 
 #endif

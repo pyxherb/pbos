@@ -2,6 +2,7 @@
 #define _PBOS_KFXX_RBTREE_H_
 
 #include "fallible_cmp.hh"
+#include <functional>
 #include <pbos/km/assert.h>
 #include <pbos/km/panic.h>
 #include <pbos/km/result.h>
@@ -25,24 +26,24 @@ namespace kfxx {
 		NodeBase *_cachedMinNode = nullptr, *_cachedMaxNode = nullptr;
 		size_t _nNodes = 0;
 
-		PB_KF_API static NodeBase *_getMinNode(NodeBase *node);
-		PB_KF_API static NodeBase *_getMaxNode(NodeBase *node);
+		PB_KFXX_API static NodeBase *_getMinNode(NodeBase *node);
+		PB_KFXX_API static NodeBase *_getMaxNode(NodeBase *node);
 
 		PB_FORCEINLINE static bool _isRed(NodeBase *node) { return node && node->color == RBColor::Red; }
 		PB_FORCEINLINE static bool _isBlack(NodeBase *node) { return (!node) || node->color == RBColor::Black; }
 
-		PB_KF_API void _lRot(NodeBase *x);
-		PB_KF_API void _rRot(NodeBase *x);
+		PB_KFXX_API void _lRot(NodeBase *x);
+		PB_KFXX_API void _rRot(NodeBase *x);
 
-		PB_KF_API void _insertFixUp(NodeBase *node);
+		PB_KFXX_API void _insertFixUp(NodeBase *node);
 
-		PB_KF_API NodeBase *_removeFixUp(NodeBase *node);
+		PB_KFXX_API NodeBase *_removeFixUp(NodeBase *node);
 
-		PB_KF_API static NodeBase *_getNextNode(const NodeBase *node, const NodeBase *lastNode) noexcept;
-		PB_KF_API static NodeBase *_getPrevNode(const NodeBase *node, const NodeBase *firstNode) noexcept;
+		PB_KFXX_API static NodeBase *_getNextNode(const NodeBase *node, const NodeBase *lastNode) noexcept;
+		PB_KFXX_API static NodeBase *_getPrevNode(const NodeBase *node, const NodeBase *firstNode) noexcept;
 
-		PB_KF_API RBTreeBase();
-		PB_KF_API ~RBTreeBase();
+		PB_KFXX_API RBTreeBase();
+		PB_KFXX_API ~RBTreeBase();
 	};
 
 	template <typename T,
@@ -53,9 +54,6 @@ namespace kfxx {
 	public:
 		struct Node : public RBTreeBase::NodeBase {
 			T value;
-
-			inline Node(T &&value) : value(std::move(value)) {}
-			virtual ~Node() {}
 		};
 
 		using NodeType = Node;
@@ -238,9 +236,9 @@ namespace kfxx {
 			other._nNodes = 0;
 		}
 
-		virtual inline ~RBTreeImpl() {
+		inline ~RBTreeImpl() {
 			if (_root)
-				_deleteNodeTree((Node *)_root);
+				km_panic("Destructing a non-empty RBTree is not allowed");
 		}
 
 		PB_FORCEINLINE ThisType &operator=(ThisType &&other) noexcept {
@@ -312,13 +310,13 @@ namespace kfxx {
 		/// @brief Insert a node into the tree.
 		/// @param node Node to be inserted.
 		/// @return Whether the node is inserted successfully, false if node with the same key presents.
-		[[nodiscard]] PB_FORCEINLINE bool insert(Node *node) {
+		PB_FORCEINLINE void insert(Node *node) {
 			Node *parent = nullptr, **slot = _getSlot(node->value, parent);
 
 			if (!slot)
-				return false;
+				km_panic("Duplicated node insertion in RBTree is not allowed");
 
-			return _insert(slot, parent, node);
+			_insert(slot, parent, node);
 		}
 
 		PB_FORCEINLINE void remove(Node *node) {
