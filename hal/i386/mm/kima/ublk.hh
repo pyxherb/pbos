@@ -5,8 +5,7 @@
 #include "vmalloc.hh"
 
 #ifdef __cplusplus
-typedef struct _kima_ublk_t {
-	kfxx::RBTree<void *>::Node node_header;
+typedef struct _kima_ublk_t : public kfxx::rbtree_t<void *>::node_t {
 	size_t size;
 } kima_ublk_t;
 #else
@@ -26,9 +25,11 @@ typedef struct _kima_ublk_poolpg_t {
 } kima_ublk_poolpg_t;
 
 extern kima_ublk_poolpg_t *kima_ublk_poolpg_list;
-extern kfxx::RBTree<void *> kima_ublk_query_tree, kima_ublk_free_tree;
+extern kfxx::rbtree_t<void *> kima_ublk_query_tree, kima_ublk_free_tree;
 
-void kima_ublk_free(kima_ublk_t *p);
+PB_FORCEINLINE void kima_ublk_free(kima_ublk_t* p) {
+	p->rb_value = NULL;
+}
 
 kima_ublk_t *kima_lookup_ublk(void *ptr);
 kima_ublk_t *kima_lookup_nearest_ublk(void *ptr);

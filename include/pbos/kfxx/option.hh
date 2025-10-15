@@ -4,199 +4,200 @@
 #include "basedefs.hh"
 #include "utils.hh"
 #include <type_traits>
+#include <pbos/km/assert.h>
 
 namespace kfxx {
-	struct NullOption {
+	struct nullopt_t {
 	};
 
-	constexpr static NullOption NULL_OPTION;
+	constexpr static nullopt_t NULL_OPTION;
 
 	template <typename T>
-	class Option final {
+	class option_t final {
 	private:
 		alignas(T) char _data[sizeof(T)];
-		bool _hasValue = false;
+		bool _has_value = false;
 
 	public:
 		using value_type = T;
 
 		PB_FORCEINLINE void reset() noexcept {
-			if (_hasValue) {
+			if (_has_value) {
 				if (std::is_destructible_v<T>) {
-					destroyAt<T>((T *)_data);
+					destroy_at<T>((T *)_data);
 				}
 			}
-			_hasValue = false;
+			_has_value = false;
 		}
 
-		PB_FORCEINLINE void setValue(T &&data) noexcept {
+		PB_FORCEINLINE void set_value(T &&data) noexcept {
 			reset();
-			constructAt<T>(((T *)_data), std::move(data));
-			_hasValue = true;
+			construct_at<T>(((T *)_data), std::move(data));
+			_has_value = true;
 		}
 
-		PB_FORCEINLINE void setValue(NullOption) noexcept {
+		PB_FORCEINLINE void set_value(nullopt_t) noexcept {
 			reset();
 		}
 
-		PB_FORCEINLINE bool hasValue() const noexcept {
-			return _hasValue;
+		PB_FORCEINLINE bool has_value() const noexcept {
+			return _has_value;
 		}
 
 		PB_FORCEINLINE T &value() noexcept {
-			assert(hasValue());
+			kd_assert(has_value());
 			return *((T *)_data);
 		}
 
 		PB_FORCEINLINE const T &value() const noexcept {
-			assert(hasValue());
+			kd_assert(has_value());
 			return *((const T *)_data);
 		}
 
 		PB_FORCEINLINE T move() noexcept {
-			assert(hasValue());
-			_hasValue = false;
+			kd_assert(has_value());
+			_has_value = false;
 			return std::move(*((T *)_data));
 		}
 
 		PB_FORCEINLINE T &operator*() noexcept {
-			assert(hasValue());
+			kd_assert(has_value());
 			return value();
 		}
 
 		PB_FORCEINLINE const T &operator*() const noexcept {
-			assert(hasValue());
+			kd_assert(has_value());
 			return value();
 		}
 
 		PB_FORCEINLINE std::remove_reference_t<T> *operator->() noexcept {
-			assert(hasValue());
+			kd_assert(has_value());
 			return &value();
 		}
 
 		PB_FORCEINLINE std::remove_reference_t<const T> *operator->() const noexcept {
-			assert(hasValue());
+			kd_assert(has_value());
 			return &value();
 		}
 
-		PB_FORCEINLINE Option() noexcept {
+		PB_FORCEINLINE option_t() noexcept {
 		}
 
-		PB_FORCEINLINE ~Option() {
+		PB_FORCEINLINE ~option_t() {
 			reset();
 		}
 
-		PB_FORCEINLINE Option(T &&data) noexcept {
-			setValue(std::move(data));
+		PB_FORCEINLINE option_t(T &&data) noexcept {
+			set_value(std::move(data));
 		}
 
-		PB_FORCEINLINE Option(NullOption) noexcept {
+		PB_FORCEINLINE option_t(nullopt_t) noexcept {
 		}
 
-		PB_FORCEINLINE Option(Option<T> &&rhs) noexcept {
-			if (rhs.hasValue()) {
-				setValue(std::move(*((T *)rhs._data)));
+		PB_FORCEINLINE option_t(option_t<T> &&rhs) noexcept {
+			if (rhs.has_value()) {
+				set_value(std::move(*((T *)rhs._data)));
 			}
 		}
 
-		PB_FORCEINLINE Option<T> &operator=(Option<T> &&rhs) noexcept {
+		PB_FORCEINLINE option_t<T> &operator=(option_t<T> &&rhs) noexcept {
 			reset();
 
-			if (rhs.hasValue()) {
-				setValue(std::move(*((T *)rhs._data)));
+			if (rhs.has_value()) {
+				set_value(std::move(*((T *)rhs._data)));
 			}
 			return *this;
 		}
 	};
 
 	template <typename T>
-	class Option<T &> final {
+	class option_t<T &> final {
 	private:
 		T *_data;
-		bool _hasValue = false;
+		bool _has_value = false;
 
 	public:
 		using value_type = T &;
 
 		PB_FORCEINLINE void reset() noexcept {
-			_hasValue = false;
+			_has_value = false;
 		}
 
-		PB_FORCEINLINE void setValueRef(T &data) noexcept {
+		PB_FORCEINLINE void set_value_ref(T &data) noexcept {
 			reset();
 			_data = &data;
-			_hasValue = true;
+			_has_value = true;
 		}
 
-		PB_FORCEINLINE void setValue(NullOption) noexcept {
+		PB_FORCEINLINE void set_value(nullopt_t) noexcept {
 			reset();
 		}
 
-		PB_FORCEINLINE bool hasValue() const noexcept {
-			return _hasValue;
+		PB_FORCEINLINE bool has_value() const noexcept {
+			return _has_value;
 		}
 
 		PB_FORCEINLINE T &value() noexcept {
-			assert(hasValue());
+			kd_assert(has_value());
 			return *_data;
 		}
 
 		PB_FORCEINLINE const T &value() const noexcept {
-			assert(hasValue());
+			kd_assert(has_value());
 			return *((const T *)_data);
 		}
 
 		PB_FORCEINLINE T move() noexcept {
-			assert(hasValue());
-			_hasValue = false;
+			kd_assert(has_value());
+			_has_value = false;
 			return std::move(*_data);
 		}
 
 		PB_FORCEINLINE T &operator*() noexcept {
-			assert(hasValue());
+			kd_assert(has_value());
 			return value();
 		}
 
 		PB_FORCEINLINE const T &operator*() const noexcept {
-			assert(hasValue());
+			kd_assert(has_value());
 			return value();
 		}
 
 		PB_FORCEINLINE std::remove_reference_t<T> *operator->() noexcept {
-			assert(hasValue());
+			kd_assert(has_value());
 			return &value();
 		}
 
 		PB_FORCEINLINE std::remove_reference_t<const T> *operator->() const noexcept {
-			assert(hasValue());
+			kd_assert(has_value());
 			return &value();
 		}
 
-		PB_FORCEINLINE Option() noexcept {
+		PB_FORCEINLINE option_t() noexcept {
 		}
 
-		PB_FORCEINLINE ~Option() {
+		PB_FORCEINLINE ~option_t() {
 			reset();
 		}
 
-		PB_FORCEINLINE Option(T &data) noexcept {
-			setValueRef(data);
+		PB_FORCEINLINE option_t(T &data) noexcept {
+			set_value_ref(data);
 		}
 
-		PB_FORCEINLINE Option(NullOption) noexcept {
+		PB_FORCEINLINE option_t(nullopt_t) noexcept {
 		}
 
-		PB_FORCEINLINE Option(Option<T> &&rhs) noexcept {
-			if (rhs.hasValue()) {
-				setValueRef(**((std::remove_reference_t<T> **)rhs._data));
+		PB_FORCEINLINE option_t(option_t<T> &&rhs) noexcept {
+			if (rhs.has_value()) {
+				set_value_ref(**((std::remove_reference_t<T> **)rhs._data));
 			}
 		}
 
-		PB_FORCEINLINE Option<T> &operator=(Option<T> &&rhs) noexcept {
+		PB_FORCEINLINE option_t<T> &operator=(option_t<T> &&rhs) noexcept {
 			reset();
 
-			if (rhs.hasValue()) {
-				setValueRef(**((std::remove_reference_t<T> **)rhs._data));
+			if (rhs.has_value()) {
+				set_value_ref(**((std::remove_reference_t<T> **)rhs._data));
 			}
 			return *this;
 		}

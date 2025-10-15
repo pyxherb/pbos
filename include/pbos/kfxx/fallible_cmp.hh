@@ -6,22 +6,22 @@
 
 namespace kfxx {
 	template <typename T>
-	struct FallibleLt {
-		Option<bool> operator()(const T &lhs, const T &rhs) const {
+	struct fallible_less {
+		option_t<bool> operator()(const T &lhs, const T &rhs) const {
 			return lhs < rhs;
 		}
 	};
 
 	template <typename T>
-	struct FallibleGt {
-		Option<bool> operator()(const T &lhs, const T &rhs) const {
+	struct fallible_greater {
+		option_t<bool> operator()(const T &lhs, const T &rhs) const {
 			return lhs > rhs;
 		}
 	};
 
 	template <typename T>
-	struct FallibleEq {
-		Option<bool> operator()(const T &lhs, const T &rhs) const {
+	struct fallible_equal_to {
+		option_t<bool> operator()(const T &lhs, const T &rhs) const {
 			return lhs == rhs;
 		}
 	};

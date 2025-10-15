@@ -5,17 +5,17 @@
 
 namespace kf {
 	template<typename T>
-	struct ScopeGuard {
+	struct scope_guard {
 		T callback;
 		bool released = false;
 
 		static_assert(std::is_nothrow_invocable_v<T>, "The callback must be noexcept");
 
-		ScopeGuard() = delete;
-		PB_FORCEINLINE ScopeGuard(T &&callback)
+		scope_guard() = delete;
+		PB_FORCEINLINE scope_guard(T &&callback)
 			: callback(std::move(callback)) {
 		}
-		PB_FORCEINLINE ~ScopeGuard() {
+		PB_FORCEINLINE ~scope_guard() {
 			if (!released)
 				callback();
 		}

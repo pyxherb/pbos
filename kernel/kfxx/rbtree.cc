@@ -2,7 +2,7 @@
 
 using namespace kfxx;
 
-PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_getMinNode(NodeBase* node) {
+PB_KFXX_API _rbtree_base::node_base* _rbtree_base::_get_min_node(node_base* node) {
 	if (!node)
 		return nullptr;
 
@@ -11,7 +11,7 @@ PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_getMinNode(NodeBase* node) {
 	return node;
 }
 
-PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_getMaxNode(NodeBase* node) {
+PB_KFXX_API _rbtree_base::node_base* _rbtree_base::_get_max_node(node_base* node) {
 	if (!node)
 		return nullptr;
 
@@ -20,8 +20,8 @@ PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_getMaxNode(NodeBase* node) {
 	return node;
 }
 
-PB_KFXX_API void RBTreeBase::_lRot(NodeBase* x) {
-	NodeBase* y = x->r;
+PB_KFXX_API void _rbtree_base::_lrot(node_base* x) {
+	node_base* y = x->r;
 	kd_assert(y);
 
 	x->r = y->l;
@@ -41,8 +41,8 @@ PB_KFXX_API void RBTreeBase::_lRot(NodeBase* x) {
 	x->p = y;
 }
 
-PB_KFXX_API void RBTreeBase::_rRot(NodeBase* x) {
-	NodeBase* y = x->l;
+PB_KFXX_API void _rbtree_base::_rrot(node_base* x) {
+	node_base* y = x->l;
 	kd_assert(y);
 
 	x->l = y->r;
@@ -61,60 +61,60 @@ PB_KFXX_API void RBTreeBase::_rRot(NodeBase* x) {
 	x->p = y;
 }
 
-PB_KFXX_API void RBTreeBase::_insertFixUp(NodeBase* node) {
-	NodeBase* p, * gp = node, * u;  // Parent, grandparent and uncle
+PB_KFXX_API void _rbtree_base::_insert_fixup(node_base* node) {
+	node_base* p, * gp = node, * u;  // Parent, grandparent and uncle
 
-	while ((p = gp->p) && _isRed(p)) {
+	while ((p = gp->p) && _is_red(p)) {
 		gp = p->p;
 
 		if (p == gp->l) {
 			u = gp->r;
 
-			if (_isRed(u)) {
-				p->color = RBColor::Black;
-				u->color = RBColor::Black;
-				gp->color = RBColor::Red;
+			if (_is_red(u)) {
+				p->color = rbcolor_t::BLACK;
+				u->color = rbcolor_t::BLACK;
+				gp->color = rbcolor_t::RED;
 				node = gp;
 				continue;
 			}
 			else {
 				if (node == p->r) {
-					_lRot(p);
+					_lrot(p);
 					std::swap(node, p);
 				}
-				_rRot(gp);
-				p->color = RBColor::Black;
-				gp->color = RBColor::Red;
+				_rrot(gp);
+				p->color = rbcolor_t::BLACK;
+				gp->color = rbcolor_t::RED;
 			}
 		}
 		else {
 			u = gp->l;
 
-			if (_isRed(u)) {
-				p->color = RBColor::Black;
-				u->color = RBColor::Black;
-				gp->color = RBColor::Red;
+			if (_is_red(u)) {
+				p->color = rbcolor_t::BLACK;
+				u->color = rbcolor_t::BLACK;
+				gp->color = rbcolor_t::RED;
 				node = gp;
 				continue;
 			}
 			else {
 				if (node == p->l) {
-					_rRot(p);
+					_rrot(p);
 					std::swap(node, p);
 				}
-				_lRot(gp);
-				p->color = RBColor::Black;
-				gp->color = RBColor::Red;
+				_lrot(gp);
+				p->color = rbcolor_t::BLACK;
+				gp->color = rbcolor_t::RED;
 			}
 		}
 	}
 
-	_root->color = RBColor::Black;
+	_root->color = rbcolor_t::BLACK;
 }
 
-PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_removeFixUp(NodeBase* node) {
+PB_KFXX_API _rbtree_base::node_base* _rbtree_base::_remove_fixup(node_base* node) {
 	// Adopted from SGI STL's stl_tree, with some minor improvements.
-	NodeBase* y = node, * x, * p;
+	node_base* y = node, * x, * p;
 
 	if (!y->l)
 		// The node has right child only.
@@ -125,7 +125,7 @@ PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_removeFixUp(NodeBase* node) {
 	}
 	else {
 		// The node has two children.
-		y = _getMinNode(y->r);
+		y = _get_min_node(y->r);
 		x = y->r;
 	}
 
@@ -168,84 +168,84 @@ PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_removeFixUp(NodeBase* node) {
 			node->p->r = x;
 	}
 
-	if (_isBlack(y)) {
-		while (x != _root && _isBlack(x)) {
+	if (_is_black(y)) {
+		while (x != _root && _is_black(x)) {
 			if (x == p->l) {
 				auto w = p->r;
 
-				if (_isRed(w)) {
-					w->color = RBColor::Black;
-					p->color = RBColor::Red;
-					_lRot(p);
+				if (_is_red(w)) {
+					w->color = rbcolor_t::BLACK;
+					p->color = rbcolor_t::RED;
+					_lrot(p);
 					w = p->r;
 				}
 
-				if (_isBlack(w->l) && _isBlack(w->r)) {
-					w->color = RBColor::Red;
+				if (_is_black(w->l) && _is_black(w->r)) {
+					w->color = rbcolor_t::RED;
 					x = p;
 					p = p->p;
 				}
 				else {
-					if (_isBlack(w->r)) {
+					if (_is_black(w->r)) {
 						if (w->l)
-							w->l->color = RBColor::Black;
-						w->color = RBColor::Red;
-						_rRot(w);
+							w->l->color = rbcolor_t::BLACK;
+						w->color = rbcolor_t::RED;
+						_rrot(w);
 						w = p->r;
 					}
 					w->color = p->color;
-					p->color = RBColor::Black;
+					p->color = rbcolor_t::BLACK;
 					if (w->r)
-						w->r->color = RBColor::Black;
-					_lRot(p);
+						w->r->color = rbcolor_t::BLACK;
+					_lrot(p);
 					break;
 				}
 			}
 			else {
 				auto w = p->l;
 
-				if (_isRed(w)) {
-					w->color = RBColor::Black;
-					p->color = RBColor::Red;
-					_rRot(p);
+				if (_is_red(w)) {
+					w->color = rbcolor_t::BLACK;
+					p->color = rbcolor_t::RED;
+					_rrot(p);
 					w = p->l;
 				}
 
-				if (_isBlack(w->r) && _isBlack(w->l)) {
-					w->color = RBColor::Red;
+				if (_is_black(w->r) && _is_black(w->l)) {
+					w->color = rbcolor_t::RED;
 					x = p;
 					p = p->p;
 				}
 				else {
-					if (_isBlack(w->l)) {
+					if (_is_black(w->l)) {
 						if (w->r)
-							w->r->color = RBColor::Black;
-						w->color = RBColor::Red;
-						_lRot(w);
+							w->r->color = rbcolor_t::BLACK;
+						w->color = rbcolor_t::RED;
+						_lrot(w);
 						w = p->l;
 					}
 					w->color = p->color;
-					p->color = RBColor::Black;
+					p->color = rbcolor_t::BLACK;
 					if (w->l)
-						w->l->color = RBColor::Black;
-					_rRot(p);
+						w->l->color = rbcolor_t::BLACK;
+					_rrot(p);
 					break;
 				}
 			}
 		}
 		if (x)
-			x->color = RBColor::Black;
+			x->color = rbcolor_t::BLACK;
 	}
 
 	return y;
 }
 
-PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_getNextNode(const NodeBase* node, const NodeBase* lastNode) noexcept {
+PB_KFXX_API _rbtree_base::node_base* _rbtree_base::_get_next(const node_base* node, const node_base* lastNode) noexcept {
 	kd_assert(node);
 
 	if (node != lastNode) {
 		if (node->r) {
-			return _getMinNode(node->r);
+			return _get_min_node(node->r);
 		}
 		else {
 			while (node->p && (node == node->p->r))
@@ -257,12 +257,12 @@ PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_getNextNode(const NodeBase* node,
 	return nullptr;
 }
 
-PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_getPrevNode(const NodeBase* node, const NodeBase* firstNode) noexcept {
+PB_KFXX_API _rbtree_base::node_base* _rbtree_base::_get_prev(const node_base* node, const node_base* firstNode) noexcept {
 	kd_assert(node);
 
 	if (node != firstNode) {
 		if (node->l) {
-			return _getMaxNode(node->l);
+			return _get_max_node(node->l);
 		}
 		else {
 			while (node->p && (node == node->p->l))
@@ -274,9 +274,9 @@ PB_KFXX_API RBTreeBase::NodeBase* RBTreeBase::_getPrevNode(const NodeBase* node,
 	return nullptr;
 }
 
-PB_KFXX_API RBTreeBase::RBTreeBase() {
+PB_KFXX_API _rbtree_base::_rbtree_base() {
 }
 
-PB_KFXX_API RBTreeBase::~RBTreeBase() {
+PB_KFXX_API _rbtree_base::~_rbtree_base() {
 	kd_assert(!_root);
 }
