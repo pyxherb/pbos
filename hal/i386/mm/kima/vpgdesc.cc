@@ -57,7 +57,7 @@ kima_vpgdesc_t* kima_alloc_vpgdesc(void* ptr) {
 
 	kima_vpgdesc_query_tree.insert(&pg->slots[0]);
 
-	for (size_t i = 1; i < PB_ARRAYSIZE(pg->slots); ++i) {
+	for (size_t i = 1; i < PBOS_ARRAYSIZE(pg->slots); ++i) {
 		memset(&pg->slots[i], 0, sizeof(pg->slots[i]));
 		pg->slots[i].rb_value = &pg->slots[i];
 

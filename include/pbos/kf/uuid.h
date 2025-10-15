@@ -30,7 +30,7 @@ typedef struct _uuid_t {
 		((_a)->e2 == (_b)->e2))
 #define uuid_neq(_a, _b) (!uuid_eq(_a, _b))
 
-PB_FORCEINLINE bool uuid_gt(const uuid_t* _a, const uuid_t* _b) {
+PBOS_FORCEINLINE bool uuid_gt(const uuid_t* _a, const uuid_t* _b) {
 	if(_a->a > _b->a)
 		return true;
 	if(_a->b > _b->b)
@@ -46,7 +46,7 @@ PB_FORCEINLINE bool uuid_gt(const uuid_t* _a, const uuid_t* _b) {
 	return false;
 }
 
-PB_FORCEINLINE bool uuid_lt(const uuid_t* _a, const uuid_t* _b) {
+PBOS_FORCEINLINE bool uuid_lt(const uuid_t* _a, const uuid_t* _b) {
 	if(_a->a < _b->a)
 		return true;
 	if(_a->b < _b->b)

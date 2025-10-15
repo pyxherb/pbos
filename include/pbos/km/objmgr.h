@@ -6,7 +6,7 @@
 #include <pbos/kf/uuid.h>
 #include "result.h"
 
-PB_EXTERN_C_BEGIN
+PBOS_EXTERN_C_BEGIN
 
 #define OM_HANDLE_MIN 1
 #define OM_HANDLE_MAX UINT32_MAX
@@ -100,6 +100,6 @@ void om_deinit_object(om_object_t *obj);
 
 void om_gc();
 
-PB_EXTERN_C_END
+PBOS_EXTERN_C_END
 
 #endif

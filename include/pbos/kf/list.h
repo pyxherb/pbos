@@ -27,13 +27,13 @@ typedef struct _kf_list_node_t {
 
 #define kf_list_foreach(i, node) for (kf_list_node_t *i = (node); i; i = i->next)
 
-PB_FORCEINLINE static kf_list_node_t *kf_list_head(kf_list_node_t *i) {
+PBOS_FORCEINLINE static kf_list_node_t *kf_list_head(kf_list_node_t *i) {
 	while (i->last)
 		i = i->last;
 	return i;
 }
 
-PB_FORCEINLINE static kf_list_node_t *kf_list_end(kf_list_node_t *i) {
+PBOS_FORCEINLINE static kf_list_node_t *kf_list_end(kf_list_node_t *i) {
 	while (i->next)
 		i = i->next;
 	return i;

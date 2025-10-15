@@ -5,7 +5,7 @@
 #include <pbos/km/objmgr.h>
 #include <stdint.h>
 
-PB_EXTERN_C_BEGIN
+PBOS_EXTERN_C_BEGIN
 
 enum {
 	FS_FILETYPE_FILE = 0,  // Regular file
@@ -94,6 +94,6 @@ km_result_t fs_resolve_path(fs_file_t *cur_dir, const char *path, size_t path_le
 
 extern om_class_t *fs_file_class;
 
-PB_EXTERN_C_END
+PBOS_EXTERN_C_END
 
 #endif

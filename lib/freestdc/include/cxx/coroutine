@@ -1,0 +1,10 @@
+#ifndef _FREESTDC_CXX_COROUTINE_
+#define _FREESTDC_CXX_COROUTINE_
+
+#if __cplusplus >= 202002L
+#include "_coroutine/coroutine_traits.hh"
+#include "_coroutine/coroutine_handle.hh"
+#include "_coroutine/trivial_awaitables.hh"
+#endif
+
+#endif

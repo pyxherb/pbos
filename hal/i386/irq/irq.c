@@ -3,7 +3,7 @@
 #include <hal/i386/syscall.h>
 #include <pbos/km/logger.h>
 
-PB_NORETURN void isr_irq0_impl(
+PBOS_NORETURN void isr_irq0_impl(
 	const uint32_t eax,
 	const uint32_t ebx,
 	const uint32_t ecx,

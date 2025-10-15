@@ -48,7 +48,7 @@ km_result_t km_exec(
 	}
 
 	kf_rbtree_foreach(i, &kn_registered_binldrs) {
-		kn_binldr_reg_t *binldr = PB_CONTAINER_OF(kn_binldr_reg_t, tree_header, i);
+		kn_binldr_reg_t *binldr = PBOS_CONTAINER_OF(kn_binldr_reg_t, tree_header, i);
 
 		if (KM_SUCCEEDED(result = binldr->binldr.load_exec(pcb, file_fp))) {
 			pcb->proc_id = kn_alloc_proc_id();

@@ -7,7 +7,7 @@
 /// @return Corresponding PMAD. NULL if not found.
 ///
 hn_pmad_t *hn_pmad_get(pgaddr_t addr) {
-	for (uint8_t i = 0; i < PB_ARRAYSIZE(hn_pmad_list); ++i) {
+	for (uint8_t i = 0; i < PBOS_ARRAYSIZE(hn_pmad_list); ++i) {
 		if (hn_pmad_list[i].attribs.type == KN_PMEM_END)
 			break;
 
@@ -21,7 +21,7 @@ hn_pmad_t *hn_pmad_get(pgaddr_t addr) {
 
 pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area) {
 	kf_rbtree_foreach(i, &area->mad_query_tree) {
-		hn_mad_t *mad = PB_CONTAINER_OF(hn_mad_t, node_header, i);
+		hn_mad_t *mad = PBOS_CONTAINER_OF(hn_mad_t, node_header, i);
 		kd_assert(mad->flags & MAD_P);
 		if (mad->type == MAD_ALLOC_FREE) {
 			pgaddr_t pgaddr = mad->pgaddr;

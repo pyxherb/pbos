@@ -5,11 +5,11 @@ alignas(16) arch_gate_t hn_kidt[256] = { 0 };
 
 size_t irq_getmax()
 {
-	return PB_ARRAYSIZE(hn_kidt);
+	return PBOS_ARRAYSIZE(hn_kidt);
 }
 
 void hn_setisr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type) {
-	kd_assert(irq <= PB_ARRAYSIZE(hn_kidt));
+	kd_assert(irq <= PBOS_ARRAYSIZE(hn_kidt));
 	kd_assert(dpl <= 3);
 	hn_kidt[irq] = GATEDESC(isr, SELECTOR_KCODE, GATEDESC_ATTRIBS(1, dpl, 0, gate_type));
 }

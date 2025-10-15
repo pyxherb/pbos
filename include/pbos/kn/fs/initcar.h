@@ -6,7 +6,7 @@
 #include <pbos/fs/file.h>
 #include <pbos/fs/fs.h>
 
-PB_EXTERN_C_BEGIN
+PBOS_EXTERN_C_BEGIN
 
 #define INITCAR_UUID UUID(44417a9f, 01be, fd99, 93d2, 010a9fc70042)
 
@@ -56,6 +56,6 @@ extern fs_filesys_t *initcar_fs;
 extern fs_file_t *initcar_dir;
 extern fs_fsops_t initcar_ops;
 
-PB_EXTERN_C_END
+PBOS_EXTERN_C_END
 
 #endif

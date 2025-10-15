@@ -354,6 +354,15 @@ namespace std {
 	};
 
 #if __cplusplus >= 202002L
+	struct compare_three_way {
+		template <class T, class U>
+		constexpr auto operator()(T &&t, U &&u) const {
+			return static_cast<T &&>(t) <=> static_cast<U &&>(u);
+		}
+
+		using is_transparent = int;
+	};
+
 	struct identity {
 		template <class T>
 		constexpr T &&operator()(T &&t) const noexcept;

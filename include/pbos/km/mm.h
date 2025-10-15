@@ -5,7 +5,7 @@
 #include <pbos/generated/km.h>
 #include "result.h"
 
-PB_EXTERN_C_BEGIN
+PBOS_EXTERN_C_BEGIN
 
 enum {
 	MM_PMEM_AVAILABLE = 0,
@@ -31,7 +31,7 @@ typedef struct _mm_context_t mm_context_t;
 /// @param memtype Type of the page to be allocated.
 /// @return Physical address of allocated page, NULL if failed.
 ///
-PB_NODISCARD void *mm_pgalloc(uint8_t memtype);
+PBOS_NODISCARD void *mm_pgalloc(uint8_t memtype);
 ///
 /// @brief Free a single physical page.
 /// @details This function decrease the reference count of specified page, when
@@ -54,7 +54,7 @@ void mm_refpg(void *ptr);
 /// @param size Size of the memory bloc to be allocated.
 /// @return Virtual address to the memory block, NULL if failed.
 ///
-PB_NODISCARD void *mm_kmalloc(size_t size);
+PBOS_NODISCARD void *mm_kmalloc(size_t size);
 
 ///
 /// @brief Free a memory block from the default pool.
@@ -77,7 +77,7 @@ typedef uint32_t mm_vmalloc_flags_t;
 /// @param size Size for allocation.
 /// @param access Page access for allocation.
 /// @return Pointer to allocated virtual address, NULL if failed.
-PB_NODISCARD void *mm_vmalloc(
+PBOS_NODISCARD void *mm_vmalloc(
 	mm_context_t *context,
 	const void *minaddr,
 	const void *maxaddr,
@@ -91,7 +91,7 @@ PB_NODISCARD void *mm_vmalloc(
 /// @param size Size for allocation.
 /// @param access Page access for allocation.
 /// @return Pointer to allocated virtual address, NULL if failed.
-PB_NODISCARD void *mm_kvmalloc(mm_context_t *context, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags);
+PBOS_NODISCARD void *mm_kvmalloc(mm_context_t *context, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags);
 
 /// @brief Free a virtual memory space.
 ///
@@ -164,7 +164,7 @@ void *mm_getmap(mm_context_t *context, const void *vaddr, mm_pgaccess_t *pgacces
 /// @param context Pointer to the memory context buffer.
 /// @return The result code for the initialization operation.
 ///
-PB_NODISCARD km_result_t kn_mm_init_context(mm_context_t *context);
+PBOS_NODISCARD km_result_t kn_mm_init_context(mm_context_t *context);
 ///
 /// @brief Free a memory context and its associated resource.
 ///
@@ -202,6 +202,6 @@ extern mm_context_t *mm_kernel_context;
 /// @brief An array that contains current memory contexts of each EU.
 extern mm_context_t **mm_cur_contexts;
 
-PB_EXTERN_C_END
+PBOS_EXTERN_C_END
 
 #endif

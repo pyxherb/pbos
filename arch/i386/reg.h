@@ -43,7 +43,7 @@
 ///
 /// @return The value stored in CR0 register.
 ///
-PB_FORCEINLINE static uint32_t arch_rcr0() {
+PBOS_FORCEINLINE static uint32_t arch_rcr0() {
 	uint32_t value;
 	__asm__ __volatile__("movl %%cr0,%0"
 						 : "=r"(value));
@@ -55,7 +55,7 @@ PB_FORCEINLINE static uint32_t arch_rcr0() {
 ///
 /// @param value The value to write.
 ///
-PB_FORCEINLINE static void arch_wcr0(uint32_t value) {
+PBOS_FORCEINLINE static void arch_wcr0(uint32_t value) {
 	__asm__ __volatile__("movl %0,%%cr0" ::"r"(value));
 }
 
@@ -64,7 +64,7 @@ PB_FORCEINLINE static void arch_wcr0(uint32_t value) {
 ///
 /// @return The value stored in CR2 register.
 ///
-PB_FORCEINLINE static uint32_t arch_rcr2() {
+PBOS_FORCEINLINE static uint32_t arch_rcr2() {
 	uint32_t value;
 	__asm__ __volatile__("movl %%cr2,%0"
 						 : "=r"(value));
@@ -76,7 +76,7 @@ PB_FORCEINLINE static uint32_t arch_rcr2() {
 ///
 /// @param value The value to write.
 ///
-PB_FORCEINLINE static void arch_wcr2(uint32_t value) {
+PBOS_FORCEINLINE static void arch_wcr2(uint32_t value) {
 	__asm__ __volatile__("movl %0,%%cr2" ::"r"(value));
 }
 
@@ -85,7 +85,7 @@ PB_FORCEINLINE static void arch_wcr2(uint32_t value) {
 ///
 /// @return The value stored in CR3 register.
 ///
-PB_FORCEINLINE static uint32_t arch_rcr3() {
+PBOS_FORCEINLINE static uint32_t arch_rcr3() {
 	uint32_t value;
 	__asm__ __volatile__("movl %%cr3,%0"
 						 : "=r"(value));
@@ -97,7 +97,7 @@ PB_FORCEINLINE static uint32_t arch_rcr3() {
 ///
 /// @param value The value to write.
 ///
-PB_FORCEINLINE static void arch_wcr3(uint32_t value) {
+PBOS_FORCEINLINE static void arch_wcr3(uint32_t value) {
 	__asm__ __volatile__("movl %0,%%cr3" ::"r"(value));
 }
 
@@ -106,7 +106,7 @@ PB_FORCEINLINE static void arch_wcr3(uint32_t value) {
 ///
 /// @return The value stored in CR4 register.
 ///
-PB_FORCEINLINE static uint32_t arch_rcr4() {
+PBOS_FORCEINLINE static uint32_t arch_rcr4() {
 	uint32_t value;
 	__asm__ __volatile__("movl %%cr4,%0"
 						 : "=r"(value));
@@ -118,7 +118,7 @@ PB_FORCEINLINE static uint32_t arch_rcr4() {
 ///
 /// @param value The value to write.
 ///
-PB_FORCEINLINE static void arch_wcr4(uint32_t value) {
+PBOS_FORCEINLINE static void arch_wcr4(uint32_t value) {
 	__asm__ __volatile__("movl %0,%%cr4" ::"r"(value));
 }
 
@@ -127,7 +127,7 @@ PB_FORCEINLINE static void arch_wcr4(uint32_t value) {
 ///
 /// @return The value stored in EFLAGS register.
 ///
-PB_FORCEINLINE static uint32_t arch_rflags() {
+PBOS_FORCEINLINE static uint32_t arch_rflags() {
 	uint32_t eflags;
 	__asm__ __volatile__("pushfl");
 	__asm__ __volatile__("popl %0"
@@ -140,7 +140,7 @@ PB_FORCEINLINE static uint32_t arch_rflags() {
 ///
 /// @param value The value to write.
 ///
-PB_FORCEINLINE static void arch_wflags(uint32_t eflags) {
+PBOS_FORCEINLINE static void arch_wflags(uint32_t eflags) {
 	__asm__ __volatile__("pushl %0" ::"r"(eflags));
 	__asm__ __volatile__("popfl");
 }

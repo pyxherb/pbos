@@ -150,6 +150,6 @@ km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {
 }
 
 void kn_file_destructor(om_object_t *obj) {
-	fs_file_t *file = PB_CONTAINER_OF(fs_file_t, object_header, obj);
+	fs_file_t *file = PBOS_CONTAINER_OF(fs_file_t, object_header, obj);
 	file->fs->ops.offload(file);
 }

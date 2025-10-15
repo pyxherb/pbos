@@ -22,7 +22,7 @@ enum {
 ///
 /// @brief Memory map entry
 ///
-typedef struct PB_PACKED _arch_mmap_entry_t {
+typedef struct PBOS_PACKED _arch_mmap_entry_t {
 	uint32_t base;
 	uint32_t size;
 	uint8_t type;
@@ -32,7 +32,7 @@ typedef struct PB_PACKED _arch_mmap_entry_t {
 ///
 /// @brief APM Entry
 ///
-typedef struct PB_PACKED _arch_apm_entry_t {
+typedef struct PBOS_PACKED _arch_apm_entry_t {
 	uint8_t exist;
 	uint16_t cs;
 	uint16_t ds;
@@ -46,7 +46,7 @@ typedef struct PB_PACKED _arch_apm_entry_t {
 ///
 /// @brief Kernel arguments structure
 ///
-typedef struct PB_PACKED _arch_kargs_ptr_t {
+typedef struct PBOS_PACKED _arch_kargs_ptr_t {
 	uint8_t magic[4];
 
 	char loader_name[256];

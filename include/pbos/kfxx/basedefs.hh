@@ -3,7 +3,7 @@
 
 #include <pbos/kf/basedefs.h>
 
-#define PB_KFXX_API
+#define PBOS_KFXX_API
 
 #ifdef __cplusplus
 namespace kfxx {

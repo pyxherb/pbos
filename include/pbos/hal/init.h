@@ -3,11 +3,11 @@
 
 #include <pbos/common.h>
 
-PB_EXTERN_C_BEGIN
+PBOS_EXTERN_C_BEGIN
 
 void hal_init();
 void hal_call_ctors();
 
-PB_EXTERN_C_END
+PBOS_EXTERN_C_END
 
 #endif

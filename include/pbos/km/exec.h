@@ -5,7 +5,7 @@
 #include <pbos/se/user.h>
 #include "proc.h"
 
-PB_EXTERN_C_BEGIN
+PBOS_EXTERN_C_BEGIN
 
 typedef struct _km_binldr_t {
 	uuid_t uuid;
@@ -20,6 +20,6 @@ km_result_t km_exec(
 	proc_id_t *pid_out);
 km_result_t km_register_binldr(km_binldr_t *binldr);
 
-PB_EXTERN_C_END
+PBOS_EXTERN_C_END
 
 #endif

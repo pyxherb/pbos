@@ -1,20 +1,24 @@
 #ifndef _FREESTDC_ISO646_H_
 #define _FREESTDC_ISO646_H_
 
-#define and &&
-#define or ||
+#ifndef __cplusplus
 
-#define bitand &
-#define bitor |
-#define xor ^
+	#define and &&
+	#define or ||
 
-#define and_eq &=
-#define or_eq |=
-#define xor_eq ^
+	#define bitand &
+	#define bitor |
+	#define xor ^
 
-#define compl ~
+	#define and_eq &=
+	#define or_eq |=
+	#define xor_eq ^
 
-#define not !
-#define not_eq !=
+	#define compl ~
+
+	#define not !
+	#define not_eq !=
+
+#endif
 
 #endif

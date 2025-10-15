@@ -52,7 +52,7 @@ hn_mad_t *hn_get_mad(pgaddr_t pgaddr) {
 		km_panic("Physical memory block not found: %p", UNPGADDR(pgaddr));
 	}
 
-	hn_mad_t *mad = PB_CONTAINER_OF(hn_mad_t, node_header, mad_node);
+	hn_mad_t *mad = PBOS_CONTAINER_OF(hn_mad_t, node_header, mad_node);
 
 	return mad;
 }

@@ -28,7 +28,7 @@ void hn_mm_init() {
 	hn_mm_init_pmadlist();
 	hn_mm_init_paging();
 
-	for (size_t i = 0; i < PB_ARRAYSIZE(hn_kspace_vpm_query_tree); ++i) {
+	for (size_t i = 0; i < PBOS_ARRAYSIZE(hn_kspace_vpm_query_tree); ++i) {
 		kf_rbtree_init(
 			&hn_kspace_vpm_query_tree[i],
 			kn_vpm_nodecmp,
@@ -195,7 +195,7 @@ static void hn_mm_init_areas() {
 				if (j == init_pgtab_paddr)
 					continue;
 
-				if (cur_madpool_slot_index >= PB_ARRAYSIZE(hn_global_mad_pool_list->descs)) {
+				if (cur_madpool_slot_index >= PBOS_ARRAYSIZE(hn_global_mad_pool_list->descs)) {
 					if (!last_madpool) {
 						km_result_t result = kn_mm_insert_vpm(mm_kernel_context, hn_global_mad_pool_list);
 						kd_assert(KM_SUCCEEDED(result));
@@ -254,7 +254,7 @@ static void hn_mm_init_areas() {
 				if (j == init_pgtab_paddr)
 					continue;
 
-				if (cur_madpool_slot_index >= PB_ARRAYSIZE(hn_global_mad_pool_list->descs)) {
+				if (cur_madpool_slot_index >= PBOS_ARRAYSIZE(hn_global_mad_pool_list->descs)) {
 					void *new_poolpg_paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
 					if (!new_poolpg_paddr)
 						km_panic("No enough physical memory for new MAD pool page");
@@ -509,7 +509,7 @@ static void hn_mm_init_paging() {
 /// @param pmad PMAD to push.
 ///
 static void hn_push_pmad(hn_pmad_t *pmad) {
-	for (uint8_t i = 0; i < PB_ARRAYSIZE(hn_pmad_list); ++i)
+	for (uint8_t i = 0; i < PBOS_ARRAYSIZE(hn_pmad_list); ++i)
 		if (hn_pmad_list[i].attribs.type == KN_PMEM_END) {
 			memcpy(&(hn_pmad_list[i]), pmad, sizeof(hn_pmad_t));
 			hn_pmad_list[i + 1].attribs.type = KN_PMEM_END;

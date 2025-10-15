@@ -8,7 +8,7 @@
 #include "error.h"
 #include "misc.h"
 
-PB_NORETURN void (*boot_kentry)();
+PBOS_NORETURN void (*boot_kentry)();
 
 #define PHDR(base, sz_entry, i) ((Elf32_Phdr *)(((const void *)base) + sz_entry * i))
 

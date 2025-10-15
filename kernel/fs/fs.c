@@ -59,12 +59,12 @@ void fs_init() {
 }
 
 static bool _filesys_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	fs_filesys_t *_x = PB_CONTAINER_OF(fs_filesys_t, tree_header, x),
-				 *_y = PB_CONTAINER_OF(fs_filesys_t, tree_header, y);
+	fs_filesys_t *_x = PBOS_CONTAINER_OF(fs_filesys_t, tree_header, x),
+				 *_y = PBOS_CONTAINER_OF(fs_filesys_t, tree_header, y);
 
 	return uuid_lt(&_x->uuid, &_y->uuid);
 }
 
 static void _filesys_nodefree(kf_rbtree_node_t *p) {
-	PB_CONTAINER_OF(fs_filesys_t, tree_header, p)->ops.destructor();
+	PBOS_CONTAINER_OF(fs_filesys_t, tree_header, p)->ops.destructor();
 }

@@ -12,11 +12,11 @@
 
 // Because the operating system will never exit normally,
 // we just using a dummy procedure to register the destructors.
-extern "C" int atexit(void (*func)(void)) {
+PBOS_EXTERN_C int atexit(void (*func)(void)) {
 	return 0;
 }
 
-extern "C" PB_NORETURN void _start() {
+PBOS_EXTERN_C PBOS_NORETURN void _start() {
 	km_result_t result;
 
 	hal_init();

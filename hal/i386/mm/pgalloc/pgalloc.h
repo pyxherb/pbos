@@ -76,7 +76,7 @@ typedef struct _hn_madpool_t {
 	hn_mad_t descs[(PAGESIZE - sizeof(hn_madpool_header_t)) / sizeof(hn_mad_t)];
 } hn_madpool_t;
 
-PB_STATIC_ASSERT(sizeof(hn_madpool_t) <= PAGESIZE);
+PBOS_STATIC_ASSERT(sizeof(hn_madpool_t) <= PAGESIZE);
 
 ///
 /// @brief Physical Memory Region Descriptor

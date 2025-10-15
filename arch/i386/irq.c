@@ -2,7 +2,7 @@
 
 void arch_lidt(void *idt, uint16_t size)
 {
-	volatile struct PB_PACKED
+	volatile struct PBOS_PACKED
 	{
 		uint16_t limit;
 		void *base;

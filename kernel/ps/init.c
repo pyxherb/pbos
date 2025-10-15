@@ -2,7 +2,7 @@
 #include <pbos/kn/km/exec.h>
 
 static bool _ps_pcb_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	return PB_CONTAINER_OF(ps_pcb_t, node_header, x)->proc_id < PB_CONTAINER_OF(ps_pcb_t, node_header, y)->proc_id;
+	return PBOS_CONTAINER_OF(ps_pcb_t, node_header, x)->proc_id < PBOS_CONTAINER_OF(ps_pcb_t, node_header, y)->proc_id;
 }
 
 static void _ps_pcb_nodefree(kf_rbtree_node_t *x) {

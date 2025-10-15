@@ -27,7 +27,7 @@ typedef struct _kima_ublk_poolpg_t {
 extern kima_ublk_poolpg_t *kima_ublk_poolpg_list;
 extern kfxx::rbtree_t<void *> kima_ublk_query_tree, kima_ublk_free_tree;
 
-PB_FORCEINLINE void kima_ublk_free(kima_ublk_t* p) {
+PBOS_FORCEINLINE void kima_ublk_free(kima_ublk_t* p) {
 	p->rb_value = NULL;
 }
 

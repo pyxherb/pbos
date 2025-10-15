@@ -25,30 +25,30 @@ namespace kfxx {
 		node_base *_cached_min_node = nullptr, *_cached_max_node = nullptr;
 		size_t _size = 0;
 
-		PB_KFXX_API static node_base *_get_min_node(node_base *node);
-		PB_KFXX_API static node_base *_get_max_node(node_base *node);
+		PBOS_KFXX_API static node_base *_get_min_node(node_base *node);
+		PBOS_KFXX_API static node_base *_get_max_node(node_base *node);
 
-		PB_FORCEINLINE static bool _is_red(node_base *node) { return node && node->color == rbcolor_t::RED; }
-		PB_FORCEINLINE static bool _is_black(node_base *node) { return (!node) || node->color == rbcolor_t::BLACK; }
+		PBOS_FORCEINLINE static bool _is_red(node_base *node) { return node && node->color == rbcolor_t::RED; }
+		PBOS_FORCEINLINE static bool _is_black(node_base *node) { return (!node) || node->color == rbcolor_t::BLACK; }
 
-		PB_KFXX_API void _lrot(node_base *x);
-		PB_KFXX_API void _rrot(node_base *x);
+		PBOS_KFXX_API void _lrot(node_base *x);
+		PBOS_KFXX_API void _rrot(node_base *x);
 
-		PB_KFXX_API void _insert_fixup(node_base *node);
+		PBOS_KFXX_API void _insert_fixup(node_base *node);
 
-		PB_KFXX_API node_base *_remove_fixup(node_base *node);
+		PBOS_KFXX_API node_base *_remove_fixup(node_base *node);
 
-		PB_KFXX_API static node_base *_get_next(const node_base *node, const node_base *lastNode) noexcept;
-		PB_KFXX_API static node_base *_get_prev(const node_base *node, const node_base *firstNode) noexcept;
+		PBOS_KFXX_API static node_base *_get_next(const node_base *node, const node_base *lastNode) noexcept;
+		PBOS_KFXX_API static node_base *_get_prev(const node_base *node, const node_base *firstNode) noexcept;
 
-		PB_KFXX_API _rbtree_base();
-		PB_KFXX_API ~_rbtree_base();
+		PBOS_KFXX_API _rbtree_base();
+		PBOS_KFXX_API ~_rbtree_base();
 	};
 
 	template <typename T,
 		typename Comparator,
 		bool Fallible>
-	PB_REQUIRES_CONCEPT(std::invocable<Comparator, const T &, const T &> &&std::strict_weak_order<Comparator, T, T>)
+	PBOS_REQUIRES_CONCEPT(std::invocable<Comparator, const T &, const T &> &&std::strict_weak_order<Comparator, T, T>)
 	class _rbtree_impl : protected _rbtree_base {
 	public:
 		struct node_t : public _rbtree_base::node_base {
@@ -64,7 +64,7 @@ namespace kfxx {
 
 		Comparator _comparator;
 
-		PB_FORCEINLINE node_query_result_t _get(const T &key) const {
+		PBOS_FORCEINLINE node_query_result_t _get(const T &key) const {
 			node_t *i = (node_t *)_root;
 
 			if constexpr (Fallible) {
@@ -109,7 +109,7 @@ namespace kfxx {
 			return nullptr;
 		}
 
-		PB_FORCEINLINE node_t **_get_slot(const T &key, node_t *&parent_out) {
+		PBOS_FORCEINLINE node_t **_get_slot(const T &key, node_t *&parent_out) {
 			node_t **i = (node_t **)&_root;
 			parent_out = nullptr;
 
@@ -159,7 +159,7 @@ namespace kfxx {
 			return i;
 		}
 
-		PB_FORCEINLINE bool _insert(node_t **slot, node_t *parent, node_t *node) {
+		PBOS_FORCEINLINE bool _insert(node_t **slot, node_t *parent, node_t *node) {
 			kd_assert(!node->l);
 			kd_assert(!node->r);
 
@@ -207,7 +207,7 @@ namespace kfxx {
 			return true;
 		}
 
-		PB_FORCEINLINE node_t *_remove(node_t *node) {
+		PBOS_FORCEINLINE node_t *_remove(node_t *node) {
 			node_t *y = (node_t *)_remove_fixup(node);
 
 			_cached_min_node = _get_min_node(_root);
@@ -219,9 +219,9 @@ namespace kfxx {
 		}
 
 	public:
-		PB_FORCEINLINE _rbtree_impl(Comparator &&comparator = {}) : _comparator(std::move(comparator)) {}
+		PBOS_FORCEINLINE _rbtree_impl(Comparator &&comparator = {}) : _comparator(std::move(comparator)) {}
 
-		PB_FORCEINLINE _rbtree_impl(this_t &&other)
+		PBOS_FORCEINLINE _rbtree_impl(this_t &&other)
 			: _comparator(std::move(other._comparator)) {
 			_root = other._root;
 			_cached_min_node = other._cached_min_node;
@@ -239,7 +239,7 @@ namespace kfxx {
 				km_panic("Destructing a non-empty rbtree_t is not allowed");
 		}
 
-		PB_FORCEINLINE this_t &operator=(this_t &&other) noexcept {
+		PBOS_FORCEINLINE this_t &operator=(this_t &&other) noexcept {
 			clear();
 
 			_root = other._root;
@@ -256,7 +256,7 @@ namespace kfxx {
 			return *this;
 		}
 
-		PB_FORCEINLINE node_t *find_max_lteq(const T &data) {
+		PBOS_FORCEINLINE node_t *find_max_lteq(const T &data) {
 			node_t *cur_node = (node_t *)_root, *max_node = NULL;
 
 			if constexpr (Fallible) {
@@ -301,14 +301,14 @@ namespace kfxx {
 			return max_node;
 		}
 
-		PB_FORCEINLINE node_query_result_t find(const T &key) const {
+		PBOS_FORCEINLINE node_query_result_t find(const T &key) const {
 			return _get(key);
 		}
 
 		/// @brief Insert a node into the tree.
 		/// @param node node_t to be inserted.
 		/// @return Whether the node is inserted successfully, false if node with the same key presents.
-		PB_FORCEINLINE void insert(node_t *node) {
+		PBOS_FORCEINLINE void insert(node_t *node) {
 			node_t *parent = nullptr, **slot = _get_slot(node->rb_value, parent);
 
 			if (!slot)
@@ -317,7 +317,7 @@ namespace kfxx {
 			_insert(slot, parent, node);
 		}
 
-		PB_FORCEINLINE void remove(node_t *node) {
+		PBOS_FORCEINLINE void remove(node_t *node) {
 			node_t *y = _remove(node);
 
 			y->l = nullptr;
@@ -327,7 +327,7 @@ namespace kfxx {
 
 		typedef void (*node_deleter_t)(node_t *node);
 
-		PB_FORCEINLINE void clear() {
+		PBOS_FORCEINLINE void clear() {
 			if (_root) {
 				_del_node_tree((node_t *)_root);
 				_root = nullptr;
@@ -337,15 +337,15 @@ namespace kfxx {
 			_cached_min_node = nullptr;
 		}
 
-		PB_FORCEINLINE size_t size() {
+		PBOS_FORCEINLINE size_t size() {
 			return _size;
 		}
 
-		PB_FORCEINLINE Comparator &comparator() {
+		PBOS_FORCEINLINE Comparator &comparator() {
 			return _comparator;
 		}
 
-		PB_FORCEINLINE const Comparator &comparator() const {
+		PBOS_FORCEINLINE const Comparator &comparator() const {
 			return _comparator;
 		}
 
@@ -362,7 +362,7 @@ namespace kfxx {
 			this_t *tree;
 			iterator_direction direction;
 
-			PB_FORCEINLINE iterator(
+			PBOS_FORCEINLINE iterator(
 				node_t *node,
 				this_t *tree,
 				iterator_direction direction)
@@ -371,33 +371,33 @@ namespace kfxx {
 				  direction(direction) {}
 
 			iterator(const iterator &it) = default;
-			PB_FORCEINLINE iterator(iterator &&it) {
+			PBOS_FORCEINLINE iterator(iterator &&it) {
 				node = it.node;
 				tree = it.tree;
 				direction = it.direction;
 
 				it.direction = iterator_direction::invalid;
 			}
-			PB_FORCEINLINE iterator &operator=(const iterator &rhs) noexcept {
+			PBOS_FORCEINLINE iterator &operator=(const iterator &rhs) noexcept {
 				if (direction != rhs.direction)
 					km_panic("Incompatible iterator direction");
 				node = rhs.node;
 				tree = rhs.tree;
 				return *this;
 			}
-			PB_FORCEINLINE iterator &operator=(iterator &&rhs) noexcept {
+			PBOS_FORCEINLINE iterator &operator=(iterator &&rhs) noexcept {
 				if (direction != rhs.direction)
 					km_panic("Incompatible iterator direction");
 				construct_at<iterator>(this, std::move(rhs));
 				return *this;
 			}
 
-			PB_FORCEINLINE bool copy(iterator &dest) noexcept {
+			PBOS_FORCEINLINE bool copy(iterator &dest) noexcept {
 				dest = *this;
 				return true;
 			}
 
-			PB_FORCEINLINE iterator &operator++() {
+			PBOS_FORCEINLINE iterator &operator++() {
 				if (!node)
 					km_panic("Increasing the end iterator");
 
@@ -410,13 +410,13 @@ namespace kfxx {
 				return *this;
 			}
 
-			PB_FORCEINLINE iterator operator++(int) {
+			PBOS_FORCEINLINE iterator operator++(int) {
 				iterator it = *this;
 				++(*this);
 				return it;
 			}
 
-			PB_FORCEINLINE iterator &operator--() {
+			PBOS_FORCEINLINE iterator &operator--() {
 				if (direction == iterator_direction::forward) {
 					if (node == tree->_cached_min_node)
 						km_panic("Dereasing the begin iterator");
@@ -432,174 +432,174 @@ namespace kfxx {
 				return *this;
 			}
 
-			PB_FORCEINLINE iterator operator--(int) {
+			PBOS_FORCEINLINE iterator operator--(int) {
 				iterator it = *this;
 				--(*this);
 				return it;
 			}
 
-			PB_FORCEINLINE bool operator==(const node_t *node) const noexcept {
+			PBOS_FORCEINLINE bool operator==(const node_t *node) const noexcept {
 				return node == node;
 			}
 
-			PB_FORCEINLINE bool operator==(const iterator &it) const {
+			PBOS_FORCEINLINE bool operator==(const iterator &it) const {
 				if (tree != it.tree)
 					km_panic("Cannot compare iterators from different trees");
 				return node == it.node;
 			}
 
-			PB_FORCEINLINE bool operator==(const iterator &&rhs) const {
+			PBOS_FORCEINLINE bool operator==(const iterator &&rhs) const {
 				const iterator it = rhs;
 				return *this == it;
 			}
 
-			PB_FORCEINLINE bool operator!=(const node_t *node) const noexcept {
+			PBOS_FORCEINLINE bool operator!=(const node_t *node) const noexcept {
 				return node != node;
 			}
 
-			PB_FORCEINLINE bool operator!=(const iterator &it) const {
+			PBOS_FORCEINLINE bool operator!=(const iterator &it) const {
 				if (tree != it.tree)
 					km_panic("Cannot compare iterators from different trees");
 				return node != it.node;
 			}
 
-			PB_FORCEINLINE bool operator!=(iterator &&rhs) const {
+			PBOS_FORCEINLINE bool operator!=(iterator &&rhs) const {
 				iterator it = rhs;
 				return *this != it;
 			}
 
-			PB_FORCEINLINE T &operator*() {
+			PBOS_FORCEINLINE T &operator*() {
 				if (!node)
 					km_panic("Deferencing the end iterator");
 				return node->rb_value;
 			}
 
-			PB_FORCEINLINE T &operator*() const {
+			PBOS_FORCEINLINE T &operator*() const {
 				if (!node)
 					km_panic("Deferencing the end iterator");
 				return node->rb_value;
 			}
 
-			PB_FORCEINLINE T *operator->() {
+			PBOS_FORCEINLINE T *operator->() {
 				if (!node)
 					km_panic("Deferencing the end iterator");
 				return &node->rb_value;
 			}
 
-			PB_FORCEINLINE T *operator->() const {
+			PBOS_FORCEINLINE T *operator->() const {
 				if (!node)
 					km_panic("Deferencing the end iterator");
 				return &node->rb_value;
 			}
 		};
 
-		PB_FORCEINLINE iterator begin() {
+		PBOS_FORCEINLINE iterator begin() {
 			return iterator((node_t *)_get_min_node(_root), this, iterator_direction::forward);
 		}
-		PB_FORCEINLINE iterator end() {
+		PBOS_FORCEINLINE iterator end() {
 			return iterator(nullptr, this, iterator_direction::forward);
 		}
-		PB_FORCEINLINE iterator beginreversed() {
+		PBOS_FORCEINLINE iterator beginreversed() {
 			return iterator((node_t *)_cached_max_node, this, iterator_direction::reversed);
 		}
-		PB_FORCEINLINE iterator endreversed() {
+		PBOS_FORCEINLINE iterator endreversed() {
 			return iterator(nullptr, this, iterator_direction::reversed);
 		}
 
 		struct const_iterator {
 			iterator _iterator;
 
-			PB_FORCEINLINE const_iterator(
+			PBOS_FORCEINLINE const_iterator(
 				iterator &&iterator)
 				: _iterator(iterator) {}
 
 			const_iterator(const const_iterator &it) = default;
-			PB_FORCEINLINE const_iterator(const_iterator &&it) : _iterator(std::move(it._iterator)) {
+			PBOS_FORCEINLINE const_iterator(const_iterator &&it) : _iterator(std::move(it._iterator)) {
 			}
-			PB_FORCEINLINE const_iterator &operator=(const const_iterator &rhs) noexcept {
+			PBOS_FORCEINLINE const_iterator &operator=(const const_iterator &rhs) noexcept {
 				_iterator = rhs._iterator;
 				return *this;
 			}
-			PB_FORCEINLINE const_iterator &operator=(const_iterator &&rhs) noexcept {
+			PBOS_FORCEINLINE const_iterator &operator=(const_iterator &&rhs) noexcept {
 				_iterator = std::move(rhs._iterator);
 				return *this;
 			}
 
-			PB_FORCEINLINE bool copy(const_iterator &dest) noexcept {
+			PBOS_FORCEINLINE bool copy(const_iterator &dest) noexcept {
 				construct_at<const_iterator>(&dest, *this);
 				return true;
 			}
 
-			PB_FORCEINLINE const_iterator &operator++() {
+			PBOS_FORCEINLINE const_iterator &operator++() {
 				++_iterator;
 				return *this;
 			}
 
-			PB_FORCEINLINE const_iterator operator++(int) {
+			PBOS_FORCEINLINE const_iterator operator++(int) {
 				const_iterator it = *this;
 				++(*this);
 				return it;
 			}
 
-			PB_FORCEINLINE const_iterator &operator--() {
+			PBOS_FORCEINLINE const_iterator &operator--() {
 				--_iterator;
 				return *this;
 			}
 
-			PB_FORCEINLINE const_iterator operator--(int) {
+			PBOS_FORCEINLINE const_iterator operator--(int) {
 				const_iterator it = *this;
 				--(*this);
 				return it;
 			}
 
-			PB_FORCEINLINE bool operator==(const const_iterator &it) const {
+			PBOS_FORCEINLINE bool operator==(const const_iterator &it) const {
 				return _iterator == it._iterator;
 			}
 
-			PB_FORCEINLINE bool operator!=(const const_iterator &it) const {
+			PBOS_FORCEINLINE bool operator!=(const const_iterator &it) const {
 				return _iterator != it._iterator;
 			}
 
-			PB_FORCEINLINE bool operator==(const node_t *node) const {
+			PBOS_FORCEINLINE bool operator==(const node_t *node) const {
 				return _iterator == node;
 			}
 
-			PB_FORCEINLINE bool operator!=(const_iterator &&rhs) const {
+			PBOS_FORCEINLINE bool operator!=(const_iterator &&rhs) const {
 				const_iterator it = rhs;
 				return *this != it;
 			}
 
-			PB_FORCEINLINE const T &operator*() {
+			PBOS_FORCEINLINE const T &operator*() {
 				return *_iterator;
 			}
 
-			PB_FORCEINLINE const T &operator*() const {
+			PBOS_FORCEINLINE const T &operator*() const {
 				return *_iterator;
 			}
 
-			PB_FORCEINLINE const T *operator->() {
+			PBOS_FORCEINLINE const T *operator->() {
 				return &*_iterator;
 			}
 
-			PB_FORCEINLINE const T *operator->() const {
+			PBOS_FORCEINLINE const T *operator->() const {
 				return &*_iterator;
 			}
 		};
 
-		PB_FORCEINLINE const_iterator beginConst() const noexcept {
+		PBOS_FORCEINLINE const_iterator beginConst() const noexcept {
 			return const_iterator(const_cast<this_t *>(this)->begin());
 		}
-		PB_FORCEINLINE const_iterator endConst() const noexcept {
+		PBOS_FORCEINLINE const_iterator endConst() const noexcept {
 			return const_iterator(const_cast<this_t *>(this)->end());
 		}
-		PB_FORCEINLINE const_iterator beginConstreversed() const noexcept {
+		PBOS_FORCEINLINE const_iterator beginConstreversed() const noexcept {
 			return const_iterator(const_cast<this_t *>(this)->beginreversed());
 		}
-		PB_FORCEINLINE const_iterator endConstreversed() const noexcept {
+		PBOS_FORCEINLINE const_iterator endConstreversed() const noexcept {
 			return const_iterator(const_cast<this_t *>(this)->endreversed());
 		}
 
-		PB_FORCEINLINE void remove(const iterator &iterator) {
+		PBOS_FORCEINLINE void remove(const iterator &iterator) {
 			kd_assert(("Cannot remove the end iterator", iterator.node));
 			remove(iterator.node);
 		}

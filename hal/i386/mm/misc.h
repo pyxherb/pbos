@@ -13,7 +13,7 @@
 #define SELECTOR_UDATA SELECTOR(3, 0, 4)
 #define SELECTOR_TSS SELECTOR(0, 0, 5)
 
-typedef struct PB_PACKED _hn_kgdt_t {
+typedef struct PBOS_PACKED _hn_kgdt_t {
 	arch_gdt_desc_t null_desc;
 	arch_gdt_desc_t kcode_desc;
 	arch_gdt_desc_t kdata_desc;

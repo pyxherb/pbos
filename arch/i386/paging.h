@@ -66,7 +66,7 @@ typedef uint32_t pgsize_t;
 #define PDE_A 0x0020   // Accessed
 #define PDE_4M 0x0080  // Enable 4MB paging
 
-typedef struct PB_PACKED _arch_pde_t {
+typedef struct PBOS_PACKED _arch_pde_t {
 	uint16_t mask : 12;
 	pgaddr_t address : 20;
 } arch_pde_t;
@@ -84,7 +84,7 @@ typedef struct PB_PACKED _arch_pde_t {
 #define PTE_AVAIL1 0x0200  // Available bit 1
 #define PTE_XD 0x0400	   // Execute Disabled
 
-typedef struct PB_PACKED _arch_pte_t {
+typedef struct PBOS_PACKED _arch_pte_t {
 	uint16_t mask : 12;
 	pgaddr_t address : 20;
 } arch_pte_t;

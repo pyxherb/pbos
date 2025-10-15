@@ -12,15 +12,15 @@ namespace kf {
 		static_assert(std::is_nothrow_invocable_v<T>, "The callback must be noexcept");
 
 		scope_guard() = delete;
-		PB_FORCEINLINE scope_guard(T &&callback)
+		PBOS_FORCEINLINE scope_guard(T &&callback)
 			: callback(std::move(callback)) {
 		}
-		PB_FORCEINLINE ~scope_guard() {
+		PBOS_FORCEINLINE ~scope_guard() {
 			if (!released)
 				callback();
 		}
 
-		PB_FORCEINLINE void release() noexcept {
+		PBOS_FORCEINLINE void release() noexcept {
 			released = true;
 		}
 	};

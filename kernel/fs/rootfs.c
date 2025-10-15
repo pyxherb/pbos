@@ -4,18 +4,18 @@
 #include <string.h>
 
 size_t kn_fs_rootfs_file_hasher(size_t bucket_num, const void *target, bool is_target_key) {
-	fs_rootfs_dir_entry_t *entry = PB_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, target);
+	fs_rootfs_dir_entry_t *entry = PBOS_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, target);
 	return kf_hash_djb(entry->name, entry->name_len) % bucket_num;
 }
 
 void kn_fs_rootfs_file_nodefree(kf_hashmap_node_t *node) {
-	fs_rootfs_dir_entry_t *entry = PB_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, node);
+	fs_rootfs_dir_entry_t *entry = PBOS_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, node);
 	om_decref(&entry->file->object_header);
 }
 
 bool kn_fs_rootfs_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs) {
-	fs_rootfs_dir_entry_t *_lhs = PB_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, lhs),
-						  *_rhs = PB_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, rhs);
+	fs_rootfs_dir_entry_t *_lhs = PBOS_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, lhs),
+						  *_rhs = PBOS_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, rhs);
 
 	fs_file_t *lhs_file = _lhs->file, *rhs_file = _rhs->file;
 
@@ -58,7 +58,7 @@ km_result_t kn_rootfs_subnode(fs_file_t *parent, const char *name, size_t name_l
 				goto cleanup;
 			}
 
-			fs_file_t *file = PB_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, node)->file;
+			fs_file_t *file = PBOS_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, node)->file;
 
 			om_incref(&file->object_header);
 			*file_out = file;

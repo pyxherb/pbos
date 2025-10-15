@@ -25,9 +25,9 @@ void hal_prepare_ps() {
 	memset(ps_cur_thread_per_eu, 0, ps_eu_num * sizeof(ps_tcb_t *));
 }
 
-PB_NORETURN void kn_enter_sched_halt();
+PBOS_NORETURN void kn_enter_sched_halt();
 
-PB_NORETURN void kn_enter_sched(ps_euid_t euid) {
+PBOS_NORETURN void kn_enter_sched(ps_euid_t euid) {
 	arch_loadfs(euid);
 	arch_sti();
 	static uint16_t COUNT_RATE = 11931;

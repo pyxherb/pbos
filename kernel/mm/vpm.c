@@ -10,14 +10,14 @@ void *kn_rounddown_to_page_leveled_addr(const void *const addr, int level) {
 }
 
 bool kn_vpm_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	hn_vpm_t *_x = PB_CONTAINER_OF(hn_vpm_t, node_header, x),
-			 *_y = PB_CONTAINER_OF(hn_vpm_t, node_header, y);
+	hn_vpm_t *_x = PBOS_CONTAINER_OF(hn_vpm_t, node_header, x),
+			 *_y = PBOS_CONTAINER_OF(hn_vpm_t, node_header, y);
 
 	return _x->addr < _y->addr;
 }
 
 void kn_vpm_nodefree(kf_rbtree_node_t *p) {
-	hn_vpm_t *_p = PB_CONTAINER_OF(hn_vpm_t, node_header, p);
+	hn_vpm_t *_p = PBOS_CONTAINER_OF(hn_vpm_t, node_header, p);
 	// No need to release here, the VPMs is managed by `kn_mm_free_vpm` and `kn_mm_free_vpm_unchecked`.
 }
 
@@ -33,7 +33,7 @@ hn_vpm_t *kn_mm_lookup_vpm(mm_context_t *context, const void *addr, int level) {
 		return NULL;
 	}
 
-	return PB_CONTAINER_OF(hn_vpm_t, node_header, node);
+	return PBOS_CONTAINER_OF(hn_vpm_t, node_header, node);
 }
 
 km_result_t kn_mm_insert_vpm(mm_context_t *context, const void *addr) {
@@ -173,7 +173,7 @@ void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 
 	kf_rbtree_node_t *target_node = kf_rbtree_find(query_tree, &query_desc.node_header);
 	kd_assert(target_node);
-	target_desc = PB_CONTAINER_OF(hn_vpm_t, node_header, target_node);
+	target_desc = PBOS_CONTAINER_OF(hn_vpm_t, node_header, target_node);
 
 	if (!(--target_desc->subref_count)) {
 		if(level < KN_MM_VPM_LEVEL_MAX) {
@@ -215,9 +215,9 @@ hn_vpm_t *kn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr, int leve
 
 	for (kn_mm_vpm_poolpg_t *i = *pool_list;
 		 i; i = i->header.next) {
-		if (i->header.used_num == PB_ARRAYSIZE(i->descs))
+		if (i->header.used_num == PBOS_ARRAYSIZE(i->descs))
 			continue;
-		for (size_t j = 0; j < PB_ARRAYSIZE(i->descs); ++j) {
+		for (size_t j = 0; j < PBOS_ARRAYSIZE(i->descs); ++j) {
 			hn_vpm_t *cur_vpm = &i->descs[j];
 
 			if (cur_vpm->flags & KM_MM_VPM_ALLOC) {

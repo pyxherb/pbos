@@ -26,13 +26,13 @@ void *mm_kmalloc(size_t size) {
 				 cur_base <= limit;) {
 				kima_ublk_t *nearest_ublk;
 				if ((nearest_ublk = kima_lookup_nearest_ublk(cur_base))) {
-					if (PB_ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->rb_value, nearest_ublk->size)) {
+					if (PBOS_ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->rb_value, nearest_ublk->size)) {
 						cur_base = ((char *)nearest_ublk->rb_value) + nearest_ublk->size;
 						continue;
 					}
 				}
 				if ((nearest_ublk = kima_lookup_nearest_ublk(((char *)cur_base) + size - 1))) {
-					if (PB_ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->rb_value, nearest_ublk->size)) {
+					if (PBOS_ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->rb_value, nearest_ublk->size)) {
 						cur_base = ((char *)nearest_ublk->rb_value) + nearest_ublk->size;
 						continue;
 					}

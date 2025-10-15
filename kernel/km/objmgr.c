@@ -15,7 +15,7 @@ static bool _kn_object_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t
 }
 
 static void _kn_unused_object_nodefree(kf_rbtree_node_t *p) {
-	om_object_t *_p = PB_CONTAINER_OF(om_object_t, tree_header, p);
+	om_object_t *_p = PBOS_CONTAINER_OF(om_object_t, tree_header, p);
 	_p->prop.p_class->destructor(_p);
 }
 

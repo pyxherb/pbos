@@ -46,7 +46,7 @@ ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd) {
 	if (!result)
 		return NULL;
 
-	return PB_CONTAINER_OF(ps_ufcb_t, node_header, result);
+	return PBOS_CONTAINER_OF(ps_ufcb_t, node_header, result);
 }
 
 void kn_proc_destructor(om_object_t *obj) {
@@ -121,7 +121,7 @@ ps_pcb_t *ps_getpcb(proc_id_t pid) {
 	kf_rbtree_node_t *node = kf_rbtree_find(&ps_global_proc_set, &query_node.node_header);
 	if (!node)
 		return NULL;
-	return PB_CONTAINER_OF(ps_pcb_t, node_header, node);
+	return PBOS_CONTAINER_OF(ps_pcb_t, node_header, node);
 }
 
 void hn_proc_cleanup(ps_pcb_t *proc) {
@@ -131,7 +131,7 @@ void hn_proc_cleanup(ps_pcb_t *proc) {
 	proc->flags &= ~PROC_A;
 
 	kf_rbtree_foreach(i, &proc->thread_set) {
-		om_decref(&(PB_CONTAINER_OF(ps_tcb_t, node_header, i)->object_header));
+		om_decref(&(PBOS_CONTAINER_OF(ps_tcb_t, node_header, i)->object_header));
 	}
 
 	kf_rbtree_free(&(proc->parp_list));
@@ -207,7 +207,7 @@ void ps_close_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle) {
 	kf_rbtree_node_t *node = kf_rbtree_find(&proc->uhandle_map, &query_uhr.node_header);
 	kd_assert(node);
 
-	ps_uhr_t *uhr = PB_CONTAINER_OF(ps_uhr_t, node_header, node);
+	ps_uhr_t *uhr = PBOS_CONTAINER_OF(ps_uhr_t, node_header, node);
 
 	om_decref(uhr->kobject);
 
@@ -225,7 +225,7 @@ om_object_t *ps_lookup_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle) {
 		return NULL;
 	}
 
-	return PB_CONTAINER_OF(ps_uhr_t, node_header, result)->kobject;
+	return PBOS_CONTAINER_OF(ps_uhr_t, node_header, result)->kobject;
 }
 
 static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
@@ -239,14 +239,14 @@ static void _parp_nodefree(kf_rbtree_node_t *p) {
 }
 
 static bool _ufcb_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	const ps_ufcb_t *_x = PB_CONTAINER_OF(ps_ufcb_t, node_header, x),
-						 *_y = PB_CONTAINER_OF(ps_ufcb_t, node_header, y);
+	const ps_ufcb_t *_x = PBOS_CONTAINER_OF(ps_ufcb_t, node_header, x),
+						 *_y = PBOS_CONTAINER_OF(ps_ufcb_t, node_header, y);
 
 	return _x->fd < _y->fd;
 }
 
 static void _ufcb_nodefree(kf_rbtree_node_t *p) {
-	ps_ufcb_t *ufcb = PB_CONTAINER_OF(ps_ufcb_t, node_header, p);
+	ps_ufcb_t *ufcb = PBOS_CONTAINER_OF(ps_ufcb_t, node_header, p);
 	fs_close(ufcb->kernel_fcb);
 	mm_kfree(ufcb);
 }

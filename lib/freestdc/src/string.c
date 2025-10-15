@@ -173,3 +173,22 @@ void* memcpy(void* dest, const void* src, size_t n) {
 		((uint8_t*)dest)[i] = ((uint8_t*)src)[i];
 	return dest;
 }
+
+void* memmove(void* dest, const void* src, size_t n) {
+	if(((const char*)src + n) < (const char*)dest)
+		return memcpy(dest, src, n);
+	// Check if the size is aligned to 2, 4, 8, etc.
+	if (!(n & 0b11)) {
+		for (size_t i = (n >> 2); i; --i)
+			((uint32_t*)dest)[i - 1] = ((uint32_t*)src)[i - 1];
+		return dest;
+	}
+	if (!(n & 0b1)) {
+		for (size_t i = (n >> 1); i; --i)
+			((uint16_t*)dest)[i - 1] = ((uint16_t*)src)[i - 1];
+		return dest;
+	}
+	for (size_t i = n; i; --i)
+		((uint8_t*)dest)[i - 1] = ((uint8_t*)src)[i - 1];
+	return dest;
+}

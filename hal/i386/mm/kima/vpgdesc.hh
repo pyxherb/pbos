@@ -27,7 +27,7 @@ typedef struct _kima_vpgdesc_poolpg_t {
 extern kima_vpgdesc_poolpg_t *kima_vpgdesc_poolpg_list;
 extern kfxx::rbtree_t<void *> kima_vpgdesc_query_tree, kima_vpgdesc_free_tree;
 
-PB_FORCEINLINE void kima_vpgdesc_free(kima_vpgdesc_t* p) {
+PBOS_FORCEINLINE void kima_vpgdesc_free(kima_vpgdesc_t* p) {
 	p->rb_value = NULL;
 }
 

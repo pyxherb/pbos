@@ -1,7 +1,7 @@
 #include <hal/i386/proc.h>
 
 void kn_thread_destructor(om_object_t *obj) {
-	hn_thread_cleanup(PB_CONTAINER_OF(ps_tcb_t, object_header, obj));
+	hn_thread_cleanup(PBOS_CONTAINER_OF(ps_tcb_t, object_header, obj));
 }
 
 ps_tcb_t *kn_alloc_tcb(ps_pcb_t *pcb) {

@@ -5,7 +5,7 @@
 #include <pbos/common.h>
 #include <stdarg.h>
 
-PB_EXTERN_C_BEGIN
+PBOS_EXTERN_C_BEGIN
 
 #define KLOG_COLOR_BLACK 0x00
 #define KLOG_COLOR_BLUE 0x01
@@ -67,14 +67,14 @@ bool klog_iscapable(uint16_t cap);
 #define KLOG_EXCALL_PRIVATE_MIN 0xc0000000
 #define KLOG_EXCALL_PRIVATE_MAX 0xffffffff
 
-PB_PACKED_BEGIN
+PBOS_PACKED_BEGIN
 
-	typedef struct PB_PACKED _klog_color_exarg_t {
+	typedef struct PBOS_PACKED _klog_color_exarg_t {
 	uint8_t fg;
 	uint8_t bg;
 } klog_color_exarg_t;
 
-PB_PACKED_END
+PBOS_PACKED_END
 
 	/// @brief Call an extra function with current kernel logger.
 	///
@@ -83,8 +83,8 @@ PB_PACKED_END
 	void
 	klog_excall(uint32_t id, ...);
 
-void kvprintf(const char *str, va_list args) PB_FMTARG(printf, 1, 0);
-void kprintf(const char *str, ...) PB_FMTARG(printf, 1, 2);
+void kvprintf(const char *str, va_list args) PBOS_FMTARG(printf, 1, 0);
+void kprintf(const char *str, ...) PBOS_FMTARG(printf, 1, 2);
 void kputc(char ch);
 void kputs(const char *str);
 
@@ -96,6 +96,6 @@ void kputs(const char *str);
 	#define kdprintf
 #endif
 
-PB_EXTERN_C_END
+PBOS_EXTERN_C_END
 
 #endif

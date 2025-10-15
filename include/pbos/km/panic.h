@@ -3,7 +3,7 @@
 
 #include <pbos/common.h>
 
-PB_EXTERN_C_BEGIN
+PBOS_EXTERN_C_BEGIN
 
 /// @brief Check if the system is panicked.
 ///
@@ -15,8 +15,8 @@ bool km_is_panicked();
 ///
 /// @param fmt Formatted panic message to display.
 /// @param ... Arguments for the formatted message.
-PB_NORETURN void km_panic(const char *fmt, ...);
+PBOS_NORETURN void km_panic(const char *fmt, ...);
 
-PB_EXTERN_C_END
+PBOS_EXTERN_C_END
 
 #endif

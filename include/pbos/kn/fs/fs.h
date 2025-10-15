@@ -6,7 +6,7 @@
 #include <pbos/kf/rbtree.h>
 #include <pbos/km/objmgr.h>
 
-PB_EXTERN_C_BEGIN
+PBOS_EXTERN_C_BEGIN
 
 typedef struct _fs_context_t {
 	fs_file_t *root_dir, *cur_dir;
@@ -17,6 +17,6 @@ extern fs_file_t *fs_abs_root_dir;
 /// @brief Initialize the file system facilities.
 void fs_init();
 
-PB_EXTERN_C_END
+PBOS_EXTERN_C_END
 
 #endif

@@ -4,19 +4,19 @@
 #include <string.h>
 
 size_t kn_initcar_file_hasher(size_t bucket_num, const void *target, bool is_target_key) {
-	initcar_dir_entry_t *entry = PB_CONTAINER_OF(initcar_dir_entry_t, node_header, target);
+	initcar_dir_entry_t *entry = PBOS_CONTAINER_OF(initcar_dir_entry_t, node_header, target);
 	fs_file_t *file = entry->file;
 	return kf_hash_djb(entry->name, entry->name_len) % bucket_num;
 }
 
 void kn_initcar_file_nodefree(kf_hashmap_node_t *node) {
-	initcar_dir_entry_t *entry = PB_CONTAINER_OF(initcar_dir_entry_t, node_header, node);
+	initcar_dir_entry_t *entry = PBOS_CONTAINER_OF(initcar_dir_entry_t, node_header, node);
 	om_decref(&entry->file->object_header);
 }
 
 bool kn_initcar_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs) {
-	initcar_dir_entry_t *_lhs = PB_CONTAINER_OF(initcar_dir_entry_t, node_header, lhs),
-						  *_rhs = PB_CONTAINER_OF(initcar_dir_entry_t, node_header, rhs);
+	initcar_dir_entry_t *_lhs = PBOS_CONTAINER_OF(initcar_dir_entry_t, node_header, lhs),
+						  *_rhs = PBOS_CONTAINER_OF(initcar_dir_entry_t, node_header, rhs);
 
 	fs_file_t *lhs_file = _lhs->file, *rhs_file = _rhs->file;
 
@@ -35,7 +35,7 @@ km_result_t initcar_subnode(fs_file_t *parent, const char *name, size_t name_len
 		kf_hashmap_node_t *node = kf_hashmap_find(&((initcar_dir_exdata_t *)parent->exdata)->children, &query_entry);
 		if (!node)
 			return KM_MAKEERROR(KM_RESULT_NOT_FOUND);
-		fs_file_t *file = PB_CONTAINER_OF(initcar_dir_entry_t, node_header, node)->file;
+		fs_file_t *file = PBOS_CONTAINER_OF(initcar_dir_entry_t, node_header, node)->file;
 		om_incref(&file->object_header);
 		*file_out = file;
 		return KM_RESULT_OK;

@@ -40,7 +40,7 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 		goto fail;
 	}
 
-	for (size_t i = 0; i < PB_ARRAYSIZE(context->uspace_vpm_query_tree); ++i) {
+	for (size_t i = 0; i < PBOS_ARRAYSIZE(context->uspace_vpm_query_tree); ++i) {
 		kf_rbtree_init(
 			&context->uspace_vpm_query_tree[i],
 			kn_vpm_nodecmp,
@@ -74,7 +74,7 @@ void mm_free_context(mm_context_t *context) {
 	}
 
 	// Free VPD query tree and pools.
-	for (size_t i = 0; i < PB_ARRAYSIZE(context->uspace_vpm_query_tree); ++i) {
+	for (size_t i = 0; i < PBOS_ARRAYSIZE(context->uspace_vpm_query_tree); ++i) {
 		kf_rbtree_free(&context->uspace_vpm_query_tree[i]);
 	}
 	for (kn_mm_vpm_poolpg_t *i = context->uspace_vpm_poolpg_list; i; i = i->header.next) {

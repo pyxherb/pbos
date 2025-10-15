@@ -11,8 +11,7 @@ PbOS stands for Paging-based Operating System.
 To build PbOS on Windows, you will need:
 
 * Clang or other compatible compilers that is compatible with C99
-* Clang++ or other compatible compilers that is compatible with C++17
-* libc++
+* Clang++ or other compatible compilers that is compatible with C++20
 
 Note that you have to set paths to libc++'s include directories manually.
 

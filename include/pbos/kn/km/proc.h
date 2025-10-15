@@ -3,14 +3,14 @@
 
 #include <pbos/km/proc.h>
 
-PB_EXTERN_C_BEGIN
+PBOS_EXTERN_C_BEGIN
 
 extern ps_sched_t ps_simploop_sched;
 
 void hal_prepare_ps();
 void ps_init();
 
-PB_NORETURN void kn_enter_sched(ps_euid_t euid);
+PBOS_NORETURN void kn_enter_sched(ps_euid_t euid);
 
 void kn_proc_destructor(om_object_t *obj);
 void kn_thread_destructor(om_object_t *obj);
@@ -31,6 +31,6 @@ void kn_proc_delparp(ps_pcb_t *pcb, void *paddr, uint8_t order);
 void kn_switch_to_user_process(ps_pcb_t* pcb);
 void kn_switch_to_user_thread(ps_tcb_t* tcb);
 
-PB_EXTERN_C_END
+PBOS_EXTERN_C_END
 
 #endif

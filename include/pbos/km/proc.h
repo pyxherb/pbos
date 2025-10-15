@@ -6,7 +6,7 @@
 #include "mm.h"
 #include "objmgr.h"
 
-PB_EXTERN_C_BEGIN
+PBOS_EXTERN_C_BEGIN
 
 #define PROC_ACCESS_EXEC 0x00000001		 // Execute other programs
 #define PROC_ACCESS_PRIORITY 0x00000002	 // Set priority
@@ -161,11 +161,11 @@ typedef struct _ps_sched_t {
 
 extern ps_sched_t *ps_cur_sched;
 
-PB_FORCEINLINE ps_sched_t *ps_get_sched() {
+PBOS_FORCEINLINE ps_sched_t *ps_get_sched() {
 	return ps_cur_sched;
 };
 km_result_t ps_set_sched(ps_sched_t *sched);
 
-PB_EXTERN_C_END
+PBOS_EXTERN_C_END
 
 #endif

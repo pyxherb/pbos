@@ -11,7 +11,7 @@ namespace kfxx {
 #else
 	template <typename T, typename... Args>
 #endif
-		PB_FORCEINLINE void construct_at(T *ptr, Args &&...args) {
+		PBOS_FORCEINLINE void construct_at(T *ptr, Args &&...args) {
 #ifdef new
 	#if __cplusplus >= 202002L
 		std::construct_at<T>(ptr, std::forward<Args>(args)...);
@@ -32,7 +32,7 @@ namespace kfxx {
 	}
 
 	template <typename T>
-	PB_FORCEINLINE void destroy_at(T *const ptr) {
+	PBOS_FORCEINLINE void destroy_at(T *const ptr) {
 		std::destroy_at<T>(ptr);
 	}
 }
