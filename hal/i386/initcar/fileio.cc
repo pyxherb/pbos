@@ -1,7 +1,9 @@
+#include <pbos/kf/hash.h>
 #include <pbos/km/panic.h>
 #include <pbos/kn/fs/initcar.h>
-#include <pbos/kf/hash.h>
 #include <string.h>
+
+PBOS_EXTERN_C_BEGIN
 
 size_t kn_initcar_file_hasher(size_t bucket_num, const void *target, bool is_target_key) {
 	initcar_dir_entry_t *entry = PBOS_CONTAINER_OF(initcar_dir_entry_t, node_header, target);
@@ -16,7 +18,7 @@ void kn_initcar_file_nodefree(kf_hashmap_node_t *node) {
 
 bool kn_initcar_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs) {
 	initcar_dir_entry_t *_lhs = PBOS_CONTAINER_OF(initcar_dir_entry_t, node_header, lhs),
-						  *_rhs = PBOS_CONTAINER_OF(initcar_dir_entry_t, node_header, rhs);
+						*_rhs = PBOS_CONTAINER_OF(initcar_dir_entry_t, node_header, rhs);
 
 	fs_file_t *lhs_file = _lhs->file, *rhs_file = _rhs->file;
 
@@ -57,7 +59,7 @@ km_result_t initcar_create_dir(fs_file_t *parent, const char *name, size_t name_
 km_result_t initcar_open(fs_file_t *file, fs_fcb_t **fcb_out) {
 	km_result_t result;
 
-	fs_fcb_t *fcb = mm_kmalloc(sizeof(fs_fcb_t));
+	fs_fcb_t *fcb = (fs_fcb_t *)mm_kmalloc(sizeof(fs_fcb_t));
 	if (!fcb)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	memset(fcb, 0, sizeof(fs_fcb_t));
@@ -120,3 +122,5 @@ cleanup:
 	}
 	return result;
 }
+
+PBOS_EXTERN_C_END

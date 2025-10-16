@@ -1,10 +1,10 @@
 #ifndef _PBOS_KFXX_RBTREE_H_
 #define _PBOS_KFXX_RBTREE_H_
 
-#include "fallible_cmp.hh"
-#include <functional>
 #include <pbos/km/assert.h>
 #include <pbos/km/panic.h>
+#include <functional>
+#include "fallible_cmp.hh"
 
 #ifdef __cplusplus
 namespace kfxx {
@@ -327,12 +327,40 @@ namespace kfxx {
 
 		typedef void (*node_deleter_t)(node_t *node);
 
-		PBOS_FORCEINLINE void clear() {
+		PBOS_FORCEINLINE void clear(node_deleter_t deleter) {
 			if (_root) {
-				_del_node_tree((node_t *)_root);
+				node_t *node = (node_t*)_root;
+				node_t *max_node = (node_t *)_get_max_node(node);
+				node_t *cur_node = (node_t *)_get_min_node(node);
+				node_t *parent = (node_t *)node->p;
+
+				while (cur_node != parent) {
+					if (cur_node->r) {
+						cur_node = (node_t *)_get_min_node(cur_node->r);
+					} else {
+						node_t *nodeToDelete = cur_node;
+
+						while (cur_node->p && (cur_node == cur_node->p->r)) {
+							nodeToDelete = cur_node;
+							cur_node = (node_t *)cur_node->p;
+							deleter(nodeToDelete);
+						}
+
+						nodeToDelete = cur_node;
+						cur_node = (node_t *)cur_node->p;
+						deleter(nodeToDelete);
+					}
+				}
 				_root = nullptr;
 				_size = 0;
 			}
+			_cached_max_node = nullptr;
+			_cached_min_node = nullptr;
+		}
+
+		PBOS_FORCEINLINE void clear_without_release() {
+			_root = nullptr;
+			_size = 0;
 			_cached_max_node = nullptr;
 			_cached_min_node = nullptr;
 		}

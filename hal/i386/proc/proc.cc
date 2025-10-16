@@ -3,6 +3,8 @@
 #include <pbos/fs/fs.h>
 #include <pbos/km/logger.h>
 
+PBOS_EXTERN_C_BEGIN
+
 ps_pcb_t **ps_cur_proc_per_eu;
 ps_tcb_t **ps_cur_thread_per_eu;
 
@@ -260,3 +262,5 @@ static bool _uhr_uhandle_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node
 static void _uhr_uhandle_nodefree(kf_rbtree_node_t *p) {
 	om_decref(((ps_uhr_t *)p)->kobject);
 }
+
+PBOS_EXTERN_C_END

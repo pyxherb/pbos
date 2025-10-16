@@ -232,15 +232,6 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	return KM_RESULT_OK;
 }
 
-km_result_t mm_mrawmap(
-	mm_context_t *context,
-	void *vaddr,
-	void *paddr,
-	size_t size,
-	mm_pgaccess_t access,
-	mmap_flags_t flags) {
-}
-
 typedef struct _hn_unmmap_walker_args {
 	mm_context_t *context;
 	bool is_curpgtab;

@@ -7,7 +7,7 @@ add_executable(bootldx
     "kloader.h" "kloader.c"
     "mb.h" "mb.c"
     "misc.h"
-    "../display/vga.c")
+    "../display/vga.cc")
 
 get_property(FREESTDC_INCLUDE_DIR GLOBAL PROPERTY FREESTDC_INCLUDE_DIR)
 get_property(FREESTDC_INCLUDE_DIR_CXX GLOBAL PROPERTY FREESTDC_INCLUDE_DIR_CXX)

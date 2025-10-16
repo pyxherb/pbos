@@ -1,5 +1,7 @@
 #include <pbos/kn/km/proc.h>
 
+PBOS_EXTERN_C_BEGIN
+
 km_result_t ps_simploop_sched_init(ps_sched_t *sched) {
 	return KM_RESULT_OK;
 }
@@ -62,3 +64,5 @@ ps_sched_t ps_simploop_sched = {
 	.drop_thread = ps_simploop_sched_drop_thread,
 	.next_thread = ps_simploop_sched_next_thread
 };
+
+PBOS_EXTERN_C_END

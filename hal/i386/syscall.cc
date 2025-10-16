@@ -1,6 +1,8 @@
 #include "syscall.h"
 #include <pbos/km/logger.h>
 
+PBOS_EXTERN_C_BEGIN
+
 uint32_t hn_syscall_handler(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx, uint32_t esi, uint32_t edi) {
 	switch (eax) {
 		case SYSENT_PBCORE_EXIT:
@@ -27,3 +29,5 @@ uint32_t hn_syscall_handler(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t e
 
 	return 0;
 }
+
+PBOS_EXTERN_C_END

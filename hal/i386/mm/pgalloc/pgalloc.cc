@@ -3,6 +3,8 @@
 #include <math.h>
 #include <pbos/km/logger.h>
 
+PBOS_EXTERN_C_BEGIN
+
 hn_madpool_t *hn_global_mad_pool_list = NULL;
 
 void *mm_pgalloc(uint8_t memtype) {
@@ -89,3 +91,5 @@ void *kn_lookup_pgdir_mapped_addr(void *addr) {
 
 	return UNPGADDR(mad->exdata.mapped_pgtab_addr);
 }
+
+PBOS_EXTERN_C_END

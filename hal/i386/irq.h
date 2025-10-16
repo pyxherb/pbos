@@ -5,6 +5,8 @@
 #include <pbos/hal/irq.h>
 #include "mm.h"
 
+PBOS_EXTERN_C_BEGIN
+
 PBOS_NORETURN void isr_diverr();		  // 0x00 Divide-by-zero Error
 PBOS_NORETURN void isr_overflow();	  // 0x04 Overflow
 PBOS_NORETURN void isr_boundrange();	  // 0x05 Bound Range Exceeded
@@ -47,5 +49,7 @@ PBOS_NORETURN void isr_stub();
 extern arch_gate_t hn_kidt[256];
 
 void hn_setisr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
+
+PBOS_EXTERN_C_END
 
 #endif

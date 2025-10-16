@@ -4,6 +4,8 @@
 #include "gate.h"
 #include "io.h"
 
+PBOS_EXTERN_C_BEGIN
+
 #define arch_iret() __asm__ __volatile__("iret")
 
 static inline void arch_cli() {
@@ -101,5 +103,7 @@ static inline uint16_t arch_read_pic_isr() {
 static inline void arch_ack_irq() {
 	arch_out8(0x20, 0x20);
 }
+
+PBOS_EXTERN_C_END
 
 #endif

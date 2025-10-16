@@ -2,6 +2,8 @@
 #include <hal/i386/syscall.h>
 #include <pbos/km/logger.h>
 
+PBOS_EXTERN_C_BEGIN
+
 static void hn_remap_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
 	uint8_t pic1_mask = arch_in8(ARCH_PIC1_IO_DATA), pic2_mask = arch_in8(ARCH_PIC2_IO_DATA);
 
@@ -72,3 +74,5 @@ void irq_init() {
 
 	kdprintf("Initialized IRQ\n");
 }
+
+PBOS_EXTERN_C_END

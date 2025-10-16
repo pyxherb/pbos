@@ -5,6 +5,10 @@
 #include <pbos/kn/fs/initcar.h>
 #include <pbos/fs/fs.h>
 
+PBOS_EXTERN_C_BEGIN
+
 extern void *initcar_ptr;
+
+PBOS_EXTERN_C_END
 
 #endif

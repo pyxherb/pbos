@@ -3,6 +3,8 @@
 #include <hal/i386/logger.h>
 #include <string.h>
 
+PBOS_EXTERN_C_BEGIN
+
 klog_logger_t hn_active_logger;
 
 static size_t _vga_logger(uint16_t mode, const void *arg, va_list vargs);
@@ -71,14 +73,14 @@ static size_t _vga_logger(uint16_t mode, const void *arg, va_list vargs) {
 			vga_vprintf((const char *)arg, vargs);
 			break;
 		case KLOG_MODE_GETCAP:
-			switch ((uint16_t)arg) {
+			switch ((uintptr_t)arg) {
 				case KLOG_CAP_COLOR:
 					return true;
 				default:
 					return false;
 			}
 		case KLOG_MODE_EXCALL:
-			switch ((uint16_t)arg) {
+			switch ((uintptr_t)arg) {
 				case KLOG_EXCALL_COLOR: {
 					vga_setcolor((uint8_t)va_arg(vargs, uint32_t), (uint8_t)va_arg(vargs, uint32_t));
 					break;
@@ -90,3 +92,5 @@ static size_t _vga_logger(uint16_t mode, const void *arg, va_list vargs) {
 
 	return 0;
 }
+
+PBOS_EXTERN_C_END

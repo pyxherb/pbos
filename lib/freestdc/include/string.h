@@ -1,11 +1,10 @@
 #ifndef _FREESTDC_STRING_H_
 #define _FREESTDC_STRING_H_
 
-#include "stddef.h"
+#include <stddef.h>
+#include "c_basedefs.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+FREESTDC_EXTERN_C_BEGIN
 
 size_t strlen(const char* str);
 
@@ -26,8 +25,6 @@ int memcmp(const void* s1, const void* s2, size_t n);
 void* memcpy(void* dest, const void* src, size_t n);
 void* memmove(void* dest, const void* src, size_t n);
 
-#ifdef __cplusplus
-}
-#endif
+FREESTDC_EXTERN_C_END
 
 #endif

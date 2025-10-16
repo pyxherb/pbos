@@ -1,5 +1,7 @@
 #include <pbos/km/proc.h>
 
+PBOS_EXTERN_C_BEGIN
+
 om_class_t *ps_proc_class = NULL, *ps_thread_class = NULL;
 kf_rbtree_t ps_global_proc_set;
 uint32_t ps_eu_num;
@@ -21,3 +23,5 @@ km_result_t ps_set_sched(ps_sched_t *sched) {
 
 	return KM_RESULT_OK;
 }
+
+PBOS_EXTERN_C_END

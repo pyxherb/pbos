@@ -1,6 +1,8 @@
 #include <pbos/kn/km/proc.h>
 #include <pbos/kn/km/exec.h>
 
+PBOS_EXTERN_C_BEGIN
+
 static bool _ps_pcb_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
 	return PBOS_CONTAINER_OF(ps_pcb_t, node_header, x)->proc_id < PBOS_CONTAINER_OF(ps_pcb_t, node_header, y)->proc_id;
 }
@@ -12,10 +14,15 @@ static void _ps_pcb_nodefree(kf_rbtree_node_t *x) {
 void ps_init() {
 	hal_prepare_ps();
 
-	if (!(ps_proc_class = om_register_class(&PROC_CLASSID, kn_proc_destructor)))
+	uuid_t uuid;
+	uuid = PROC_CLASSID;
+
+	if (!(ps_proc_class = om_register_class(&uuid, kn_proc_destructor)))
 		km_panic("Error registering process kernel class");
 
-	if (!(ps_thread_class = om_register_class(&THREAD_CLASSID, kn_thread_destructor)))
+	uuid = THREAD_CLASSID;
+
+	if (!(ps_thread_class = om_register_class(&uuid, kn_thread_destructor)))
 		km_panic("Error registering thread kernel class");
 
 	kf_rbtree_init(
@@ -40,3 +47,5 @@ void kn_init_binldrs() {
 		km_register_binldr(*i);
 	}
 }
+
+PBOS_EXTERN_C_END

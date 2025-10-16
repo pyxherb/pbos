@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <string.h>
 
+PBOS_EXTERN_C_BEGIN
+
 static uint8_t _cur_bgcolor = CHAR_COLOR_BLACK;
 static uint8_t _cur_fgcolor = CHAR_COLOR_WHITE;
 
@@ -388,3 +390,5 @@ void vga_chwrite(unsigned char ch, uint8_t fgcolor, uint8_t bgcolor, uint8_t x, 
 	dest[0] = ch;
 	dest[1] = attrib;
 }
+
+PBOS_EXTERN_C_END

@@ -1,7 +1,7 @@
 #ifndef _FREESTDC_INTTYPES_H_
 #define _FREESTDC_INTTYPES_H_
 
-#include "stdint.h"
+#include <stdint.h>
 
 typedef struct _div_t {
 	int quot;

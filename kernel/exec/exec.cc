@@ -2,6 +2,8 @@
 #include <pbos/kn/km/exec.h>
 #include <string.h>
 
+PBOS_EXTERN_C_BEGIN
+
 typedef struct _kn_binldr_reg_t {
 	kf_rbtree_node_t tree_header;
 	uuid_t uuid;
@@ -17,7 +19,7 @@ proc_id_t kn_alloc_proc_id() {
 }
 
 km_result_t km_register_binldr(km_binldr_t *binldr) {
-	kn_binldr_reg_t *reg = mm_kmalloc(sizeof(kn_binldr_reg_t));
+	kn_binldr_reg_t *reg = (kn_binldr_reg_t*)mm_kmalloc(sizeof(kn_binldr_reg_t));
 	if (!reg)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
@@ -80,3 +82,5 @@ bool kn_binldr_reg_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y)
 void kn_binldr_reg_nodefree(kf_rbtree_node_t *p) {
 	// TODO: Do some freeing operations?
 }
+
+PBOS_EXTERN_C_END

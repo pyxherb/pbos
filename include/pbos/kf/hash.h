@@ -7,9 +7,12 @@
 #ifndef _PBOS_KF_HASH_H_
 #define _PBOS_KF_HASH_H_
 
-#include <stdint.h>
-#include <stddef.h>
+#include "basedefs.h"
+
+PBOS_EXTERN_C_BEGIN
 
 uint64_t kf_hash_djb(const char *src, size_t size);
+
+PBOS_EXTERN_C_END
 
 #endif

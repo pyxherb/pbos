@@ -1,39 +1,29 @@
-#include <pbos/kn/km/mm.h>
 #include <string.h>
+#include <pbos/kn/km/mm.hh>
+
+PBOS_EXTERN_C_BEGIN
 
 kn_mm_vpm_poolpg_t *hn_kspace_vpm_poolpg_list;
 
 void *kn_rounddown_to_page_leveled_addr(const void *const addr, int level) {
-	if(level > KN_MM_VPM_LEVEL_MAX)
+	if (level > KN_MM_VPM_LEVEL_MAX)
 		km_panic("Invalid page rounddown level: %d", level);
 	return (void *)kn_mm_vpm_rounddowners[level]((uintptr_t)addr);
 }
 
-bool kn_vpm_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	hn_vpm_t *_x = PBOS_CONTAINER_OF(hn_vpm_t, node_header, x),
-			 *_y = PBOS_CONTAINER_OF(hn_vpm_t, node_header, y);
-
-	return _x->addr < _y->addr;
-}
-
-void kn_vpm_nodefree(kf_rbtree_node_t *p) {
-	hn_vpm_t *_p = PBOS_CONTAINER_OF(hn_vpm_t, node_header, p);
+void kn_vpm_nodefree(hn_vpm_t *p) {
 	// No need to release here, the VPMs is managed by `kn_mm_free_vpm` and `kn_mm_free_vpm_unchecked`.
 }
 
 hn_vpm_t *kn_mm_lookup_vpm(mm_context_t *context, const void *addr, int level) {
-	kf_rbtree_t *query_tree = kn_mm_get_vpm_lookup_tree(context, addr, level);
+	kfxx::rbtree_t<void *> *query_tree = kn_mm_get_vpm_lookup_tree(context, addr, level);
 
-	hn_vpm_t query_desc;
-
-	query_desc.addr = (void *)addr;
-
-	kf_rbtree_node_t *node;
-	if (!(node = kf_rbtree_find(query_tree, &query_desc.node_header))) {
+	kfxx::rbtree_t<void *>::node_t *node;
+	if (!(node = query_tree->find((void *)addr))) {
 		return NULL;
 	}
 
-	return PBOS_CONTAINER_OF(hn_vpm_t, node_header, node);
+	return static_cast<hn_vpm_t *>(node);
 }
 
 km_result_t kn_mm_insert_vpm(mm_context_t *context, const void *addr) {
@@ -74,18 +64,15 @@ km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 	// Check if the address is page-aligned.
 	kd_assert(!(((uintptr_t)addr) % hn_vpm_level_size[level]));
 
-	kf_rbtree_t *query_tree = kn_mm_get_vpm_lookup_tree(context, addr, level);
+	kfxx::rbtree_t<void *> *query_tree = kn_mm_get_vpm_lookup_tree(context, addr, level);
 	kn_mm_vpm_poolpg_t **pool_list = kn_mm_get_vpm_pool_list(context, addr, level);
 
 	km_result_t result;
 	hn_vpm_t *vpm = kn_mm_alloc_vpm_slot(context, addr, level);
 
 	if (vpm) {
-		vpm->addr = (void *)addr;
-		result = kf_rbtree_insert(
-			query_tree,
-			&vpm->node_header);
-		kd_assert(KM_SUCCEEDED(result));
+		vpm->rb_value = (void *)addr;
+		query_tree->insert(vpm);
 		return KM_RESULT_OK;
 	}
 
@@ -107,7 +94,7 @@ km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 	}
 
 	{
-		kn_mm_vpm_poolpg_t *newpool = new_vpmpool_vaddr;
+		kn_mm_vpm_poolpg_t *newpool = (kn_mm_vpm_poolpg_t *)new_vpmpool_vaddr;
 
 		kd_assert(newpool != addr);
 
@@ -117,16 +104,16 @@ km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 
 		// Initialize the self VPM.
 		vpm = &newpool->descs[0];
-		vpm->addr = new_vpmpool_vaddr;
+		vpm->rb_value = new_vpmpool_vaddr;
 		vpm->flags = KM_MM_VPM_ALLOC;
-		result = kf_rbtree_insert(query_tree, &vpm->node_header);
+		query_tree->insert(vpm);
 		kd_assert(KM_SUCCEEDED(result));
 
 		// Initialize the target VPM.
 		vpm = &newpool->descs[1];
-		vpm->addr = (void *)addr;
+		vpm->rb_value = (void *)addr;
 		vpm->flags = KM_MM_VPM_ALLOC;
-		result = kf_rbtree_insert(query_tree, &vpm->node_header);
+		query_tree->insert(vpm);
 		kd_assert(KM_SUCCEEDED(result));
 
 		if (*pool_list)
@@ -163,36 +150,32 @@ void kn_mm_free_vpm(mm_context_t *context, const void *addr) {
 }
 
 void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level) {
-	kf_rbtree_t *query_tree = kn_mm_get_vpm_lookup_tree(context, addr, level);
+	kfxx::rbtree_t<void *> *query_tree = kn_mm_get_vpm_lookup_tree(context, addr, level);
 	kn_mm_vpm_poolpg_t **pool_list = kn_mm_get_vpm_pool_list(context, addr, level);
 
-	hn_vpm_t query_desc,
-		*target_desc;
+	hn_vpm_t *target_desc;
 
-	query_desc.addr = (void *)addr;
-
-	kf_rbtree_node_t *target_node = kf_rbtree_find(query_tree, &query_desc.node_header);
+	kfxx::rbtree_t<void *>::node_t *target_node = query_tree->find((void *)addr);
 	kd_assert(target_node);
-	target_desc = PBOS_CONTAINER_OF(hn_vpm_t, node_header, target_node);
+	target_desc = static_cast<hn_vpm_t *>(target_node);
 
 	if (!(--target_desc->subref_count)) {
-		if(level < KN_MM_VPM_LEVEL_MAX) {
+		if (level < KN_MM_VPM_LEVEL_MAX) {
 			mm_unmmap(
 				context,
-				kn_lookup_pgdir_mapped_addr(kn_lookup_pgdir(context, addr, level)),
+				kn_lookup_pgdir_mapped_addr(kn_lookup_pgdir(context, (void *)addr, level)),
 				PAGESIZE,
 				0);
-			kn_mm_free_pgdir(context, (void*)addr, 0);
+			kn_mm_free_pgdir(context, (void *)addr, 0);
 		}
-		kf_rbtree_remove(query_tree, &target_desc->node_header);
+		query_tree->remove(target_desc);
 
 		target_desc->flags &= ~KM_MM_VPM_ALLOC;
 
 		kn_mm_vpm_poolpg_t *pool = (kn_mm_vpm_poolpg_t *)PGFLOOR(target_desc);
 
 		if (!(--pool->header.used_num)) {
-			query_desc.addr = pool;
-			kf_rbtree_remove(query_tree, kf_rbtree_find(query_tree, &query_desc.node_header));
+			query_tree->remove(query_tree->find(pool));
 
 			if (pool == *pool_list) {
 				*pool_list = pool->header.next;
@@ -210,11 +193,11 @@ void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 }
 
 hn_vpm_t *kn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr, int level) {
-	kf_rbtree_t *query_tree = kn_mm_get_vpm_lookup_tree(context, addr, level);
+	kfxx::rbtree_t<void *> *query_tree = kn_mm_get_vpm_lookup_tree(context, addr, level);
 	kn_mm_vpm_poolpg_t **pool_list = kn_mm_get_vpm_pool_list(context, addr, level);
 
 	for (kn_mm_vpm_poolpg_t *i = *pool_list;
-		 i; i = i->header.next) {
+		i; i = i->header.next) {
 		if (i->header.used_num == PBOS_ARRAYSIZE(i->descs))
 			continue;
 		for (size_t j = 0; j < PBOS_ARRAYSIZE(i->descs); ++j) {
@@ -227,7 +210,6 @@ hn_vpm_t *kn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr, int leve
 			++i->header.used_num;
 			memset(cur_vpm, 0, sizeof(*cur_vpm));
 			cur_vpm->flags = KM_MM_VPM_ALLOC;
-			cur_vpm->addr = (void *)0xcdcdcdcd;
 
 			return cur_vpm;
 		}
@@ -235,3 +217,5 @@ hn_vpm_t *kn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr, int leve
 
 	return NULL;
 }
+
+PBOS_EXTERN_C_END

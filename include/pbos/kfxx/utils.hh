@@ -3,6 +3,7 @@
 
 #include "basedefs.hh"
 #include <memory>
+#include <new>
 
 namespace kfxx {
 #if __cplusplus >= 202002L

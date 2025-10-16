@@ -1,6 +1,8 @@
 #include <hal/i386/irq.h>
 #include <stdalign.h>
 
+PBOS_EXTERN_C_BEGIN
+
 alignas(16) arch_gate_t hn_kidt[256] = { 0 };
 
 size_t irq_getmax()
@@ -20,3 +22,5 @@ void irq_setisr(hal_isr_t isr, size_t irq)
 		return;
 	hn_kidt[irq] = GATEDESC(isr, SELECTOR_KCODE, GATEDESC_ATTRIBS(1, 0x00, 0, GATE_INT386));
 }
+
+PBOS_EXTERN_C_END

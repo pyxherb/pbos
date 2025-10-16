@@ -6,6 +6,8 @@
 #include <pbos/km/result.h>
 #include <stdbool.h>
 
+PBOS_EXTERN_C_BEGIN
+
 #define KF_HASHMAP_BUCKET_MIN 4
 
 typedef struct _kf_hashmap_t kf_hashmap_t;
@@ -55,5 +57,7 @@ kf_hashmap_node_t *kf_hashmap_end(kf_hashmap_t *dest);
 kf_hashmap_node_t *kf_hashmap_next(kf_hashmap_node_t *cur);
 
 #define kf_hashmap_size(dest) (dest->node_num)
+
+PBOS_EXTERN_C_END
 
 #endif

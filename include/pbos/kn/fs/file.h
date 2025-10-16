@@ -6,6 +6,8 @@
 #include <pbos/kf/list.h>
 #include <pbos/km/objmgr.h>
 
+PBOS_EXTERN_C_BEGIN
+
 ///
 /// @brief Allocate a new file node.
 ///
@@ -29,5 +31,7 @@ km_result_t kn_alloc_file(
 #define FILE_CLASS_UUID UUID(f11e5157, f11e, c1a5, 1d0f, f11e0b15)
 
 void kn_file_destructor(om_object_t *obj);
+
+PBOS_EXTERN_C_END
 
 #endif

@@ -12,15 +12,15 @@ typedef struct PBOS_PACKED _arch_gate_t {
 	uint16_t off_high : 16;
 } arch_gate_t;
 
-#define GATEDESC(off, sel, attr)                    \
-	((arch_gate_t){                                \
-		.off_low = (((uint32_t)(off)) & 0x0000ffff), \
-		.off_high = (((uint32_t)(off)) >> 16),       \
-		.selector = (sel),                          \
-		.attribs = (attr),                          \
+#define GATEDESC(off, sel, attr)                     \
+	((arch_gate_t){                                  \
+		.off_low = (uint16_t)(((uint32_t)(off)) & 0x0000ffff), \
+		.selector = (sel),                           \
+		.attribs = (uint8_t)(attr),                           \
+		.off_high = (uint16_t)(((uint32_t)(off)) >> 16),       \
 	})
 
-#define GATEDESC_OFFSET(l, h) ((void*)((l) | ((h) << 16)))
+#define GATEDESC_OFFSET(l, h) ((void *)((l) | ((h) << 16)))
 
 #define GATEDESC_ATTRIBS(p, dpl, s, type) ((type) | ((s) << 4) | ((dpl) << 5) | ((p) << 7))
 

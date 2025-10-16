@@ -3,6 +3,8 @@
 #include <pbos/hal/spinlock.h>
 #include <pbos/km/logger.h>
 
+PBOS_EXTERN_C_BEGIN
+
 typedef struct _kn_ctxtsw_tmp_t {
 	ps_user_context_t context;
 	struct {
@@ -45,3 +47,5 @@ PBOS_NORETURN void ps_load_user_context(ps_user_context_t *ctxt) {
 	memcpy(&hn_ctxtsw_tmp_area->context, ctxt, sizeof(ps_user_context_t));
 	hn_load_user_context();
 }
+
+PBOS_EXTERN_C_END

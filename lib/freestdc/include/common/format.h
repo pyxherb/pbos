@@ -1,8 +1,11 @@
 #ifndef _FREESTDC_COMMON_FORMAT_H_
 #define _FREESTDC_COMMON_FORMAT_H_
 
+#include "../c_basedefs.h"
 #include <stddef.h>
 #include <stdint.h>
+
+FREESTDC_EXTERN_C_BEGIN
 
 enum {
 	FMTCTL_FLAGS_NONE,
@@ -44,5 +47,7 @@ typedef struct _fmtctl_info_t {
 } fmtctl_info_t;
 
 size_t fmtctl_parse(const char *str, fmtctl_info_t *dest);
+
+FREESTDC_EXTERN_C_END
 
 #endif

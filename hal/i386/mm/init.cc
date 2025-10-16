@@ -30,13 +30,6 @@ void hn_mm_init() {
 	hn_mm_init_pmadlist();
 	hn_mm_init_paging();
 
-	for (size_t i = 0; i < PBOS_ARRAYSIZE(hn_kspace_vpm_query_tree); ++i) {
-		kf_rbtree_init(
-			&hn_kspace_vpm_query_tree[i],
-			kn_vpm_nodecmp,
-			kn_vpm_nodefree);
-	}
-
 	hn_mm_init_stage = HN_MM_INIT_STAGE_AREAS_INITIAL;
 
 	hn_mm_init_areas();

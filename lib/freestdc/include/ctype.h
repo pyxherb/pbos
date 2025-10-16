@@ -1,6 +1,10 @@
 #ifndef _FREESTDC_CTYPE_H_
 #define _FREESTDC_CTYPE_H_
 
+#include "c_basedefs.h"
+
+FREESTDC_EXTERN_C_BEGIN
+
 inline int isalnum(int c);
 inline int isalpha(int c);
 inline int iscntrl(int c);
@@ -71,5 +75,7 @@ inline int toupper(int c) {
 		return c + 32;
 	return c;
 }
+
+FREESTDC_EXTERN_C_END
 
 #endif

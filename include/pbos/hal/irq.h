@@ -4,6 +4,8 @@
 #include <pbos/common.h>
 #include <pbos/attribs.h>
 
+PBOS_EXTERN_C_BEGIN
+
 typedef PBOS_NORETURN void (*hal_isr_t)();
 
 size_t irq_getmax();
@@ -11,5 +13,7 @@ void irq_setisr(hal_isr_t isr, size_t irq);
 hal_isr_t irq_getisr();
 
 void irq_init();
+
+PBOS_EXTERN_C_END
 
 #endif

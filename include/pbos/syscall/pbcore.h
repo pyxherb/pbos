@@ -4,6 +4,8 @@
 #include <pbos/km/result.h>
 #include <pbos/km/proc.h>
 
+PBOS_EXTERN_C_BEGIN
+
 void sysent_exit(int exitcode);
 km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint32_t mode, ps_ufd_t *ufd_out);
 km_result_t sysent_close(ps_ufd_t ufd, uint32_t flags);
@@ -15,5 +17,7 @@ km_result_t sysent_exec_child(
 	const char *args,
 	size_t args_len,
 	proc_id_t *proc_id_out);
+
+PBOS_EXTERN_C_END
 
 #endif

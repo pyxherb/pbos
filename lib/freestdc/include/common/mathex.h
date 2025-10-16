@@ -1,6 +1,10 @@
 #ifndef _FREESTDC_COMMON_MATHEX_H_
 #define _FREESTDC_COMMON_MATHEX_H_
 
+#include "../c_basedefs.h"
+
+FREESTDC_EXTERN_C_BEGIN
+
 #define _PI_F 3.1415926f
 #define _PI 3.141592653589793
 
@@ -21,5 +25,7 @@ int getxdigit(unsigned int x, int n);
 
 int odigcount(unsigned int x);
 int getodigit(unsigned int x, int n);
+
+FREESTDC_EXTERN_C_END
 
 #endif

@@ -3,6 +3,8 @@
 #include <pbos/kn/fs/file.h>
 #include <pbos/kn/fs/fs.h>
 
+PBOS_EXTERN_C_BEGIN
+
 void *initcar_ptr = NULL;
 
 fs_filesys_t *initcar_fs = NULL;
@@ -10,9 +12,9 @@ fs_file_t *initcar_dir;
 
 fs_fsops_t initcar_ops = {
 	.subnode = initcar_subnode,
+	.offload = initcar_offload,
 	.create_file = initcar_create_file,
 	.create_dir = initcar_create_dir,
-	.offload = initcar_offload,
 	.open = initcar_open,
 	.close = initcar_close,
 	.read = initcar_read,
@@ -52,7 +54,7 @@ km_result_t initcar_destructor() {
 
 km_result_t initcar_mount(fs_file_t *parent, fs_file_t *file) {
 	if (parent == initcar_dir) {
-		initcar_dir_entry_t *dir_entry = mm_kmalloc(sizeof(initcar_dir_entry_t));
+		initcar_dir_entry_t *dir_entry = (initcar_dir_entry_t*)mm_kmalloc(sizeof(initcar_dir_entry_t));
 		if (!dir_entry)
 			return KM_MAKEERROR(KM_RESULT_NO_MEM);
 		memset(dir_entry, 0, sizeof(*dir_entry));
@@ -97,7 +99,7 @@ void initcar_init() {
 
 	if (!(initcar_ptr = mm_vmalloc(
 			  mm_kernel_context,
-			  (const void *)CRITICAL_VTOP + 1,
+			  (const char *)CRITICAL_VTOP + 1,
 			  (const void *)UINTPTR_MAX,
 			  ARCH_KARGS_PTR->initcar_size,
 			  PAGE_MAPPED | PAGE_READ,
@@ -106,7 +108,7 @@ void initcar_init() {
 
 	mm_mmap(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_ptr, ARCH_KARGS_PTR->initcar_size, PAGE_MAPPED | PAGE_READ, 0);
 
-	pbcar_metadata_t *md = initcar_ptr;
+	pbcar_metadata_t *md = (pbcar_metadata_t*)initcar_ptr;
 	if (md->magic[0] != PBCAR_MAGIC_0 ||
 		md->magic[1] != PBCAR_MAGIC_1 ||
 		md->magic[2] != PBCAR_MAGIC_2 ||
@@ -181,3 +183,5 @@ void initcar_init() {
 void initcar_deinit() {
 	mm_unmmap(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_size, 0);
 }
+
+PBOS_EXTERN_C_END

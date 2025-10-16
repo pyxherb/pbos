@@ -2,6 +2,8 @@
 #include <pbos/fs/file.h>
 #include <pbos/km/exec.h>
 
+PBOS_EXTERN_C_BEGIN
+
 void sysent_exit(int exitcode) {
 }
 
@@ -83,3 +85,5 @@ km_result_t sysent_exec_child(
 
 	return km_exec(pcb->proc_id, 0, ufcb->kernel_fcb, proc_id_out);
 }
+
+PBOS_EXTERN_C_END

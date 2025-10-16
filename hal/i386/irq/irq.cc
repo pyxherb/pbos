@@ -3,6 +3,8 @@
 #include <hal/i386/syscall.h>
 #include <pbos/km/logger.h>
 
+PBOS_EXTERN_C_BEGIN
+
 PBOS_NORETURN void isr_irq0_impl(
 	const uint32_t eax,
 	const uint32_t ebx,
@@ -50,3 +52,5 @@ PBOS_NORETURN void isr_irq0_impl(
 
 	kn_switch_to_user_thread(next_thread);
 }
+
+PBOS_EXTERN_C_END

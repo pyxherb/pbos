@@ -9,11 +9,13 @@
 #include "logger.h"
 #include "misc.h"
 
-hn_ctor_t alignas(hn_ctor_t) KN_CTORS_BEGIN[0] = { };
-hn_ctor_t alignas(hn_ctor_t) KN_CTORS_END[0] = { };
+PBOS_EXTERN_C_BEGIN
 
-hn_dtor_t alignas(hn_dtor_t) KN_DTORS_BEGIN[0] = { };
-hn_dtor_t alignas(hn_dtor_t) KN_DTORS_END[0] = { };
+alignas(hn_ctor_t) hn_ctor_t KN_CTORS_BEGIN[0] = { };
+alignas(hn_ctor_t) hn_ctor_t KN_CTORS_END[0] = { };
+
+alignas(hn_dtor_t) hn_dtor_t KN_DTORS_BEGIN[0] = { };
+alignas(hn_dtor_t) hn_dtor_t KN_DTORS_END[0] = { };
 
 void hal_call_ctors() {
 	kdprintf("Global ctor ptr: %p-%p\n", KN_CTORS_BEGIN, KN_CTORS_END);
@@ -43,3 +45,5 @@ void hal_init() {
 
 	kdprintf("Initialized HAL\n");
 }
+
+PBOS_EXTERN_C_END

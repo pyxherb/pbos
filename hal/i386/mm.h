@@ -4,7 +4,6 @@
 #include <arch/i386/kargs.h>
 #include <arch/i386/paging.h>
 #include <pbos/km/assert.h>
-#include <pbos/kn/km/mm.h>
 #include <stdalign.h>
 #include <string.h>
 #include "mm/misc.h"
@@ -25,12 +24,7 @@ enum {
 
 extern uint8_t hn_mm_init_stage;
 
-extern kn_mm_vpm_poolpg_t *hn_kspace_vpm_poolpg_list;
-extern kf_rbtree_t hn_kspace_vpm_query_tree[HN_VPM_LEVEL_MAX + 1];
-
 typedef struct _mm_context_t mm_context_t;
-
-extern size_t hn_vpm_level_size[HN_VPM_LEVEL_MAX + 1];
 
 void hn_mm_init();
 

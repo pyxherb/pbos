@@ -1,5 +1,7 @@
 #include <hal/i386/mm.h>
 
+PBOS_EXTERN_C_BEGIN
+
 ///
 /// @brief Get PMAD by a physical address.
 ///
@@ -43,3 +45,5 @@ pgaddr_t hn_alloc_freeblk(uint8_t type) {
 
 	return NULLPG;
 }
+
+PBOS_EXTERN_C_END

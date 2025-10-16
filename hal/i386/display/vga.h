@@ -5,6 +5,8 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+PBOS_EXTERN_C_BEGIN
+
 #define VGA_TEXTDISP_BUFFER 0x000b8000
 #define VGA_TEXTDISP_BUFFER_TOP 0x000bffff
 #define VGA_TEXTDISP_BUFFER_SIZE 0x8000
@@ -46,5 +48,7 @@ int vga_putchar(int c);
 int vga_puts(const char *s);
 int vga_vprintf(const char *s, va_list args);
 int vga_printf(const char *s, ...);
+
+PBOS_EXTERN_C_END
 
 #endif

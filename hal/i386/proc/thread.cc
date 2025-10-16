@@ -5,11 +5,11 @@ void kn_thread_destructor(om_object_t *obj) {
 }
 
 ps_tcb_t *kn_alloc_tcb(ps_pcb_t *pcb) {
-	ps_tcb_t *t = mm_kmalloc(sizeof(ps_tcb_t));
+	ps_tcb_t *t = (ps_tcb_t *)mm_kmalloc(sizeof(ps_tcb_t));
 	if (!t)
 		return NULL;
 	memset(t, 0, sizeof(ps_tcb_t));
-	if (!(t->context = mm_kmalloc(sizeof(ps_user_context_t)))) {
+	if (!(t->context = (ps_user_context_t *)mm_kmalloc(sizeof(ps_user_context_t)))) {
 		mm_kfree(t);
 		return NULL;
 	}
@@ -35,7 +35,7 @@ thread_id_t ps_create_thread(
 		return -1;
 
 	km_result_t result = ps_cur_sched->prepare_thread(ps_cur_sched, t);
-	if(KM_FAILED(result)) {
+	if (KM_FAILED(result)) {
 		// TODO: Do something to destroy the TCB.
 		return -1;
 	}
@@ -48,7 +48,7 @@ void hn_thread_cleanup(ps_tcb_t *thread) {
 	kf_rbtree_remove(&thread->parent->thread_set, &thread->node_header);
 	while (thread->stacksize) {
 		mm_pgfree(mm_getmap(thread->parent->mm_context, thread->stack, NULL));
-		thread->stack += PAGESIZE;
+		((char *&)thread->stack) += PAGESIZE;
 		thread->stacksize -= PAGESIZE;
 	}
 }

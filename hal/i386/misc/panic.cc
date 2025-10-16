@@ -3,6 +3,8 @@
 #include <hal/i386/display/vga.h>
 #include <pbos/km/panic.h>
 
+PBOS_EXTERN_C_BEGIN
+
 PBOS_NORETURN void _km_panic_halt();
 
 static bool _panicked = false;
@@ -29,3 +31,5 @@ panicked:
 	// QEMU
 	arch_out16(0x0604, 0x2000);
 }
+
+PBOS_EXTERN_C_END
