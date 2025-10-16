@@ -22,12 +22,11 @@ hn_pmad_t *hn_pmad_get(pgaddr_t addr) {
 }
 
 pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area) {
-	kf_rbtree_foreach(i, &area->mad_query_tree) {
-		hn_mad_t *mad = PBOS_CONTAINER_OF(hn_mad_t, node_header, i);
+	for (auto it = area->mad_query_tree.begin(); it != area->mad_query_tree.end(); ++it) {
+		hn_mad_t *mad = static_cast<hn_mad_t *>(it.node);
 		kd_assert(mad->flags & MAD_P);
 		if (mad->type == MAD_ALLOC_FREE) {
-			pgaddr_t pgaddr = mad->pgaddr;
-			return pgaddr;
+			return mad->rb_value;
 		}
 	}
 

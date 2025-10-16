@@ -6,7 +6,5 @@ user_syscall:
 	movl 16(%esp), %edx
 	movl 20(%esp), %esi
 	movl 24(%esp), %edi
-	xchg %bx, %bx
 	int $0xc0
-	xchg %bx, %bx
 	ret

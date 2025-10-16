@@ -6,7 +6,7 @@
 #include <arch/i386/mlayout.h>
 #include <arch/i386/paging.h>
 #include <pbos/kn/km/mm.hh>
-#include <pbos/kf/rbtree.h>
+#include <pbos/kfxx/rbtree.hh>
 #include <stdint.h>
 
 PBOS_EXTERN_C_BEGIN
@@ -42,11 +42,9 @@ enum {
 ///
 /// @brief Memory Allocation Descriptor (MAD), manages a single page.
 ///
-typedef struct _hn_mad_t {
-	kf_rbtree_node_t node_header;
+typedef struct _hn_mad_t : public kfxx::rbtree_t<pgaddr_t>::node_t {
 	uint8_t flags : 8;
-	uint8_t type : 4;
-	uint32_t pgaddr : 20;
+	uint8_t type : 8;
 	uint32_t ref_count;
 	union {
 		uint32_t mapped_pgtab_addr : 20;
@@ -90,7 +88,7 @@ typedef struct _hn_pmad_t {
 		uint8_t type : 8;	 // Type
 	} attribs;
 	// MAD pages were all preallocated at initializing stage.
-	kf_rbtree_t mad_query_tree;
+	kfxx::rbtree_t<pgaddr_t> mad_query_tree;
 } hn_pmad_t;
 
 extern hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1];
@@ -101,9 +99,6 @@ extern hn_madpool_t *hn_global_mad_pool_list;
 	for (hn_pmad_t *i = hn_pmad_list; i->attribs.type != KN_PMEM_END; ++i)
 
 hn_mad_t *hn_get_mad(pgaddr_t pgaddr);
-
-bool hn_mad_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
-void hn_mad_nodefree(kf_rbtree_node_t *p);
 
 hn_pmad_t *hn_pmad_get(pgaddr_t addr);
 

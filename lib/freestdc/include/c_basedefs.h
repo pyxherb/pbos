@@ -9,4 +9,12 @@
 #define FREESTDC_EXTERN_C_END
 #endif
 
+#ifndef FREESTDC_FORCEINLINE
+	#if defined(__GNUC__) || defined(__clang__)
+		#define FREESTDC_FORCEINLINE __attribute__((__always_inline__)) inline
+	#else
+		#define FREESTDC_FORCEINLINE
+	#endif
+#endif
+
 #endif

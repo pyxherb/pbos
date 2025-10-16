@@ -15,7 +15,7 @@ size_t hn_tss_storage_num;
 arch_tss_t *hn_tss_storage_ptr;
 char **hn_tss_stacks;
 
-static void hn_push_pmad(hn_pmad_t *pmad);
+static void hn_push_pmad(hn_pmad_t &&pmad);
 static void hn_init_gdt();
 static void hn_mm_init_paging();
 static void hn_mm_init_pmadlist();
@@ -98,10 +98,6 @@ static void hn_mm_init_areas() {
 				need_pgtab = true;
 			}
 
-			PMAD_FOREACH(i) {
-				kf_rbtree_init(&i->mad_query_tree, hn_mad_nodecmp, hn_mad_nodefree);
-			}
-
 			// Find proper initial pages for further initialization.
 			PMAD_FOREACH(i) {
 				if (i->attribs.type != KN_PMEM_AVAILABLE)
@@ -161,19 +157,19 @@ static void hn_mm_init_areas() {
 
 			// Mark the initial pages as allocated.
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
-			hn_global_mad_pool_list->descs[cur_madpool_slot_index].pgaddr = init_madpool_paddr;
+			hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = init_madpool_paddr;
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
 			++hn_global_mad_pool_list->header.used_num;
-			kf_rbtree_insert(&init_madpool_pmad->mad_query_tree, &hn_global_mad_pool_list->descs[cur_madpool_slot_index].node_header);
+			init_madpool_pmad->mad_query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 			++cur_madpool_slot_index;
 
 			if (need_pgtab) {
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].pgaddr = init_pgtab_paddr;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = init_pgtab_paddr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].exdata.mapped_pgtab_addr = (pgaddr_t)NULL;
 				++hn_global_mad_pool_list->header.used_num;
-				kf_rbtree_insert(&init_pgtab_pmad->mad_query_tree, &hn_global_mad_pool_list->descs[cur_madpool_slot_index].node_header);
+				init_pgtab_pmad->mad_query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				++cur_madpool_slot_index;
 			}
 		}
@@ -230,10 +226,10 @@ static void hn_mm_init_areas() {
 				}
 
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].pgaddr = j;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = j;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_FREE;
 				++hn_global_mad_pool_list->header.used_num;
-				kf_rbtree_insert(&i->mad_query_tree, &hn_global_mad_pool_list->descs[cur_madpool_slot_index].node_header);
+				i->mad_query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 
 				++cur_madpool_slot_index;
 			}
@@ -282,10 +278,10 @@ static void hn_mm_init_areas() {
 				}
 
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].pgaddr = j;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = j;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_FREE;
 				++hn_global_mad_pool_list->header.used_num;
-				kf_rbtree_insert(&i->mad_query_tree, &hn_global_mad_pool_list->descs[cur_madpool_slot_index].node_header);
+				i->mad_query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 
 				++cur_madpool_slot_index;
 			}
@@ -368,12 +364,12 @@ static void hn_mm_init_pmadlist() {
 						pmad.attribs.base = PGROUNDDOWN(entry->base);
 						pmad.attribs.len = PGROUNDUP(INIT_CRITICAL_PBASE - entry->base);
 						pmad.attribs.type = KN_PMEM_HARDWARE;
-						hn_push_pmad(&pmad);
+						hn_push_pmad(std::move(pmad));
 
 						pmad.attribs.base = PGROUNDDOWN(INIT_CRITICAL_PBASE);
 						pmad.attribs.len = PGROUNDUP(INIT_CRITICAL_SIZE);
 						pmad.attribs.type = KN_PMEM_CRITICAL;
-						hn_push_pmad(&pmad);
+						hn_push_pmad(std::move(pmad));
 
 						if (entry_max > INIT_CRITICAL_PTOP) {
 							pmad.attribs.base = PGROUNDDOWN(INIT_CRITICAL_PTOP + 1);
@@ -394,7 +390,7 @@ static void hn_mm_init_pmadlist() {
 							pmad.attribs.base = PGROUNDDOWN(entry->base);
 							pmad.attribs.len = PGROUNDUP((INIT_CRITICAL_PTOP - entry->base) + 1);
 							pmad.attribs.type = KN_PMEM_CRITICAL;
-							hn_push_pmad(&pmad);
+							hn_push_pmad(std::move(pmad));
 
 							pmad.attribs.base = PGROUNDDOWN(INIT_CRITICAL_PTOP) + 1;
 							pmad.attribs.len = PGROUNDUP((entry_max + 1) - INIT_CRITICAL_PTOP);
@@ -447,7 +443,7 @@ static void hn_mm_init_pmadlist() {
 					continue;
 		}
 
-		hn_push_pmad(&pmad);
+		hn_push_pmad(std::move(pmad));
 	}
 
 	kdprintf("Initialized PMAD list\n");
@@ -503,10 +499,10 @@ static void hn_mm_init_paging() {
 ///
 /// @param pmad PMAD to push.
 ///
-static void hn_push_pmad(hn_pmad_t *pmad) {
+static void hn_push_pmad(hn_pmad_t &&pmad) {
 	for (uint8_t i = 0; i < PBOS_ARRAYSIZE(hn_pmad_list); ++i)
 		if (hn_pmad_list[i].attribs.type == KN_PMEM_END) {
-			memcpy(&(hn_pmad_list[i]), pmad, sizeof(hn_pmad_t));
+			hn_pmad_list[i] = std::move(pmad);
 			hn_pmad_list[i + 1].attribs.type = KN_PMEM_END;
 			return;
 		}

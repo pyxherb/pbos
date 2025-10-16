@@ -240,7 +240,7 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE this_t &operator=(this_t &&other) noexcept {
-			clear();
+			clear_without_release();
 
 			_root = other._root;
 			_cached_min_node = other._cached_min_node;

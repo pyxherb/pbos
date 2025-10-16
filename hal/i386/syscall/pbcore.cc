@@ -17,20 +17,14 @@ km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint3
 	if (mm_probe_user_space(pcb->mm_context, ufd_out, sizeof(*ufd_out)))
 		return KM_RESULT_ACCESS_VIOLATION;
 
-	asm volatile("xchg %bx, %bx");
-
 	ps_ufd_t fd = ps_alloc_fd(pcb);
 	if(fd < 0)
 		return KM_RESULT_NO_SLOT;
 
-	asm volatile("xchg %bx, %bx");
-
 	fs_fcb_t *fcb;
 	if (KM_FAILED(result = fs_open(pcb->cur_dir, path, path_len, &fcb))) {
 		return result;
-	}
-
-	asm volatile("xchg %bx, %bx");
+	};
 
 	ps_ufcb_t *ufcb;
 	if(!(ufcb = ps_alloc_ufcb(pcb, fcb, fd))) {

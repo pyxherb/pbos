@@ -29,32 +29,18 @@ void mm_refpg(void *ptr) {
 	hn_set_pgblk_used(PGROUNDDOWN(ptr), MAD_ALLOC_KERNEL);
 }
 
-bool hn_mad_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	const hn_mad_t *_x = (const hn_mad_t *)x,
-				   *_y = (const hn_mad_t *)y;
-
-	return _x->pgaddr < _y->pgaddr;
-}
-
-void hn_mad_nodefree(kf_rbtree_node_t *p) {
-}
-
 hn_mad_t *hn_get_mad(pgaddr_t pgaddr) {
 	// kprintf("hn_set_pgblk_used: %p (%d)\n", UNPGADDR(pgaddr), (int)order & 0x3f);
 	hn_pmad_t *pmad = hn_pmad_get(pgaddr);
-	if(!pmad)
+	if (!pmad)
 		km_panic("No PMAD corresponds to physical address %p", UNPGADDR(pgaddr));
 
-	hn_mad_t query_mad = {
-		.pgaddr = pgaddr
-	};
-
-	kf_rbtree_node_t *mad_node = kf_rbtree_find(&pmad->mad_query_tree, &query_mad.node_header);
+	kfxx::rbtree_t<pgaddr_t>::node_t *mad_node = pmad->mad_query_tree.find(pgaddr);
 	if (!mad_node) {
 		km_panic("Physical memory block not found: %p", UNPGADDR(pgaddr));
 	}
 
-	hn_mad_t *mad = PBOS_CONTAINER_OF(hn_mad_t, node_header, mad_node);
+	hn_mad_t *mad = static_cast<hn_mad_t *>(mad_node);
 
 	return mad;
 }

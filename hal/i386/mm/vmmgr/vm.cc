@@ -554,7 +554,6 @@ void *kn_lookup_pgdir(mm_context_t *ctxt, void *addr, int level) {
 	switch (level) {
 		case 0: {
 			kd_assert(ctxt);
-			kdprintf("Looking up page directory for context %p at PDX %hu: \n", ctxt, PDX(addr));
 			kd_assert(PDX(addr) <= PDX_MAX);
 			arch_pde_t *pde = &(ctxt->pdt[PDX(addr)]);
 
@@ -572,7 +571,6 @@ void *kn_mm_alloc_pgdir(mm_context_t *ctxt, void *ptr, int level) {
 	switch (level) {
 		case 0: {
 			kd_assert(ctxt);
-			kdprintf("Allocating page directory for context %p at PDX %hu: \n", ctxt, PDX(ptr));
 			kd_assert(PDX(ptr) <= PDX_MAX);
 			arch_pde_t *pde = &(ctxt->pdt[PDX(ptr)]);
 
