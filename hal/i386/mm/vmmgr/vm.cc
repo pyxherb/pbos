@@ -1,7 +1,9 @@
 #include "vm.h"
 #include <hal/i386/logger.h>
-#include <hal/i386/mm.h>
 #include <pbos/km/proc.h>
+#include <hal/i386/mm.hh>
+
+PBOS_EXTERN_C_BEGIN
 
 static uint16_t hn_pgaccess_to_pgmask(mm_pgaccess_t access) {
 	uint16_t mask = 0;
@@ -53,7 +55,7 @@ km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_wal
 	km_result_t result;
 
 	for (uint16_t di = PDX(vaddr); di <= (PDX(((char *)vaddr) + size));
-		 di++) {
+		di++) {
 		arch_pde_t *const pde = &pdt[di];
 		kd_assert(pde->mask & PDE_P);
 
@@ -61,22 +63,22 @@ km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_wal
 		bool is_tmpmap = false;
 
 		if (hn_mm_init_stage < HN_MM_INIT_STAGE_AREAS_INITED) {
-			goto use_tmpmap;
+			tmpaddr = UNPGADDR(hn_tmpmap(pde->address, 1, PTE_P | PTE_RW));
+			is_tmpmap = true;
 		} else {
 			hn_mad_t *mad = hn_get_mad(pde->address);
 			kd_assert(mad);
 			if (mad->exdata.mapped_pgtab_addr) {
 				tmpaddr = UNPGADDR(mad->exdata.mapped_pgtab_addr);
 			} else {
-			use_tmpmap:
 				tmpaddr = UNPGADDR(hn_tmpmap(pde->address, 1, PTE_P | PTE_RW));
 				is_tmpmap = true;
 			}
 		}
 
 		for (uint16_t ti = VADDR(di, 0, 0) >= vaddr ? 0 : PTX(vaddr);
-			 (ti <= PTX_MAX);
-			 ++ti) {
+			(ti <= PTX_MAX);
+			++ti) {
 			if ((((char *)VADDR(di, ti, 0)) - ((char *)vaddr)) >= size) {
 				break;
 			}
@@ -166,12 +168,12 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 				void *map_addr;
 
-				if (vaddr >= KSPACE_VBASE) {
+				if ((uintptr_t)vaddr >= KSPACE_VBASE) {
 					if ((map_addr = mm_vmalloc(ctxt, (void *)KSPACE_VBASE, vaddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
 						goto vmalloc_succeeded;
 					}
 				}
-				if (((char *)vaddr) + size > KSPACE_VBASE) {
+				if ((uintptr_t)(((char *)vaddr) + size) > KSPACE_VBASE) {
 					if ((map_addr = mm_vmalloc(ctxt, ((char *)vaddr) + size, (void *)KSPACE_VTOP, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
 						goto vmalloc_succeeded;
 					}
@@ -290,7 +292,7 @@ void mm_chpgmod(
 	pgsize_t pg_num = PGROUNDUP(size);
 
 	for (uint16_t di = PDX(vaddr); di < (PDX(vaddr) + PDX(pg_num + PTX_MAX));
-		 di++) {
+		di++) {
 		arch_pde_t *const pde = &context->pdt[di];
 		if (!(pde->mask & PDE_P))
 			km_panic("Modifying page access in non-existing PDE %p-%p for context %p",
@@ -301,8 +303,8 @@ void mm_chpgmod(
 		pgaddr_t tmapaddr = hn_tmpmap(pde->address, 1, PTE_P | PTE_RW);
 
 		for (pgaddr_t ti = (VADDR(di, 0, 0) >= vaddr ? 0 : PTX(vaddr));
-			 (ti < (PTX_MAX + 1)) && ((PGADDR(di, ti) - PGROUNDDOWN(vaddr)) < pg_num);
-			 ti++) {
+			(ti < (PTX_MAX + 1)) && ((PGADDR(di, ti) - PGROUNDDOWN(vaddr)) < pg_num);
+			ti++) {
 			// The page table was mapped temporarily.
 			arch_pte_t *const pte = &(((arch_pte_t *)UNPGADDR(tmapaddr))[ti]);
 
@@ -356,7 +358,7 @@ void *mm_vmalloc(mm_context_t *ctxt,
 
 		// Scan for each PTEs.
 		for (uint16_t j = (VADDR(i, 0, 0) >= minaddr ? 0 : PTX(minaddr));
-			 j < (PTX_MAX + 1) && (VADDR(i, j, 0) <= maxaddr); ++j) {
+			j < (PTX_MAX + 1) && (VADDR(i, j, 0) <= maxaddr); ++j) {
 			if (pgtab[j].mask & PTE_P)
 				// Clear the counter once we found any used page.
 				p_found = NULL, sz_found = 0;
@@ -397,7 +399,7 @@ void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr, uint16_t *mask_out) 
 		return NULL;
 	}
 
-	void *paddr = UNPGADDR(pte->address);
+	char *paddr = (char *)UNPGADDR(pte->address);
 	if (paddr)
 		paddr += PGOFF(vaddr);
 
@@ -460,13 +462,13 @@ pgaddr_t hn_tmpmap(pgaddr_t pgpaddr, pgsize_t pg_num, uint16_t mask) {
 alloc_succeeded:
 	for (uint16_t i = 0; i < pg_num; ++i) {
 		arch_pte_t *pte =
-			&hn_kernel_pgt[i + PGROUNDDOWN(UNPGADDR(vaddr) - KERNEL_VBASE)];
+			&hn_kernel_pgt[i + PGROUNDDOWN(((char*)UNPGADDR(vaddr)) - KERNEL_VBASE)];
 		pte->address = pgpaddr + i;
 		pte->mask = mask;
 	}
 
 	for (pgsize_t i = 0; i < pg_num; ++i)
-		arch_invlpg(UNPGADDR(vaddr) + (i << 12));
+		arch_invlpg(((char*)UNPGADDR(vaddr)) + (i << 12));
 
 	for (uint8_t i = 0; i < PBOS_ARRAYSIZE(_tmpmap_slots); ++i) {
 		if (!_tmpmap_slots[i].addr) {
@@ -521,7 +523,7 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 			hn_vpm_t *vpm;
 			if ((vpm = kn_mm_lookup_vpm(mm_cur_contexts[ps_get_cur_euid()], UNPGADDR(pgdir[i].address), HN_VPM_LEVEL_MAX))) {
 				if (vpm->map_addr) {
-					pgtab = vpm->map_addr;
+					pgtab = (arch_pte_t*)vpm->map_addr;
 					goto already_mapped;
 				}
 			}
@@ -541,7 +543,7 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 		// in the condition.
 		//
 		for (uint16_t j = (PGADDR(i, 0) >= minaddr ? 0 : PGTX(minaddr));
-			 j < (PTX_MAX + 1) && PGADDR(i, j) < (maxaddr + 1); ++j) {
+			j < (PTX_MAX + 1) && PGADDR(i, j) < (maxaddr + 1); ++j) {
 			// The page is free if it does not present.
 			if (!(pgtab[j].mask & PTE_P)) {
 				hn_tmpunmap(tmapaddr);
@@ -611,3 +613,5 @@ void kn_mm_free_pgdir(mm_context_t *ctxt, void *ptr, int level) {
 			km_panic("Invalid page level for page directory: %d", level);
 	}
 }
+
+PBOS_EXTERN_C_END

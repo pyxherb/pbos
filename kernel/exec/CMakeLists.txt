@@ -15,5 +15,5 @@ foreach(i ${PBOS_BINLDRS})
     add_subdirectory(${_LOADER_SOURCE_DIR}/${i})
 endforeach()
 
-file(GLOB SRC *.h *.c *.S)
+file(GLOB SRC *.h *.hh *.c *.cc *.S)
 target_sources(pbkern PRIVATE ${SRC})

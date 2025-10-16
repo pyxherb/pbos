@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+PBOS_EXTERN_C_BEGIN
+
 #define KF_RBTREE_BLACK 0
 #define KF_RBTREE_RED 1
 
@@ -59,5 +61,7 @@ kf_rbtree_node_t* kf_rbtree_next(kf_rbtree_node_t* node);
 #define kf_rbtree_isempty(tree) ((tree)->root == NULL)
 
 #define kf_rbtree_size(tree) ((tree)->node_num)
+
+PBOS_EXTERN_C_END
 
 #endif

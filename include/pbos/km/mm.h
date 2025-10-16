@@ -194,7 +194,7 @@ void mm_invlpg(void *ptr);
 /// @return true The accessing violates the memory protection.
 /// @return false The accessing does not violate the memory protection.
 ///
-bool mm_is_user_access_violated(mm_context_t *mm_context, const void *ptr, size_t size);
+bool mm_probe_user_space(mm_context_t *mm_context, const void *ptr, size_t size);
 
 /// @brief The kernel memory context.
 extern mm_context_t *mm_kernel_context;

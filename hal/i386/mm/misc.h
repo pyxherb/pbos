@@ -1,11 +1,12 @@
 #ifndef _HAL_I386_MM_MISC_H_
 #define _HAL_I386_MM_MISC_H_
 
-#include <hal/i386/mm.h>
 #include <pbos/km/mm.h>
 #include <arch/i386/seg.h>
 #include <arch/i386/tss.h>
 #include "pgalloc/pgalloc.h"
+
+PBOS_EXTERN_C_BEGIN
 
 #define SELECTOR_KCODE SELECTOR(0, 0, 1)
 #define SELECTOR_KDATA SELECTOR(0, 0, 2)
@@ -34,5 +35,7 @@ extern arch_tss_t *hn_tss_storage_ptr;
 extern char **hn_tss_stacks;
 
 uint8_t hn_to_kn_pmem_type(uint8_t memtype);
+
+PBOS_EXTERN_C_END
 
 #endif

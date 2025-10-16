@@ -1,4 +1,5 @@
 #include "vpgdesc.hh"
+#include <string.h>
 
 kima_vpgdesc_poolpg_t* kima_vpgdesc_poolpg_list = NULL;
 kfxx::rbtree_t<void*> kima_vpgdesc_query_tree, kima_vpgdesc_free_tree;

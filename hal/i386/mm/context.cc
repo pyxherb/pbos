@@ -1,5 +1,8 @@
-#include "../mm.h"
+#include <pbos/kfxx/scope_guard.hh>
+#include "../mm.hh"
 #include "../proc.h"
+
+PBOS_EXTERN_C_BEGIN
 
 mm_context_t hn_kernel_mm_context;
 mm_context_t *mm_kernel_context = &hn_kernel_mm_context;
@@ -29,16 +32,23 @@ void kn_mm_sync_global_mappings(const mm_context_t *src) {
 
 km_result_t kn_mm_init_context(mm_context_t *context) {
 	km_result_t result;
+
 	void *pdt_paddr = NULL,
 		 *pdt_vaddr = NULL;
+
 	if (!(pdt_paddr = mm_pgalloc(MM_PMEM_AVAILABLE))) {
-		result = KM_RESULT_NO_MEM;
-		goto fail;
+		return KM_RESULT_NO_MEM;
 	}
+	kfxx::scope_guard free_pdt_paddr_guard([pdt_paddr]() noexcept {
+		mm_pgfree(pdt_paddr);
+	});
+
 	if (!(pdt_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
-		result = KM_RESULT_NO_MEM;
-		goto fail;
+		return KM_RESULT_NO_MEM;
 	}
+	kfxx::scope_guard free_pdt_vaddr_guard([pdt_vaddr]() noexcept {
+		mm_vmfree(mm_kernel_context, pdt_vaddr, PAGESIZE);
+	});
 
 	for (size_t i = 0; i < PBOS_ARRAYSIZE(context->uspace_vpm_query_tree); ++i) {
 		kf_rbtree_init(
@@ -47,23 +57,19 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 			kn_vpm_nodefree);
 	}
 	if (KM_FAILED(result = mm_mmap(mm_kernel_context, pdt_vaddr, pdt_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
-		goto fail;
+		return result;
 	}
+
+	free_pdt_paddr_guard.release();
+	free_pdt_vaddr_guard.release();
+
 	memset(pdt_vaddr, 0, PAGESIZE);
-	context->pdt = pdt_vaddr;
+	context->pdt = (arch_pde_t *)pdt_vaddr;
 
 	kn_mm_copy_global_mappings(context, mm_kernel_context);
 
 	// kn_mm_copy_global_mappings(context, mm_kernel_context);
 	return KM_RESULT_OK;
-
-fail:
-	if (pdt_paddr) {
-		mm_pgfree(pdt_paddr);
-	}
-	if (pdt_vaddr) {
-		mm_vmfree(mm_kernel_context, pdt_vaddr, PAGESIZE);
-	}
 }
 
 void mm_free_context(mm_context_t *context) {
@@ -93,3 +99,5 @@ void mm_switch_context(mm_context_t *context) {
 	kn_mm_sync_global_mappings(prev_context);
 	arch_lpdt(PGROUNDDOWN(hn_getmap(mm_kernel_context->pdt, context->pdt, NULL)));
 }
+
+PBOS_EXTERN_C_END

@@ -4,7 +4,7 @@
 #include "stddef.h"
 
 #ifdef __cplusplus
-PBOS_EXTERN_C {
+extern "C" {
 #endif
 
 size_t strlen(const char* str);

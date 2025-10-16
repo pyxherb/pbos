@@ -10,9 +10,9 @@ km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint3
 	ps_euid_t euid = ps_get_cur_euid();
 	ps_pcb_t *pcb = ps_get_cur_proc();
 
-	if (mm_is_user_access_violated(pcb->mm_context, path, path_len))
+	if (mm_probe_user_space(pcb->mm_context, path, path_len))
 		return KM_RESULT_ACCESS_VIOLATION;
-	if (mm_is_user_access_violated(pcb->mm_context, ufd_out, sizeof(*ufd_out)))
+	if (mm_probe_user_space(pcb->mm_context, ufd_out, sizeof(*ufd_out)))
 		return KM_RESULT_ACCESS_VIOLATION;
 
 	asm volatile("xchg %bx, %bx");
@@ -70,10 +70,10 @@ km_result_t sysent_exec_child(
 	ps_pcb_t *pcb = ps_get_cur_proc();
 	km_result_t result;
 
-	if (mm_is_user_access_violated(pcb->mm_context, args, args_len))
+	if (mm_probe_user_space(pcb->mm_context, args, args_len))
 		return KM_RESULT_ACCESS_VIOLATION;
 
-	if (mm_is_user_access_violated(pcb->mm_context, proc_id_out, sizeof(proc_id_t)))
+	if (mm_probe_user_space(pcb->mm_context, proc_id_out, sizeof(proc_id_t)))
 		return KM_RESULT_ACCESS_VIOLATION;
 
 	ps_ufcb_t *ufcb = ps_lookup_ufcb(pcb, file_ufd);

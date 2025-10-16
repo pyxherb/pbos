@@ -1,6 +1,8 @@
 #include <pbos/km/logger.h>
 #include <pbos/km/proc.h>
-#include "../mm.h"
+#include "../mm.hh"
+
+PBOS_EXTERN_C_BEGIN
 
 uint8_t hn_mm_init_stage = HN_MM_INIT_STAGE_INITIAL;
 
@@ -44,7 +46,7 @@ void hn_mm_init() {
 	kn_mm_init_kima();
 
 	ps_eu_num = 1;
-	if (!(mm_cur_contexts = mm_kmalloc(ps_eu_num * sizeof(mm_context_t *)))) {
+	if (!(mm_cur_contexts = (mm_context_t **)mm_kmalloc(ps_eu_num * sizeof(mm_context_t *)))) {
 		km_panic("Unable to allocate memory context for all CPUs");
 	}
 
@@ -59,18 +61,18 @@ void hn_mm_init() {
 
 static void hn_init_tss() {
 	hn_tss_storage_num = 1;
-	hn_tss_storage_ptr = mm_kmalloc(hn_tss_storage_num * sizeof(arch_tss_t));
+	hn_tss_storage_ptr = (arch_tss_t *)mm_kmalloc(hn_tss_storage_num * sizeof(arch_tss_t));
 	if (!hn_tss_storage_ptr) {
 		km_panic("Unable to allocate memory for TSS storage for processors");
 	}
 	memset(hn_tss_storage_ptr, 0, hn_tss_storage_num * sizeof(arch_tss_t));
 
-	hn_tss_stacks = mm_kmalloc(hn_tss_storage_num * sizeof(char *));
+	hn_tss_stacks = (char **)mm_kmalloc(hn_tss_storage_num * sizeof(char *));
 	if (!hn_tss_stacks) {
 		km_panic("Unable to allocate memory for TSS storage for processors");
 	}
 	for (size_t i = 0; i < hn_tss_storage_num; ++i) {
-		if (!(hn_tss_stacks[i] = mm_kmalloc(1024 * 1024 * 2))) {
+		if (!(hn_tss_stacks[i] = (char *)mm_kmalloc(1024 * 1024 * 2))) {
 			km_panic("Unable to allocate memory for TSS stacks");
 		}
 
@@ -216,7 +218,7 @@ static void hn_mm_init_areas() {
 					}
 
 					if (new_poolpg_need_pgtab) {
-						if (!kn_mm_alloc_pgdir(mm_kernel_context, (void*)PDX(new_poolpg_vaddr), 0)) {
+						if (!kn_mm_alloc_pgdir(mm_kernel_context, (void *)PDX(new_poolpg_vaddr), 0)) {
 							km_panic("No enough memory for new MAD pool page's corresponding page table");
 						}
 					}
@@ -266,7 +268,7 @@ static void hn_mm_init_areas() {
 					}
 
 					if (new_poolpg_need_pgtab) {
-						if (!kn_mm_alloc_pgdir(mm_kernel_context, (void*)PDX(new_poolpg_vaddr), 0)) {
+						if (!kn_mm_alloc_pgdir(mm_kernel_context, (void *)PDX(new_poolpg_vaddr), 0)) {
 							km_panic("No enough memory for new MAD pool page's corresponding page table");
 						}
 					}
@@ -306,7 +308,7 @@ static void hn_mm_init_areas() {
 	}
 
 	for (uintptr_t i = INIT_CRITICAL_PBASE; i <= INIT_CRITICAL_PTOP; i += PAGESIZE) {
-		mm_refpg((void*)i);
+		mm_refpg((void *)i);
 	}
 
 	kdprintf("Initialized memory areas\n");
@@ -469,7 +471,7 @@ static void hn_mm_init_paging() {
 	// Kernel bottom area
 	//
 	for (uint32_t vi = PDX(KBOTTOM_VBASE), pi = PDX(KBOTTOM_PBASE), pdi = 0;
-		 ((size_t)VADDR(vi, 0, 0)) < KBOTTOM_VTOP; vi++, pi++, pdi++) {
+		((size_t)VADDR(vi, 0, 0)) < KBOTTOM_VTOP; vi++, pi++, pdi++) {
 		arch_pte_t *cur = hn_bottom_pgt + (pdi << 10);
 		arch_pte_t *pcur = ((arch_pte_t *)KBOTTOMPGT_PBASE) + (pdi << 10);
 		hn_kernel_pdt[vi].mask = PDE_P | PDE_RW;
@@ -485,7 +487,7 @@ static void hn_mm_init_paging() {
 	// Initializable part of critical area
 	//
 	for (uint32_t vi = PDX(INIT_CRITICAL_VBASE), pi = PDX(INIT_CRITICAL_PBASE), pdi = 0;
-		 ((size_t)VADDR(vi, 0, 0)) <= INIT_CRITICAL_VTOP; vi++, pi++, pdi++) {
+		((size_t)VADDR(vi, 0, 0)) <= INIT_CRITICAL_VTOP; vi++, pi++, pdi++) {
 		arch_pte_t *vcur = hn_kernel_pgt + (pdi << 10);
 		arch_pte_t *pcur = ((arch_pte_t *)KPGT_PBASE) + (pdi << 10);
 		hn_kernel_pdt[vi].mask = PDE_P | PDE_RW;
@@ -517,3 +519,5 @@ static void hn_push_pmad(hn_pmad_t *pmad) {
 		}
 	km_panic("Too many memory map entries");
 }
+
+PBOS_EXTERN_C_END

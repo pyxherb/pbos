@@ -1,4 +1,4 @@
-file(GLOB SRC *.h *.c *.S)
+file(GLOB SRC *.hh *.cc *.h *.hh *.c *.cc *.S)
 target_sources(pbhal PRIVATE ${SRC})
 
 add_subdirectory("pgalloc")

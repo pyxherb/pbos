@@ -20,7 +20,7 @@ ps_ufd_t ps_alloc_fd(ps_pcb_t *pcb) {
 }
 
 ps_ufcb_t *ps_alloc_ufcb(ps_pcb_t *pcb, fs_fcb_t *kernel_fcb, ps_ufd_t fd) {
-	ps_ufcb_t *p = mm_kmalloc(sizeof(ps_ufcb_t));
+	ps_ufcb_t *p = (ps_ufcb_t *)mm_kmalloc(sizeof(ps_ufcb_t));
 	if (!p)
 		return NULL;
 	p->fd = fd;
@@ -65,14 +65,14 @@ void ps_create_proc(
 }
 
 ps_pcb_t *kn_alloc_pcb() {
-	ps_pcb_t *proc = mm_kmalloc(sizeof(ps_pcb_t));
+	ps_pcb_t *proc = (ps_pcb_t *)mm_kmalloc(sizeof(ps_pcb_t));
 
 	if (!proc)
 		return NULL;
 
 	memset(proc, 0, sizeof(ps_pcb_t));
 
-	if (!(proc->mm_context = mm_kmalloc(sizeof(mm_context_t)))) {
+	if (!(proc->mm_context = (mm_context_t *)mm_kmalloc(sizeof(mm_context_t)))) {
 		mm_kfree(proc);
 		return NULL;
 	}
@@ -83,7 +83,7 @@ ps_pcb_t *kn_alloc_pcb() {
 		return NULL;
 	}
 
-	if(KM_FAILED(ps_cur_sched->prepare_proc(ps_cur_sched, proc))) {
+	if (KM_FAILED(ps_cur_sched->prepare_proc(ps_cur_sched, proc))) {
 		mm_kfree(proc->mm_context);
 		mm_kfree(proc);
 		return NULL;
@@ -161,7 +161,7 @@ void kn_set_cur_euid(ps_euid_t euid) {
 
 km_result_t ps_create_uhandle(ps_pcb_t *proc, om_object_t *kobject, ps_uhandle_t *uhandle_out) {
 	km_result_t result;
-	ps_uhr_t *uhr = mm_kmalloc(sizeof(ps_uhr_t));
+	ps_uhr_t *uhr = (ps_uhr_t *)mm_kmalloc(sizeof(ps_uhr_t));
 
 	if (!uhr) {
 		return KM_RESULT_NO_MEM;
@@ -240,7 +240,7 @@ static void _parp_nodefree(kf_rbtree_node_t *p) {
 
 static bool _ufcb_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
 	const ps_ufcb_t *_x = PBOS_CONTAINER_OF(ps_ufcb_t, node_header, x),
-						 *_y = PBOS_CONTAINER_OF(ps_ufcb_t, node_header, y);
+					*_y = PBOS_CONTAINER_OF(ps_ufcb_t, node_header, y);
 
 	return _x->fd < _y->fd;
 }

@@ -1,2 +1,2 @@
-file(GLOB SRC *.hh *.cc *.h *.c *.S)
+file(GLOB SRC *.h *.hh *.c *.cc *.S)
 target_sources(pbkern PRIVATE ${SRC})

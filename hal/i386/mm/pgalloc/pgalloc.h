@@ -9,6 +9,8 @@
 #include <pbos/kf/rbtree.h>
 #include <stdint.h>
 
+PBOS_EXTERN_C_BEGIN
+
 //
 // MAD allocation types.
 // For non-terminal MADs, only `MAD_ALLOC_FREE` and `MAD_ALLOC_KERNEL` (Used) are valid.
@@ -110,5 +112,7 @@ pgaddr_t hn_alloc_freeblk(uint8_t type);
 
 void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type);
 void hn_set_pgblk_free(pgaddr_t addr);
+
+PBOS_EXTERN_C_END
 
 #endif

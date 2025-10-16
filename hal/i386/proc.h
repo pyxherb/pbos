@@ -5,7 +5,13 @@
 #include <pbos/kf/rbtree.h>
 #include <pbos/km/objmgr.h>
 #include <pbos/kn/km/proc.h>
+#ifdef __cplusplus
+#include "mm.hh"
+#else
 #include "mm.h"
+#endif
+
+PBOS_EXTERN_C_BEGIN
 
 typedef struct _ps_user_context_t {
 	uint32_t edi;
@@ -38,5 +44,7 @@ void hn_proc_cleanup(ps_pcb_t *proc);
 void hn_thread_cleanup(ps_tcb_t *thread);
 void ps_save_context(ps_user_context_t *ctxt);
 PBOS_NORETURN void ps_load_user_context(ps_user_context_t *ctxt);
+
+PBOS_EXTERN_C_END
 
 #endif

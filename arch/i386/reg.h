@@ -3,6 +3,8 @@
 
 #include <pbos/common.h>
 
+PBOS_EXTERN_C_BEGIN
+
 #define CR0_PE 0x00000001  // Protected mode enable
 #define CR0_MP 0x00000002  // Monitor coprocessor
 #define CR0_EM 0x00000004  // x87 emulation
@@ -154,5 +156,7 @@ PBOS_FORCEINLINE static void arch_wflags(uint32_t eflags) {
 /// @return Value of EIP register.
 ///
 void* arch_reip();
+
+PBOS_EXTERN_C_END
 
 #endif

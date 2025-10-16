@@ -1,7 +1,10 @@
 #ifndef _HAL_I386_MM_VM_H_
 #define _HAL_I386_MM_VM_H_
 
-#include <hal/i386/mm.h>
+#include <arch/i386/paging.h>
+#include <pbos/km/result.h>
+
+PBOS_EXTERN_C_BEGIN
 
 /// @brief Allocate a single virtual page in kernel space.
 /// @param pgdir Page directory to be operated.
@@ -30,5 +33,7 @@ pgaddr_t hn_tmpmap(pgaddr_t pgpaddr, pgsize_t pg_num, uint16_t mask);
 /// @brief Map a temporary-mapped page previously
 /// @param addr Paged virtual address to the first mapped page.
 void hn_tmpunmap(pgaddr_t addr);
+
+PBOS_EXTERN_C_END
 
 #endif

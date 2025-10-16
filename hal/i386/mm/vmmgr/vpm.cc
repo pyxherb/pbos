@@ -1,5 +1,7 @@
 #include <pbos/km/logger.h>
-#include "../../mm.h"
+#include "../../mm.hh"
+
+PBOS_EXTERN_C_BEGIN
 
 static uintptr_t hn_level0_rounddowner(uintptr_t addr) {
 	return addr & (uintptr_t)VADDR(PDX_MAX, 0, 0);
@@ -20,14 +22,15 @@ hn_vpm_level_rounddowner_t kn_mm_vpm_rounddowners[] = {
 };
 
 kf_rbtree_t *kn_mm_get_vpm_lookup_tree(mm_context_t *context, const void *addr, int level) {
-	return ISINRANGE(USPACE_VBASE, USPACE_SIZE, addr)
+	return ISINRANGE(USPACE_VBASE, USPACE_SIZE, (uintptr_t)addr)
 			   ? &context->uspace_vpm_query_tree[level]
 			   : &hn_kspace_vpm_query_tree[level];
 }
 
 kn_mm_vpm_poolpg_t **kn_mm_get_vpm_pool_list(mm_context_t *context, const void *addr, int level) {
-	return ISINRANGE(USPACE_VBASE, USPACE_SIZE, addr)
+	return ISINRANGE(USPACE_VBASE, USPACE_SIZE, (uintptr_t)addr)
 			   ? &context->uspace_vpm_poolpg_list
 			   : &hn_kspace_vpm_poolpg_list;
 }
 
+PBOS_EXTERN_C_END

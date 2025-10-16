@@ -3,7 +3,7 @@
 
 #include "basedefs.hh"
 
-namespace kf {
+namespace kfxx {
 	template<typename T>
 	struct scope_guard {
 		T callback;

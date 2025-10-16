@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 #include <arch/i386/paging.h>
-#include <hal/i386/mm/vmmgr/vm.h>
+#include <pbos/km/assert.h>
+#include <pbos/km/mm.h>
 
 void *kima_vpgalloc(void *addr, size_t size);
 void kima_vpgfree(void *addr, size_t size);

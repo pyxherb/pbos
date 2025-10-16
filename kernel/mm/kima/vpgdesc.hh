@@ -4,13 +4,9 @@
 #include <pbos/kfxx/rbtree.hh>
 #include "vmalloc.hh"
 
-#ifdef __cplusplus
 typedef struct _kima_vpgdesc_t : public kfxx::rbtree_t<void *>::node_t {
 	size_t ref_count;
 } kima_vpgdesc_t;
-#else
-typedef struct _kima_vpgdesc_t kima_vpgdesc_t;
-#endif
 
 typedef struct _kima_vpgdesc_poolpg_t kima_vpgdesc_poolpg_t;
 

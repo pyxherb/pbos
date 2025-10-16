@@ -1,4 +1,4 @@
-file(GLOB SRC *.h *.c *.S)
+file(GLOB SRC *.h *.hh *.c *.cc *.S)
 target_sources(pbkern PRIVATE ${SRC})
 
 if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "i386")

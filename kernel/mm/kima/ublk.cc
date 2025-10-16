@@ -1,4 +1,5 @@
 #include "ublk.hh"
+#include <string.h>
 
 kima_ublk_poolpg_t* kima_ublk_poolpg_list = NULL;
 kfxx::rbtree_t<void*> kima_ublk_query_tree, kima_ublk_free_tree;
