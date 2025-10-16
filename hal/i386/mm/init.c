@@ -41,7 +41,7 @@ void hn_mm_init() {
 
 	hn_mm_init_stage = HN_MM_INIT_STAGE_AREAS_INITED;
 
-	kima_init();
+	kn_mm_init_kima();
 
 	ps_eu_num = 1;
 	if (!(mm_cur_contexts = mm_kmalloc(ps_eu_num * sizeof(mm_context_t *)))) {

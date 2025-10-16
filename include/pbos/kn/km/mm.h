@@ -7,6 +7,8 @@
 
 #include <arch/i386/paging.h>
 
+PBOS_EXTERN_C_BEGIN
+
 #define KM_MM_VPM_ALLOC 0x00000001
 
 typedef uint32_t kn_mm_vpm_flags_t;
@@ -37,6 +39,8 @@ typedef uintptr_t (*hn_vpm_level_rounddowner_t)(uintptr_t addr);
 extern hn_vpm_level_rounddowner_t kn_mm_vpm_rounddowners[];
 extern size_t hn_vpm_level_size[];
 
+void kn_mm_init_kima();
+
 void kn_mm_sync_global_mappings(const mm_context_t *src);
 void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src);
 
@@ -58,5 +62,7 @@ void *kn_lookup_pgdir_mapped_addr(void *addr);
 void *kn_lookup_pgdir(mm_context_t *ctxt, void *addr, int level);
 void *kn_mm_alloc_pgdir(mm_context_t *ctxt, void *addr, int level);
 void kn_mm_free_pgdir(mm_context_t *ctxt, void *addr, int level);
+
+PBOS_EXTERN_C_END
 
 #endif

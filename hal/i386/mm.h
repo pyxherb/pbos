@@ -8,9 +8,10 @@
 #include <pbos/kn/km/mm.h>
 #include <stdalign.h>
 #include <string.h>
-#include "mm/kima/init.hh"
 #include "mm/misc.h"
 #include "mm/vmmgr/vm.h"
+
+PBOS_EXTERN_C_BEGIN
 
 #define HN_MAX_PGTAB_LEVEL 2
 
@@ -37,5 +38,7 @@ typedef struct _mm_context_t {
 extern size_t hn_vpm_level_size[HN_VPM_LEVEL_MAX + 1];
 
 void hn_mm_init();
+
+PBOS_EXTERN_C_END
 
 #endif

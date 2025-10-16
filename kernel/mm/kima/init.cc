@@ -1,10 +1,6 @@
-#include "init.hh"
+#include <pbos/kn/km/mm.h>
 #include <pbos/km/logger.h>
 
-void kima_init() {
+void kn_mm_init_kima() {
 	kdprintf("Initialized KIMA\n");
-}
-
-void kima_deinit() {
-
 }
