@@ -3,17 +3,4 @@
 
 #include <pbos/common.h>
 
-typedef struct _km_syment_t {
-	void *ptr;
-	size_t len;
-	const char name[64 - sizeof(void *)];
-} km_syment_t;
-
-#define KM_SYMEXPORT(sym)                                              \
-	PBOS_IN_SECTION("EXPORTED_SYMBOLS") PBOS_USED km_syment_t __symexport_##sym = { \
-		.ptr = (void *)sym,                                            \
-		.len = sizeof(#sym),                                           \
-		.name = #sym                                                   \
-	}
-
 #endif
