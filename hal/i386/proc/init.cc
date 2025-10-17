@@ -1,5 +1,5 @@
 #include <arch/i386/io.h>
-#include <arch/i386/irq.h>
+#include <hal/i386/irq.h>
 #include <hal/i386/proc.h>
 #include <pbos/kn/km/exec.h>
 
@@ -31,10 +31,15 @@ PBOS_NORETURN void kn_enter_sched_halt();
 
 PBOS_NORETURN void kn_enter_sched(ps_euid_t euid) {
 	arch_loadfs(euid);
+
+	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_LVT_TIMER, 0x30 | (0 << 16) | (0b01 << 17));
+	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_DIVIDE_CONFIG, 0x03);
+	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_INITIAL_COUNT, hn_sched_interval);
+
 	arch_sti();
-	static uint16_t COUNT_RATE = 11931;
-	arch_out8(0x40, (COUNT_RATE) & 0xff);
-	arch_out8(0x40, (COUNT_RATE >> 8) & 0xff);
+
+	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
+
 	kn_enter_sched_halt();
 }
 

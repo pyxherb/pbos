@@ -1,8 +1,13 @@
+#include <arch/i386/apic.h>
 #include <hal/i386/irq.h>
 #include <hal/i386/syscall.h>
 #include <pbos/km/logger.h>
+#include <pbos/km/proc.h>
 
 PBOS_EXTERN_C_BEGIN
+
+void *hn_lapic_pbase;
+uint32_t *hn_lapic_vbase;
 
 static void hn_remap_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
 	uint8_t pic1_mask = arch_in8(ARCH_PIC1_IO_DATA), pic2_mask = arch_in8(ARCH_PIC2_IO_DATA);
@@ -38,7 +43,7 @@ static void hn_remap_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
 	arch_out8(ARCH_PIC2_IO_DATA, pic2_mask);
 }
 
-void irq_init() {
+void hal_irq_init() {
 	hn_setisr(isr_diverr, 0x00, 0, GATE_TRAP386);
 	hn_setisr(isr_overflow, 0x04, 0, GATE_TRAP386);
 	hn_setisr(isr_boundrange, 0x05, 0, GATE_TRAP386);
@@ -60,7 +65,7 @@ void irq_init() {
 	hn_setisr(isr_vmmerr, 0x1d, 0, GATE_INT386);
 	hn_setisr(isr_securityerr, 0x1e, 0, GATE_INT386);
 
-	hn_setisr(isr_irq0, 0x20, 0, GATE_INT386);
+	hn_setisr(isr_timer, 0x30, 0, GATE_INT386);
 
 	hn_setisr(isr_syscall, 0xc0, 3, GATE_TRAP386);
 
@@ -71,6 +76,23 @@ void irq_init() {
 	arch_unmask_irq(0);
 
 	hn_remap_pic(0x20, 0x28);
+	arch_disable_pic();
+
+	if (!arch_has_msr())
+		km_panic("The kernel requires MSR support");
+
+	if (!arch_has_apic())
+		km_panic("The kernel requires APIC support");
+
+	if (!(hal_irq_contexts = (hal_irq_context_t **)mm_kmalloc(ps_eu_num * sizeof(hal_irq_context_t *)))) {
+		km_panic("Unable to allocate interrupt context for all CPUs");
+	}
+
+	for (uint32_t i = 0; i < ps_eu_num; ++i) {
+		if (!(hal_irq_contexts[i] = (hal_irq_context_t *)mm_kmalloc(ps_eu_num * sizeof(hal_irq_context_t)))) {
+			km_panic("Unable to allocate interrupt context for CPU %u", i);
+		}
+	}
 
 	kdprintf("Initialized IRQ\n");
 }

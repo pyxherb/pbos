@@ -1,5 +1,5 @@
-.global isr_irq0
-isr_irq0:
+.global isr_timer
+isr_timer:
 	push %ebp
 	push %edi
 	push %esi
@@ -10,4 +10,4 @@ isr_irq0:
 
 	cli
 
-	call isr_irq0_impl
+	call isr_timer_impl

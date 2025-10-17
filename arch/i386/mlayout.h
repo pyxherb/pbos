@@ -3,6 +3,7 @@
 
 #include <pbos/common.h>
 #include "paging.h"
+#include "apic.h"
 
 #define PADDR_TOP(prefix) ((prefix##_PBASE) + ((prefix##_SIZE) - 1))
 #define VADDR_TOP(prefix) ((prefix##_VBASE) + ((prefix##_SIZE) - 1))
@@ -136,6 +137,10 @@
 #define KSPACE_VBASE 0x80000000
 #define KSPACE_VTOP 0xffffffff
 #define KSPACE_SIZE (KSPACE_VTOP - KSPACE_VBASE + 1)
+
+#define LAPIC_PBASE ARCH_LAPIC_PBASE
+#define LAPIC_PTOP (ARCH_LAPIC_PBASE + PAGESIZE - 1)
+#define LAPIC_SIZE PAGESIZE
 
 PBOS_STATIC_ASSERT(UNPGSIZE(KPGT_SIZE) >= CRITICAL_SIZE);
 PBOS_STATIC_ASSERT(CRITICAL_SIZE >= INIT_CRITICAL_SIZE);

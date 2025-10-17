@@ -8,6 +8,7 @@
 #include <pbos/kn/fs/fs.h>
 #include <pbos/kn/fs/initcar.h>
 #include <pbos/kn/km/exec.h>
+#include <pbos/kn/km/smp.h>
 #include <pbos/kn/km/objmgr.h>
 
 // Because the operating system will never exit normally,
@@ -20,11 +21,13 @@ PBOS_EXTERN_C PBOS_NORETURN void _start() {
 	km_result_t result;
 
 	hal_init();
-	// irq_init();
+	// hal_irq_init();
 
 	om_init();
 	fs_init();
 	ps_init();
+
+	smp_init();
 
 	initcar_init();
 

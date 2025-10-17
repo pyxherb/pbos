@@ -1,14 +1,80 @@
-#ifndef _ARCH_I386_CPUID_H_
-#define _ARCH_I386_CPUID_H_
+#ifndef _ARCH_I386_ARCH_CPUID_H_
+#define _ARCH_I386_ARCH_CPUID_H_
 
 #include <pbos/common.h>
 
-#define CPUID_FUNC_VENDOR 0x00000000
-#define CPUID_FUNC_CPU_NAME1 0x80000002
-#define CPUID_FUNC_CPU_NAME2 0x80000003
-#define CPUID_FUNC_CPU_NAME3 0x80000004
+PBOS_EXTERN_C_BEGIN
 
-PBOS_FORCEINLINE static bool arch_iscpuidcap() {
+#define ARCH_CPUID_FUNC_VENDOR 0x00000000
+#define ARCH_CPUID_FUNC_FEATURES 0x00000001
+#define ARCH_CPUID_FUNC_CPU_NAME1 0x80000002
+#define ARCH_CPUID_FUNC_CPU_NAME2 0x80000003
+#define ARCH_CPUID_FUNC_CPU_NAME3 0x80000004
+
+#define ARCH_CPUID_FEATURE_ECX_SSE3 (1 << 0)
+#define ARCH_CPUID_FEATURE_ECX_PCLMUL (1 << 1)
+#define ARCH_CPUID_FEATURE_ECX_DTES64 (1 << 2)
+#define ARCH_CPUID_FEATURE_ECX_MONITOR (1 << 3)
+#define ARCH_CPUID_FEATURE_ECX_DS_CPL (1 << 4)
+#define ARCH_CPUID_FEATURE_ECX_VMX (1 << 5)
+#define ARCH_CPUID_FEATURE_ECX_SMX (1 << 6)
+#define ARCH_CPUID_FEATURE_ECX_EST (1 << 7)
+#define ARCH_CPUID_FEATURE_ECX_TM2 (1 << 8)
+#define ARCH_CPUID_FEATURE_ECX_SSSE3 (1 << 9)
+#define ARCH_CPUID_FEATURE_ECX_CID (1 << 10)
+#define ARCH_CPUID_FEATURE_ECX_SDBG (1 << 11)
+#define ARCH_CPUID_FEATURE_ECX_FMA (1 << 12)
+#define ARCH_CPUID_FEATURE_ECX_CX16 (1 << 13)
+#define ARCH_CPUID_FEATURE_ECX_XTPR (1 << 14)
+#define ARCH_CPUID_FEATURE_ECX_PDCM (1 << 15)
+#define ARCH_CPUID_FEATURE_ECX_PCID (1 << 17)
+#define ARCH_CPUID_FEATURE_ECX_DCA (1 << 18)
+#define ARCH_CPUID_FEATURE_ECX_SSE4_1 (1 << 19)
+#define ARCH_CPUID_FEATURE_ECX_SSE4_2 (1 << 20)
+#define ARCH_CPUID_FEATURE_ECX_X2APIC (1 << 21)
+#define ARCH_CPUID_FEATURE_ECX_MOVBE (1 << 22)
+#define ARCH_CPUID_FEATURE_ECX_POPCNT (1 << 23)
+#define ARCH_CPUID_FEATURE_ECX_TSC (1 << 24)
+#define ARCH_CPUID_FEATURE_ECX_AES (1 << 25)
+#define ARCH_CPUID_FEATURE_ECX_XSAVE (1 << 26)
+#define ARCH_CPUID_FEATURE_ECX_OSXSAVE (1 << 27)
+#define ARCH_CPUID_FEATURE_ECX_AVX (1 << 28)
+#define ARCH_CPUID_FEATURE_ECX_F16C (1 << 29)
+#define ARCH_CPUID_FEATURE_ECX_RDRAND (1 << 30)
+#define ARCH_CPUID_FEATURE_ECX_HYPERVISOR (1 << 31)
+
+#define ARCH_CPUID_FEATURE_EDX_FPU (1 << 0)
+#define ARCH_CPUID_FEATURE_EDX_VME (1 << 1)
+#define ARCH_CPUID_FEATURE_EDX_DE (1 << 2)
+#define ARCH_CPUID_FEATURE_EDX_PSE (1 << 3)
+#define ARCH_CPUID_FEATURE_EDX_TSC (1 << 4)
+#define ARCH_CPUID_FEATURE_EDX_MSR (1 << 5)
+#define ARCH_CPUID_FEATURE_EDX_PAE (1 << 6)
+#define ARCH_CPUID_FEATURE_EDX_MCE (1 << 7)
+#define ARCH_CPUID_FEATURE_EDX_CX8 (1 << 8)
+#define ARCH_CPUID_FEATURE_EDX_APIC (1 << 9)
+#define ARCH_CPUID_FEATURE_EDX_SEP (1 << 11)
+#define ARCH_CPUID_FEATURE_EDX_MTRR (1 << 12)
+#define ARCH_CPUID_FEATURE_EDX_PGE (1 << 13)
+#define ARCH_CPUID_FEATURE_EDX_MCA (1 << 14)
+#define ARCH_CPUID_FEATURE_EDX_CMOV (1 << 15)
+#define ARCH_CPUID_FEATURE_EDX_PAT (1 << 16)
+#define ARCH_CPUID_FEATURE_EDX_PSE36 (1 << 17)
+#define ARCH_CPUID_FEATURE_EDX_PSN (1 << 18)
+#define ARCH_CPUID_FEATURE_EDX_CLFLUSH (1 << 19)
+#define ARCH_CPUID_FEATURE_EDX_DS (1 << 21)
+#define ARCH_CPUID_FEATURE_EDX_ACPI (1 << 22)
+#define ARCH_CPUID_FEATURE_EDX_MMX (1 << 23)
+#define ARCH_CPUID_FEATURE_EDX_FXSR (1 << 24)
+#define ARCH_CPUID_FEATURE_EDX_SSE (1 << 25)
+#define ARCH_CPUID_FEATURE_EDX_SSE2 (1 << 26)
+#define ARCH_CPUID_FEATURE_EDX_SS (1 << 27)
+#define ARCH_CPUID_FEATURE_EDX_HTT (1 << 28)
+#define ARCH_CPUID_FEATURE_EDX_TM (1 << 29)
+#define ARCH_CPUID_FEATURE_EDX_IA64 (1 << 30)
+#define ARCH_CPUID_FEATURE_EDX_PBE (1 << 31)
+
+PBOS_FORCEINLINE static bool arch_has_cpuid() {
 	bool result = 0;
 
 	__asm__ __volatile__("pushfl");
@@ -17,12 +83,14 @@ PBOS_FORCEINLINE static bool arch_iscpuidcap() {
 	__asm__ __volatile__("cmpl 0x00200000,%eax");
 	__asm__ __volatile__("jne 0f");
 	__asm__ __volatile__("notb %0"
-						 : "=m"(result));
+		: "=m"(result));
 	__asm__ __volatile__("0:");
 
 	return result;
 }
 
 void arch_cpuid(uint32_t func, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
+
+PBOS_EXTERN_C_END
 
 #endif

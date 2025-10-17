@@ -5,7 +5,9 @@
 
 PBOS_EXTERN_C_BEGIN
 
-PBOS_NORETURN void isr_irq0_impl(
+hal_irq_context_t **hal_irq_contexts;
+
+PBOS_NORETURN void isr_timer_impl(
 	const uint32_t eax,
 	const uint32_t ebx,
 	const uint32_t ecx,
@@ -44,11 +46,11 @@ PBOS_NORETURN void isr_irq0_impl(
 		cur_thread->context->eflags = eflags;
 	}
 
-	static uint16_t COUNT_RATE = 65535;
-	arch_out8(0x40, (COUNT_RATE) & 0xff);
-	arch_out8(0x40, (COUNT_RATE >> 8) & 0xff);
+	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_LVT_TIMER, 0x30 | (0 << 16) | (0b01 << 17));
 
-	arch_out8(0x20, 0x20);
+	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_INITIAL_COUNT, hn_sched_interval);
+
+	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
 	kn_switch_to_user_thread(next_thread);
 }

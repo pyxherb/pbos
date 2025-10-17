@@ -147,9 +147,6 @@ PBOS_FORCEINLINE static void arch_wflags(uint32_t eflags) {
 	__asm__ __volatile__("popfl");
 }
 
-#define arch_rdmsr(msr, l, h) asm volatile("rdmsr" : "=a"(*(l)), "=d"(*(h)) : "c"(msr)))
-#define arch_wrmsr(msr, l, h) asm volatile("wrmsr" :: "a"(l), "d"(h), "c"(msr)))
-
 ///
 /// @brief Get value of EIP register.
 ///

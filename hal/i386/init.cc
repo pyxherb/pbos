@@ -8,6 +8,7 @@
 #include "irq.h"
 #include "logger.h"
 #include "misc.h"
+#include <pbos/kn/km/proc.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -41,7 +42,7 @@ void hal_init() {
 
 	hn_mm_init();
 
-	irq_init();
+	hal_irq_init();
 
 	kdprintf("Initialized HAL\n");
 }

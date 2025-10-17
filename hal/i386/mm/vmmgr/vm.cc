@@ -222,10 +222,8 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 		size_t rounded_size = PGCEIL(size);
 		for (size_t i = 0; i < rounded_size; i += PAGESIZE) {
 			void *cur_ptr = ((char *)rounded_vaddr) + i;
-			if (!(flags & MMAP_NOSETVPM)) {
-				km_result_t result = kn_mm_insert_vpm(ctxt, cur_ptr);
-				kd_assert(KM_SUCCEEDED(result));
-			}
+			km_result_t result = kn_mm_insert_vpm(ctxt, cur_ptr);
+			kd_assert(KM_SUCCEEDED(result));
 		}
 	}
 
@@ -453,13 +451,13 @@ pgaddr_t hn_tmpmap(pgaddr_t pgpaddr, pgsize_t pg_num, uint16_t mask) {
 alloc_succeeded:
 	for (uint16_t i = 0; i < pg_num; ++i) {
 		arch_pte_t *pte =
-			&hn_kernel_pgt[i + PGROUNDDOWN(((char*)UNPGADDR(vaddr)) - KERNEL_VBASE)];
+			&hn_kernel_pgt[i + PGROUNDDOWN(((char *)UNPGADDR(vaddr)) - KERNEL_VBASE)];
 		pte->address = pgpaddr + i;
 		pte->mask = mask;
 	}
 
 	for (pgsize_t i = 0; i < pg_num; ++i)
-		arch_invlpg(((char*)UNPGADDR(vaddr)) + (i << 12));
+		arch_invlpg(((char *)UNPGADDR(vaddr)) + (i << 12));
 
 	for (uint8_t i = 0; i < PBOS_ARRAYSIZE(_tmpmap_slots); ++i) {
 		if (!_tmpmap_slots[i].addr) {
@@ -514,7 +512,7 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 			hn_vpm_t *vpm;
 			if ((vpm = kn_mm_lookup_vpm(mm_cur_contexts[ps_get_cur_euid()], UNPGADDR(pgdir[i].address), HN_VPM_LEVEL_MAX))) {
 				if (vpm->map_addr) {
-					pgtab = (arch_pte_t*)vpm->map_addr;
+					pgtab = (arch_pte_t *)vpm->map_addr;
 					goto already_mapped;
 				}
 			}

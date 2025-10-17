@@ -6,13 +6,17 @@
 
 PBOS_EXTERN_C_BEGIN
 
+typedef struct _hal_irq_context_t hal_irq_context_t;
+
+extern hal_irq_context_t **hal_irq_contexts;
+
 typedef PBOS_NORETURN void (*hal_isr_t)();
 
-size_t irq_getmax();
-void irq_setisr(hal_isr_t isr, size_t irq);
-hal_isr_t irq_getisr();
+size_t hal_irq_getmax();
+void hal_irq_setisr(hal_isr_t isr, size_t irq);
+hal_isr_t hal_irq_getisr();
 
-void irq_init();
+void hal_irq_init();
 
 PBOS_EXTERN_C_END
 
