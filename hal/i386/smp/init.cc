@@ -11,30 +11,26 @@ void smp_init() {
 	smp_main_eu_init();
 }
 
-void smp_main_eu_init() {
-	arch_cli();
+void hn_calibrate_apic() {
+	uint8_t lapic_intvec = arch_read_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_SPURIOUS_INT_VEC) & 0xff;
 
-	hal_irq_context_t *ctxt = hal_irq_contexts[0];
-
-	if (!(hn_lapic_pbase = mm_pgalloc(MM_PMEM_AVAILABLE)))
-		km_panic("Unable to allocate physical LAPIC page");
-
-	if (!(hn_lapic_vbase = (uint32_t *)mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0)))
-		km_panic("Unable to allocate virtual LAPIC page");
-
-	arch_set_lapic_base(hn_lapic_pbase, ARCH_APIC_BASE_MSR_BSP);
-
-	if (KM_FAILED(mm_mmap(mm_kernel_context, hn_lapic_vbase, hn_lapic_pbase, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_NOCACHE, 0))) {
-		km_panic("Unable to mapping LAPIC page for the main EU");
-	}
+	// Disable LAPIC
+	arch_write_lapic(
+		hn_lapic_vbase,
+		ARCH_LAPIC_REG_SPURIOUS_INT_VEC,
+		lapic_intvec & ~ARCH_LAPIC_SPURIOUS_INT_VEC_REG_ENABLE);
 
 	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_DIVIDE_CONFIG, 0x03);
 
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_LVT_TIMER, (1 << 16) | (0b00 << 17));
+	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_LVT_TIMER, ARCH_LAPIC_LVT_TIMER_REG_MASKED | ARCH_LAPIC_LVT_TIMER_REG_ONESHOT);
 
 	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_INITIAL_COUNT, 0xffffffff);
 
-	arch_enable_apic(hn_lapic_vbase);
+	// Enable LAPIC
+	arch_write_lapic(
+		hn_lapic_vbase,
+		ARCH_LAPIC_REG_SPURIOUS_INT_VEC,
+		lapic_intvec | ARCH_LAPIC_SPURIOUS_INT_VEC_REG_ENABLE);
 
 	// Delay for 1000 microseconds to calibrate the APIC.
 	arch_out8(0x43, 0x30);
@@ -54,6 +50,14 @@ void smp_main_eu_init() {
 
 	uint32_t cur_timer = arch_read_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_CURRENT_COUNT);
 	hn_sched_interval = 0xffffffff - cur_timer;
+}
+
+void smp_main_eu_init() {
+	arch_cli();
+
+	hal_irq_context_t *ctxt = hal_irq_contexts[0];
+
+	hn_calibrate_apic();
 
 	kprintf("Timer interval ticks: %u\n", hn_sched_interval);
 }

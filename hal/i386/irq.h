@@ -50,11 +50,15 @@ PBOS_NORETURN void isr_syscall();
 
 PBOS_NORETURN void isr_stub();
 
+void hn_set_sched_timer();
+
 extern arch_gate_t hn_kidt[256];
 
 extern void *hn_lapic_pbase;
 extern uint32_t *hn_lapic_vbase;
 extern uint32_t hn_sched_interval;
+
+void hn_calibrate_apic();
 
 void hn_setisr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
 

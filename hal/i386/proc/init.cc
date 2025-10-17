@@ -32,13 +32,10 @@ PBOS_NORETURN void kn_enter_sched_halt();
 PBOS_NORETURN void kn_enter_sched(ps_euid_t euid) {
 	arch_loadfs(euid);
 
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_LVT_TIMER, 0x30 | (0 << 16) | (0b01 << 17));
 	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_DIVIDE_CONFIG, 0x03);
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_INITIAL_COUNT, hn_sched_interval);
+	hn_set_sched_timer();
 
 	arch_sti();
-
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
 	kn_enter_sched_halt();
 }

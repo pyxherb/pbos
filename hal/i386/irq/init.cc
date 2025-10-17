@@ -71,19 +71,30 @@ void hal_irq_init() {
 
 	arch_lidt(hn_kidt, 256);
 
-	for (int i = 1; i < 16; ++i)
+	for (int i = 0; i < 16; ++i)
 		arch_mask_irq(i);
-	arch_unmask_irq(0);
 
 	hn_remap_pic(0x20, 0x28);
 	arch_disable_pic();
 
-	if (!arch_has_msr())
-		km_panic("The kernel requires MSR support");
-
+	// Check if the CPU has APIC.
 	if (!arch_has_apic())
 		km_panic("The kernel requires APIC support");
 
+	// Relocate and remap APIC.
+	if (!(hn_lapic_pbase = mm_pgalloc(MM_PMEM_AVAILABLE)))
+		km_panic("Unable to allocate physical LAPIC page");
+
+	if (!(hn_lapic_vbase = (uint32_t *)mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0)))
+		km_panic("Unable to allocate virtual LAPIC page");
+
+	arch_set_lapic_base(hn_lapic_pbase, ARCH_APIC_BASE_MSR_BSP);
+
+	if (KM_FAILED(mm_mmap(mm_kernel_context, hn_lapic_vbase, hn_lapic_pbase, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_NOCACHE, 0))) {
+		km_panic("Unable to mapping LAPIC page for the main EU");
+	}
+
+	// Allocate IRQ contexts.
 	if (!(hal_irq_contexts = (hal_irq_context_t **)mm_kmalloc(ps_eu_num * sizeof(hal_irq_context_t *)))) {
 		km_panic("Unable to allocate interrupt context for all CPUs");
 	}

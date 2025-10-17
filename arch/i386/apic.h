@@ -50,6 +50,12 @@ PBOS_EXTERN_C_BEGIN
 #define ARCH_LAPIC_REG_CURRENT_COUNT 0x390
 #define ARCH_LAPIC_REG_DIVIDE_CONFIG 0x3e0
 
+#define ARCH_LAPIC_SPURIOUS_INT_VEC_REG_ENABLE 0x100
+
+#define ARCH_LAPIC_LVT_TIMER_REG_MASKED (1 << 16)
+#define ARCH_LAPIC_LVT_TIMER_REG_ONESHOT (0b00 << 17)
+#define ARCH_LAPIC_LVT_TIMER_REG_PERIODIC (0b01 << 17)
+
 PBOS_FORCEINLINE static bool arch_has_apic() {
 	uint32_t a, b, c, d;
 	arch_cpuid(1, &a, &b, &c, &d);
@@ -92,20 +98,6 @@ PBOS_FORCEINLINE void arch_write_lapic(void *base, uint32_t reg, uint32_t value)
 	uint32_t volatile *lapic = (uint32_t volatile *)base;
 
 	*(lapic + (reg >> 2)) = value;
-}
-
-PBOS_FORCEINLINE void arch_enable_apic_with_intvec(void *base, uint8_t intvec) {
-	arch_write_lapic(
-		base,
-		ARCH_LAPIC_REG_SPURIOUS_INT_VEC,
-		intvec | 0x100);
-}
-
-PBOS_FORCEINLINE void arch_enable_apic(void *base) {
-	arch_write_lapic(
-		base,
-		ARCH_LAPIC_REG_SPURIOUS_INT_VEC,
-		arch_read_lapic(base, ARCH_LAPIC_REG_SPURIOUS_INT_VEC) | 0x100);
 }
 
 PBOS_FORCEINLINE void arch_set_lapic_timer_divisor(void *base, uint32_t divisor) {

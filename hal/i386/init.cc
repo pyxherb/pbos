@@ -42,6 +42,9 @@ void hal_init() {
 
 	hn_mm_init();
 
+	if (!arch_has_msr())
+		km_panic("The kernel requires MSR support");
+
 	hal_irq_init();
 
 	kdprintf("Initialized HAL\n");
