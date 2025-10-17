@@ -27,7 +27,15 @@ PBOS_FORCEINLINE void kima_vpgdesc_free(kima_vpgdesc_t* p) {
 	p->rb_value = NULL;
 }
 
-kima_vpgdesc_t *kima_lookup_vpgdesc(void *ptr);
+PBOS_FORCEINLINE kima_vpgdesc_t* kima_lookup_vpgdesc(void* ptr) {
+	kfxx::rbtree_t<void*>::node_t* node = kima_vpgdesc_query_tree.find(ptr);
+
+	if (!node)
+		return NULL;
+
+	return static_cast<kima_vpgdesc_t*>(node);
+}
+
 kima_vpgdesc_t *kima_alloc_vpgdesc(void *ptr);
 void kima_free_vpgdesc(kima_vpgdesc_t *vpgdesc);
 

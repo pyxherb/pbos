@@ -4,15 +4,6 @@
 kima_vpgdesc_poolpg_t* kima_vpgdesc_poolpg_list = NULL;
 kfxx::rbtree_t<void*> kima_vpgdesc_query_tree, kima_vpgdesc_free_tree;
 
-kima_vpgdesc_t* kima_lookup_vpgdesc(void* ptr) {
-	kfxx::rbtree_t<void*>::node_t* node = kima_vpgdesc_query_tree.find(ptr);
-
-	if (!node)
-		return NULL;
-
-	return static_cast<kima_vpgdesc_t*>(node);
-}
-
 void kima_free_vpgdesc(kima_vpgdesc_t* vpgdesc) {
 	kima_vpgdesc_poolpg_t* poolpg = (kima_vpgdesc_poolpg_t*)PGFLOOR(vpgdesc);
 
@@ -52,14 +43,12 @@ kima_vpgdesc_t* kima_alloc_vpgdesc(void* ptr) {
 
 	pg->header.used_num = 1;
 
-	memset(&pg->slots[0], 0, sizeof(pg->slots[0]));
 	pg->slots[0].rb_value = ptr;
 	pg->slots[0].ref_count = 0;
 
 	kima_vpgdesc_query_tree.insert(&pg->slots[0]);
 
 	for (size_t i = 1; i < PBOS_ARRAYSIZE(pg->slots); ++i) {
-		memset(&pg->slots[i], 0, sizeof(pg->slots[i]));
 		pg->slots[i].rb_value = &pg->slots[i];
 
 		kima_vpgdesc_free_tree.insert(&pg->slots[i]);

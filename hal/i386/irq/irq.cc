@@ -8,7 +8,7 @@ PBOS_EXTERN_C_BEGIN
 hal_irq_context_t **hal_irq_contexts;
 
 void hn_set_sched_timer() {
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_LVT_TIMER, 0x30 & ~ARCH_LAPIC_LVT_TIMER_REG_MASKED | ARCH_LAPIC_LVT_TIMER_REG_PERIODIC);
+	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_LVT_TIMER, 0x30 | ARCH_LAPIC_LVT_TIMER_REG_PERIODIC);
 	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_INITIAL_COUNT, hn_sched_interval);
 }
 
@@ -24,8 +24,6 @@ PBOS_NORETURN void isr_timer_impl(
 	const uint32_t cs,
 	const uint32_t eflags,
 	const uint32_t esp) {
-	arch_cli();
-
 	ps_euid_t cur_euid = ps_get_cur_euid();
 	ps_pcb_t *cur_proc = ps_get_cur_proc();
 	ps_tcb_t *cur_thread = ps_get_cur_thread();
@@ -55,10 +53,9 @@ PBOS_NORETURN void isr_timer_impl(
 
 	hn_set_sched_timer();
 
-	arch_sti();
-
 	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
+	next_thread->context->eflags |= (1 << 9);
 	kn_switch_to_user_thread(next_thread);
 }
 

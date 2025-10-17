@@ -11,4 +11,8 @@ bool hal_spinlock_trylock(hal_spinlock_t *lock) {
 	return arch_cmpxchg8((uint8_t*)lock, 0, 1) == 0;
 }
 
+void hal_spinlock_unlock(hal_spinlock_t *lock) {
+	lock = HAL_SPINLOCK_UNLOCKED;
+}
+
 PBOS_EXTERN_C_END

@@ -2,10 +2,13 @@
 #include <hal/i386/display/vga.h>
 #include <hal/i386/logger.h>
 #include <string.h>
+#include <pbos/hal/spinlock.h>
 
 PBOS_EXTERN_C_BEGIN
 
 klog_logger_t hn_active_logger;
+
+hal_spinlock_t hn_logger_spinlock = HAL_SPINLOCK_UNLOCKED;
 
 static size_t _vga_logger(uint16_t mode, const void *arg, va_list vargs);
 
@@ -26,7 +29,9 @@ klog_logger_t klog_getdefault() {
 }
 
 void kvprintf(const char *str, va_list args) {
+	hal_spinlock_lock(&hn_logger_spinlock);
 	hn_active_logger(KLOG_MODE_PRINTFMT, str, args);
+	hal_spinlock_unlock(&hn_logger_spinlock);
 }
 
 void kprintf(const char *str, ...) {

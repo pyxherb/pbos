@@ -27,8 +27,24 @@ PBOS_FORCEINLINE void kima_ublk_free(kima_ublk_t* p) {
 	p->rb_value = NULL;
 }
 
-kima_ublk_t *kima_lookup_ublk(void *ptr);
-kima_ublk_t *kima_lookup_nearest_ublk(void *ptr);
+PBOS_FORCEINLINE kima_ublk_t* kima_lookup_ublk(void* ptr) {
+	kfxx::rbtree_t<void*>::node_t* node = kima_ublk_query_tree.find(ptr);
+
+	if (!node)
+		return nullptr;
+
+	return static_cast<kima_ublk_t*>(node);
+}
+
+PBOS_FORCEINLINE kima_ublk_t* kima_lookup_nearest_ublk(void* ptr) {
+	kfxx::rbtree_t<void*>::node_t* node = kima_ublk_query_tree.find_max_lteq(ptr);
+
+	if (!node)
+		return NULL;
+
+	return static_cast<kima_ublk_t*>(node);
+}
+
 kima_ublk_t *kima_alloc_ublk(void *ptr, size_t size);
 void kima_free_ublk(kima_ublk_t *ublk);
 

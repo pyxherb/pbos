@@ -50,11 +50,21 @@ PBOS_EXTERN_C_BEGIN
 #define ARCH_LAPIC_REG_CURRENT_COUNT 0x390
 #define ARCH_LAPIC_REG_DIVIDE_CONFIG 0x3e0
 
+#define ARCH_LAPIC_DIVIDE_CONFIG_2 0b0000
+#define ARCH_LAPIC_DIVIDE_CONFIG_4 0b0001
+#define ARCH_LAPIC_DIVIDE_CONFIG_8 0b0010
+#define ARCH_LAPIC_DIVIDE_CONFIG_16 0b0011
+#define ARCH_LAPIC_DIVIDE_CONFIG_32 0b1000
+#define ARCH_LAPIC_DIVIDE_CONFIG_64 0b1001
+#define ARCH_LAPIC_DIVIDE_CONFIG_128 0b1010
+#define ARCH_LAPIC_DIVIDE_CONFIG_1 0b1011
+
 #define ARCH_LAPIC_SPURIOUS_INT_VEC_REG_ENABLE 0x100
 
 #define ARCH_LAPIC_LVT_TIMER_REG_MASKED (1 << 16)
 #define ARCH_LAPIC_LVT_TIMER_REG_ONESHOT (0b00 << 17)
 #define ARCH_LAPIC_LVT_TIMER_REG_PERIODIC (0b01 << 17)
+#define ARCH_LAPIC_LVT_TIMER_REG_TSC_DEADLINE (0b10 << 17)
 
 PBOS_FORCEINLINE static bool arch_has_apic() {
 	uint32_t a, b, c, d;
@@ -64,7 +74,7 @@ PBOS_FORCEINLINE static bool arch_has_apic() {
 
 PBOS_FORCEINLINE void arch_set_lapic_base(void *base, uint32_t flags) {
 	uint32_t edx = 0;
-	uint32_t eax = ((((uintptr_t)base) & 0xfffff000) | ARCH_APIC_BASE_MSR_ENABLE | flags);
+	uint32_t eax = ((((uintptr_t)base) & 0xfffff000) | flags);
 
 	arch_wrmsr(ARCH_APIC_BASE_MSR, eax, edx);
 }

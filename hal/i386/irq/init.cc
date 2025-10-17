@@ -88,7 +88,7 @@ void hal_irq_init() {
 	if (!(hn_lapic_vbase = (uint32_t *)mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0)))
 		km_panic("Unable to allocate virtual LAPIC page");
 
-	arch_set_lapic_base(hn_lapic_pbase, ARCH_APIC_BASE_MSR_BSP);
+	arch_set_lapic_base(hn_lapic_pbase, ARCH_APIC_BASE_MSR_BSP | ARCH_APIC_BASE_MSR_ENABLE);
 
 	if (KM_FAILED(mm_mmap(mm_kernel_context, hn_lapic_vbase, hn_lapic_pbase, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_NOCACHE, 0))) {
 		km_panic("Unable to mapping LAPIC page for the main EU");

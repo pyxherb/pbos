@@ -8,13 +8,9 @@ PBOS_EXTERN_C_BEGIN
 
 #define arch_iret() __asm__ __volatile__("iret")
 
-static inline void arch_cli() {
-	__asm__ __volatile__("cli");
-}
+#define arch_cli() __asm__ __volatile__("cli")
 
-static inline void arch_sti() {
-	__asm__ __volatile__("sti");
-}
+#define arch_sti() __asm__ __volatile__("sti")
 
 static inline void arch_mask_nmi() {
 	arch_out8(0x70, arch_in8(0x70) | 0x80);

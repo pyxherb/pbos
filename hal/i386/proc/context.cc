@@ -19,7 +19,7 @@ typedef struct _kn_ctxtsw_tmp_t {
 
 #define hn_ctxtsw_tmp_area ((kn_ctxtsw_tmp_t *)KCTXTSWTMP_VBASE)
 
-hal_spinlock_t hn_load_context_spinlock = HAL_SPINLOCK_DEFAULT_VALUE;
+hal_spinlock_t hn_load_context_spinlock = HAL_SPINLOCK_UNLOCKED;
 
 PBOS_NORETURN void hn_load_user_context();
 

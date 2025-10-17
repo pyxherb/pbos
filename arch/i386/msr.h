@@ -3,8 +3,13 @@
 
 #include "cpuid.h"
 
-#define arch_rdmsr(msr, l, h) asm volatile("rdmsr" : "=a"(*(l)), "=d"(*(h)) : "c"(msr))
-#define arch_wrmsr(msr, l, h) asm volatile("wrmsr" :: "a"(l), "d"(h), "c"(msr))
+PBOS_FORCEINLINE void arch_rdmsr(uint32_t msr, uint32_t *l, uint32_t *h) {
+	asm volatile("rdmsr" : "=a"(*l), "=d"(*h) : "c"(msr));
+}
+
+PBOS_FORCEINLINE void arch_wrmsr(uint32_t msr, uint32_t l, uint32_t h) {
+	asm volatile("wrmsr" : : "a"(l), "d"(h), "c"(msr));
+}
 
 PBOS_FORCEINLINE static bool arch_has_msr() {
 	uint32_t a, b, c, d;

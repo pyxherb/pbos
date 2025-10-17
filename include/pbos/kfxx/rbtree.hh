@@ -160,8 +160,9 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE bool _insert(node_t **slot, node_t *parent, node_t *node) {
-			kd_assert(!node->l);
-			kd_assert(!node->r);
+			node->l = nullptr;
+			node->r = nullptr;
+			node->p = nullptr;
 
 			if (!_root) {
 				_root = node;
