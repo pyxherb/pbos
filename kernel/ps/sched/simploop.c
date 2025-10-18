@@ -1,4 +1,4 @@
-#include <pbos/kn/km/proc.h>
+#include <pbos/km/proc.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -28,27 +28,20 @@ ps_tcb_t *ps_simploop_sched_next_thread(ps_sched_t *sched, ps_euid_t cur_euid, p
 
 	if (!cur_thread) {
 		ps_pcb_t *next_proc;
-		next_proc = PBOS_CONTAINER_OF(ps_pcb_t, node_header, kf_rbtree_begin(&ps_global_proc_set));
-		next_thread = PBOS_CONTAINER_OF(ps_tcb_t, node_header, kf_rbtree_begin(&next_proc->thread_set));
+		next_proc = ps_global_proc_set_begin();
+		next_thread = ps_proc_thread_set_begin(next_proc);
 		ps_cur_proc_per_eu[cur_euid] = next_proc;
-
-		next_thread = PBOS_CONTAINER_OF(ps_tcb_t, node_header, kf_rbtree_begin(&next_proc->thread_set));
 	} else {
-		kf_rbtree_node_t *next_thread_node = kf_rbtree_next(&cur_thread->node_header);
+		next_thread = ps_proc_thread_set_next(cur_proc, cur_thread);
 
-		if (!next_thread_node) {
-			kf_rbtree_node_t *next_proc_node = kf_rbtree_next(&cur_proc->node_header);
-			ps_pcb_t *next_proc;
-			if (!next_proc_node) {
-				next_proc = PBOS_CONTAINER_OF(ps_pcb_t, node_header, kf_rbtree_begin(&ps_global_proc_set));
-			} else {
-				next_proc = PBOS_CONTAINER_OF(ps_pcb_t, node_header, next_proc_node);
+		if (!next_thread) {
+			ps_pcb_t *next_proc = ps_global_proc_set_next(cur_proc);
+			if (!next_proc) {
+				next_proc = ps_global_proc_set_begin();
 			}
 
 			ps_cur_proc_per_eu[cur_euid] = next_proc;
-			next_thread = PBOS_CONTAINER_OF(ps_tcb_t, node_header, kf_rbtree_begin(&next_proc->thread_set));
-		} else {
-			next_thread = PBOS_CONTAINER_OF(ps_tcb_t, node_header, next_thread_node);
+			next_thread = ps_proc_thread_set_begin(next_proc);
 		}
 	}
 

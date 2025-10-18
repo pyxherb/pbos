@@ -54,7 +54,7 @@ km_result_t initcar_destructor() {
 
 km_result_t initcar_mount(fs_file_t *parent, fs_file_t *file) {
 	if (parent == initcar_dir) {
-		initcar_dir_entry_t *dir_entry = (initcar_dir_entry_t*)mm_kmalloc(sizeof(initcar_dir_entry_t));
+		initcar_dir_entry_t *dir_entry = (initcar_dir_entry_t*)mm_kmalloc(sizeof(initcar_dir_entry_t), alignof(initcar_dir_entry_t));
 		if (!dir_entry)
 			return KM_MAKEERROR(KM_RESULT_NO_MEM);
 		memset(dir_entry, 0, sizeof(*dir_entry));

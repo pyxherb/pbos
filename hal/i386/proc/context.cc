@@ -1,5 +1,5 @@
 #include <arch/i386/reg.h>
-#include <hal/i386/proc.h>
+#include <hal/i386/proc.hh>
 #include <pbos/hal/spinlock.h>
 #include <pbos/km/logger.h>
 

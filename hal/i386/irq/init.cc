@@ -95,12 +95,12 @@ void hal_irq_init() {
 	}
 
 	// Allocate IRQ contexts.
-	if (!(hal_irq_contexts = (hal_irq_context_t **)mm_kmalloc(ps_eu_num * sizeof(hal_irq_context_t *)))) {
+	if (!(hal_irq_contexts = (hal_irq_context_t **)mm_kmalloc(ps_eu_num * sizeof(hal_irq_context_t *), alignof(hal_irq_context_t *)))) {
 		km_panic("Unable to allocate interrupt context for all CPUs");
 	}
 
 	for (uint32_t i = 0; i < ps_eu_num; ++i) {
-		if (!(hal_irq_contexts[i] = (hal_irq_context_t *)mm_kmalloc(ps_eu_num * sizeof(hal_irq_context_t)))) {
+		if (!(hal_irq_contexts[i] = (hal_irq_context_t *)mm_kmalloc(ps_eu_num * sizeof(hal_irq_context_t), alignof(hal_irq_context_t)))) {
 			km_panic("Unable to allocate interrupt context for CPU %u", i);
 		}
 	}

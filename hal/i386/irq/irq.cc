@@ -1,5 +1,5 @@
 #include <hal/i386/irq.h>
-#include <hal/i386/proc.h>
+#include <hal/i386/proc.hh>
 #include <hal/i386/syscall.h>
 #include <pbos/km/logger.h>
 
@@ -55,7 +55,6 @@ PBOS_NORETURN void isr_timer_impl(
 
 	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
-	next_thread->context->eflags |= (1 << 9);
 	kn_switch_to_user_thread(next_thread);
 }
 

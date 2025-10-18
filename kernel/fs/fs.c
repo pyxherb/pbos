@@ -18,7 +18,7 @@ fs_filesys_t *fs_register_filesys(
 	const char *name,
 	uuid_t *uuid,
 	fs_fsops_t *ops) {
-	fs_filesys_t *fs = mm_kmalloc(sizeof(fs_filesys_t));
+	fs_filesys_t *fs = mm_kmalloc(sizeof(fs_filesys_t), alignof(fs_filesys_t));
 	if (!fs)
 		return NULL;
 

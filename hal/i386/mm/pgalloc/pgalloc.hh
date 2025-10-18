@@ -5,9 +5,9 @@
 #include <arch/i386/misc.h>
 #include <arch/i386/mlayout.h>
 #include <arch/i386/paging.h>
-#include <pbos/kn/km/mm.hh>
-#include <pbos/kfxx/rbtree.hh>
 #include <stdint.h>
+#include <pbos/kfxx/rbtree.hh>
+#include <pbos/kn/km/mm.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -43,12 +43,12 @@ enum {
 /// @brief Memory Allocation Descriptor (MAD), manages a single page.
 ///
 typedef struct _hn_mad_t : public kfxx::rbtree_t<pgaddr_t>::node_t {
+	uint32_t ref_count;
+
+	uint32_t mapped_pgtab_addr : 20;
+
 	uint8_t flags : 8;
 	uint8_t type : 8;
-	uint32_t ref_count;
-	union {
-		uint32_t mapped_pgtab_addr : 20;
-	} exdata;
 } hn_mad_t;
 
 #define _mm_isvalidmad(mad) (((hn_mad_t *)mad)->flags & MAD_P)
@@ -89,6 +89,7 @@ typedef struct _hn_pmad_t {
 	} attribs;
 	// MAD pages were all preallocated at initializing stage.
 	kfxx::rbtree_t<pgaddr_t> mad_query_tree;
+	kfxx::rbtree_t<pgaddr_t> mad_free_tree;
 } hn_pmad_t;
 
 extern hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1];

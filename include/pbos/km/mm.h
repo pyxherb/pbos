@@ -4,6 +4,9 @@
 #include <pbos/common.h>
 #include <pbos/generated/km.h>
 #include "result.h"
+#ifndef __cplusplus
+	#include <stdalign.h>
+#endif
 
 PBOS_EXTERN_C_BEGIN
 
@@ -41,6 +44,18 @@ PBOS_NODISCARD void *mm_pgalloc(uint8_t memtype);
 ///
 void mm_pgfree(void *ptr);
 
+typedef uint32_t mm_iommap_flags_t;
+
+km_result_t mm_iommap(
+	mm_context_t *context,
+	void *vaddr,
+	void *paddr,
+	size_t size,
+	mm_pgaccess_t access,
+	mm_iommap_flags_t flags);
+
+void mm_uniommap(mm_context_t *context, void *vaddr, size_t size, mm_iommap_flags_t flags);
+
 ///
 /// @brief Increase reference counter of a physical page.
 ///
@@ -54,7 +69,7 @@ void mm_refpg(void *ptr);
 /// @param size Size of the memory bloc to be allocated.
 /// @return Virtual address to the memory block, NULL if failed.
 ///
-PBOS_NODISCARD void *mm_kmalloc(size_t size);
+PBOS_NODISCARD void *mm_kmalloc(size_t size, size_t alignment);
 
 ///
 /// @brief Free a memory block from the default pool.

@@ -1,7 +1,7 @@
 #include <arch/i386/kargs.h>
 #include <hal/i386/initcar.h>
 #include <pbos/km/panic.h>
-#include <pbos/kn/km/exec.h>
+#include <pbos/kn/km/exec.hh>
 #include <string.h>
 
 PBOS_EXTERN_C_BEGIN

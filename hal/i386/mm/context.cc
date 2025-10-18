@@ -1,6 +1,6 @@
 #include <pbos/kfxx/scope_guard.hh>
 #include "../mm.hh"
-#include "../proc.h"
+#include "../proc.hh"
 
 PBOS_EXTERN_C_BEGIN
 

@@ -8,7 +8,7 @@
 #include "irq.h"
 #include "logger.h"
 #include "misc.h"
-#include <pbos/kn/km/proc.h>
+#include <pbos/kn/km/proc.hh>
 
 PBOS_EXTERN_C_BEGIN
 

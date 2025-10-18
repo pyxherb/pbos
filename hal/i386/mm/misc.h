@@ -4,7 +4,7 @@
 #include <pbos/km/mm.h>
 #include <arch/i386/seg.h>
 #include <arch/i386/tss.h>
-#include "pgalloc/pgalloc.h"
+#include "pgalloc/pgalloc.hh"
 
 PBOS_EXTERN_C_BEGIN
 

@@ -69,19 +69,18 @@ bool klog_iscapable(uint16_t cap);
 
 PBOS_PACKED_BEGIN
 
-	typedef struct PBOS_PACKED _klog_color_exarg_t {
+typedef struct PBOS_PACKED _klog_color_exarg_t {
 	uint8_t fg;
 	uint8_t bg;
 } klog_color_exarg_t;
 
 PBOS_PACKED_END
 
-	/// @brief Call an extra function with current kernel logger.
-	///
-	/// @param id Extra function ID.
-	/// @param ... Arguments for the extra function.
-	void
-	klog_excall(uint32_t id, ...);
+/// @brief Call an extra function with current kernel logger.
+///
+/// @param id Extra function ID.
+/// @param ... Arguments for the extra function.
+void klog_excall(uint32_t id, ...);
 
 void kvprintf(const char *str, va_list args) PBOS_FMTARG(printf, 1, 0);
 void kprintf(const char *str, ...) PBOS_FMTARG(printf, 1, 2);

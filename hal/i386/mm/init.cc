@@ -39,7 +39,7 @@ void hn_mm_init() {
 	kn_mm_init_kima();
 
 	ps_eu_num = 1;
-	if (!(mm_cur_contexts = (mm_context_t **)mm_kmalloc(ps_eu_num * sizeof(mm_context_t *)))) {
+	if (!(mm_cur_contexts = (mm_context_t **)mm_kmalloc(ps_eu_num * sizeof(mm_context_t *), alignof(mm_context_t *)))) {
 		km_panic("Unable to allocate memory context for all CPUs");
 	}
 
@@ -54,18 +54,18 @@ void hn_mm_init() {
 
 static void hn_init_tss() {
 	hn_tss_storage_num = 1;
-	hn_tss_storage_ptr = (arch_tss_t *)mm_kmalloc(hn_tss_storage_num * sizeof(arch_tss_t));
+	hn_tss_storage_ptr = (arch_tss_t *)mm_kmalloc(hn_tss_storage_num * sizeof(arch_tss_t), alignof(arch_tss_t));
 	if (!hn_tss_storage_ptr) {
 		km_panic("Unable to allocate memory for TSS storage for processors");
 	}
 	memset(hn_tss_storage_ptr, 0, hn_tss_storage_num * sizeof(arch_tss_t));
 
-	hn_tss_stacks = (char **)mm_kmalloc(hn_tss_storage_num * sizeof(char *));
+	hn_tss_stacks = (char **)mm_kmalloc(hn_tss_storage_num * sizeof(char *), alignof(char *));
 	if (!hn_tss_stacks) {
 		km_panic("Unable to allocate memory for TSS storage for processors");
 	}
 	for (size_t i = 0; i < hn_tss_storage_num; ++i) {
-		if (!(hn_tss_stacks[i] = (char *)mm_kmalloc(1024 * 1024 * 2))) {
+		if (!(hn_tss_stacks[i] = (char *)mm_kmalloc(1024 * 1024 * 2, PAGESIZE))) {
 			km_panic("Unable to allocate memory for TSS stacks");
 		}
 
@@ -167,7 +167,7 @@ static void hn_mm_init_areas() {
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = init_pgtab_paddr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].exdata.mapped_pgtab_addr = (pgaddr_t)NULL;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].mapped_pgtab_addr = (pgaddr_t)NULL;
 				++hn_global_mad_pool_list->header.used_num;
 				init_pgtab_pmad->mad_query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				++cur_madpool_slot_index;
@@ -229,7 +229,7 @@ static void hn_mm_init_areas() {
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = j;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_FREE;
 				++hn_global_mad_pool_list->header.used_num;
-				i->mad_query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
+				i->mad_free_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 
 				++cur_madpool_slot_index;
 			}
@@ -281,7 +281,7 @@ static void hn_mm_init_areas() {
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = j;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_FREE;
 				++hn_global_mad_pool_list->header.used_num;
-				i->mad_query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
+				i->mad_free_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 
 				++cur_madpool_slot_index;
 			}
@@ -292,7 +292,7 @@ static void hn_mm_init_areas() {
 		if (mm_kernel_context->pdt[i].mask & PDE_P) {
 			hn_mad_t *mad = hn_get_mad(mm_kernel_context->pdt[i].address);
 
-			mad->exdata.mapped_pgtab_addr = (pgaddr_t)NULL;
+			mad->mapped_pgtab_addr = (pgaddr_t)NULL;
 		}
 	}
 

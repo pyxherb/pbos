@@ -1,15 +1,15 @@
-#include <hal/i386/proc.h>
+#include <hal/i386/proc.hh>
 
 void kn_thread_destructor(om_object_t *obj) {
 	hn_thread_cleanup(PBOS_CONTAINER_OF(ps_tcb_t, object_header, obj));
 }
 
-ps_tcb_t *kn_alloc_tcb(ps_pcb_t *pcb) {
-	ps_tcb_t *t = (ps_tcb_t *)mm_kmalloc(sizeof(ps_tcb_t));
+ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb) {
+	ps_tcb_t *t = (ps_tcb_t *)mm_kmalloc(sizeof(ps_tcb_t), alignof(ps_tcb_t));
 	if (!t)
 		return NULL;
 	memset(t, 0, sizeof(ps_tcb_t));
-	if (!(t->context = (ps_user_context_t *)mm_kmalloc(sizeof(ps_user_context_t)))) {
+	if (!(t->context = (ps_user_context_t *)mm_kmalloc(sizeof(ps_user_context_t), alignof(ps_user_context_t)))) {
 		mm_kfree(t);
 		return NULL;
 	}
@@ -28,7 +28,7 @@ thread_id_t ps_create_thread(
 	if (!stacksize)
 		return -1;
 
-	ps_tcb_t *t = kn_alloc_tcb(pcb);
+	ps_tcb_t *t = ps_alloc_tcb(pcb);
 	// ps_pcb_t *p = ps_getpcb(pid);
 
 	if ((!t) || (!pcb))
@@ -40,12 +40,12 @@ thread_id_t ps_create_thread(
 		return -1;
 	}
 
-	kf_rbtree_insert(&pcb->thread_set, &t->node_header);
+	pcb->thread_set.insert(t);
 }
 
 void hn_thread_cleanup(ps_tcb_t *thread) {
 	ps_cur_sched->drop_thread(ps_cur_sched, thread);
-	kf_rbtree_remove(&thread->parent->thread_set, &thread->node_header);
+	thread->parent->thread_set.remove(thread);
 	while (thread->stacksize) {
 		mm_pgfree(mm_getmap(thread->parent->mm_context, thread->stack, NULL));
 		((char *&)thread->stack) += PAGESIZE;
@@ -53,7 +53,7 @@ void hn_thread_cleanup(ps_tcb_t *thread) {
 	}
 }
 
-void kn_thread_setentry(ps_tcb_t *tcb, void *ptr) {
+void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr) {
 	tcb->context->eip = ptr;
 }
 
@@ -64,7 +64,7 @@ void kn_thread_setstack(ps_tcb_t *tcb, void *ptr, size_t size) {
 	tcb->context->ebp = (uint32_t)sp;
 }
 
-km_result_t kn_thread_allocstack(ps_tcb_t *tcb, size_t size) {
+km_result_t ps_thread_allocstack(ps_tcb_t *tcb, size_t size) {
 	km_result_t result;
 	ps_pcb_t *pcb = tcb->parent;
 

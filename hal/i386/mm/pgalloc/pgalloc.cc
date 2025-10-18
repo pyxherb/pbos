@@ -1,4 +1,4 @@
-#include "pgalloc.h"
+#include "pgalloc.hh"
 #include <hal/i386/mm.h>
 #include <math.h>
 #include <pbos/km/logger.h>
@@ -35,14 +35,15 @@ hn_mad_t *hn_get_mad(pgaddr_t pgaddr) {
 	if (!pmad)
 		km_panic("No PMAD corresponds to physical address %p", UNPGADDR(pgaddr));
 
-	kfxx::rbtree_t<pgaddr_t>::node_t *mad_node = pmad->mad_query_tree.find(pgaddr);
-	if (!mad_node) {
-		km_panic("Physical memory block not found: %p", UNPGADDR(pgaddr));
+	kfxx::rbtree_t<pgaddr_t>::node_t *mad;
+	if ((mad = pmad->mad_query_tree.find(pgaddr))) {
+		return static_cast<hn_mad_t *>(mad);
+	}
+	if ((mad = pmad->mad_free_tree.find(pgaddr))) {
+		return static_cast<hn_mad_t *>(mad);
 	}
 
-	hn_mad_t *mad = static_cast<hn_mad_t *>(mad_node);
-
-	return mad;
+	km_panic("Physical memory block not found: %p", UNPGADDR(pgaddr));
 }
 
 ///
@@ -52,22 +53,29 @@ hn_mad_t *hn_get_mad(pgaddr_t pgaddr) {
 /// @param type Allocation type.
 ///
 void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type) {
+	hn_pmad_t *area = hn_pmad_get(pgaddr);
 	hn_mad_t *mad = hn_get_mad(pgaddr);
 
 	mad->flags = MAD_P;
 	mad->type = type;
 	++mad->ref_count;
 
+	area->mad_free_tree.remove(mad);
+	area->mad_query_tree.insert(mad);
+
 	return;
 }
 
 void hn_set_pgblk_free(pgaddr_t addr) {
+	hn_pmad_t *area = hn_pmad_get(addr);
 	hn_mad_t *mad = hn_get_mad(addr);
 
 	kd_assert(mad->ref_count);
 	if (!(--mad->ref_count)) {
 		mad->flags = MAD_P;
 		mad->type = MAD_ALLOC_FREE;
+		area->mad_query_tree.remove(mad);
+		area->mad_free_tree.insert(mad);
 	}
 	return;
 }
@@ -75,7 +83,7 @@ void hn_set_pgblk_free(pgaddr_t addr) {
 void *kn_lookup_pgdir_mapped_addr(void *addr) {
 	hn_mad_t *mad = hn_get_mad(PGROUNDDOWN(addr));
 
-	return UNPGADDR(mad->exdata.mapped_pgtab_addr);
+	return UNPGADDR(mad->mapped_pgtab_addr);
 }
 
 PBOS_EXTERN_C_END

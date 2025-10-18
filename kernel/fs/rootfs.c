@@ -90,7 +90,7 @@ km_result_t kn_rootfs_create_dir(fs_file_t *parent, const char *name, size_t nam
 km_result_t kn_rootfs_open(fs_file_t *file, fs_fcb_t **fcb_out) {
 	km_result_t result;
 
-	fs_fcb_t *fcb = mm_kmalloc(sizeof(fs_fcb_t));
+	fs_fcb_t *fcb = mm_kmalloc(sizeof(fs_fcb_t), alignof(fs_fcb_t));
 	if (!fcb)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	memset(fcb, 0, sizeof(fs_fcb_t));
@@ -124,7 +124,7 @@ km_result_t kn_rootfs_size(fs_fcb_t *fcb, size_t *size_out) {
 }
 
 km_result_t kn_rootfs_mount(fs_file_t *parent, fs_file_t *file) {
-	fs_rootfs_dir_entry_t *dir_entry = mm_kmalloc(sizeof(fs_rootfs_dir_entry_t));
+	fs_rootfs_dir_entry_t *dir_entry = mm_kmalloc(sizeof(fs_rootfs_dir_entry_t), alignof(fs_rootfs_dir_entry_t));
 	if (!dir_entry)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	memset(dir_entry, 0, sizeof(*dir_entry));

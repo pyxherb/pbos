@@ -15,12 +15,12 @@ km_result_t kn_alloc_file(
 		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
 
 	// Allocate the file object.
-	fs_file_t *file = mm_kmalloc(sizeof(fs_file_t) + exdata_size);
+	fs_file_t *file = mm_kmalloc(sizeof(fs_file_t) + exdata_size, alignof(fs_file_t));
 	if (!file)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	memset(file, 0, sizeof(fs_file_t));
 
-	if (!(file->filename = mm_kmalloc(filename_len))) {
+	if (!(file->filename = mm_kmalloc(filename_len, sizeof(char)))) {
 		mm_kfree(file);
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	}

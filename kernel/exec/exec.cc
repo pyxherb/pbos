@@ -1,5 +1,5 @@
-#include <hal/i386/proc.h>
-#include <pbos/kn/km/exec.h>
+#include <hal/i386/proc.hh>
+#include <pbos/kn/km/exec.hh>
 #include <string.h>
 
 PBOS_EXTERN_C_BEGIN
@@ -8,7 +8,7 @@ typedef struct _kn_binldr_reg_t {
 	kf_rbtree_node_t tree_header;
 	uuid_t uuid;
 	km_binldr_t binldr;
-} kn_binldr_reg_t;
+} kn_binldr_registry_t;
 
 kf_rbtree_t kn_registered_binldrs;
 
@@ -19,12 +19,12 @@ proc_id_t kn_alloc_proc_id() {
 }
 
 km_result_t km_register_binldr(km_binldr_t *binldr) {
-	kn_binldr_reg_t *reg = (kn_binldr_reg_t*)mm_kmalloc(sizeof(kn_binldr_reg_t));
+	kn_binldr_registry_t *reg = (kn_binldr_registry_t*)mm_kmalloc(sizeof(kn_binldr_registry_t), alignof(kn_binldr_registry_t));
 	if (!reg)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
 	// Initialize the registry
-	memset(reg, 0, sizeof(kn_binldr_reg_t));
+	memset(reg, 0, sizeof(kn_binldr_registry_t));
 	memcpy(&(reg->binldr), binldr, sizeof(km_binldr_t));
 
 	kf_rbtree_insert(&kn_registered_binldrs, &reg->tree_header);
@@ -43,17 +43,17 @@ km_result_t km_exec(
 	if(new_proc_id < 0)
 		return KM_MAKEERROR(KM_RESULT_NO_SLOT);
 
-	ps_pcb_t *pcb = kn_alloc_pcb();
+	ps_pcb_t *pcb = ps_alloc_pcb();
 	if (!pcb) {
 		result = KM_MAKEERROR(KM_RESULT_NO_MEM);
 		goto failed;
 	}
 
 	kf_rbtree_foreach(i, &kn_registered_binldrs) {
-		kn_binldr_reg_t *binldr = PBOS_CONTAINER_OF(kn_binldr_reg_t, tree_header, i);
+		kn_binldr_registry_t *binldr = PBOS_CONTAINER_OF(kn_binldr_registry_t, tree_header, i);
 
 		if (KM_SUCCEEDED(result = binldr->binldr.load_exec(pcb, file_fp))) {
-			pcb->proc_id = kn_alloc_proc_id();
+			pcb->rb_value = kn_alloc_proc_id();
 			ps_create_proc(pcb, parent);
 			return KM_RESULT_OK;
 		}
@@ -73,8 +73,8 @@ failed:
 }
 
 bool kn_binldr_reg_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	const kn_binldr_reg_t *_x = (const kn_binldr_reg_t *)x,
-						  *_y = (const kn_binldr_reg_t *)y;
+	const kn_binldr_registry_t *_x = (const kn_binldr_registry_t *)x,
+						  *_y = (const kn_binldr_registry_t *)y;
 
 	return uuid_lt(&_x->uuid, &_y->uuid);
 }

@@ -1,20 +1,23 @@
 #include "malloc.hh"
 
-void *mm_kmalloc(size_t size) {
+void *mm_kmalloc(size_t size, size_t alignment) {
 	kd_assert(size);
-	void *filter_base = NULL;
+	char *filter_base = nullptr;
 
-	for (auto it = kima_vpgdesc_query_tree.begin(); it != kima_vpgdesc_query_tree.end(); ++it) {
-		kima_vpgdesc_t *cur_desc = static_cast<kima_vpgdesc_t*>(it.node);
+	for (auto it = kima_vpgdesc_query_tree.begin(); it != kima_vpgdesc_query_tree.end();) {
+		kima_vpgdesc_t *cur_desc = static_cast<kima_vpgdesc_t *>(it.node);
 
-		if (cur_desc->rb_value < filter_base)
+		if (cur_desc->rb_value < filter_base) {
+			++it;
 			continue;
+		}
 
 		for (size_t j = 0;
-			 j < PGCEIL(size);
-			 j += PAGESIZE) {
+			j < PGCEIL(size);
+			j += PAGESIZE) {
 			if (!kima_lookup_vpgdesc(((char *)cur_desc->rb_value) + j)) {
 				filter_base = ((char *)cur_desc->rb_value) + j;
+				it = kfxx::rbtree_t<void *>::iterator(kima_vpgdesc_query_tree.find_max_lteq(filter_base), &kima_vpgdesc_query_tree, kfxx::iterator_direction::forward);
 				goto noncontinuous;
 			}
 		}
@@ -22,8 +25,12 @@ void *mm_kmalloc(size_t size) {
 		{
 			void *const limit = ((char *)cur_desc->rb_value) + (PGCEIL(size) - size);
 
-			for (void *cur_base = cur_desc->rb_value;
-				 cur_base <= limit;) {
+			for (char *cur_base = (char *)cur_desc->rb_value;
+				cur_base <= limit;) {
+				if (size_t aligned_diff = ((uintptr_t)cur_base) % alignment; aligned_diff) {
+					cur_base += alignment - aligned_diff;
+				}
+
 				kima_ublk_t *nearest_ublk;
 				if ((nearest_ublk = kima_lookup_nearest_ublk(cur_base))) {
 					if (PBOS_ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->rb_value, nearest_ublk->size)) {
@@ -42,8 +49,8 @@ void *mm_kmalloc(size_t size) {
 				kd_assert(ublk);
 
 				for (size_t j = 0;
-					 j < PGCEIL(size);
-					 j += PAGESIZE) {
+					j < PGCEIL(size);
+					j += PAGESIZE) {
 					kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(((char *)cur_desc->rb_value) + j);
 
 					kd_assert(vpgdesc);
@@ -55,10 +62,15 @@ void *mm_kmalloc(size_t size) {
 			}
 		}
 
+		++it;
 	noncontinuous:;
 	}
 
-	void *new_free_pg = kima_vpgalloc(NULL, PGCEIL(size));
+	char *new_free_pg = (char*)kima_vpgalloc(NULL, PGCEIL(size + alignment));
+
+	if (size_t aligned_diff = ((uintptr_t)new_free_pg) % alignment; aligned_diff) {
+		new_free_pg += alignment - aligned_diff;
+	}
 
 	kd_assert(new_free_pg);
 
@@ -78,8 +90,8 @@ void mm_kfree(void *ptr) {
 	kima_ublk_t *ublk = kima_lookup_ublk(ptr);
 	kd_assert(ublk);
 	for (uintptr_t i = PGFLOOR(ublk->rb_value);
-		 i < PGCEIL(((char *)ublk->rb_value) + ublk->size);
-		 i += PAGESIZE) {
+		i < PGCEIL(((char *)ublk->rb_value) + ublk->size);
+		i += PAGESIZE) {
 		kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc((void *)i);
 
 		kd_assert(vpgdesc);

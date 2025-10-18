@@ -68,8 +68,8 @@ km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_wal
 		} else {
 			hn_mad_t *mad = hn_get_mad(pde->address);
 			kd_assert(mad);
-			if (mad->exdata.mapped_pgtab_addr) {
-				tmpaddr = UNPGADDR(mad->exdata.mapped_pgtab_addr);
+			if (mad->mapped_pgtab_addr) {
+				tmpaddr = UNPGADDR(mad->mapped_pgtab_addr);
 			} else {
 				tmpaddr = UNPGADDR(hn_tmpmap(pde->address, 1, PTE_P | PTE_RW));
 				is_tmpmap = true;
@@ -107,7 +107,7 @@ typedef struct _hn_mmap_walker_args {
 	bool rawmap;
 } hn_mmap_walker_args;
 
-km_result_t hn_mmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs) {
+static km_result_t hn_mmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs) {
 	hn_mmap_walker_args *args = (hn_mmap_walker_args *)exargs;
 
 	if (pte->mask & PTE_P) {
@@ -189,13 +189,13 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 				ctxt->pdt[i].mask = PDE_P | PDE_RW | PDE_U;
 
 				hn_mad_t *mad = hn_get_mad(PGROUNDDOWN(pgdir));
-				mad->type = MAD_ALLOC_KERNEL;
-				mad->exdata.mapped_pgtab_addr = (pgaddr_t)NULL;
+				hn_set_pgblk_used(PGROUNDDOWN(pgdir), MAD_ALLOC_KERNEL);
+				mad->mapped_pgtab_addr = (pgaddr_t)NULL;
 
 				result = mm_mmap(ctxt, map_addr, pgdir, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
 				kd_assert(KM_SUCCEEDED(result));
 
-				mad->exdata.mapped_pgtab_addr = PGROUNDDOWN(map_addr);
+				mad->mapped_pgtab_addr = PGROUNDDOWN(map_addr);
 			}
 		}
 	}

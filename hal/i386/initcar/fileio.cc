@@ -59,7 +59,7 @@ km_result_t initcar_create_dir(fs_file_t *parent, const char *name, size_t name_
 km_result_t initcar_open(fs_file_t *file, fs_fcb_t **fcb_out) {
 	km_result_t result;
 
-	fs_fcb_t *fcb = (fs_fcb_t *)mm_kmalloc(sizeof(fs_fcb_t));
+	fs_fcb_t *fcb = (fs_fcb_t *)mm_kmalloc(sizeof(fs_fcb_t), alignof(fs_fcb_t));
 	if (!fcb)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	memset(fcb, 0, sizeof(fs_fcb_t));

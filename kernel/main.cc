@@ -7,9 +7,10 @@
 #include <pbos/km/panic.h>
 #include <pbos/kn/fs/fs.h>
 #include <pbos/kn/fs/initcar.h>
-#include <pbos/kn/km/exec.h>
+#include <pbos/kn/km/exec.hh>
 #include <pbos/kn/km/smp.h>
 #include <pbos/kn/km/objmgr.h>
+#include <pbos/kn/km/proc.hh>
 
 // Because the operating system will never exit normally,
 // we just using a dummy procedure to register the destructors.

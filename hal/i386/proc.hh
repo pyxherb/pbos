@@ -4,7 +4,7 @@
 #include <pbos/kf/list.h>
 #include <pbos/kf/rbtree.h>
 #include <pbos/km/objmgr.h>
-#include <pbos/kn/km/proc.h>
+#include <pbos/kn/km/proc.hh>
 #ifdef __cplusplus
 #include "mm.hh"
 #else

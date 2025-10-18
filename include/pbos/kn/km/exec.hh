@@ -1,7 +1,7 @@
 #ifndef _PBOS_KN_KM_EXEC_H_
 #define _PBOS_KN_KM_EXEC_H_
 
-#include "proc.h"
+#include "proc.hh"
 #include <pbos/km/exec.h>
 #include <pbos/kf/rbtree.h>
 

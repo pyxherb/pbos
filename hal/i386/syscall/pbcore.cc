@@ -77,7 +77,7 @@ km_result_t sysent_exec_child(
 	if(!ufcb)
 		return KM_RESULT_INVALID_ARGS;
 
-	return km_exec(pcb->proc_id, 0, ufcb->kernel_fcb, proc_id_out);
+	return km_exec(pcb->rb_value, 0, ufcb->kernel_fcb, proc_id_out);
 }
 
 PBOS_EXTERN_C_END

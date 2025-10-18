@@ -1,4 +1,4 @@
-#include <hal/i386/proc.h>
+#include <hal/i386/proc.hh>
 #include <pbos/fs/file.h>
 #include <pbos/fs/fs.h>
 #include <pbos/km/logger.h>
@@ -14,41 +14,31 @@ static void _parp_nodefree(kf_rbtree_node_t *p);
 static bool _ufcb_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 static void _ufcb_nodefree(kf_rbtree_node_t *p);
 
-static bool _uhr_uhandle_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
-static void _uhr_uhandle_nodefree(kf_rbtree_node_t *p);
-
 ps_ufd_t ps_alloc_fd(ps_pcb_t *pcb) {
 	return pcb->last_fd++;
 }
 
 ps_ufcb_t *ps_alloc_ufcb(ps_pcb_t *pcb, fs_fcb_t *kernel_fcb, ps_ufd_t fd) {
-	ps_ufcb_t *p = (ps_ufcb_t *)mm_kmalloc(sizeof(ps_ufcb_t));
+	ps_ufcb_t *p = (ps_ufcb_t *)mm_kmalloc(sizeof(ps_ufcb_t), alignof(ps_ufcb_t));
+	kfxx::construct_at<ps_ufcb_t>(p);
 	if (!p)
 		return NULL;
-	p->fd = fd;
+	p->rb_value = fd;
 	p->kernel_fcb = kernel_fcb;
-	memset(&p->node_header, 0, sizeof(kf_rbtree_node_t));
 	ps_add_ufcb(pcb, p);
 	return p;
 }
 
 void ps_add_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
-	kf_rbtree_insert(&pcb->ufcb_set, &ufcb->node_header);
+	pcb->ufcb_set.insert(ufcb);
 }
 
 void ps_remove_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
-	kf_rbtree_remove(&pcb->ufcb_set, &ufcb->node_header);
+	pcb->ufcb_set.remove(ufcb);
 }
 
 ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd) {
-	ps_ufcb_t query_ufcb = {
-		.fd = fd
-	};
-	kf_rbtree_node_t *result = kf_rbtree_find(&pcb->ufcb_set, &query_ufcb.node_header);
-	if (!result)
-		return NULL;
-
-	return PBOS_CONTAINER_OF(ps_ufcb_t, node_header, result);
+	return static_cast<ps_ufcb_t*>(pcb->ufcb_set.find(fd));
 }
 
 void kn_proc_destructor(om_object_t *obj) {
@@ -58,23 +48,21 @@ void kn_proc_destructor(om_object_t *obj) {
 void ps_create_proc(
 	ps_pcb_t *pcb,
 	proc_id_t parent) {
-	kf_rbtree_node_t *node = kf_rbtree_find(&ps_global_proc_set, &pcb->node_header);
-	if (node)
+	if (ps_global_proc_set.find(pcb->rb_value))
 		km_panic("Trying to create a new process with PCB with PID that is already used by a process");
 
-	km_result_t result = kf_rbtree_insert(&ps_global_proc_set, &pcb->node_header);
-	kd_assert(KM_SUCCEEDED(result));
+	ps_global_proc_set.insert(pcb);
 }
 
-ps_pcb_t *kn_alloc_pcb() {
-	ps_pcb_t *proc = (ps_pcb_t *)mm_kmalloc(sizeof(ps_pcb_t));
+ps_pcb_t *ps_alloc_pcb() {
+	ps_pcb_t *proc = (ps_pcb_t *)mm_kmalloc(sizeof(ps_pcb_t), alignof(ps_pcb_t));
 
 	if (!proc)
 		return NULL;
 
-	memset(proc, 0, sizeof(ps_pcb_t));
+	kfxx::construct_at<ps_pcb_t>(proc);
 
-	if (!(proc->mm_context = (mm_context_t *)mm_kmalloc(sizeof(mm_context_t)))) {
+	if (!(proc->mm_context = (mm_context_t *)mm_kmalloc(sizeof(mm_context_t), alignof(mm_context_t)))) {
 		mm_kfree(proc);
 		return NULL;
 	}
@@ -98,16 +86,6 @@ ps_pcb_t *kn_alloc_pcb() {
 		_parp_nodecmp,
 		_parp_nodefree);
 
-	kf_rbtree_init(
-		&(proc->ufcb_set),
-		_ufcb_nodecmp,
-		_ufcb_nodefree);
-
-	kf_rbtree_init(
-		&(proc->uhandle_map),
-		_uhr_uhandle_nodecmp,
-		_uhr_uhandle_nodefree);
-
 	proc->last_thread_id = 0;
 	proc->last_fd = 0;
 
@@ -117,13 +95,7 @@ ps_pcb_t *kn_alloc_pcb() {
 }
 
 ps_pcb_t *ps_getpcb(proc_id_t pid) {
-	ps_pcb_t query_node = {
-		.proc_id = pid
-	};
-	kf_rbtree_node_t *node = kf_rbtree_find(&ps_global_proc_set, &query_node.node_header);
-	if (!node)
-		return NULL;
-	return PBOS_CONTAINER_OF(ps_pcb_t, node_header, node);
+	return static_cast<ps_pcb_t*>(ps_global_proc_set.find(pid));
 }
 
 void hn_proc_cleanup(ps_pcb_t *proc) {
@@ -132,8 +104,8 @@ void hn_proc_cleanup(ps_pcb_t *proc) {
 	mm_kfree(proc->mm_context);
 	proc->flags &= ~PROC_A;
 
-	kf_rbtree_foreach(i, &proc->thread_set) {
-		om_decref(&(PBOS_CONTAINER_OF(ps_tcb_t, node_header, i)->object_header));
+	for(auto it = proc->thread_set.begin(); it != proc->thread_set.end(); ++it) {
+		om_decref(&static_cast<ps_tcb_t*>(it.node)->object_header);
 	}
 
 	kf_rbtree_free(&(proc->parp_list));
@@ -141,8 +113,8 @@ void hn_proc_cleanup(ps_pcb_t *proc) {
 
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
 	// stub: do some checks with the new thread id, such as checking if a thread with the id exists.
-	thread->thread_id = ++proc->last_thread_id;
-	kf_rbtree_insert(&proc->thread_set, &thread->node_header);
+	thread->rb_value = ++proc->last_thread_id;
+	proc->thread_set.insert(thread);
 }
 
 void kn_switch_to_user_process(ps_pcb_t *pcb) {
@@ -161,75 +133,6 @@ void kn_set_cur_euid(ps_euid_t euid) {
 	arch_loadfs(euid);
 }
 
-km_result_t ps_create_uhandle(ps_pcb_t *proc, om_object_t *kobject, ps_uhandle_t *uhandle_out) {
-	km_result_t result;
-	ps_uhr_t *uhr = (ps_uhr_t *)mm_kmalloc(sizeof(ps_uhr_t));
-
-	if (!uhr) {
-		return KM_RESULT_NO_MEM;
-	}
-
-	ps_uhandle_t initial_uhandle = proc->last_allocated_uhandle_value;
-	ps_uhandle_t uhandle;
-
-	ps_uhr_t query_uhr;
-	for (;;) {
-		uhandle = ++proc->last_allocated_uhandle_value;
-
-		query_uhr.uhandle = uhandle;
-
-		if (!kf_rbtree_find(&proc->uhandle_map, &query_uhr.node_header)) {
-			break;
-		}
-
-		if (uhandle == initial_uhandle) {
-			mm_kfree(uhr);
-			return KM_RESULT_NO_SLOT;
-		}
-	}
-
-	memset(uhr, 0, sizeof(ps_uhr_t));
-
-	om_incref(kobject);
-	uhr->kobject = kobject;
-
-	result = kf_rbtree_insert(&proc->uhandle_map, &uhr->node_header);
-
-	kd_assert(KM_SUCCEEDED(result));
-
-	*uhandle_out = uhandle;
-
-	return KM_RESULT_OK;
-}
-
-void ps_close_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle) {
-	ps_uhr_t query_uhr;
-	query_uhr.uhandle = uhandle;
-
-	kf_rbtree_node_t *node = kf_rbtree_find(&proc->uhandle_map, &query_uhr.node_header);
-	kd_assert(node);
-
-	ps_uhr_t *uhr = PBOS_CONTAINER_OF(ps_uhr_t, node_header, node);
-
-	om_decref(uhr->kobject);
-
-	if (!--uhr->ref_num) {
-		kf_rbtree_remove(&proc->uhandle_map, node);
-	}
-}
-
-om_object_t *ps_lookup_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle) {
-	ps_uhr_t query_uhr;
-	query_uhr.uhandle = uhandle;
-
-	kf_rbtree_node_t *result;
-	if (!(result = kf_rbtree_find(&proc->uhandle_map, &query_uhr.node_header))) {
-		return NULL;
-	}
-
-	return PBOS_CONTAINER_OF(ps_uhr_t, node_header, result)->kobject;
-}
-
 static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
 	const hn_parp_t *_x = (const hn_parp_t *)x, *_y = (const hn_parp_t *)y;
 
@@ -238,29 +141,6 @@ static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) 
 
 static void _parp_nodefree(kf_rbtree_node_t *p) {
 	mm_kfree(p);
-}
-
-static bool _ufcb_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	const ps_ufcb_t *_x = PBOS_CONTAINER_OF(ps_ufcb_t, node_header, x),
-					*_y = PBOS_CONTAINER_OF(ps_ufcb_t, node_header, y);
-
-	return _x->fd < _y->fd;
-}
-
-static void _ufcb_nodefree(kf_rbtree_node_t *p) {
-	ps_ufcb_t *ufcb = PBOS_CONTAINER_OF(ps_ufcb_t, node_header, p);
-	fs_close(ufcb->kernel_fcb);
-	mm_kfree(ufcb);
-}
-
-static bool _uhr_uhandle_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	const ps_uhr_t *_x = (const ps_uhr_t *)x, *_y = (const ps_uhr_t *)y;
-
-	return _x->uhandle < _y->uhandle;
-}
-
-static void _uhr_uhandle_nodefree(kf_rbtree_node_t *p) {
-	om_decref(((ps_uhr_t *)p)->kobject);
 }
 
 PBOS_EXTERN_C_END

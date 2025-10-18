@@ -153,7 +153,7 @@ static km_result_t _kf_hashmap_insert(kf_hashmap_t *dest, kf_hashmap_node_t *nod
 static km_result_t _kf_hashmap_resize_buckets(kf_hashmap_t *dest, size_t size) {
 	kprintf("resizing buckets, size = %d\n", (int)size);
 	kd_assert(size >= KF_HASHMAP_BUCKET_MIN);
-	kf_hashmap_bucket_t *new_buckets = mm_kmalloc(sizeof(kf_hashmap_bucket_t) * size);
+	kf_hashmap_bucket_t *new_buckets = mm_kmalloc(sizeof(kf_hashmap_bucket_t) * size, alignof(kf_hashmap_bucket_t));
 
 	if (!new_buckets)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);

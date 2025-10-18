@@ -17,19 +17,7 @@ PBOS_EXTERN_C_BEGIN
 #define PROC_ACCESS_SESSION 0x00000040	 // Session
 #define PROC_ACCESS_NET 0x00000080		 // Network
 
-typedef uint32_t ps_uhandle_t;
-
 #define PS_INVALID_UHANDLE_VALUE UINT32_MAX
-
-/// @brief User Handle Registry (UHR)
-typedef struct _ps_uhr_t {
-	om_object_t object_header;
-
-	kf_rbtree_node_t node_header;
-	om_object_t *kobject;
-	ps_uhandle_t uhandle;
-	size_t ref_num;
-} ps_uhr_t;
 
 typedef uint32_t ps_proc_access_t;
 
@@ -40,31 +28,9 @@ typedef uint16_t ps_euid_t;
 typedef int ps_ufd_t;
 
 // Process Control Block (PCB)
-typedef struct _ps_pcb_t {
-	kf_rbtree_node_t node_header;
-	om_object_t object_header;
+typedef struct _ps_pcb_t ps_pcb_t;
 
-	proc_id_t proc_id;
-	thread_id_t last_thread_id;
-	kf_rbtree_t parp_list;
-	mm_context_t *mm_context;
-	kf_rbtree_t thread_set;
-	uint8_t priority, flags;
-
-	fs_file_t *cur_dir;
-
-	kf_rbtree_t uhandle_map;
-	ps_uhandle_t last_allocated_uhandle_value;
-
-	kf_rbtree_t ufcb_set;
-	ps_ufd_t last_fd;
-} ps_pcb_t;
-
-typedef struct _ps_ufcb_t {
-	kf_rbtree_node_t node_header;
-	fs_fcb_t *kernel_fcb;
-	ps_ufd_t fd;
-} ps_ufcb_t;
+typedef struct _ps_ufcb_t ps_ufcb_t;
 
 ps_ufd_t ps_alloc_fd(ps_pcb_t *pcb);
 ps_ufcb_t *ps_alloc_ufcb(ps_pcb_t *pcb, fs_fcb_t *kernel_fcb, ps_ufd_t fd);
@@ -75,19 +41,7 @@ ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd);
 typedef struct _ps_user_context_t ps_user_context_t;
 
 // Thread Control Block (TCB)
-typedef struct _ps_tcb_t {
-	kf_rbtree_node_t node_header;
-	om_object_t object_header;
-
-	thread_id_t thread_id;
-	ps_pcb_t *parent;
-
-	uint8_t priority, flags;
-
-	ps_user_context_t *context;
-	void *stack;
-	size_t stacksize;
-} ps_tcb_t;
+typedef struct _ps_tcb_t ps_tcb_t;
 
 #define PM_PROC_ID_MAX PROC_MAX
 #define PM_THREAD_ID_MAX UINT32_MAX
@@ -115,29 +69,26 @@ uint16_t ps_maxproc();
 ps_pcb_t *ps_getpcb(proc_id_t pid);
 proc_id_t *ps_getpid(ps_pcb_t *pcb);
 
-/// @brief Get current executing process.
-///
-/// @return Current process object.
-ps_pcb_t *ps_curproc();
-
-/// @brief Get current executing thread.
-///
-/// @return Current thread object.
-ps_tcb_t *ps_curthread();
-
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread);
+
+ps_pcb_t *ps_alloc_pcb();
+ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb);
+km_result_t ps_thread_allocstack(ps_tcb_t *tcb, size_t size);
+mm_context_t *ps_mm_context_of(ps_pcb_t *pcb);
+
+ps_pcb_t *ps_global_proc_set_begin();
+ps_pcb_t *ps_global_proc_set_next(ps_pcb_t *cur);
+
+ps_tcb_t *ps_proc_thread_set_begin(ps_pcb_t *pcb);
+ps_tcb_t *ps_proc_thread_set_next(ps_pcb_t *pcb, ps_tcb_t *cur);
+
+void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr);
 
 ps_euid_t ps_get_cur_euid();
 void kn_set_cur_euid(ps_euid_t euid);
 
 #define ps_get_cur_proc() (ps_cur_proc_per_eu[ps_get_cur_euid()])
 #define ps_get_cur_thread() (ps_cur_thread_per_eu[ps_get_cur_euid()])
-
-km_result_t ps_create_uhandle(ps_pcb_t *proc, om_object_t *kobject, ps_uhandle_t *uhandle_out);
-void ps_close_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle);
-om_object_t *ps_lookup_uhandle(ps_pcb_t *proc, ps_uhandle_t uhandle);
-
-extern kf_rbtree_t ps_global_proc_set;
 
 typedef struct _ps_sched_t ps_sched_t;
 

@@ -20,7 +20,7 @@ static void _kn_unused_object_nodefree(kf_rbtree_node_t *p) {
 }
 
 om_class_t *om_register_class(uuid_t *uuid, om_destructor_t destructor) {
-	om_class_t *cls = mm_kmalloc(sizeof(om_class_t));
+	om_class_t *cls = mm_kmalloc(sizeof(om_class_t), alignof(om_class_t));
 	if (!cls)
 		return NULL;
 

@@ -1,15 +1,7 @@
-#include <pbos/kn/km/proc.h>
-#include <pbos/kn/km/exec.h>
+#include <pbos/kn/km/proc.hh>
+#include <pbos/kn/km/exec.hh>
 
 PBOS_EXTERN_C_BEGIN
-
-static bool _ps_pcb_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	return PBOS_CONTAINER_OF(ps_pcb_t, node_header, x)->proc_id < PBOS_CONTAINER_OF(ps_pcb_t, node_header, y)->proc_id;
-}
-
-static void _ps_pcb_nodefree(kf_rbtree_node_t *x) {
-	// stub
-}
 
 void ps_init() {
 	hal_prepare_ps();
@@ -24,11 +16,6 @@ void ps_init() {
 
 	if (!(ps_thread_class = om_register_class(&uuid, kn_thread_destructor)))
 		km_panic("Error registering thread kernel class");
-
-	kf_rbtree_init(
-		&ps_global_proc_set,
-		_ps_pcb_nodecmp,
-		_ps_pcb_nodefree);
 
 	kn_init_binldrs();
 

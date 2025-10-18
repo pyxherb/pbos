@@ -3,7 +3,7 @@
 #include <pbos/fmt/elf.h>
 #include <pbos/fs/file.h>
 #include <pbos/km/logger.h>
-#include <pbos/kn/km/exec.h>
+#include <pbos/km/exec.h>
 #include <string.h>
 
 km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp);
@@ -18,12 +18,12 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	km_result_t result;
 	size_t off = 0, bytes_read;
 
-	ps_tcb_t *tcb = kn_alloc_tcb(proc);
+	ps_tcb_t *tcb = ps_alloc_tcb(proc);
 	if(!tcb)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
 	// Allocate stack for main thread.
-	if (KM_FAILED(result = kn_thread_allocstack(tcb, 0x200000)))
+	if (KM_FAILED(result = ps_thread_allocstack(tcb, 0x200000)))
 		return result;
 
 	Elf32_Ehdr ehdr;
@@ -79,13 +79,13 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 
 		off = ph.p_offset;
 
-		mm_switch_context(proc->mm_context);
+		mm_switch_context(ps_mm_context_of(proc));
 		{
 			// Allocate pages for current segment.
 			for (Elf32_Word j = 0; j < ph.p_memsz; j += PAGESIZE) {
-				if (!mm_getmap(proc->mm_context, vaddr + PAGESIZE * j, NULL)) {
+				if (!mm_getmap(ps_mm_context_of(proc), vaddr + PAGESIZE * j, NULL)) {
 					void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
-					mm_mmap(proc->mm_context, vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0);
+					mm_mmap(ps_mm_context_of(proc), vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0);
 				}
 			}
 
@@ -98,13 +98,13 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 			off += bytes_read;
 
 			// Mark the pages as executable.
-			mm_chpgmod(proc->mm_context, vaddr, ph.p_memsz, PAGE_EXEC);
+			mm_chpgmod(ps_mm_context_of(proc), vaddr, ph.p_memsz, PAGE_EXEC);
 		}
 		mm_switch_context(mm_kernel_context);
 	}
 
 	// Set entry of main thread.
-	kn_thread_setentry(tcb, (void *)ehdr.e_entry);
+	ps_thread_set_entry(tcb, (void *)ehdr.e_entry);
 
 	ps_add_thread(proc, tcb);
 
