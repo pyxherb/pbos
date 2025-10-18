@@ -2,7 +2,7 @@
 #define _PBOS_KN_SE_USER_H_
 
 #include <pbos/se/user.h>
-#include <kf/rbtree.h>
+#include <pbos/kf/rbtree.h>
 
 typedef struct _kn_user_t {
 	kf_rbtree_node_t tree_header;

@@ -104,7 +104,6 @@ typedef struct _hn_mmap_walker_args {
 	uint16_t mask;
 	bool is_curpgtab;
 	mmap_flags_t flags;
-	bool rawmap;
 } hn_mmap_walker_args;
 
 static km_result_t hn_mmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs) {
