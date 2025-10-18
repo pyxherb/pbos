@@ -48,7 +48,7 @@ PBOS_NORETURN void isr_timer_impl(
 		cur_thread->context->esp = esp;
 		cur_thread->context->ebp = ebp;
 		cur_thread->context->eip = (void *)eip;
-		cur_thread->context->eflags = eflags;
+		cur_thread->context->eflags = eflags | (1 << 9);
 	}
 
 	hn_set_sched_timer();

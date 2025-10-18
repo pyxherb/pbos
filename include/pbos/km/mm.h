@@ -102,6 +102,7 @@ void mm_vmfree(mm_context_t *context, void *addr, size_t size);
 
 #define MMAP_NOSETVPM 0x40000000
 #define MMAP_NORC 0x80000000
+#define MMAP_IOREMAP MMAP_NORC
 
 typedef uint32_t mmap_flags_t;
 

@@ -5,12 +5,10 @@
 
 PBOS_EXTERN_C_BEGIN
 
-#define ARCH_APIC_BASE_MSR 0x1B
-
 #define ARCH_APIC_BASE_MSR_BSP 0x100
 #define ARCH_APIC_BASE_MSR_ENABLE 0x800
 
-#define ARCH_LAPIC_PBASE 0xfee00000
+#define ARCH_DEFAULT_APIC_PBASE 0xfee00000
 
 #define ARCH_LAPIC_REG_ID_REG 0x020
 #define ARCH_LAPIC_REG_VER_REG 0x030
@@ -72,16 +70,16 @@ PBOS_FORCEINLINE static bool arch_has_apic() {
 	return d & ARCH_CPUID_FEATURE_EDX_APIC;
 }
 
-PBOS_FORCEINLINE void arch_set_lapic_base(void *base, uint32_t flags) {
+PBOS_FORCEINLINE void arch_set_apic_base(void *base, uint32_t flags) {
 	uint32_t edx = 0;
 	uint32_t eax = ((((uintptr_t)base) & 0xfffff000) | flags);
 
-	arch_wrmsr(ARCH_APIC_BASE_MSR, eax, edx);
+	arch_wrmsr(ARCH_MSR_APIC_BASE, eax, edx);
 }
 
 PBOS_FORCEINLINE void *arch_get_lapic_base() {
 	uint32_t eax, edx;
-	arch_rdmsr(ARCH_APIC_BASE_MSR, &eax, &edx);
+	arch_rdmsr(ARCH_MSR_APIC_BASE, &eax, &edx);
 
 	return (void *)(eax & 0xfffff000);
 }
