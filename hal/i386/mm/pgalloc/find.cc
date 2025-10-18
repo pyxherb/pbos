@@ -22,13 +22,8 @@ hn_pmad_t *hn_pmad_get(pgaddr_t addr) {
 }
 
 pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area) {
-	if (auto it = area->mad_free_tree.begin(); it != area->mad_free_tree.end()) {
-		hn_mad_t *mad = static_cast<hn_mad_t *>(it.node);
-		kd_assert(mad->flags & MAD_P);
-		kd_assert(mad->type == MAD_ALLOC_FREE);
-
-		return mad->rb_value;
-	}
+	if (area->free_list)
+		return area->free_list->rb_value;
 
 	return NULLPG;
 }

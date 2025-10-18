@@ -36,10 +36,7 @@ hn_mad_t *hn_get_mad(pgaddr_t pgaddr) {
 		km_panic("No PMAD corresponds to physical address %p", UNPGADDR(pgaddr));
 
 	kfxx::rbtree_t<pgaddr_t>::node_t *mad;
-	if ((mad = pmad->mad_query_tree.find(pgaddr))) {
-		return static_cast<hn_mad_t *>(mad);
-	}
-	if ((mad = pmad->mad_free_tree.find(pgaddr))) {
+	if ((mad = pmad->query_tree.find(pgaddr))) {
 		return static_cast<hn_mad_t *>(mad);
 	}
 
@@ -58,10 +55,17 @@ void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type) {
 
 	mad->flags = MAD_P;
 	mad->type = type;
-	++mad->ref_count;
 
-	area->mad_free_tree.remove(mad);
-	area->mad_query_tree.insert(mad);
+	if (!(mad->ref_count++)) {
+		if (mad == area->free_list)
+			area->free_list = mad->next_free;
+		if (mad->prev_free)
+			mad->prev_free->next_free = mad->next_free;
+		if (mad->next_free)
+			mad->next_free->prev_free = mad->prev_free;
+		mad->prev_free = nullptr;
+		mad->next_free = nullptr;
+	}
 
 	return;
 }
@@ -74,8 +78,10 @@ void hn_set_pgblk_free(pgaddr_t addr) {
 	if (!(--mad->ref_count)) {
 		mad->flags = MAD_P;
 		mad->type = MAD_ALLOC_FREE;
-		area->mad_query_tree.remove(mad);
-		area->mad_free_tree.insert(mad);
+		if(area->free_list)
+			area->free_list->prev_free = mad;
+		mad->next_free = area->free_list;
+		kd_assert(!mad->prev_free);
 	}
 	return;
 }

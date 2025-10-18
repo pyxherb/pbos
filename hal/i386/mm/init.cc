@@ -156,20 +156,24 @@ static void hn_mm_init_areas() {
 			memset(hn_global_mad_pool_list, 0, PAGESIZE);
 
 			// Mark the initial pages as allocated.
+			hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
+			hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = init_madpool_paddr;
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
 			++hn_global_mad_pool_list->header.used_num;
-			init_madpool_pmad->mad_query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
+			init_madpool_pmad->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 			++cur_madpool_slot_index;
 
 			if (need_pgtab) {
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = init_pgtab_paddr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].mapped_pgtab_addr = (pgaddr_t)NULL;
 				++hn_global_mad_pool_list->header.used_num;
-				init_pgtab_pmad->mad_query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
+				init_pgtab_pmad->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				++cur_madpool_slot_index;
 			}
 		}
@@ -180,6 +184,7 @@ static void hn_mm_init_areas() {
 			if (i->attribs.type != KN_PMEM_AVAILABLE)
 				continue;
 
+			hn_mad_t *prev_free_mad = nullptr;
 			for (pgaddr_t j = i->attribs.base; j < i->attribs.base + i->attribs.len; ++j) {
 				if (j == init_madpool_paddr)
 					continue;
@@ -225,11 +230,22 @@ static void hn_mm_init_areas() {
 					hn_global_mad_pool_list = (hn_madpool_t *)new_poolpg_vaddr;
 				}
 
+				if (prev_free_mad) {
+					hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = prev_free_mad;
+					prev_free_mad->next_free = &hn_global_mad_pool_list->descs[cur_madpool_slot_index];
+					hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
+				} else {
+					i->free_list = &hn_global_mad_pool_list->descs[cur_madpool_slot_index];
+					hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
+					hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
+				}
+				prev_free_mad = &hn_global_mad_pool_list->descs[cur_madpool_slot_index];
+
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = j;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_FREE;
 				++hn_global_mad_pool_list->header.used_num;
-				i->mad_free_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
+				i->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 
 				++cur_madpool_slot_index;
 			}
@@ -277,11 +293,20 @@ static void hn_mm_init_areas() {
 					hn_global_mad_pool_list->header.prev = last_madpool;
 				}
 
+				if (j != i->attribs.base) {
+					hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = &hn_global_mad_pool_list->descs[cur_madpool_slot_index - 1];
+					hn_global_mad_pool_list->descs[cur_madpool_slot_index - 1].next_free = &hn_global_mad_pool_list->descs[cur_madpool_slot_index];
+					hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
+				} else {
+					i->free_list = &hn_global_mad_pool_list->descs[cur_madpool_slot_index];
+					hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
+					hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
+				}
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = j;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_FREE;
 				++hn_global_mad_pool_list->header.used_num;
-				i->mad_free_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
+				i->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 
 				++cur_madpool_slot_index;
 			}

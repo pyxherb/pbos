@@ -43,6 +43,8 @@ enum {
 /// @brief Memory Allocation Descriptor (MAD), manages a single page.
 ///
 typedef struct _hn_mad_t : public kfxx::rbtree_t<pgaddr_t>::node_t {
+	struct _hn_mad_t *next_free, *prev_free;
+
 	uint32_t ref_count;
 
 	uint32_t mapped_pgtab_addr : 20;
@@ -88,8 +90,8 @@ typedef struct _hn_pmad_t {
 		uint8_t type : 8;	 // Type
 	} attribs;
 	// MAD pages were all preallocated at initializing stage.
-	kfxx::rbtree_t<pgaddr_t> mad_query_tree;
-	kfxx::rbtree_t<pgaddr_t> mad_free_tree;
+	hn_mad_t *free_list;
+	kfxx::rbtree_t<pgaddr_t> query_tree;
 } hn_pmad_t;
 
 extern hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1];
