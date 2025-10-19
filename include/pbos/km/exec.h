@@ -8,7 +8,7 @@
 PBOS_EXTERN_C_BEGIN
 
 typedef struct _km_binldr_t {
-	uuid_t uuid;
+	kf_uuid_t uuid;
 	km_result_t (*load_exec)(ps_pcb_t *proc, fs_fcb_t *file_fp);
 	km_result_t (*load_mod)(ps_pcb_t *proc, fs_fcb_t *file_fp);
 } km_binldr_t;

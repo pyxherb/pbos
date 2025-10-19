@@ -6,8 +6,6 @@
 
 om_class_t *kn_class_list = NULL;
 
-kf_rbtree_t kn_global_handle_set;
-
 static kf_rbtree_t kn_unused_objects;
 
 static bool _kn_object_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
@@ -19,12 +17,12 @@ static void _kn_unused_object_nodefree(kf_rbtree_node_t *p) {
 	_p->prop.p_class->destructor(_p);
 }
 
-om_class_t *om_register_class(uuid_t *uuid, om_destructor_t destructor) {
+om_class_t *om_register_class(kf_uuid_t *uuid, om_destructor_t destructor) {
 	om_class_t *cls = mm_kmalloc(sizeof(om_class_t), alignof(om_class_t));
 	if (!cls)
 		return NULL;
 
-	memcpy(&cls->uuid, uuid, sizeof(uuid_t));
+	memcpy(&cls->uuid, uuid, sizeof(kf_uuid_t));
 	cls->destructor = destructor;
 	cls->obj_num = 0;
 
@@ -61,7 +59,7 @@ bool om_is_class_registered(om_class_t *cls) {
 	return false;
 }
 
-om_class_t *om_lookup_class(uuid_t *uuid) {
+om_class_t *om_lookup_class(kf_uuid_t *uuid) {
 	for (om_class_t *i = kn_class_list; i; i = i->next)
 		if (uuid_eq(&i->uuid, uuid))
 			return i;

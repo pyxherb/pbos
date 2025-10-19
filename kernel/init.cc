@@ -1,6 +1,6 @@
 #include <pbos/km/exec.h>
 #include <pbos/kn/fs/initcar.h>
-#include <pbos/kn/fs/fs.h>
+#include <pbos/kn/fs/fs.hh>
 
 #define INIT_PATH "/initcar/init"
 

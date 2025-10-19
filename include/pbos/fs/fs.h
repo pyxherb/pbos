@@ -6,6 +6,8 @@
 
 PBOS_EXTERN_C_BEGIN
 
+#define ROOTFS_UUID UUID(8ad4b63d, f097, 48e0, 9c68, 77c8606143e9)
+
 typedef struct _fs_file_t fs_file_t;
 typedef struct _fs_fcb_t fs_fcb_t;
 
@@ -39,17 +41,12 @@ typedef struct _fs_fsops_t {
 	km_result_t (*destructor)();
 } fs_fsops_t;
 
-typedef struct _fs_filesys_t {
-	kf_rbtree_node_t tree_header;
-
-	char name[32];
-	uuid_t uuid;
-	fs_fsops_t ops;
-} fs_filesys_t;
+typedef struct _fs_filesys_t fs_filesys_t;
 
 fs_filesys_t *fs_register_filesys(
 	const char *name,
-	uuid_t *uuid,
+	size_t name_len,
+	kf_uuid_t *uuid,
 	fs_fsops_t *ops);
 
 PBOS_EXTERN_C_END

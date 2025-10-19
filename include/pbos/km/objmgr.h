@@ -21,7 +21,7 @@ typedef uint32_t om_class_flags_t;
 
 /// @brief Class registry.
 typedef struct _om_class_t {
-	uuid_t uuid;
+	kf_uuid_t uuid;
 	om_destructor_t destructor;
 	size_t obj_num;
 	struct _om_class_t *next, *last;
@@ -50,7 +50,7 @@ typedef struct _om_object_t {
 /// @param destructor Destructor of the kernel class.
 /// @return Registered kernel class registry, NULL if failed.
 ///
-om_class_t *om_register_class(uuid_t *uuid, om_destructor_t destructor);
+om_class_t *om_register_class(kf_uuid_t *uuid, om_destructor_t destructor);
 
 ///
 /// @brief Unregister a kernel class.
@@ -67,7 +67,7 @@ void om_unregister_class(om_class_t *cls);
 /// @return false The class was not registered.
 ///
 bool om_is_class_registered(om_class_t *cls);
-om_class_t *om_lookup_class(uuid_t *uuid);
+om_class_t *om_lookup_class(kf_uuid_t *uuid);
 
 ///
 /// @brief Create a new kernel object with specified kernel class.

@@ -66,15 +66,14 @@ void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type) {
 		mad->prev_free = nullptr;
 		mad->next_free = nullptr;
 	}
-
-	return;
 }
 
 void hn_set_pgblk_free(pgaddr_t addr) {
 	hn_pmad_t *area = hn_pmad_get(addr);
 	hn_mad_t *mad = hn_get_mad(addr);
 
-	kd_assert(mad->ref_count);
+	if(!mad->ref_count)
+		return;
 	if (!(--mad->ref_count)) {
 		mad->flags = MAD_P;
 		mad->type = MAD_ALLOC_FREE;

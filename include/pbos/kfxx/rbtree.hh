@@ -1,5 +1,5 @@
-#ifndef _PBOS_KFXX_RBTREE_H_
-#define _PBOS_KFXX_RBTREE_H_
+#ifndef _PBOS_KFXX_RBTREE_HH_
+#define _PBOS_KFXX_RBTREE_HH_
 
 #include <pbos/km/assert.h>
 #include <pbos/km/panic.h>

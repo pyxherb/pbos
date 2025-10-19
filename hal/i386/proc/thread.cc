@@ -1,4 +1,5 @@
 #include <hal/i386/proc.hh>
+#include <pbos/kfxx/scope_guard.hh>
 
 void kn_thread_destructor(om_object_t *obj) {
 	hn_thread_cleanup(PBOS_CONTAINER_OF(ps_tcb_t, object_header, obj));
@@ -16,7 +17,7 @@ ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb) {
 	memset(t->context, 0, sizeof(ps_user_context_t));
 	om_init_object(&(t->object_header), ps_thread_class, 0);
 	t->parent = pcb;
-	t->context->eflags |= (1 << 9);  // IF
+	t->context->eflags |= (1 << 9);	 // IF
 
 	return t;
 }
@@ -79,24 +80,30 @@ km_result_t ps_thread_allocstack(ps_tcb_t *tcb, size_t size) {
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	}
 
-	for (size_t i = 0; i < tcb->stacksize; i += PAGESIZE) {
-		void *pg = mm_pgalloc(MM_PMEM_AVAILABLE);
+	{
+		size_t i = 0;
 
-		if (!pg) {
+		kfxx::scope_guard release_pages_guard([pcb, tcb, size, &i]() noexcept {
 			do {
-				mm_pgfree(mm_getmap(pcb->mm_context, ((char *)tcb->stack) + i, NULL));
-			} while (--i);
+				void *paddr = mm_getmap(pcb->mm_context, ((char *)tcb->stack) + (i - PAGESIZE), NULL);
+				mm_pgfree(paddr);
+			} while (i -= PAGESIZE);
 			mm_vmfree(pcb->mm_context, tcb->stack, size);
-			return KM_MAKEERROR(KM_RESULT_NO_MEM);
+		});
+
+		for (; i < tcb->stacksize; i += PAGESIZE) {
+			void *pg = mm_pgalloc(MM_PMEM_AVAILABLE);
+
+			if (!pg) {
+				return KM_MAKEERROR(KM_RESULT_NO_MEM);
+			}
+
+			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ((char *)tcb->stack) + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, 0))) {
+				return result;
+			}
 		}
 
-		if (KM_FAILED(result = mm_mmap(pcb->mm_context, ((char *)tcb->stack) + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, 0))) {
-			do {
-				mm_pgfree(mm_getmap(pcb->mm_context, ((char *)tcb->stack) + i, NULL));
-			} while (--i);
-			mm_vmfree(pcb->mm_context, tcb->stack, size);
-			return result;
-		}
+		release_pages_guard.release();
 	}
 
 	kn_thread_setstack(tcb, tcb->stack, tcb->stacksize);

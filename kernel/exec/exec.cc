@@ -6,7 +6,7 @@ PBOS_EXTERN_C_BEGIN
 
 typedef struct _kn_binldr_reg_t {
 	kf_rbtree_node_t tree_header;
-	uuid_t uuid;
+	kf_uuid_t uuid;
 	km_binldr_t binldr;
 } kn_binldr_registry_t;
 

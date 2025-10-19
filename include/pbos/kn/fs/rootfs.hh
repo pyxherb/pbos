@@ -1,10 +1,10 @@
 #ifndef _PBOS_KN_FS_ROOTFS_H_
 #define _PBOS_KN_FS_ROOTFS_H_
 
-#include "file.h"
-#include "fs.h"
+#include "file.hh"
+#include "fs.hh"
 
-#define ROOTFS_UUID UUID(8ad4b63d, f097, 48e0, 9c68, 77c8606143e9)
+PBOS_EXTERN_C_BEGIN
 
 extern fs_fsops_t kn_rootfs_ops;
 extern fs_filesys_t *fs_rootfs;
@@ -41,5 +41,7 @@ km_result_t kn_rootfs_destructor();
 size_t kn_fs_rootfs_file_hasher(size_t bucket_num, const void *target, bool is_target_key);
 void kn_fs_rootfs_file_nodefree(kf_hashmap_node_t *node);
 bool kn_fs_rootfs_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs);
+
+PBOS_EXTERN_C_END
 
 #endif

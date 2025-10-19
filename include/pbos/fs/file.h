@@ -7,6 +7,8 @@
 
 PBOS_EXTERN_C_BEGIN
 
+#define FILE_CLASS_UUID UUID(f11e5157, f11e, c1a5, 1d0f, f11e0b15)
+
 enum {
 	FS_FILETYPE_FILE = 0,  // Regular file
 	FS_FILETYPE_DIR,	   // Directory Entry

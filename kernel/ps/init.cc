@@ -6,7 +6,7 @@ PBOS_EXTERN_C_BEGIN
 void ps_init() {
 	hal_prepare_ps();
 
-	uuid_t uuid;
+	kf_uuid_t uuid;
 	uuid = PROC_CLASSID;
 
 	if (!(ps_proc_class = om_register_class(&uuid, kn_proc_destructor)))

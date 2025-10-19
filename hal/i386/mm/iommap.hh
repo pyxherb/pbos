@@ -4,7 +4,7 @@
 #include <arch/i386/paging.h>
 #include <pbos/km/mm.h>
 #include <pbos/kfxx/rbtree.hh>
-#include "../vmmgr/vm.h"
+#include "vmmgr/vm.h"
 
 PBOS_EXTERN_C_BEGIN
 

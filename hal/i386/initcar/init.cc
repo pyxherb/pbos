@@ -1,7 +1,7 @@
 #include <hal/i386/initcar.h>
 #include <pbos/km/logger.h>
-#include <pbos/kn/fs/file.h>
-#include <pbos/kn/fs/fs.h>
+#include <pbos/kn/fs/file.hh>
+#include <pbos/kn/fs/fs.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -87,8 +87,8 @@ km_result_t initcar_unmount(fs_file_t *file) {
 void initcar_init() {
 	km_result_t result;
 
-	uuid_t uuid = INITCAR_UUID;
-	if (!(initcar_fs = fs_register_filesys("initcar", &uuid, &initcar_ops)))
+	kf_uuid_t uuid = INITCAR_UUID;
+	if (!(initcar_fs = fs_register_filesys("initcar", strlen("initcar"), &uuid, &initcar_ops)))
 		km_panic("Error registering initcar file system");
 
 	kdprintf("INITCAR range: %p-%p\n",
