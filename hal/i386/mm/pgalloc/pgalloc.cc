@@ -30,7 +30,6 @@ void mm_refpg(void *ptr) {
 }
 
 hn_mad_t *hn_get_mad(pgaddr_t pgaddr) {
-	// kprintf("hn_set_pgblk_used: %p (%d)\n", UNPGADDR(pgaddr), (int)order & 0x3f);
 	hn_pmad_t *pmad = hn_pmad_get(pgaddr);
 	if (!pmad)
 		km_panic("No PMAD corresponds to physical address %p", UNPGADDR(pgaddr));

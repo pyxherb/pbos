@@ -53,17 +53,6 @@ typedef struct _hn_mad_t : public kfxx::rbtree_t<pgaddr_t>::node_t {
 	uint8_t type : 8;
 } hn_mad_t;
 
-#define _mm_isvalidmad(mad) (((hn_mad_t *)mad)->flags & MAD_P)
-
-//
-// Order definitions.
-// Greater order always with smaller block size.
-//
-#define MM_BLKSIZE(ord) (PAGESIZE << (ord))	 // Ordered block size
-#define MM_BLKPGSIZE(ord) (1 << (ord))		 // Ordered paged block size
-#define MM_PGWIND(ord, n) ((n) >> (ord))	 // Get ordered value, the value decreases with increment of the order
-#define MM_PGUNWIND(ord, n) ((n) << (ord))	 // Get ordered value, the value increase with the order
-
 #define ISINRANGE(min, size, n) ((((n) >= (min))) && (n < ((min) + (size))))
 
 typedef struct _hn_madpool_t hn_madpool_t;
@@ -78,7 +67,7 @@ typedef struct _hn_madpool_t {
 	hn_mad_t descs[(PAGESIZE - sizeof(hn_madpool_header_t)) / sizeof(hn_mad_t)];
 } hn_madpool_t;
 
-PBOS_STATIC_ASSERT(sizeof(hn_madpool_t) <= PAGESIZE);
+static_assert(sizeof(hn_madpool_t) <= PAGESIZE);
 
 ///
 /// @brief Physical Memory Region Descriptor

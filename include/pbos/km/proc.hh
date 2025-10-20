@@ -8,9 +8,7 @@ typedef struct _ps_ufcb_t : public kfxx::rbtree_t<ps_ufd_t>::node_t {
 	fs_fcb_t *kernel_fcb;
 } ps_ufcb_t;
 
-typedef struct _ps_tcb_t : public kfxx::rbtree_t<thread_id_t>::node_t {
-	om_object_t object_header;
-
+typedef struct _ps_tcb_t : public kfxx::rbtree_t<thread_id_t>::node_t, public om_object_t {
 	ps_pcb_t *parent;
 
 	uint8_t priority, flags;
@@ -20,9 +18,7 @@ typedef struct _ps_tcb_t : public kfxx::rbtree_t<thread_id_t>::node_t {
 	size_t stacksize;
 } ps_tcb_t;
 
-typedef struct _ps_pcb_t : kfxx::rbtree_t<proc_id_t>::node_t {
-	om_object_t object_header;
-
+typedef struct _ps_pcb_t : kfxx::rbtree_t<proc_id_t>::node_t, public om_object_t {
 	thread_id_t last_thread_id;
 	kf_rbtree_t parp_list;
 	mm_context_t *mm_context;

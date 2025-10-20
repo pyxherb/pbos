@@ -30,7 +30,6 @@ entry_tag:
 .align 8
 entry_tag_end:
 
-
 end_tag:
 .short 0 // Type
 .short 0 // Flags

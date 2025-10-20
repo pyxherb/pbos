@@ -10,6 +10,7 @@ typedef enum _pbcore_sysent_id {
 	SYSENT_PBCORE_CLOSE,
 	SYSENT_PBCORE_READ,
 	SYSENT_PBCORE_WRITE,
+	SYSENT_PBCORE_IOCTL,
 	SYSENT_PBCORE_EXEC_CHILD
 } pbcore_sysent_id;
 

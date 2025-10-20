@@ -49,7 +49,7 @@ void hal_irq_init() {
 	hn_setisr(isr_boundrange, 0x05, 0, GATE_TRAP386);
 	hn_setisr(isr_invl_opcode, 0x06, 0, GATE_INT386);
 	hn_setisr(isr_nofpu, 0x07, 0, GATE_TRAP386);
-	hn_setisr(isr_double_fault, 0x08, 0, GATE_INT386);
+	// hn_setisr(isr_double_fault, 0x08, 0, GATE_INT386);
 	hn_setisr(isr_dev_invltss, 0x0a, 0, GATE_INT386);
 	hn_setisr(isr_noseg, 0x0b, 0, GATE_INT386);
 	hn_setisr(isr_stackerr, 0x0c, 0, GATE_INT386);
@@ -67,7 +67,7 @@ void hal_irq_init() {
 
 	hn_setisr(isr_timer, 0x30, 0, GATE_INT386);
 
-	hn_setisr(isr_syscall, 0xc0, 3, GATE_TRAP386);
+	hn_setisr(isr_syscall, 0xc0, 3, GATE_INT386);
 
 	arch_lidt(hn_kidt, 256);
 

@@ -2,6 +2,8 @@
 #include <hal/i386/logger.h>
 #include <pbos/km/proc.h>
 #include <hal/i386/mm.hh>
+#include <pbos/hal/irq.hh>
+#include "arch/i386/irq.h"
 
 PBOS_EXTERN_C_BEGIN
 
@@ -416,6 +418,8 @@ typedef struct _tmpmap_info_t {
 static tmpmap_info_t _tmpmap_slots[16];
 
 pgaddr_t hn_tmpmap(pgaddr_t pgpaddr, pgsize_t pg_num, uint16_t mask) {
+	io::irq_disable_lock irq_lock;
+
 	kd_dbgcheck(
 		pg_num <= (PGROUNDDOWN(KTMPMAP_SIZE)),
 		"Number of pages (%d pages) to map is bigger than the size of KTMPMAP area (%d pages)",
@@ -470,6 +474,8 @@ alloc_succeeded:
 }
 
 void hn_tmpunmap(pgaddr_t addr) {
+	io::irq_disable_lock irq_lock;
+
 	kd_dbgcheck(ISVALIDPG(addr), "Unmapping with an invalid TMPMAP address");
 
 	tmpmap_info_t *i = NULL;

@@ -79,6 +79,7 @@ PBOS_NODISCARD void *mm_kmalloc(size_t size, size_t alignment);
 void mm_kfree(void *ptr);
 
 /// @brief Do not mark the virtual pages as reserved after the allocation.
+#define VMALLOC_ATOMIC 0x40000000
 #define VMALLOC_NORESERVE 0x80000000
 
 typedef uint32_t mm_vmalloc_flags_t;
@@ -115,6 +116,7 @@ PBOS_NODISCARD void *mm_kvmalloc(mm_context_t *context, size_t size, mm_pgaccess
 /// @param size Previous allocated size.
 void mm_vmfree(mm_context_t *context, void *addr, size_t size);
 
+#define MMAP_ATOMIC 0x00000001
 #define MMAP_NOSETVPM 0x40000000
 #define MMAP_NORC 0x80000000
 #define MMAP_IOREMAP MMAP_NORC

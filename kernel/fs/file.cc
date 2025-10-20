@@ -3,6 +3,7 @@
 #include <pbos/km/mm.h>
 #include <pbos/kn/fs/file.hh>
 #include <pbos/kn/fs/fs.hh>
+#include <pbos/km/objmgr.hh>
 
 km_result_t kn_alloc_file(
 	fs_filesys_t *fs,

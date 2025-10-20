@@ -2,7 +2,10 @@
 #include <pbos/kfxx/scope_guard.hh>
 
 void kn_thread_destructor(om_object_t *obj) {
-	hn_thread_cleanup(PBOS_CONTAINER_OF(ps_tcb_t, object_header, obj));
+	ps_tcb_t *tcb = static_cast<ps_tcb_t *>(obj);
+	hn_thread_cleanup(tcb);
+	kfxx::destroy_at<ps_tcb_t>(tcb);
+	mm_kfree(tcb);
 }
 
 ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb) {
@@ -15,7 +18,7 @@ ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb) {
 		return NULL;
 	}
 	memset(t->context, 0, sizeof(ps_user_context_t));
-	om_init_object(&(t->object_header), ps_thread_class, 0);
+	om_init_object(t, ps_thread_class, 0);
 	t->parent = pcb;
 	t->context->eflags |= (1 << 9);	 // IF
 

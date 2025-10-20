@@ -42,7 +42,10 @@ ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd) {
 }
 
 void kn_proc_destructor(om_object_t *obj) {
-	hn_proc_cleanup((ps_pcb_t *)obj);
+	ps_pcb_t *pcb = static_cast<ps_pcb_t *>(obj);
+	hn_proc_cleanup(pcb);
+	kfxx::destroy_at<ps_pcb_t>(pcb);
+	mm_kfree(pcb);
 }
 
 void ps_create_proc(
@@ -79,7 +82,7 @@ ps_pcb_t *ps_alloc_pcb() {
 		return NULL;
 	}
 
-	om_init_object(&(proc->object_header), ps_proc_class, 0);
+	om_init_object(proc, ps_proc_class, 0);
 
 	kf_rbtree_init(
 		&(proc->parp_list),
@@ -105,7 +108,7 @@ void hn_proc_cleanup(ps_pcb_t *proc) {
 	proc->flags &= ~PROC_A;
 
 	for(auto it = proc->thread_set.begin(); it != proc->thread_set.end(); ++it) {
-		om_decref(&static_cast<ps_tcb_t*>(it.node)->object_header);
+		om_decref(static_cast<ps_tcb_t*>(it.node));
 	}
 
 	kf_rbtree_free(&(proc->parp_list));

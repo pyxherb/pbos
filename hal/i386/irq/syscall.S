@@ -5,8 +5,6 @@
 // e[a-d]x: Arguments
 //
 isr_syscall:
-	cli
-
 	pushl %ebx
 	pushl %ecx
 	pushl %esi
