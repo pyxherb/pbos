@@ -32,6 +32,8 @@ isr_syscall:
 
 	call hn_syscall_handler
 
+	cli
+
 	addl $24, %esp
 
 	movl %eax, %edx

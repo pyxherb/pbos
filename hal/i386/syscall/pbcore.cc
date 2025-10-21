@@ -1,6 +1,7 @@
 #include "pbcore.h"
 #include <pbos/fs/file.h>
 #include <pbos/km/exec.h>
+#include "pbos/hal/irq.hh"
 
 PBOS_EXTERN_C_BEGIN
 
@@ -18,16 +19,18 @@ km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint3
 		return KM_RESULT_ACCESS_VIOLATION;
 
 	ps_ufd_t fd = ps_alloc_fd(pcb);
-	if(fd < 0)
+	if (fd < 0)
 		return KM_RESULT_NO_SLOT;
 
 	fs_fcb_t *fcb;
-	if (KM_FAILED(result = fs_open(pcb->cur_dir, path, path_len, &fcb))) {
-		return result;
-	};
+	{
+		if (KM_FAILED(result = fs_open(pcb->cur_dir, path, path_len, &fcb))) {
+			return result;
+		};
+	}
 
 	ps_ufcb_t *ufcb;
-	if(!(ufcb = ps_alloc_ufcb(pcb, fcb, fd))) {
+	if (!(ufcb = ps_alloc_ufcb(pcb, fcb, fd))) {
 		fs_close(fcb);
 		return KM_RESULT_NO_MEM;
 	}
@@ -43,7 +46,7 @@ km_result_t sysent_close(ps_ufd_t ufd, uint32_t flags) {
 
 	ps_ufcb_t *ufcb = ps_lookup_ufcb(pcb, ufd);
 
-	if(!ufcb)
+	if (!ufcb)
 		return KM_RESULT_INVALID_ARGS;
 
 	ps_remove_ufcb(pcb, ufcb);
@@ -74,7 +77,7 @@ km_result_t sysent_exec_child(
 
 	ps_ufcb_t *ufcb = ps_lookup_ufcb(pcb, file_ufd);
 
-	if(!ufcb)
+	if (!ufcb)
 		return KM_RESULT_INVALID_ARGS;
 
 	return km_exec(pcb->rb_value, 0, ufcb->kernel_fcb, proc_id_out);

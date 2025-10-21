@@ -144,6 +144,8 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	size_t size,
 	mm_pgaccess_t access,
 	mmap_flags_t flags) {
+	io::irq_disable_lock irq_lock;
+
 	kd_assert(ctxt);
 
 	km_result_t result;
@@ -340,6 +342,7 @@ void *mm_vmalloc(mm_context_t *ctxt,
 			continue;
 		}
 
+		io::irq_disable_lock irq_lock;
 		pgaddr_t tmapaddr = hn_tmpmap(
 			pdt[i].address,
 			PGROUNDUP(sizeof(arch_pte_t) * (PTX_MAX + 1)),
@@ -373,6 +376,8 @@ succeeded:
 }
 
 void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr, uint16_t *mask_out) {
+	io::irq_disable_lock irq_lock;
+
 	const arch_pde_t *pde = &pgdir[PDX(vaddr)];
 	if (!(pde->mask & PDE_P))
 		return NULL;
@@ -418,8 +423,7 @@ typedef struct _tmpmap_info_t {
 static tmpmap_info_t _tmpmap_slots[16];
 
 pgaddr_t hn_tmpmap(pgaddr_t pgpaddr, pgsize_t pg_num, uint16_t mask) {
-	io::irq_disable_lock irq_lock;
-
+	kd_dbgcheck(hal_is_irq_disabled(), "hn_tmpmap() requires interrupts disabled");
 	kd_dbgcheck(
 		pg_num <= (PGROUNDDOWN(KTMPMAP_SIZE)),
 		"Number of pages (%d pages) to map is bigger than the size of KTMPMAP area (%d pages)",
@@ -474,8 +478,7 @@ alloc_succeeded:
 }
 
 void hn_tmpunmap(pgaddr_t addr) {
-	io::irq_disable_lock irq_lock;
-
+	kd_dbgcheck(hal_is_irq_disabled(), "hn_tmpunmap() requires interrupts disabled");
 	kd_dbgcheck(ISVALIDPG(addr), "Unmapping with an invalid TMPMAP address");
 
 	tmpmap_info_t *i = NULL;

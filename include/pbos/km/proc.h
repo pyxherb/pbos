@@ -82,6 +82,7 @@ ps_pcb_t *ps_global_proc_set_next(ps_pcb_t *cur);
 ps_tcb_t *ps_proc_thread_set_begin(ps_pcb_t *pcb);
 ps_tcb_t *ps_proc_thread_set_next(ps_pcb_t *pcb, ps_tcb_t *cur);
 
+void ps_user_thread_init(ps_tcb_t *tcb);
 void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr);
 
 ps_euid_t ps_get_cur_euid();

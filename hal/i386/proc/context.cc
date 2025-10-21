@@ -1,7 +1,8 @@
 #include <arch/i386/reg.h>
-#include <hal/i386/proc.hh>
 #include <pbos/hal/spinlock.h>
 #include <pbos/km/logger.h>
+#include <hal/i386/proc.hh>
+#include <pbos/hal/irq.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -19,33 +20,46 @@ typedef struct _kn_ctxtsw_tmp_t {
 
 #define hn_ctxtsw_tmp_area ((kn_ctxtsw_tmp_t *)KCTXTSWTMP_VBASE)
 
-hal_spinlock_t hn_load_context_spinlock = HAL_SPINLOCK_UNLOCKED;
+PBOS_NORETURN void hn_load_user_context(
+	uint32_t edi,
+	uint32_t esi,
+	uint32_t ebp,
+	uint32_t ebx,
+	uint32_t edx,
+	uint32_t ecx,
+	uint32_t fs,
+	uint32_t es,
+	uint32_t gs,
+	uint32_t ds,
+	uint32_t eax,
 
-PBOS_NORETURN void hn_load_user_context();
-
-void ps_save_context(ps_user_context_t *ctxt) {
-}
+	void *eip,
+	uint32_t cs,
+	uint32_t eflags,
+	uint32_t esp,
+	uint32_t ss);
 
 PBOS_NORETURN void ps_load_user_context(ps_user_context_t *ctxt) {
-	hal_spinlock_lock(&hn_load_context_spinlock);
-	/*kdprintf("Switching context:\n"
-			"EAX=%.8x EBX=%.8x\n"
-			"ECX=%.8x EDX=%.8x\n"
-			"ESP=%.8x EBP=%.8x\n"
-			"ESI=%.8x EDI=%.8x\n"
-			"EIP=%.8x EFLAGS=%.8x\n",
-			ctxt->eax, ctxt->ebx,
-			ctxt->ecx, ctxt->edx,
-			ctxt->esp, ctxt->ebp,
-			ctxt->esi, ctxt->edi,
-			ctxt->eip, ctxt->eflags);*/
-	hn_ctxtsw_tmp_area->cs = SELECTOR_UCODE;
-	hn_ctxtsw_tmp_area->ds = SELECTOR_UDATA;
-	hn_ctxtsw_tmp_area->es = SELECTOR_UDATA;
-	hn_ctxtsw_tmp_area->fs = ps_get_cur_euid();
-	hn_ctxtsw_tmp_area->gs = SELECTOR_UDATA;
-	memcpy(&hn_ctxtsw_tmp_area->context, ctxt, sizeof(ps_user_context_t));
-	hn_load_user_context();
+	hn_load_user_context(
+		ctxt->edi,
+		ctxt->esi,
+		ctxt->ebp,
+		ctxt->ebx,
+		ctxt->edx,
+		ctxt->ecx,
+		ps_get_cur_euid(),
+		ctxt->es,
+		ctxt->gs,
+		ctxt->ds,
+		ctxt->eax,
+		ctxt->eip,
+		ctxt->cs,
+		ctxt->eflags,
+		ctxt->esp,
+		ctxt->ss);
+}
+
+void ps_save_context(ps_user_context_t *ctxt) {
 }
 
 PBOS_EXTERN_C_END

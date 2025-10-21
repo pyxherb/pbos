@@ -4,6 +4,8 @@
 PBOS_EXTERN_C_BEGIN
 
 uint32_t hn_syscall_handler(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx, uint32_t esi, uint32_t edi) {
+	arch_sti();
+
 	switch (eax) {
 		case SYSENT_PBCORE_EXIT:
 			kprintf("exit test\n");

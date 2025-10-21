@@ -2,9 +2,10 @@
 #include <arch/i386/paging.h>
 #include <pbos/fmt/elf.h>
 #include <pbos/fs/file.h>
-#include <pbos/km/logger.h>
 #include <pbos/km/exec.h>
+#include <pbos/km/logger.h>
 #include <string.h>
+#include <pbos/hal/irq.hh>
 
 km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp);
 km_result_t kn_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp);
@@ -19,7 +20,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	size_t off = 0, bytes_read;
 
 	ps_tcb_t *tcb = ps_alloc_tcb(proc);
-	if(!tcb)
+	if (!tcb)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
 	// Allocate stack for main thread.
@@ -79,6 +80,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 
 		off = ph.p_offset;
 
+		io::irq_disable_lock irq_disable_lock;
 		mm_switch_context(ps_mm_context_of(proc));
 		{
 			// Allocate pages for current segment.
@@ -104,6 +106,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	}
 
 	// Set entry of main thread.
+	ps_user_thread_init(tcb);
 	ps_thread_set_entry(tcb, (void *)ehdr.e_entry);
 
 	ps_add_thread(proc, tcb);

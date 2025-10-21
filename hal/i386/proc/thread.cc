@@ -1,5 +1,6 @@
 #include <hal/i386/proc.hh>
 #include <pbos/kfxx/scope_guard.hh>
+#include <pbos/hal/irq.hh>
 
 void kn_thread_destructor(om_object_t *obj) {
 	ps_tcb_t *tcb = static_cast<ps_tcb_t *>(obj);
@@ -29,6 +30,7 @@ thread_id_t ps_create_thread(
 	ps_proc_access_t access,
 	ps_pcb_t *pcb,
 	size_t stacksize) {
+	io::irq_disable_lock irq_disable_lock;
 	if (!stacksize)
 		return -1;
 
@@ -55,6 +57,14 @@ void hn_thread_cleanup(ps_tcb_t *thread) {
 		((char *&)thread->stack) += PAGESIZE;
 		thread->stacksize -= PAGESIZE;
 	}
+}
+
+void ps_user_thread_init(ps_tcb_t *tcb) {
+	tcb->context->cs = SELECTOR_UCODE;
+	tcb->context->ds = SELECTOR_UDATA;
+	tcb->context->ss = SELECTOR_UDATA;
+	tcb->context->es = SELECTOR_UDATA;
+	tcb->context->gs = SELECTOR_UDATA;
 }
 
 void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr) {

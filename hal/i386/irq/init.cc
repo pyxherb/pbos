@@ -53,7 +53,7 @@ void hal_irq_init() {
 	hn_setisr(isr_dev_invltss, 0x0a, 0, GATE_INT386);
 	hn_setisr(isr_noseg, 0x0b, 0, GATE_INT386);
 	hn_setisr(isr_stackerr, 0x0c, 0, GATE_INT386);
-	hn_setisr(isr_prot, 0x0d, 0, GATE_INT386);
+	// hn_setisr(isr_prot, 0x0d, 0, GATE_INT386);
 	// hn_setisr(isr_pgfault, 0x0e, 0, GATE_INT386);
 	hn_setisr(isr_fpuerr, 0x10, 0, GATE_INT386);
 	hn_setisr(isr_alignchk, 0x11, 0, GATE_INT386);

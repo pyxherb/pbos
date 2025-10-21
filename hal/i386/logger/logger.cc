@@ -1,8 +1,9 @@
 #include <common/format.h>
 #include <hal/i386/display/vga.h>
 #include <hal/i386/logger.h>
-#include <string.h>
 #include <pbos/hal/spinlock.h>
+#include <string.h>
+#include <pbos/hal/irq.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -29,6 +30,7 @@ klog_logger_t klog_getdefault() {
 }
 
 void kvprintf(const char *str, va_list args) {
+	io::irq_disable_lock irq_lock;
 	hal_spinlock_lock(&hn_logger_spinlock);
 	hn_active_logger(KLOG_MODE_PRINTFMT, str, args);
 	hal_spinlock_unlock(&hn_logger_spinlock);

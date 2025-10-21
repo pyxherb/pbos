@@ -1,6 +1,7 @@
 #include <pbos/kfxx/scope_guard.hh>
 #include "../mm.hh"
 #include "../proc.hh"
+#include <pbos/hal/irq.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -79,7 +80,7 @@ void mm_free_context(mm_context_t *context) {
 	// Free VPD query tree and pools.
 	for (size_t i = 0; i < PBOS_ARRAYSIZE(context->uspace_vpm_query_tree); ++i) {
 		context->uspace_vpm_query_tree[i].clear([](kfxx::rbtree_t<void *>::node_t *node) noexcept {
-			kn_vpm_nodefree(static_cast<hn_vpm_t*>(node));
+			kn_vpm_nodefree(static_cast<hn_vpm_t *>(node));
 		});
 	}
 	for (kn_mm_vpm_poolpg_t *i = context->uspace_vpm_poolpg_list; i; i = i->header.next) {
@@ -92,6 +93,7 @@ void mm_free_context(mm_context_t *context) {
 }
 
 void mm_switch_context(mm_context_t *context) {
+	io::irq_disable_lock irq_lock;
 	kd_assert(context);
 	mm_context_t *prev_context = mm_cur_contexts[ps_get_cur_euid()];
 	mm_cur_contexts[ps_get_cur_euid()] = context;

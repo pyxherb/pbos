@@ -1,6 +1,7 @@
-#include <hal/i386/proc.hh>
-#include <pbos/kn/km/exec.hh>
 #include <string.h>
+#include <hal/i386/proc.hh>
+#include <pbos/hal/irq.hh>
+#include <pbos/kn/km/exec.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -19,7 +20,7 @@ proc_id_t kn_alloc_proc_id() {
 }
 
 km_result_t km_register_binldr(km_binldr_t *binldr) {
-	kn_binldr_registry_t *reg = (kn_binldr_registry_t*)mm_kmalloc(sizeof(kn_binldr_registry_t), alignof(kn_binldr_registry_t));
+	kn_binldr_registry_t *reg = (kn_binldr_registry_t *)mm_kmalloc(sizeof(kn_binldr_registry_t), alignof(kn_binldr_registry_t));
 	if (!reg)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
@@ -40,7 +41,7 @@ km_result_t km_exec(
 	km_result_t result;
 
 	proc_id_t new_proc_id = kn_alloc_proc_id();
-	if(new_proc_id < 0)
+	if (new_proc_id < 0)
 		return KM_MAKEERROR(KM_RESULT_NO_SLOT);
 
 	ps_pcb_t *pcb = ps_alloc_pcb();
@@ -50,6 +51,8 @@ km_result_t km_exec(
 	}
 
 	kf_rbtree_foreach(i, &kn_registered_binldrs) {
+		io::irq_disable_lock irq_disable_lock;
+
 		kn_binldr_registry_t *binldr = PBOS_CONTAINER_OF(kn_binldr_registry_t, tree_header, i);
 
 		if (KM_SUCCEEDED(result = binldr->binldr.load_exec(pcb, file_fp))) {
@@ -74,7 +77,7 @@ failed:
 
 bool kn_binldr_reg_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
 	const kn_binldr_registry_t *_x = (const kn_binldr_registry_t *)x,
-						  *_y = (const kn_binldr_registry_t *)y;
+							   *_y = (const kn_binldr_registry_t *)y;
 
 	return uuid_lt(&_x->uuid, &_y->uuid);
 }

@@ -1,7 +1,8 @@
-#include <hal/i386/proc.hh>
 #include <pbos/fs/file.h>
 #include <pbos/fs/fs.h>
 #include <pbos/km/logger.h>
+#include <hal/i386/proc.hh>
+#include <pbos/hal/irq.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -38,7 +39,7 @@ void ps_remove_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
 }
 
 ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd) {
-	return static_cast<ps_ufcb_t*>(pcb->ufcb_set.find(fd));
+	return static_cast<ps_ufcb_t *>(pcb->ufcb_set.find(fd));
 }
 
 void kn_proc_destructor(om_object_t *obj) {
@@ -51,6 +52,7 @@ void kn_proc_destructor(om_object_t *obj) {
 void ps_create_proc(
 	ps_pcb_t *pcb,
 	proc_id_t parent) {
+	io::irq_disable_lock irq_disable_lock;
 	if (ps_global_proc_set.find(pcb->rb_value))
 		km_panic("Trying to create a new process with PCB with PID that is already used by a process");
 
@@ -98,7 +100,7 @@ ps_pcb_t *ps_alloc_pcb() {
 }
 
 ps_pcb_t *ps_getpcb(proc_id_t pid) {
-	return static_cast<ps_pcb_t*>(ps_global_proc_set.find(pid));
+	return static_cast<ps_pcb_t *>(ps_global_proc_set.find(pid));
 }
 
 void hn_proc_cleanup(ps_pcb_t *proc) {
@@ -107,14 +109,15 @@ void hn_proc_cleanup(ps_pcb_t *proc) {
 	mm_kfree(proc->mm_context);
 	proc->flags &= ~PROC_A;
 
-	for(auto it = proc->thread_set.begin(); it != proc->thread_set.end(); ++it) {
-		om_decref(static_cast<ps_tcb_t*>(it.node));
+	for (auto it = proc->thread_set.begin(); it != proc->thread_set.end(); ++it) {
+		om_decref(static_cast<ps_tcb_t *>(it.node));
 	}
 
 	kf_rbtree_free(&(proc->parp_list));
 }
 
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
+	io::irq_disable_lock irq_disable_lock;
 	// stub: do some checks with the new thread id, such as checking if a thread with the id exists.
 	thread->rb_value = ++proc->last_thread_id;
 	proc->thread_set.insert(thread);
