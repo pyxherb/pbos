@@ -7,9 +7,11 @@ PBOS_EXTERN_C_BEGIN
 
 mm_context_t hn_kernel_mm_context;
 mm_context_t *mm_kernel_context = &hn_kernel_mm_context;
-mm_context_t **mm_cur_contexts;
+mm_context_t **mm_cur_contexts = nullptr;
 
 void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
+	if (dest == src)
+		return;
 	memcpy(
 		dest->pdt + PDX(KBOTTOM_VBASE),
 		src->pdt + PDX(KBOTTOM_VBASE),
@@ -44,17 +46,17 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 		mm_pgfree(pdt_paddr);
 	});
 
-	if (!(pdt_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
+	if (!(pdt_vaddr = mm_kvmalloc(mm_cur_contexts[ps_get_cur_euid()], PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
 		return KM_RESULT_NO_MEM;
 	}
 	kfxx::scope_guard free_pdt_vaddr_guard([pdt_vaddr]() noexcept {
-		mm_vmfree(mm_kernel_context, pdt_vaddr, PAGESIZE);
+		mm_vmfree(mm_cur_contexts[ps_get_cur_euid()], pdt_vaddr, PAGESIZE);
 	});
 
 	for (size_t i = 0; i < PBOS_ARRAYSIZE(context->uspace_vpm_query_tree); ++i) {
 		kfxx::construct_at<kfxx::rbtree_t<void *>>(&context->uspace_vpm_query_tree[i]);
 	}
-	if (KM_FAILED(result = mm_mmap(mm_kernel_context, pdt_vaddr, pdt_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
+	if (KM_FAILED(result = mm_mmap(mm_cur_contexts[ps_get_cur_euid()], pdt_vaddr, pdt_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
 		return result;
 	}
 
@@ -64,7 +66,7 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 	memset(pdt_vaddr, 0, PAGESIZE);
 	context->pdt = (arch_pde_t *)pdt_vaddr;
 
-	kn_mm_copy_global_mappings(context, mm_kernel_context);
+	kn_mm_copy_global_mappings(context, mm_cur_contexts[ps_get_cur_euid()]);
 
 	// kn_mm_copy_global_mappings(context, mm_kernel_context);
 	return KM_RESULT_OK;

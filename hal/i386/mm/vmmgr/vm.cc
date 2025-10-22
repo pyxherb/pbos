@@ -56,7 +56,9 @@ void mm_vmfree(mm_context_t *ctxt, void *addr, size_t size) {
 km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_walker walker, void *exargs) {
 	km_result_t result;
 
-	for (uint16_t di = PDX(vaddr); di <= (PDX(((char *)vaddr) + size));
+	uint16_t limit = (PDX(((char *)vaddr) + size));
+
+	for (uint16_t di = PDX(vaddr); di <= limit;
 		di++) {
 		arch_pde_t *const pde = &pdt[di];
 		kd_assert(pde->mask & PDE_P);
@@ -112,15 +114,25 @@ static km_result_t hn_mmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx
 	hn_mmap_walker_args *args = (hn_mmap_walker_args *)exargs;
 
 	if (pte->mask & PTE_P) {
+		// Free previous mapping.
 		if (pte->address) {
 			if (!(args->flags & MMAP_NORC)) {
 				mm_pgfree(UNPGADDR(pte->address));
 			}
 		}
-		if (!(args->flags & MMAP_NOSETVPM)) {
-			kn_mm_free_vpm(args->context, VADDR(pdx, ptx, 0));
-		}
+
+		if (!(args->mask & PTE_P))
+			if (!(args->flags & MMAP_NOSETVPM)) {
+				kn_mm_free_vpm(args->context, VADDR(pdx, ptx, 0));
+			}
 	}
+
+	/*if (args->mask & PTE_P) {
+		if (!(args->flags & MMAP_NOSETVPM)) {
+			km_result_t result = kn_mm_insert_vpm(args->context, VADDR(pdx, ptx, 0));
+			kd_assert(KM_SUCCEEDED(result));
+		}
+	}*/
 
 	pte->address = PGROUNDDOWN(args->paddr);
 	pte->mask = args->mask;
@@ -221,10 +233,11 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	}
 
 	if (!(flags & MMAP_NOSETVPM)) {
-		void *rounded_vaddr = (void *)PGFLOOR(vaddr), *rounded_paddr = (void *)PGFLOOR(paddr);
+		// Insert VPMs after free all previous VPMs.
+		char *rounded_vaddr = (char *)PGFLOOR(vaddr), *rounded_paddr = (char *)PGFLOOR(paddr);
 		size_t rounded_size = PGCEIL(size);
 		for (size_t i = 0; i < rounded_size; i += PAGESIZE) {
-			void *cur_ptr = ((char *)rounded_vaddr) + i;
+			void *cur_ptr = rounded_vaddr + i;
 			km_result_t result = kn_mm_insert_vpm(ctxt, cur_ptr);
 			kd_assert(KM_SUCCEEDED(result));
 		}
@@ -277,7 +290,7 @@ void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 	kd_assert(KM_SUCCEEDED(result));
 }
 
-void mm_chpgmod(
+void mm_set_page_access(
 	mm_context_t *context,
 	const void *vaddr,
 	size_t size,
@@ -375,8 +388,13 @@ void *mm_vmalloc(mm_context_t *ctxt,
 
 	return NULL;
 succeeded:
+	mmap_flags_t mmap_flags = 0;
+
+	if (flags & VMALLOC_NOSETVPM)
+		mmap_flags |= VMALLOC_NOSETVPM;
+
 	if (!(flags & VMALLOC_NORESERVE))
-		mm_mmap(ctxt, p_found, NULL, size, access, 0);
+		mm_mmap(ctxt, p_found, NULL, size, access, mmap_flags);
 	return p_found;
 }
 

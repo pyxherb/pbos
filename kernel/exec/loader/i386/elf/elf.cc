@@ -27,6 +27,8 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	if (KM_FAILED(result = ps_thread_alloc_stack(tcb, 0x200000)))
 		return result;
 
+	// TODO: Add cleanup guard.
+
 	if (KM_FAILED(result = ps_thread_alloc_kernel_stack(tcb, 0x2000)))
 		return result;
 
@@ -90,7 +92,10 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 			for (Elf32_Word j = 0; j < ph.p_memsz; j += PAGESIZE) {
 				if (!mm_getmap(ps_mm_context_of(proc), vaddr + PAGESIZE * j, NULL)) {
 					void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
-					mm_mmap(ps_mm_context_of(proc), vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0);
+					if(!paddr)
+						return KM_RESULT_NO_MEM;
+					if(!KM_SUCCEEDED(result = mm_mmap(ps_mm_context_of(proc), vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0)))
+						return result;
 				}
 			}
 
@@ -103,7 +108,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 			off += bytes_read;
 
 			// Mark the pages as executable.
-			mm_chpgmod(ps_mm_context_of(proc), vaddr, ph.p_memsz, PAGE_EXEC);
+			mm_set_page_access(ps_mm_context_of(proc), vaddr, ph.p_memsz, PAGE_EXEC);
 		}
 		mm_switch_context(mm_kernel_context);
 	}

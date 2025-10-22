@@ -1,4 +1,6 @@
+#include <pbos/km/logger.h>
 #include <string.h>
+#include <pbos/hal/irq.hh>
 #include <pbos/kn/km/mm.hh>
 
 PBOS_EXTERN_C_BEGIN
@@ -28,7 +30,7 @@ hn_vpm_t *kn_mm_lookup_vpm(mm_context_t *context, const void *addr, int level) {
 
 km_result_t kn_mm_insert_vpm(mm_context_t *context, const void *addr) {
 	if (kn_mm_lookup_vpm(context, addr, KN_MM_VPM_LEVEL_MAX)) {
-		return KM_MAKEERROR(KM_RESULT_EXISTED);
+		kd_assert("Inserting duplicated VPM, aborting");
 	}
 
 	bool inserted_flags_per_level[KN_MM_VPM_LEVEL_MAX + 1];
@@ -79,7 +81,7 @@ km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 	void *new_vpmpool_paddr = NULL,
 		 *new_vpmpool_vaddr = NULL;
 
-	if ((!(new_vpmpool_vaddr = mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE)))) {
+	if ((!(new_vpmpool_vaddr = mm_kvmalloc(context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NOSETVPM)))) {
 		result = KM_RESULT_NO_MEM;
 		goto fail;
 	}
@@ -89,7 +91,7 @@ km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 		goto fail;
 	}
 
-	if (KM_FAILED(result = mm_mmap(mm_kernel_context, new_vpmpool_vaddr, new_vpmpool_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_NOSETVPM))) {
+	if (KM_FAILED(result = mm_mmap(context, new_vpmpool_vaddr, new_vpmpool_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_NOSETVPM))) {
 		goto fail;
 	}
 
@@ -130,7 +132,7 @@ fail:
 		mm_pgfree(new_vpmpool_paddr);
 	}
 	if (new_vpmpool_vaddr) {
-		mm_vmfree(mm_kernel_context, new_vpmpool_vaddr, PAGESIZE);
+		mm_vmfree(context, new_vpmpool_vaddr, PAGESIZE);
 	}
 
 	return KM_MAKEERROR(result);
@@ -140,7 +142,7 @@ void kn_mm_free_vpm(mm_context_t *context, const void *addr) {
 	for (int i = 0; i <= KN_MM_VPM_LEVEL_MAX; ++i) {
 		void *aligned_addr = kn_rounddown_to_page_leveled_addr(addr, i);
 
-#ifndef _NDEBUG
+#ifndef NDEBUG
 		hn_vpm_t *cur_level_vpm = kn_mm_lookup_vpm(context, aligned_addr, i);
 		kd_assert(cur_level_vpm);
 #endif
@@ -150,6 +152,7 @@ void kn_mm_free_vpm(mm_context_t *context, const void *addr) {
 }
 
 void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level) {
+	io::irq_disable_lock irq_lock;
 	kfxx::rbtree_t<void *> *query_tree = kn_mm_get_vpm_lookup_tree(context, addr, level);
 	kn_mm_vpm_poolpg_t **pool_list = kn_mm_get_vpm_pool_list(context, addr, level);
 
@@ -193,6 +196,8 @@ void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 }
 
 hn_vpm_t *kn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr, int level) {
+	io::irq_disable_lock irq_lock;
+
 	kfxx::rbtree_t<void *> *query_tree = kn_mm_get_vpm_lookup_tree(context, addr, level);
 	kn_mm_vpm_poolpg_t **pool_list = kn_mm_get_vpm_pool_list(context, addr, level);
 

@@ -4,11 +4,11 @@
 PBOS_EXTERN_C_BEGIN
 
 static uintptr_t hn_level0_rounddowner(uintptr_t addr) {
-	return addr & (uintptr_t)VADDR(PDX_MAX, 0, 0);
+	return (uintptr_t)VADDR(PDX(addr), 0, 0);
 }
 
 static uintptr_t hn_level1_rounddowner(uintptr_t addr) {
-	return addr & (uintptr_t)VADDR(PDX_MAX, PTX_MAX, 0);
+	return (uintptr_t)VADDR(PDX(addr), PTX(addr), 0);
 }
 
 kfxx::rbtree_t<void *> hn_kspace_vpm_query_tree[HN_VPM_LEVEL_MAX + 1];

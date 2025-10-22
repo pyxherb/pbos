@@ -450,12 +450,12 @@ namespace kfxx {
 					if (node == tree->_cached_min_node)
 						km_panic("Dereasing the begin iterator");
 
-					node = this_t::get_next(node, nullptr);
+					node = this_t::get_prev(node, nullptr);
 				} else {
 					if (node == tree->_cached_max_node)
 						km_panic("Dereasing the begin iterator");
 
-					node = this_t::get_prev(node, nullptr);
+					node = this_t::get_next(node, nullptr);
 				}
 
 				return *this;

@@ -1,6 +1,7 @@
+#include <pbos/km/logger.h>
 #include <hal/i386/proc.hh>
-#include <pbos/kfxx/scope_guard.hh>
 #include <pbos/hal/irq.hh>
+#include <pbos/kfxx/scope_guard.hh>
 
 void kn_thread_destructor(om_object_t *obj) {
 	ps_tcb_t *tcb = static_cast<ps_tcb_t *>(obj);
@@ -74,6 +75,8 @@ void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr) {
 void kn_thread_set_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
 	kd_assert(tcb->context);
 	const void *sp = ((char *)ptr) + size;
+	tcb->stack = ptr;
+	tcb->stack_size = size;
 	tcb->context->esp = (uint32_t)sp;
 	tcb->context->ebp = (uint32_t)sp;
 }
@@ -81,6 +84,8 @@ void kn_thread_set_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
 void kn_thread_set_kernel_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
 	kd_assert(tcb->context);
 	const void *sp = ((char *)ptr) + size;
+	tcb->kernel_stack = ptr;
+	tcb->kernel_stack_size = size;
 	tcb->context->esp0 = (uint32_t)sp;
 }
 
@@ -88,12 +93,12 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 	km_result_t result;
 	ps_pcb_t *pcb = tcb->parent;
 
-	tcb->stack_size = size;
-	if (!(tcb->stack = mm_vmalloc(
+	char *ptr;
+	if (!(ptr = (char *)mm_vmalloc(
 			  pcb->mm_context,
 			  (void *)UFREE_VBASE,
 			  (void *)UFREE_VTOP,
-			  tcb->stack_size,
+			  size,
 			  PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER,
 			  VMALLOC_ATOMIC))) {
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
@@ -102,22 +107,21 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 	{
 		size_t i = 0;
 
-		kfxx::scope_guard release_pages_guard([pcb, tcb, size, &i]() noexcept {
-			do {
-				void *paddr = mm_getmap(pcb->mm_context, ((char *)tcb->stack) + (i - PAGESIZE), NULL);
-				mm_pgfree(paddr);
-			} while (i -= PAGESIZE);
-			mm_vmfree(pcb->mm_context, tcb->stack, size);
+		kfxx::scope_guard release_pages_guard([pcb, size, &i, ptr]() noexcept {
+			kprintf("Freeing stack page: %p-%p", ptr, ptr + (i - PAGESIZE));
+			mm_vmfree(pcb->mm_context, ptr, (i - PAGESIZE));
 		});
 
-		for (; i < tcb->stack_size; i += PAGESIZE) {
+		for (; i < size; i += PAGESIZE) {
 			void *pg = mm_pgalloc(MM_PMEM_AVAILABLE);
 
 			if (!pg) {
+				kprintf("Error allocating physical page: %p", ptr + i);
+				--i;
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
 			}
 
-			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ((char *)tcb->stack) + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, MMAP_ATOMIC))) {
+			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, MMAP_ATOMIC))) {
 				return result;
 			}
 		}
@@ -125,7 +129,7 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 		release_pages_guard.release();
 	}
 
-	kn_thread_set_stack(tcb, tcb->stack, tcb->stack_size);
+	kn_thread_set_stack(tcb, ptr, size);
 
 	return KM_RESULT_OK;
 }
@@ -134,12 +138,12 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 	km_result_t result;
 	ps_pcb_t *pcb = tcb->parent;
 
-	tcb->kernel_stack_size = size;
-	if (!(tcb->kernel_stack = mm_vmalloc(
+	char *ptr;
+	if (!(ptr = (char *)mm_vmalloc(
 			  pcb->mm_context,
 			  (void *)KSPACE_VBASE,
 			  (void *)KSPACE_VTOP,
-			  tcb->kernel_stack_size,
+			  size,
 			  PAGE_MAPPED | PAGE_READ | PAGE_WRITE,
 			  VMALLOC_ATOMIC))) {
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
@@ -148,22 +152,21 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 	{
 		size_t i = 0;
 
-		kfxx::scope_guard release_pages_guard([pcb, tcb, size, &i]() noexcept {
-			do {
-				void *paddr = mm_getmap(pcb->mm_context, ((char *)tcb->stack) + (i - PAGESIZE), NULL);
-				mm_pgfree(paddr);
-			} while (i -= PAGESIZE);
-			mm_vmfree(pcb->mm_context, tcb->kernel_stack, size);
+		kfxx::scope_guard release_pages_guard([pcb, size, &i, ptr]() noexcept {
+			for (size_t j = 0; j < i; j += PAGESIZE) {
+				kprintf("Freeing kernel stack page: %p", ptr + j);
+				mm_vmfree(pcb->mm_context, ptr + j, PAGESIZE);
+			}
 		});
 
-		for (; i < tcb->kernel_stack_size; i += PAGESIZE) {
+		for (; i < size; i += PAGESIZE) {
 			void *pg = mm_pgalloc(MM_PMEM_AVAILABLE);
 
 			if (!pg) {
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
 			}
 
-			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ((char *)tcb->kernel_stack) + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_ATOMIC))) {
+			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, MMAP_ATOMIC))) {
 				return result;
 			}
 		}
@@ -171,10 +174,10 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 		release_pages_guard.release();
 	}
 
-	kn_thread_set_kernel_stack(tcb, tcb->kernel_stack, tcb->kernel_stack_size);
+	kn_thread_set_kernel_stack(tcb, ptr, size);
 
 	// stub
-	if(!ps_global_proc_set.size()) {
+	if (!ps_global_proc_set.size()) {
 		hn_tss_storage_ptr[ps_get_cur_euid()].esp0 = tcb->context->esp0;
 		hn_tss_storage_ptr[ps_get_cur_euid()].ss0 = SELECTOR_KDATA;
 	}
