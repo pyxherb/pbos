@@ -67,8 +67,6 @@ PBOS_NORETURN void ps_load_user_context(const ps_user_context_t *ctxt) {
 		ctxt->ss);
 }
 
-uint32_t last_eip = 0;
-
 PBOS_NORETURN void ps_load_kernel_context(const ps_user_context_t *ctxt) {
 	kn_ctxtsw_tmp_t tmp = {
 		.eax = ctxt->eax,
@@ -77,6 +75,8 @@ PBOS_NORETURN void ps_load_kernel_context(const ps_user_context_t *ctxt) {
 		.eip = (uint32_t)ctxt->eip,
 		.cs = (uint32_t)ctxt->cs
 	};
+
+	kd_assert(ctxt->cs == SELECTOR_KCODE);
 
 	hn_load_kernel_context(
 		ctxt->edi,

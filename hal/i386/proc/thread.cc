@@ -153,17 +153,17 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 				void *paddr = mm_getmap(pcb->mm_context, ((char *)tcb->stack) + (i - PAGESIZE), NULL);
 				mm_pgfree(paddr);
 			} while (i -= PAGESIZE);
-			mm_vmfree(pcb->mm_context, tcb->stack, size);
+			mm_vmfree(pcb->mm_context, tcb->kernel_stack, size);
 		});
 
-		for (; i < tcb->stack_size; i += PAGESIZE) {
+		for (; i < tcb->kernel_stack_size; i += PAGESIZE) {
 			void *pg = mm_pgalloc(MM_PMEM_AVAILABLE);
 
 			if (!pg) {
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
 			}
 
-			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ((char *)tcb->stack) + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, MMAP_ATOMIC))) {
+			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ((char *)tcb->kernel_stack) + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_ATOMIC))) {
 				return result;
 			}
 		}

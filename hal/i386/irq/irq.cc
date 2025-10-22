@@ -61,7 +61,7 @@ PBOS_NORETURN void isr_timer_impl(
 		if (((uintptr_t)eip) < KERNEL_VBASE) {
 			// SS (32-bits?)->ESP->EFLAGS->CS (32-bits)->EIP
 			cur_thread->context->esp = esp_top[3];
-			// kd_assert(cur_thread->context->esp0 = (uint32_t)((char*)cur_thread->kernel_stack + cur_thread->kernel_stack_size));
+			// kd_assert(cur_thread->context->esp0 == (uint32_t)((char*)cur_thread->kernel_stack + cur_thread->kernel_stack_size));
 			// kdprintf("U!\n");
 
 			cur_thread->context->ds = ds;
@@ -83,6 +83,8 @@ PBOS_NORETURN void isr_timer_impl(
 
 	kd_assert(next_thread);
 
+	hn_tss_storage_ptr[cur_euid].esp0 = next_thread->context->esp0;
+
 	if (next_thread->parent != cur_proc) {
 		kn_switch_to_user_process(next_thread->parent);
 		ps_cur_proc_per_eu[cur_euid] = next_thread->parent;
@@ -96,18 +98,17 @@ PBOS_NORETURN void isr_timer_impl(
 
 	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
-	hn_tss_storage_ptr[cur_euid].esp0 = next_thread->context->esp0;
-
 	if (((uintptr_t)next_thread->context->eip) < KERNEL_VBASE) {
-		kdprintf(
+		/*kdprintf(
 			"PID=%d, EIP=%.8x, ESP=%.8x, ESP0=%.8x U\n",
-			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);
+			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);*/
 
 		kn_switch_to_user_thread(next_thread);
 	} else {
-		kdprintf(
+		// We are already in ring 0.
+		/*kdprintf(
 			"PID=%d, EIP=%.8x, ESP=%.8x, ESP0=%.8x K\n",
-			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);
+			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);*/
 		// asm volatile("xchg %bx, %bx");
 		// asm volatile("xchg %bx, %bx");
 		kn_switch_to_kernel_thread(next_thread);

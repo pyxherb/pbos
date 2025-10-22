@@ -98,7 +98,8 @@ void mm_switch_context(mm_context_t *context) {
 
 	mm_context_t *prev_context = mm_cur_contexts[ps_get_cur_euid()];
 	mm_cur_contexts[ps_get_cur_euid()] = context;
-	kn_mm_sync_global_mappings(mm_kernel_context);
+	kn_mm_sync_global_mappings(prev_context);
+	kn_mm_copy_global_mappings(mm_kernel_context, prev_context);
 	arch_lpdt(PGROUNDDOWN(hn_getmap(mm_kernel_context->pdt, context->pdt, NULL)));
 }
 
