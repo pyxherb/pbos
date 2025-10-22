@@ -33,8 +33,7 @@ PBOS_NORETURN void isr_vmmerr();		// 0x1d VMM Communication Exception
 PBOS_NORETURN void isr_securityerr();	// 0x1e Security Exception
 
 PBOS_NORETURN void isr_timer();	 // IRQ0
-void isr_timer_impl(
-	const uint32_t *const user_esp_ptr,
+PBOS_NORETURN void isr_timer_impl(
 	const uint32_t eax,
 	const uint32_t ebx,
 	const uint32_t ecx,
@@ -47,9 +46,7 @@ void isr_timer_impl(
 	const uint32_t es,
 	const uint32_t ds,
 
-	const uint32_t eip,
-	const uint32_t cs,
-	const uint32_t eflags);
+	const uint32_t *const esp_top);
 
 PBOS_NORETURN void isr_syscall();
 

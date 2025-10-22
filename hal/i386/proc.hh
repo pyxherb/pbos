@@ -18,6 +18,7 @@ typedef struct _ps_user_context_t {
 	uint32_t esi;
 	uint32_t ebp;
 	uint32_t esp;
+	uint32_t esp0;
 	uint32_t ebx;
 	uint32_t edx;
 	uint32_t ecx;
@@ -44,8 +45,8 @@ typedef struct _hn_parp_t {
 void hn_proc_cleanup(ps_pcb_t *proc);
 void hn_thread_cleanup(ps_tcb_t *thread);
 void ps_save_context(ps_user_context_t *ctxt);
-PBOS_NORETURN void ps_load_user_context(ps_user_context_t *ctxt);
-PBOS_NORETURN void ps_load_kernel_context(ps_user_context_t *ctxt);
+PBOS_NORETURN void ps_load_user_context(const ps_user_context_t *ctxt);
+PBOS_NORETURN void ps_load_kernel_context(const ps_user_context_t *ctxt);
 
 PBOS_EXTERN_C_END
 

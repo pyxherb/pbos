@@ -22,5 +22,3 @@ The typical command to build the project after the project is configured:
 ```powershell
 cmake -S . -B build
 ```
-
-Note that the default build configuration is `Debug`, you may change it by your want.

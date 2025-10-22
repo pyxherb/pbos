@@ -15,7 +15,10 @@ typedef struct _ps_tcb_t : public kfxx::rbtree_t<thread_id_t>::node_t, public om
 
 	ps_user_context_t *context;
 	void *stack;
-	size_t stacksize;
+	size_t stack_size;
+
+	void *kernel_stack;
+	size_t kernel_stack_size;
 } ps_tcb_t;
 
 typedef struct _ps_pcb_t : kfxx::rbtree_t<proc_id_t>::node_t, public om_object_t {

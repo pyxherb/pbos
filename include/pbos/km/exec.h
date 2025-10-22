@@ -18,6 +18,11 @@ km_result_t km_exec(
 	se_uid_t uid,
 	fs_fcb_t *file_fp,
 	proc_id_t *pid_out);
+km_result_t km_exec_init(
+	proc_id_t parent,
+	se_uid_t uid,
+	fs_fcb_t *file_fp,
+	proc_id_t *pid_out);
 km_result_t km_register_binldr(km_binldr_t *binldr);
 
 PBOS_EXTERN_C_END

@@ -1,6 +1,9 @@
 #include "malloc.hh"
+#include <pbos/hal/irq.hh>
 
 void *mm_kmalloc(size_t size, size_t alignment) {
+	io::irq_disable_lock irq_lock;
+
 	kd_assert(size);
 	char *filter_base = nullptr;
 
@@ -87,6 +90,8 @@ void *mm_kmalloc(size_t size, size_t alignment) {
 }
 
 void mm_kfree(void *ptr) {
+	io::irq_disable_lock irq_lock;
+
 	kima_ublk_t *ublk = kima_lookup_ublk(ptr);
 	kd_assert(ublk);
 	for (uintptr_t i = PGFLOOR(ublk->rb_value);

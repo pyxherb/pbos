@@ -265,6 +265,8 @@ km_result_t hn_unmmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uin
 void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
 	kd_assert(ctxt);
 
+	io::irq_disable_lock irq_lock;
+
 	const void *vaddr_limit = ((const char *)vaddr) + size;
 	hn_unmmap_walker_args args = {
 		.context = ctxt,
@@ -280,6 +282,8 @@ void mm_chpgmod(
 	const void *vaddr,
 	size_t size,
 	mm_pgaccess_t access) {
+	io::irq_disable_lock irq_lock;
+
 	uint16_t mask = hn_pgaccess_to_pgmask(access);
 	pgsize_t pg_num = PGROUNDUP(size);
 
@@ -317,6 +321,7 @@ void *mm_vmalloc(mm_context_t *ctxt,
 	mm_vmalloc_flags_t flags) {
 	kd_assert(ctxt);
 	kd_assert(size);
+	io::irq_disable_lock irq_lock;
 	pgaddr_t pgminaddr = PGROUNDDOWN(minaddr), pgmaxaddr = PGROUNDUP(maxaddr),
 			 pgsize = PGROUNDUP(size);
 
@@ -376,8 +381,6 @@ succeeded:
 }
 
 void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr, uint16_t *mask_out) {
-	io::irq_disable_lock irq_lock;
-
 	const arch_pde_t *pde = &pgdir[PDX(vaddr)];
 	if (!(pde->mask & PDE_P))
 		return NULL;
@@ -404,6 +407,8 @@ void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr, uint16_t *mask_out) 
 }
 
 void *mm_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
+	io::irq_disable_lock irq_lock;
+
 	kd_assert(ctxt);
 	uint16_t mask;
 	void *mapped_addr = hn_getmap(ctxt->pdt, vaddr, &mask);

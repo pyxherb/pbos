@@ -13,7 +13,6 @@ hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1] = {
 
 size_t hn_tss_storage_num;
 arch_tss_t *hn_tss_storage_ptr;
-char **hn_tss_stacks;
 
 static void hn_push_pmad(hn_pmad_t &&pmad);
 static void hn_init_gdt();
@@ -59,19 +58,6 @@ static void hn_init_tss() {
 		km_panic("Unable to allocate memory for TSS storage for processors");
 	}
 	memset(hn_tss_storage_ptr, 0, hn_tss_storage_num * sizeof(arch_tss_t));
-
-	hn_tss_stacks = (char **)mm_kmalloc(hn_tss_storage_num * sizeof(char *), alignof(char *));
-	if (!hn_tss_stacks) {
-		km_panic("Unable to allocate memory for TSS storage for processors");
-	}
-	for (size_t i = 0; i < hn_tss_storage_num; ++i) {
-		if (!(hn_tss_stacks[i] = (char *)mm_kmalloc(1024 * 1024 * 2, PAGESIZE))) {
-			km_panic("Unable to allocate memory for TSS stacks");
-		}
-
-		hn_tss_storage_ptr[i].ss0 = SELECTOR_KDATA;
-		hn_tss_storage_ptr[i].esp0 = ((uint32_t)hn_tss_stacks[i]) + 1024 * 1024 * 2;
-	}
 
 	hn_kgdt.tss_desc =
 		GDTDESC(((uintptr_t)hn_tss_storage_ptr), hn_tss_storage_num * sizeof(arch_tss_t), GDT_AB_P | GDT_AB_DPL(0) | GDT_SYSTYPE_TSS32, 0);

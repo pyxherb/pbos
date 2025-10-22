@@ -1,7 +1,7 @@
+#include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include "../mm.hh"
 #include "../proc.hh"
-#include <pbos/hal/irq.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -93,11 +93,12 @@ void mm_free_context(mm_context_t *context) {
 }
 
 void mm_switch_context(mm_context_t *context) {
-	io::irq_disable_lock irq_lock;
 	kd_assert(context);
+	io::irq_disable_lock irq_lock;
+
 	mm_context_t *prev_context = mm_cur_contexts[ps_get_cur_euid()];
 	mm_cur_contexts[ps_get_cur_euid()] = context;
-	kn_mm_copy_global_mappings(context, prev_context);
+	kn_mm_sync_global_mappings(mm_kernel_context);
 	arch_lpdt(PGROUNDDOWN(hn_getmap(mm_kernel_context->pdt, context->pdt, NULL)));
 }
 

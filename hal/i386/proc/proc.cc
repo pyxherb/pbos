@@ -131,6 +131,10 @@ void kn_switch_to_user_thread(ps_tcb_t *tcb) {
 	ps_load_user_context(tcb->context);
 }
 
+void kn_switch_to_kernel_thread(ps_tcb_t *tcb) {
+	ps_load_kernel_context(tcb->context);
+}
+
 ps_euid_t ps_get_cur_euid() {
 	return arch_storefs();
 }

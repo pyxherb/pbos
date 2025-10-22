@@ -56,6 +56,7 @@ km_result_t km_exec(
 		kn_binldr_registry_t *binldr = PBOS_CONTAINER_OF(kn_binldr_registry_t, tree_header, i);
 
 		if (KM_SUCCEEDED(result = binldr->binldr.load_exec(pcb, file_fp))) {
+			io::irq_disable_lock irq_disable_lock;
 			pcb->rb_value = kn_alloc_proc_id();
 			ps_create_proc(pcb, parent);
 			return KM_RESULT_OK;

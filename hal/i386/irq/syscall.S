@@ -10,11 +10,11 @@ isr_syscall:
 	pushl %esi
 	pushl %edi
 
-	pushw %ds
+	pushl %ds
 
-	pushw %es
+	pushl %es
 
-	pushw %gs
+	pushl %gs
 
 	pushl %edi
 	pushl %esi
@@ -30,6 +30,8 @@ isr_syscall:
 
 	cld
 
+	sti
+
 	call hn_syscall_handler
 
 	cli
@@ -38,13 +40,13 @@ isr_syscall:
 
 	movl %eax, %edx
 
-	popw %ax
+	popl %eax
 	movw %ax, %gs
 
-	popw %ax
+	popl %eax
 	movw %ax, %es
 
-	popw %ax
+	popl %eax
 	movw %ax, %ds
 
 	movl %edx, %eax
@@ -53,4 +55,4 @@ isr_syscall:
 	popl %esi
 	popl %ecx
 	popl %ebx
-	iret
+	iretl

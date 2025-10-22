@@ -15,4 +15,6 @@ PBOS_NORETURN void _start() {
 	while (1) {
 		asm volatile("nop");
 	}
+
+	user_syscall(114514, 1919810, 114, 514, 1919, 810);
 }

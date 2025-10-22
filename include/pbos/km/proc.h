@@ -62,7 +62,7 @@ void ps_create_proc(
 thread_id_t ps_create_thread(
 	ps_proc_access_t access,
 	ps_pcb_t *pcb,
-	size_t stacksize);
+	size_t stack_size);
 
 uint16_t ps_maxproc();
 
@@ -73,7 +73,8 @@ void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread);
 
 ps_pcb_t *ps_alloc_pcb();
 ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb);
-km_result_t ps_thread_allocstack(ps_tcb_t *tcb, size_t size);
+km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size);
+km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size);
 mm_context_t *ps_mm_context_of(ps_pcb_t *pcb);
 
 ps_pcb_t *ps_global_proc_set_begin();

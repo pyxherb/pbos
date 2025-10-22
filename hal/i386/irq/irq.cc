@@ -24,8 +24,7 @@ void hn_set_sched_timer() {
 	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_INITIAL_COUNT, hn_sched_interval);
 }
 
-void isr_timer_impl(
-	const uint32_t *const user_esp_ptr,
+PBOS_NORETURN void isr_timer_impl(
 	const uint32_t eax,
 	const uint32_t ebx,
 	const uint32_t ecx,
@@ -38,20 +37,18 @@ void isr_timer_impl(
 	const uint32_t es,
 	const uint32_t ds,
 
-	const uint32_t eip,
-	const uint32_t cs,
-	const uint32_t eflags) {
+	const uint32_t *const esp_top) {
 	bool is_user = false;
 	ps_euid_t cur_euid = ps_get_cur_euid();
 	ps_pcb_t *cur_proc = ps_get_cur_proc();
 	ps_tcb_t *cur_thread = ps_get_cur_thread();
 	ps_tcb_t *next_thread = ps_cur_sched->next_thread(ps_cur_sched, cur_euid, cur_proc, cur_thread);
 
-	if (cur_thread) {
-		void *ip = (void *)eip;
-		void *sp = (void *)user_esp_ptr;
-		void *bp = (void *)ebp;
+	uint32_t eip = esp_top[0];
+	uint32_t cs = esp_top[1];
+	uint32_t eflags = esp_top[2];
 
+	if (cur_thread) {
 		cur_thread->context->eax = eax;
 		cur_thread->context->ebx = ebx;
 		cur_thread->context->ecx = ecx;
@@ -61,18 +58,19 @@ void isr_timer_impl(
 		cur_thread->context->ebp = ebp;
 		cur_thread->context->eip = (void *)eip;
 		cur_thread->context->eflags = eflags;
-		if ((uintptr_t)eip < KERNEL_VBASE) {
+		if (((uintptr_t)eip) < KERNEL_VBASE) {
 			// SS (32-bits?)->ESP->EFLAGS->CS (32-bits)->EIP
-			cur_thread->context->esp = (uintptr_t)*((user_esp_ptr));
-			// kdprintf("USER!!!\n");
+			cur_thread->context->esp = esp_top[3];
+			// kd_assert(cur_thread->context->esp0 = (uint32_t)((char*)cur_thread->kernel_stack + cur_thread->kernel_stack_size));
+			// kdprintf("U!\n");
 
 			cur_thread->context->ds = ds;
-			cur_thread->context->ss = ds;
+			cur_thread->context->ss = esp_top[4];
 		} else {
 			// EFLAGS->CS (32-bits)->EIP
-			cur_thread->context->esp = (uint32_t)(user_esp_ptr);
-			// asm volatile("xchg %bx, %bx");
-			// kdprintf("KERNEL!!!\n");
+			cur_thread->context->esp = (uint32_t)(&esp_top[3]);
+			cur_thread->context->esp0 = cur_thread->context->esp;
+			// kdprintf("K!\n");
 
 			cur_thread->context->ds = ds;
 			cur_thread->context->ss = ds;
@@ -82,6 +80,8 @@ void isr_timer_impl(
 		cur_thread->context->es = es;
 		cur_thread->context->gs = gs;
 	}
+
+	kd_assert(next_thread);
 
 	if (next_thread->parent != cur_proc) {
 		kn_switch_to_user_process(next_thread->parent);
@@ -96,8 +96,21 @@ void isr_timer_impl(
 
 	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
-	if ((uintptr_t)next_thread->context->eip < KERNEL_VBASE) {
+	hn_tss_storage_ptr[cur_euid].esp0 = next_thread->context->esp0;
+
+	if (((uintptr_t)next_thread->context->eip) < KERNEL_VBASE) {
+		kdprintf(
+			"PID=%d, EIP=%.8x, ESP=%.8x, ESP0=%.8x U\n",
+			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);
+
 		kn_switch_to_user_thread(next_thread);
+	} else {
+		kdprintf(
+			"PID=%d, EIP=%.8x, ESP=%.8x, ESP0=%.8x K\n",
+			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);
+		// asm volatile("xchg %bx, %bx");
+		// asm volatile("xchg %bx, %bx");
+		kn_switch_to_kernel_thread(next_thread);
 	}
 }
 

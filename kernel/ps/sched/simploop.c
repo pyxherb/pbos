@@ -30,7 +30,6 @@ ps_tcb_t *ps_simploop_sched_next_thread(ps_sched_t *sched, ps_euid_t cur_euid, p
 		ps_pcb_t *next_proc;
 		next_proc = ps_global_proc_set_begin();
 		next_thread = ps_proc_thread_set_begin(next_proc);
-		ps_cur_proc_per_eu[cur_euid] = next_proc;
 	} else {
 		next_thread = ps_proc_thread_set_next(cur_proc, cur_thread);
 
@@ -40,7 +39,6 @@ ps_tcb_t *ps_simploop_sched_next_thread(ps_sched_t *sched, ps_euid_t cur_euid, p
 				next_proc = ps_global_proc_set_begin();
 			}
 
-			ps_cur_proc_per_eu[cur_euid] = next_proc;
 			next_thread = ps_proc_thread_set_begin(next_proc);
 		}
 	}

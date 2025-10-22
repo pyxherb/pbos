@@ -29,9 +29,9 @@ ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb) {
 thread_id_t ps_create_thread(
 	ps_proc_access_t access,
 	ps_pcb_t *pcb,
-	size_t stacksize) {
+	size_t stack_size) {
 	io::irq_disable_lock irq_disable_lock;
-	if (!stacksize)
+	if (!stack_size)
 		return -1;
 
 	ps_tcb_t *t = ps_alloc_tcb(pcb);
@@ -52,10 +52,10 @@ thread_id_t ps_create_thread(
 void hn_thread_cleanup(ps_tcb_t *thread) {
 	ps_cur_sched->drop_thread(ps_cur_sched, thread);
 	thread->parent->thread_set.remove(thread);
-	while (thread->stacksize) {
+	while (thread->stack_size) {
 		mm_pgfree(mm_getmap(thread->parent->mm_context, thread->stack, NULL));
 		((char *&)thread->stack) += PAGESIZE;
-		thread->stacksize -= PAGESIZE;
+		thread->stack_size -= PAGESIZE;
 	}
 }
 
@@ -71,25 +71,31 @@ void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr) {
 	tcb->context->eip = ptr;
 }
 
-void kn_thread_setstack(ps_tcb_t *tcb, void *ptr, size_t size) {
+void kn_thread_set_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
 	kd_assert(tcb->context);
 	const void *sp = ((char *)ptr) + size;
 	tcb->context->esp = (uint32_t)sp;
 	tcb->context->ebp = (uint32_t)sp;
 }
 
-km_result_t ps_thread_allocstack(ps_tcb_t *tcb, size_t size) {
+void kn_thread_set_kernel_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
+	kd_assert(tcb->context);
+	const void *sp = ((char *)ptr) + size;
+	tcb->context->esp0 = (uint32_t)sp;
+}
+
+km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 	km_result_t result;
 	ps_pcb_t *pcb = tcb->parent;
 
-	tcb->stacksize = size;
+	tcb->stack_size = size;
 	if (!(tcb->stack = mm_vmalloc(
 			  pcb->mm_context,
 			  (void *)UFREE_VBASE,
 			  (void *)UFREE_VTOP,
-			  tcb->stacksize,
+			  tcb->stack_size,
 			  PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER,
-			  0))) {
+			  VMALLOC_ATOMIC))) {
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	}
 
@@ -104,14 +110,14 @@ km_result_t ps_thread_allocstack(ps_tcb_t *tcb, size_t size) {
 			mm_vmfree(pcb->mm_context, tcb->stack, size);
 		});
 
-		for (; i < tcb->stacksize; i += PAGESIZE) {
+		for (; i < tcb->stack_size; i += PAGESIZE) {
 			void *pg = mm_pgalloc(MM_PMEM_AVAILABLE);
 
 			if (!pg) {
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
 			}
 
-			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ((char *)tcb->stack) + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, 0))) {
+			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ((char *)tcb->stack) + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, MMAP_ATOMIC))) {
 				return result;
 			}
 		}
@@ -119,7 +125,59 @@ km_result_t ps_thread_allocstack(ps_tcb_t *tcb, size_t size) {
 		release_pages_guard.release();
 	}
 
-	kn_thread_setstack(tcb, tcb->stack, tcb->stacksize);
+	kn_thread_set_stack(tcb, tcb->stack, tcb->stack_size);
+
+	return KM_RESULT_OK;
+}
+
+km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
+	km_result_t result;
+	ps_pcb_t *pcb = tcb->parent;
+
+	tcb->kernel_stack_size = size;
+	if (!(tcb->kernel_stack = mm_vmalloc(
+			  pcb->mm_context,
+			  (void *)KSPACE_VBASE,
+			  (void *)KSPACE_VTOP,
+			  tcb->kernel_stack_size,
+			  PAGE_MAPPED | PAGE_READ | PAGE_WRITE,
+			  VMALLOC_ATOMIC))) {
+		return KM_MAKEERROR(KM_RESULT_NO_MEM);
+	}
+
+	{
+		size_t i = 0;
+
+		kfxx::scope_guard release_pages_guard([pcb, tcb, size, &i]() noexcept {
+			do {
+				void *paddr = mm_getmap(pcb->mm_context, ((char *)tcb->stack) + (i - PAGESIZE), NULL);
+				mm_pgfree(paddr);
+			} while (i -= PAGESIZE);
+			mm_vmfree(pcb->mm_context, tcb->stack, size);
+		});
+
+		for (; i < tcb->stack_size; i += PAGESIZE) {
+			void *pg = mm_pgalloc(MM_PMEM_AVAILABLE);
+
+			if (!pg) {
+				return KM_MAKEERROR(KM_RESULT_NO_MEM);
+			}
+
+			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ((char *)tcb->stack) + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, MMAP_ATOMIC))) {
+				return result;
+			}
+		}
+
+		release_pages_guard.release();
+	}
+
+	kn_thread_set_kernel_stack(tcb, tcb->kernel_stack, tcb->kernel_stack_size);
+
+	// stub
+	if(!ps_global_proc_set.size()) {
+		hn_tss_storage_ptr[ps_get_cur_euid()].esp0 = tcb->context->esp0;
+		hn_tss_storage_ptr[ps_get_cur_euid()].ss0 = SELECTOR_KDATA;
+	}
 
 	return KM_RESULT_OK;
 }

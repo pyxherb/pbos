@@ -1,8 +1,11 @@
 .global isr_timer
+.align 4
 isr_timer:
 	// Kernel mode: EFLAGS -> CS -> EIP
 	// User mode: SS -> ESP -> EFLAGS -> CS -> EIP
 	// xchg %bx, %bx
+
+	pushl %esp
 
 	pushl %ds
 	pushl %es
@@ -17,32 +20,6 @@ isr_timer:
 	pushl %ebx
 	pushl %eax
 
-	movl %esp, %eax
-	addl $(14 * 4), %eax
-	pushl %eax
-
 	// xchg %bx, %bx
 
 	call isr_timer_impl
-
-	popl %eax
-
-	popl %eax
-
-	popl %ebx
-	popl %ecx
-	popl %edx
-	popl %esi
-	popl %edi
-	popl %ebp
-
-	popl %eax
-	movw %ax, %gs
-	popl %eax
-	movw %ax, %fs
-	popl %eax
-	movw %ax, %es
-	popl %eax
-	movw %ax, %ds
-
-	iretl

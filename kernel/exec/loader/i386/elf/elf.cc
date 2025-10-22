@@ -24,7 +24,10 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
 	// Allocate stack for main thread.
-	if (KM_FAILED(result = ps_thread_allocstack(tcb, 0x200000)))
+	if (KM_FAILED(result = ps_thread_alloc_stack(tcb, 0x200000)))
+		return result;
+
+	if (KM_FAILED(result = ps_thread_alloc_kernel_stack(tcb, 0x2000)))
 		return result;
 
 	Elf32_Ehdr ehdr;

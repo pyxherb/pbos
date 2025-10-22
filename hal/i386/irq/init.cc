@@ -44,7 +44,7 @@ static void hn_remap_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
 }
 
 void hal_irq_init() {
-	hn_setisr(isr_diverr, 0x00, 0, GATE_TRAP386);
+	/*hn_setisr(isr_diverr, 0x00, 0, GATE_TRAP386);
 	hn_setisr(isr_overflow, 0x04, 0, GATE_TRAP386);
 	hn_setisr(isr_boundrange, 0x05, 0, GATE_TRAP386);
 	hn_setisr(isr_invl_opcode, 0x06, 0, GATE_INT386);
@@ -63,7 +63,7 @@ void hal_irq_init() {
 	hn_setisr(isr_ctrlprot, 0x15, 0, GATE_INT386);
 	hn_setisr(isr_hverr, 0x1c, 0, GATE_INT386);
 	hn_setisr(isr_vmmerr, 0x1d, 0, GATE_INT386);
-	hn_setisr(isr_securityerr, 0x1e, 0, GATE_INT386);
+	hn_setisr(isr_securityerr, 0x1e, 0, GATE_INT386);*/
 
 	hn_setisr(isr_timer, 0x30, 0, GATE_INT386);
 
