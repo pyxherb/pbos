@@ -3,6 +3,6 @@
 
 #include <pbos/common.h>
 
-#define PBOS_KF_API
+#define PBOS_API
 
 #endif

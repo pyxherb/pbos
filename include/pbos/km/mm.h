@@ -220,6 +220,8 @@ extern mm_context_t *mm_kernel_context;
 /// @brief An array that contains current memory contexts of each EU.
 extern mm_context_t **mm_cur_contexts;
 
+mm_context_t *mm_get_cur_context();
+
 PBOS_EXTERN_C_END
 
 #endif

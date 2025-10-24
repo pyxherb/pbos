@@ -219,7 +219,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 		.context = ctxt,
 		.paddr = (char *)paddr,
 		.mask = hn_pgaccess_to_pgmask(access),
-		.is_curpgtab = ctxt == mm_cur_contexts[ps_get_cur_euid()],
+		.is_curpgtab = ctxt == mm_get_cur_context(),
 		.flags = flags
 	};
 	if (KM_FAILED(result = hn_walkpgtab(
@@ -283,7 +283,7 @@ void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 	const void *vaddr_limit = ((const char *)vaddr) + size;
 	hn_unmmap_walker_args args = {
 		.context = ctxt,
-		.is_curpgtab = ctxt == mm_cur_contexts[ps_get_cur_euid()],
+		.is_curpgtab = ctxt == mm_get_cur_context(),
 		.flags = flags
 	};
 	km_result_t result = hn_walkpgtab(ctxt->pdt, vaddr, size, hn_unmmap_walker, &args);
@@ -541,7 +541,7 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 
 		{
 			hn_vpm_t *vpm;
-			if ((vpm = kn_mm_lookup_vpm(mm_cur_contexts[ps_get_cur_euid()], UNPGADDR(pgdir[i].address), HN_VPM_LEVEL_MAX))) {
+			if ((vpm = kn_mm_lookup_vpm(mm_get_cur_context(), UNPGADDR(pgdir[i].address), HN_VPM_LEVEL_MAX))) {
 				if (vpm->map_addr) {
 					pgtab = (arch_pte_t *)vpm->map_addr;
 					goto already_mapped;

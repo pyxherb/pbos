@@ -25,13 +25,8 @@ void ps_init() {
 }
 
 void kn_init_binldrs() {
-	kf_rbtree_init(
-		&kn_registered_binldrs,
-		kn_binldr_reg_nodecmp,
-		kn_binldr_reg_nodefree);
-
-	for (km_binldr_t **i = kn_builtin_binldrs; *i; ++i) {
-		km_register_binldr(*i);
+	for (km_init_binldr_registry_t *i = kn_builtin_binldrs; i->binldr; ++i) {
+		km_register_binldr(&i->uuid, i->binldr);
 	}
 }
 

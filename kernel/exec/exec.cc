@@ -5,13 +5,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-typedef struct _kn_binldr_reg_t {
-	kf_rbtree_node_t tree_header;
-	kf_uuid_t uuid;
-	km_binldr_t binldr;
-} kn_binldr_registry_t;
-
-kf_rbtree_t kn_registered_binldrs;
+kfxx::rbtree_t<kf_uuid_t> kn_registered_binldrs;
 
 static proc_id_t _last_proc_id = 0;
 
@@ -19,16 +13,18 @@ proc_id_t kn_alloc_proc_id() {
 	return _last_proc_id++;
 }
 
-km_result_t km_register_binldr(km_binldr_t *binldr) {
+km_result_t km_register_binldr(kf_uuid_t *uuid, km_binldr_t *binldr) {
 	kn_binldr_registry_t *reg = (kn_binldr_registry_t *)mm_kmalloc(sizeof(kn_binldr_registry_t), alignof(kn_binldr_registry_t));
 	if (!reg)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
 	// Initialize the registry
-	memset(reg, 0, sizeof(kn_binldr_registry_t));
-	memcpy(&(reg->binldr), binldr, sizeof(km_binldr_t));
+	kfxx::construct_at<kn_binldr_registry_t>(reg);
 
-	kf_rbtree_insert(&kn_registered_binldrs, &reg->tree_header);
+	memcpy(&reg->rb_value, &uuid, sizeof(*uuid));
+	memcpy(&reg->binldr, binldr, sizeof(km_binldr_t));
+
+	kn_registered_binldrs.insert(reg);
 
 	return KM_RESULT_OK;
 }
@@ -50,12 +46,10 @@ km_result_t km_exec(
 		goto failed;
 	}
 
-	kf_rbtree_foreach(i, &kn_registered_binldrs) {
+	for(auto it = kn_registered_binldrs.begin(); it != kn_registered_binldrs.end(); ++it) {
 		io::irq_disable_lock irq_disable_lock;
 
-		kn_binldr_registry_t *binldr = PBOS_CONTAINER_OF(kn_binldr_registry_t, tree_header, i);
-
-		if (KM_SUCCEEDED(result = binldr->binldr.load_exec(pcb, file_fp))) {
+		if (KM_SUCCEEDED(result = static_cast<kn_binldr_registry_t *>(it.node)->binldr.load_exec(pcb, file_fp))) {
 			io::irq_disable_lock irq_disable_lock;
 			pcb->rb_value = kn_alloc_proc_id();
 			ps_create_proc(pcb, parent);
@@ -74,17 +68,6 @@ failed:
 	}
 
 	return result;
-}
-
-bool kn_binldr_reg_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	const kn_binldr_registry_t *_x = (const kn_binldr_registry_t *)x,
-							   *_y = (const kn_binldr_registry_t *)y;
-
-	return uuid_lt(&_x->uuid, &_y->uuid);
-}
-
-void kn_binldr_reg_nodefree(kf_rbtree_node_t *p) {
-	// TODO: Do some freeing operations?
 }
 
 PBOS_EXTERN_C_END

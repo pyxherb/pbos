@@ -8,10 +8,14 @@
 PBOS_EXTERN_C_BEGIN
 
 typedef struct _km_binldr_t {
-	kf_uuid_t uuid;
 	km_result_t (*load_exec)(ps_pcb_t *proc, fs_fcb_t *file_fp);
 	km_result_t (*load_mod)(ps_pcb_t *proc, fs_fcb_t *file_fp);
 } km_binldr_t;
+
+typedef struct _km_init_binldr_registry_t {
+	kf_uuid_t uuid;
+	km_binldr_t *binldr;
+} km_init_binldr_registry_t;
 
 km_result_t km_exec(
 	proc_id_t parent,
@@ -23,7 +27,7 @@ km_result_t km_exec_init(
 	se_uid_t uid,
 	fs_fcb_t *file_fp,
 	proc_id_t *pid_out);
-km_result_t km_register_binldr(km_binldr_t *binldr);
+km_result_t km_register_binldr(kf_uuid_t *uuid, km_binldr_t *binldr);
 
 PBOS_EXTERN_C_END
 

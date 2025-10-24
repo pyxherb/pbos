@@ -89,8 +89,8 @@ void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr);
 ps_euid_t ps_get_cur_euid();
 void kn_set_cur_euid(ps_euid_t euid);
 
-#define ps_get_cur_proc() (ps_cur_proc_per_eu[ps_get_cur_euid()])
-#define ps_get_cur_thread() (ps_cur_thread_per_eu[ps_get_cur_euid()])
+ps_pcb_t *ps_get_cur_proc();
+ps_tcb_t *ps_get_cur_thread();
 
 typedef struct _ps_sched_t ps_sched_t;
 
