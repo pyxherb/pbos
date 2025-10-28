@@ -47,7 +47,8 @@ namespace kfxx {
 
 	template <typename T,
 		typename Comparator,
-		bool Fallible>
+		bool Fallible,
+		bool IsThreeway>
 	PBOS_REQUIRES_CONCEPT(std::invocable<Comparator, const T &, const T &> &&std::strict_weak_order<Comparator, T, T>)
 	class _rbtree_impl : protected _rbtree_base {
 	public:
@@ -60,7 +61,7 @@ namespace kfxx {
 	protected:
 		using node_query_result_t = typename std::conditional<Fallible, option_t<node_t *>, node_t *>::type;
 
-		using this_t = _rbtree_impl<T, Comparator, Fallible>;
+		using this_t = _rbtree_impl<T, Comparator, Fallible, IsThreeway>;
 
 		Comparator _comparator;
 
@@ -68,42 +69,63 @@ namespace kfxx {
 			node_t *i = (node_t *)_root;
 
 			if constexpr (Fallible) {
-				option_t<bool> result;
-
 				while (i) {
-					if ((result = _comparator(i->rb_value, key)).has_value()) {
-						if (result.value()) {
-	#ifndef _NDEBUG
-							if ((result = _comparator(key, i->rb_value)).has_value()) {
-								kd_assert(!result.value());
+					if constexpr (IsThreeway) {
+						auto &&result = _comparator(i->rb_value, key);
+
+						if (result.value() > 0)
+							i = (node_t *)i->r;
+						else if (result.value() < 0)
+							i = (node_t *)i->l;
+						else
+							return i;
+					} else {
+						option_t<bool> result;
+
+						if ((result = _comparator(i->rb_value, key)).hasValue()) {
+							if (result.value()) {
+	#ifndef NDEBUG
+								if ((result = _comparator(key, i->rb_value)).hasValue()) {
+									kd_assert(!result.value());
+									i = (node_t *)i->r;
+								} else {
+									return NULL_OPTION;
+								}
+	#else
 								i = (node_t *)i->r;
+	#endif
+							} else if ((result = _comparator(key, i->rb_value)).hasValue()) {
+								if (result.value()) {
+									i = (node_t *)i->l;
+								} else
+									return i;
 							} else {
 								return NULL_OPTION;
 							}
-	#else
-							i = (node_t *)i->r;
-	#endif
-						} else if ((result = _comparator(key, i->rb_value)).has_value()) {
-							if (result.value()) {
-								i = (node_t *)i->l;
-							} else
-								return i;
 						} else {
 							return NULL_OPTION;
 						}
-					} else {
-						return NULL_OPTION;
 					}
 				}
 			} else {
 				while (i) {
-					if (_comparator(i->rb_value, key)) {
-						kd_assert(!_comparator(key, i->rb_value));
-						i = (node_t *)i->r;
-					} else if (_comparator(key, i->rb_value)) {
-						i = (node_t *)i->l;
-					} else
-						return i;
+					if constexpr (IsThreeway) {
+						auto &&result = _comparator(i->rb_value, key);
+						if (result > 0)
+							i = (node_t *)i->r;
+						else if (result < 0)
+							i = (node_t *)i->l;
+						else
+							return i;
+					} else {
+						if (_comparator(i->rb_value, key)) {
+							kd_assert(!_comparator(key, i->rb_value));
+							i = (node_t *)i->r;
+						} else if (_comparator(key, i->rb_value)) {
+							i = (node_t *)i->l;
+						} else
+							return i;
+					}
 				}
 			}
 			return nullptr;
@@ -114,46 +136,72 @@ namespace kfxx {
 			parent_out = nullptr;
 
 			if constexpr (Fallible) {
-				option_t<bool> result;
-
 				while (*i) {
 					parent_out = *i;
 
-					if ((result = _comparator((*i)->rb_value, key)).has_value()) {
-						if (result.value()) {
-	#ifndef _NDEBUG
-							if ((result = _comparator(key, (*i)->rb_value)).has_value()) {
-								kd_assert(!result.value());
+					if constexpr (IsThreeway) {
+						auto &&result = _comparator((*i)->rb_value, key);
+
+						if (result.value() > 0)
+							i = (node_t **)&(*i)->r;
+						else if (result.value() < 0)
+							i = (node_t **)&(*i)->l;
+						else
+							return i;
+					} else {
+						option_t<bool> result;
+
+						if ((result = _comparator((*i)->rb_value, key)).hasValue()) {
+							if (result.value()) {
+	#ifndef NDEBUG
+								if ((result = _comparator(key, (*i)->rb_value)).hasValue()) {
+									kd_assert(!result.value());
+									i = (node_t **)&(*i)->r;
+								} else {
+									return nullptr;
+								}
+	#else
 								i = (node_t **)&(*i)->r;
+	#endif
+							} else if ((result = _comparator(key, (*i)->rb_value)).hasValue()) {
+								if (result.value()) {
+									i = (node_t **)&(*i)->l;
+								} else
+									return i;
 							} else {
 								return nullptr;
 							}
-	#else
-							i = (node_t **)&(*i)->r;
-	#endif
-						} else if ((result = _comparator(key, (*i)->rb_value)).has_value()) {
-							if (result.value()) {
-								i = (node_t **)&(*i)->l;
-							} else
-								return i;
 						} else {
 							return nullptr;
 						}
-					} else {
-						return nullptr;
 					}
 				}
 			} else {
-				while (*i) {
-					parent_out = *i;
+				if constexpr (IsThreeway) {
+					while (*i) {
+						parent_out = *i;
 
-					if (_comparator((*i)->rb_value, key)) {
-						kd_assert(!_comparator(key, (*i)->rb_value));
-						i = (node_t **)&((*i)->r);
-					} else if (_comparator(key, (*i)->rb_value)) {
-						i = (node_t **)&((*i)->l);
-					} else
-						return nullptr;
+						auto &&result = _comparator((*i)->rb_value, key);
+
+						if (result > 0) {
+							i = (node_t **)&((*i)->r);
+						} else if (result < 0) {
+							i = (node_t **)&((*i)->l);
+						} else
+							return nullptr;
+					}
+				} else {
+					while (*i) {
+						parent_out = *i;
+
+						if (_comparator((*i)->rb_value, key)) {
+							kd_assert(!_comparator(key, (*i)->rb_value));
+							i = (node_t **)&((*i)->r);
+						} else if (_comparator(key, (*i)->rb_value)) {
+							i = (node_t **)&((*i)->l);
+						} else
+							return nullptr;
+					}
 				}
 			}
 			return i;
@@ -171,9 +219,20 @@ namespace kfxx {
 			}
 
 			if constexpr (Fallible) {
-				{
+				if constexpr (IsThreeway) {
+					if (auto &&result = _comparator(node->rb_value, parent->rb_value); result.hasValue()) {
+						if (result.value() > 0)
+							parent->l = node;
+						else if (result.value() < 0)
+							parent->r = node;
+						else
+							kd_assert(false);
+					} else {
+						return false;
+					}
+				} else {
 					option_t<bool> result;
-					if ((result = _comparator(node->rb_value, parent->rb_value)).has_value()) {
+					if ((result = _comparator(node->rb_value, parent->rb_value)).hasValue()) {
 						if (result.value())
 							parent->l = node;
 						else
@@ -181,23 +240,27 @@ namespace kfxx {
 					} else {
 						return false;
 					}
-					node->p = parent;
-					node->color = rbcolor_t::RED;
-
-					_insert_fixup(node);
 				}
 			} else {
-				{
+				if (IsThreeway) {
+					auto &&result = _comparator(node->rb_value, parent->rb_value);
+					if (result > 0)
+						parent->l = node;
+					else if (result < 0)
+						parent->r = node;
+					else
+						kd_assert(false);
+				} else {
 					if (_comparator(node->rb_value, parent->rb_value))
 						parent->l = node;
 					else
 						parent->r = node;
-					node->p = parent;
-					node->color = rbcolor_t::RED;
-
-					_insert_fixup(node);
 				}
 			}
+			node->p = parent;
+			node->color = rbcolor_t::RED;
+
+			_insert_fixup(node);
 
 		updateNodeCaches:
 			_cached_min_node = _get_min_node(_root);
@@ -257,45 +320,71 @@ namespace kfxx {
 			return *this;
 		}
 
-		PBOS_FORCEINLINE node_t *find_max_lteq(const T &data) {
+		PBOS_FORCEINLINE node_query_result_t find_max_lteq(const T &data) {
 			node_t *cur_node = (node_t *)_root, *max_node = NULL;
 
 			if constexpr (Fallible) {
-				option_t<bool> result;
-
 				while (cur_node) {
-					if ((result = _comparator(cur_node->rb_value, data)).has_value()) {
-						if (result.value()) {
-							if ((result = _comparator(data, cur_node->rb_value)).has_value()) {
-								kd_assert(!result.value());
-								max_node = cur_node;
-								cur_node = (node_t *)cur_node->r;
-							} else {
-								return nullptr;
-							}
-						} else if ((result = _comparator(data, cur_node->rb_value)).has_value()) {
+					if constexpr (IsThreeway) {
+						auto &&result = _comparator(cur_node->rb_value, data);
+
+						if (result.value() > 0) {
+							max_node = cur_node;
+							cur_node = (node_t *)cur_node->r;
+						} else if (result.value() < 0)
+							cur_node = (node_t *)cur_node->l;
+						else
+							return cur_node;
+					} else {
+						option_t<bool> result;
+
+						if ((result = _comparator(cur_node->rb_value, data)).hasValue()) {
 							if (result.value()) {
-								cur_node = (node_t *)cur_node->l;
+	#ifndef NDEBUG
+								if ((result = _comparator(data, cur_node->rb_value)).hasValue()) {
+									kd_assert(!result.value());
+									cur_node = (node_t *)cur_node->r;
+								} else {
+									return NULL_OPTION;
+								}
+	#else
+								max_node = cur_node;
+								cur_node = (node_t *)curNode->r;
+	#endif
+							} else if ((result = _comparator(data, cur_node->rb_value)).hasValue()) {
+								if (result.value()) {
+									cur_node = (node_t *)cur_node->l;
+								} else
+									return cur_node;
 							} else {
-								return cur_node;
+								return NULL_OPTION;
 							}
 						} else {
-							return nullptr;
+							return NULL_OPTION;
 						}
-					} else {
-						return nullptr;
 					}
 				}
 			} else {
 				while (cur_node) {
-					if (_comparator(cur_node->rb_value, data)) {
-						kd_assert(!_comparator(data, cur_node->rb_value));
-						max_node = cur_node;
-						cur_node = (node_t *)cur_node->r;
-					} else if (_comparator(data, cur_node->rb_value)) {
-						cur_node = (node_t *)cur_node->l;
-					} else
-						return cur_node;
+					if constexpr (IsThreeway) {
+						auto &&result = _comparator(cur_node->rb_value, data);
+						if (result > 0) {
+							max_node = cur_node;
+							cur_node = (node_t *)cur_node->r;
+						} else if (result < 0)
+							cur_node = (node_t *)cur_node->l;
+						else
+							return cur_node;
+					} else {
+						if (_comparator(cur_node->rb_value, data)) {
+							kd_assert(!_comparator(data, cur_node->rb_value));
+							max_node = cur_node;
+							cur_node = (node_t *)cur_node->r;
+						} else if (_comparator(data, cur_node->rb_value)) {
+							cur_node = (node_t *)cur_node->l;
+						} else
+							return cur_node;
+					}
 				}
 			}
 
@@ -330,7 +419,7 @@ namespace kfxx {
 
 		PBOS_FORCEINLINE void clear(node_deleter_t deleter) {
 			if (_root) {
-				node_t *node = (node_t*)_root;
+				node_t *node = (node_t *)_root;
 				node_t *max_node = (node_t *)_get_max_node(node);
 				node_t *cur_node = (node_t *)_get_min_node(node);
 				node_t *parent = (node_t *)node->p;
@@ -634,10 +723,10 @@ namespace kfxx {
 		}
 	};
 
-	template <typename T, typename Comparator = std::less<T>>
-	using rbtree_t = _rbtree_impl<T, Comparator, false>;
-	template <typename T, typename Comparator = fallible_less<T>>
-	using fallible_rbtree_t = _rbtree_impl<T, Comparator, true>;
+	template <typename T, typename Comparator = std::less<T>, bool IsThreeway = false>
+	using rbtree_t = _rbtree_impl<T, Comparator, false, IsThreeway>;
+	template <typename T, typename Comparator = fallible_less<T>, bool IsThreeway = false>
+	using fallible_rbtree_t = _rbtree_impl<T, Comparator, true, IsThreeway>;
 }
 #endif
 

@@ -53,9 +53,7 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 		mm_vmfree(mm_get_cur_context(), pdt_vaddr, PAGESIZE);
 	});
 
-	for (size_t i = 0; i < PBOS_ARRAYSIZE(context->uspace_vpm_query_tree); ++i) {
-		kfxx::construct_at<kfxx::rbtree_t<void *>>(&context->uspace_vpm_query_tree[i]);
-	}
+	kfxx::construct_at<mm_context_t>(context);
 	if (KM_FAILED(result = mm_mmap(mm_get_cur_context(), pdt_vaddr, pdt_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
 		return result;
 	}
