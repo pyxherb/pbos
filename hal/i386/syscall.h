@@ -2,7 +2,7 @@
 #define _HAL_I386_SYSCALL_H_
 
 #include "irq.h"
-#include "syscall/pbcore.h"
+#include <pbos/syscall/pbcore.h>
 
 #define IRQ_SYSCALL 0xc0
 

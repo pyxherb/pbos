@@ -29,6 +29,7 @@ typedef enum _km_results {
 	KM_RESULT_UNSUPPORTED_OPERATION,  // Unsupported operation
 	KM_RESULT_UNSUPPORTED_EXECFMT,	  // Unsupport executable format
 	KM_RESULT_ACCESS_VIOLATION,		  // Access violation
+	KM_RESULT_CHILD_FORKED,			  // Child forked
 } km_results;
 
 typedef uint32_t km_result_t;

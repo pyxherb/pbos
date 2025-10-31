@@ -10,7 +10,6 @@ typedef struct _mm_context_t {
 	arch_pde_t *pdt;
 	kn_mm_vpm_poolpg_t *uspace_vpm_poolpg_list = nullptr;
 	kfxx::rbtree_t<void *> uspace_vpm_query_tree[HN_VPM_LEVEL_MAX + 1];
-	kfxx::rbtree_t<pgaddr_t> iomd_query_tree;
 } mm_context_t;
 
 extern kn_mm_vpm_poolpg_t *hn_kspace_vpm_poolpg_list;
