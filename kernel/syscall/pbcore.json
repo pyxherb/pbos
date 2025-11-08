@@ -1,0 +1,66 @@
+{
+	"apiset_name": "pbcore",
+	"impl_prefix": "sysent",
+	"entries": {
+		"exit": {
+			"entry": 0,
+			"args": [
+				"int"
+			],
+			"return_value": "void"
+		},
+		"open": {
+			"entry": 1,
+			"args": [
+				"ptr",
+				"size",
+				"uint32",
+				"uint32",
+				"ptr"
+			],
+			"return_value": "result"
+		},
+		"close": {
+			"entry": 2,
+			"args": [
+				"int",
+				"uint32"
+			],
+			"return_value": "result"
+		},
+		"read": {
+			"entry": 3,
+			"args": [
+				"int",
+				"ptr",
+				"uint32"
+			],
+			"return_value": "result"
+		},
+		"write": {
+			"entry": 4,
+			"args": [
+				"int",
+				"const_ptr",
+				"uint32"
+			],
+			"return_value": "result"
+		},
+		"exec_child": {
+			"entry": 5,
+			"args": [
+				"int",
+				"int",
+				"const_ptr",
+				"size",
+				"ptr"
+			],
+			"return_value": "result"
+		},
+		"fork": {
+			"entry": 6,
+			"args": [],
+			"return_value": "result"
+		}
+	}
+}

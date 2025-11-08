@@ -55,10 +55,10 @@ km_result_t sysent_close(ps_ufd_t ufd, uint32_t flags) {
 	return KM_RESULT_OK;
 }
 
-void *sysent_read(ps_ufd_t ufd, void *buf, uint32_t size) {
+km_result_t sysent_read(ps_ufd_t ufd, void *buf, uint32_t size) {
 }
 
-void *sysent_write(ps_ufd_t ufd, const void *buf, uint32_t size) {
+km_result_t sysent_write(ps_ufd_t ufd, const void *buf, uint32_t size) {
 }
 
 km_result_t sysent_exec_child(

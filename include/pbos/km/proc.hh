@@ -3,6 +3,7 @@
 
 #include "proc.h"
 #include <pbos/kfxx/rbtree.hh>
+#include <pbos/se/user.h>
 
 typedef struct _ps_ufcb_t : public kfxx::rbtree_t<ps_ufd_t>::node_t {
 	fs_fcb_t *kernel_fcb;
@@ -19,6 +20,8 @@ typedef struct _ps_tcb_t : public kfxx::rbtree_t<thread_id_t>::node_t, public om
 
 	void *kernel_stack;
 	size_t kernel_stack_size;
+
+	se_uid_t user_id;
 } ps_tcb_t;
 
 typedef struct _ps_pcb_t : kfxx::rbtree_t<proc_id_t>::node_t, public om_object_t {
