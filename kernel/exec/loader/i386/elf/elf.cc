@@ -6,6 +6,7 @@
 #include <pbos/km/logger.h>
 #include <string.h>
 #include <pbos/hal/irq.hh>
+#include <pbos/kfxx/scope_guard.hh>
 
 km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp);
 km_result_t kn_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp);
@@ -85,32 +86,37 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 
 		off = ph.p_offset;
 
-		io::irq_disable_lock irq_disable_lock;
-		mm_switch_context(ps_mm_context_of(proc));
+		mm_context_t *prev_context = mm_get_cur_context();
 		{
 			// Allocate pages for current segment.
 			for (Elf32_Word j = 0; j < ph.p_memsz; j += PAGESIZE) {
 				if (!mm_getmap(ps_mm_context_of(proc), vaddr + PAGESIZE * j, NULL)) {
 					void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
-					if(!paddr)
+					if (!paddr)
 						return KM_RESULT_NO_MEM;
-					if(!KM_SUCCEEDED(result = mm_mmap(ps_mm_context_of(proc), vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0)))
+					if (!KM_SUCCEEDED(result = mm_mmap(ps_mm_context_of(proc), vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0)))
 						return result;
 				}
 			}
 
 			// Read the whole segment into the memory.
-			memset((void *)ph.p_vaddr, 0, ph.p_memsz);
-			if (!KM_SUCCEEDED(result = fs_read(file_fp, (void *)ph.p_vaddr, ph.p_filesz, ph.p_offset, &bytes_read))) {
-				// TODO: free allocated resources here.
-				return result;
+			{
+				io::irq_disable_lock irq_disable_lock;
+				kfxx::scope_guard restore_context_guard([prev_context]() noexcept {
+					mm_switch_context(prev_context);
+				});
+				mm_switch_context(ps_mm_context_of(proc));
+				memset((void *)ph.p_vaddr, 0, ph.p_memsz);
+				if (!KM_SUCCEEDED(result = fs_read(file_fp, (void *)ph.p_vaddr, ph.p_filesz, ph.p_offset, &bytes_read))) {
+					// TODO: free allocated resources here.
+					return result;
+				}
 			}
 			off += bytes_read;
 
 			// Mark the pages as executable.
 			mm_set_page_access(ps_mm_context_of(proc), vaddr, ph.p_memsz, PAGE_EXEC);
 		}
-		mm_switch_context(mm_kernel_context);
 	}
 
 	// Set entry of main thread.

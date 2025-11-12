@@ -47,8 +47,6 @@ km_result_t km_exec(
 	}
 
 	for(auto it = kn_registered_binldrs.begin(); it != kn_registered_binldrs.end(); ++it) {
-		io::irq_disable_lock irq_disable_lock;
-
 		if (KM_SUCCEEDED(result = static_cast<kn_binldr_registry_t *>(it.node)->binldr.load_exec(pcb, file_fp))) {
 			io::irq_disable_lock irq_disable_lock;
 			pcb->rb_value = kn_alloc_proc_id();
