@@ -1,11 +1,16 @@
 #ifndef _ARCH_I386_MEMCONF_H_
 #define _ARCH_I386_MEMCONF_H_
 
-#define DEFAULT_PAGESIZE 4096
+#define PAGESIZE 4096
 
 #define PAGE_TABLE_LEVEL_MAX 2
 
 #define PGADDR_MAX 0xfffff
 #define PGADDR_MIN 0
+
+/// @brief Round up a linear address into page-aligned.
+#define PGCEIL(addr) ((uintptr_t)((((size_t)(addr)) + (PAGESIZE - 1)) & (~(PAGESIZE - 1))))
+/// @brief Round down a linear address into page-aligned.
+#define PGFLOOR(addr) ((uintptr_t)(((size_t)(addr)) & (~(PAGESIZE - 1))))
 
 #endif

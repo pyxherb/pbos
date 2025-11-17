@@ -64,7 +64,7 @@ void smp_main_eu_init() {
 
 	hn_calibrate_apic();
 
-	kprintf("Timer interval ticks: %u\n", hn_sched_interval);
+	klog_printf("Timer interval ticks: %u\n", hn_sched_interval);
 }
 
 PBOS_EXTERN_C_END

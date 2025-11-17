@@ -91,7 +91,7 @@ void initcar_init() {
 	if (!(initcar_fs = fs_register_filesys("initcar", strlen("initcar"), &uuid, &initcar_ops)))
 		km_panic("Error registering initcar file system");
 
-	kdprintf("INITCAR range: %p-%p\n",
+	kd_printf("INITCAR range: %p-%p\n",
 		ARCH_KARGS_PTR->initcar_ptr,
 		((const char *)ARCH_KARGS_PTR->initcar_ptr) + ARCH_KARGS_PTR->initcar_size);
 
@@ -154,8 +154,8 @@ void initcar_init() {
 		if (fe->flags & PBCAR_FILE_FLAG_END)
 			break;
 
-		kdprintf("File: %s\n", fe->filename);
-		kdprintf("Size: %d\n", (int)fe->size);
+		kd_printf("File: %s\n", fe->filename);
+		kd_printf("Size: %d\n", (int)fe->size);
 
 		fs_file_t *file;
 		size_t filename_len = strlen(fe->filename);
@@ -172,7 +172,7 @@ void initcar_init() {
 		exdata->ptr = p_cur;
 		exdata->sz_total = fe->size;
 
-		kdprintf("initcar: Mounting file: %s\n", fe->filename);
+		kd_printf("initcar: Mounting file: %s\n", fe->filename);
 		if (KM_FAILED(result = fs_mount_file(initcar_dir, file)))
 			km_panic("Error mounting initcar file `%s', error code = %x\n", fe->filename, result);
 

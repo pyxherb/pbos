@@ -46,22 +46,22 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 		mm_pgfree(pdt_paddr);
 	});
 
-	if (!(pdt_vaddr = mm_kvmalloc(mm_get_cur_context(), DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
+	if (!(pdt_vaddr = mm_kvmalloc(mm_get_cur_context(), PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
 		return KM_RESULT_NO_MEM;
 	}
 	kfxx::scope_guard free_pdt_vaddr_guard([pdt_vaddr]() noexcept {
-		mm_vmfree(mm_get_cur_context(), pdt_vaddr, DEFAULT_PAGESIZE);
+		mm_vmfree(mm_get_cur_context(), pdt_vaddr, PAGESIZE);
 	});
 
 	kfxx::construct_at<mm_context_t>(context);
-	if (KM_FAILED(result = mm_mmap(mm_get_cur_context(), pdt_vaddr, pdt_paddr, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
+	if (KM_FAILED(result = mm_mmap(mm_get_cur_context(), pdt_vaddr, pdt_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
 		return result;
 	}
 
 	free_pdt_paddr_guard.release();
 	free_pdt_vaddr_guard.release();
 
-	memset(pdt_vaddr, 0, DEFAULT_PAGESIZE);
+	memset(pdt_vaddr, 0, PAGESIZE);
 	context->pdt = (arch_pde_t *)pdt_vaddr;
 
 	kn_mm_copy_global_mappings(context, mm_get_cur_context());
@@ -85,7 +85,7 @@ void mm_free_context(mm_context_t *context) {
 	}
 	for (kn_mm_vpm_poolpg_t *i = context->uspace_vpm_poolpg_list; i; i = i->header.next) {
 		void *paddr = mm_getmap(mm_kernel_context, i, NULL);
-		mm_unmmap(mm_kernel_context, i, DEFAULT_PAGESIZE, 0);
+		mm_unmmap(mm_kernel_context, i, PAGESIZE, 0);
 		mm_pgfree(paddr);
 	}
 

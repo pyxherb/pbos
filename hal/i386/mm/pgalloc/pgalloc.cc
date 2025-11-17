@@ -1,6 +1,5 @@
 #include "pgalloc.hh"
 #include <hal/i386/mm.h>
-#include <math.h>
 #include <pbos/km/logger.h>
 
 PBOS_EXTERN_C_BEGIN

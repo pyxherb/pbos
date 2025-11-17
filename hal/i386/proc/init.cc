@@ -6,11 +6,11 @@
 PBOS_EXTERN_C_BEGIN
 
 void hal_prepare_ps() {
-	for (size_t i = 0; i < KCTXTSWTMP_SIZE; i += DEFAULT_PAGESIZE) {
+	for (size_t i = 0; i < KCTXTSWTMP_SIZE; i += PAGESIZE) {
 		void *paddr = mm_pgalloc(KN_PMEM_AVAILABLE);
 		if (!paddr)
 			km_panic("Error allocating memory for user context area");
-		if (KM_FAILED(mm_mmap(mm_kernel_context, (void *)(KCTXTSWTMP_VBASE + i), paddr, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, 0)))
+		if (KM_FAILED(mm_mmap(mm_kernel_context, (void *)(KCTXTSWTMP_VBASE + i), paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, 0)))
 			km_panic("Error mapping the user context area");
 	}
 

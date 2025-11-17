@@ -85,12 +85,12 @@ void hal_irq_init() {
 	if (!(hn_lapic_pbase = mm_pgalloc(MM_PMEM_AVAILABLE)))
 		km_panic("Unable to allocate physical LAPIC page");
 
-	if (!(hn_lapic_vbase = (uint32_t *)mm_kvmalloc(mm_kernel_context, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0)))
+	if (!(hn_lapic_vbase = (uint32_t *)mm_kvmalloc(mm_kernel_context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0)))
 		km_panic("Unable to allocate virtual LAPIC page");
 
 	// arch_set_apic_base(hn_lapic_pbase, ARCH_APIC_BASE_MSR_BSP | ARCH_APIC_BASE_MSR_ENABLE);
 
-	if (KM_FAILED(mm_iommap(mm_kernel_context, hn_lapic_vbase, (void*)ARCH_DEFAULT_APIC_PBASE, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_NOCACHE, 0))) {
+	if (KM_FAILED(mm_iommap(mm_kernel_context, hn_lapic_vbase, (void*)ARCH_DEFAULT_APIC_PBASE, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_NOCACHE, 0))) {
 		km_panic("Unable to mapping LAPIC page for the main EU");
 	}
 
@@ -105,7 +105,7 @@ void hal_irq_init() {
 		}
 	}
 
-	kdprintf("Initialized IRQ\n");
+	kd_printf("Initialized IRQ\n");
 }
 
 PBOS_EXTERN_C_END

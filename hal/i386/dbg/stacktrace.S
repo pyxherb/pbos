@@ -11,7 +11,7 @@ movl %esp, %ebp
 
 	cld
 		pushl $MSG_STACKTRACE
-		call kprintf
+		call klog_printf
 	addl $4, %esp
 
 	movl (%esp), %ecx// ECX = Previous EBP
@@ -28,7 +28,7 @@ movl %esp, %ebp
 			pushl %edx
 			pushl %eax
 			pushl $MSG_STACKFRAME_TRACE
-			call kprintf
+			call klog_printf
 		add $12, %esp
 
 		incl %eax

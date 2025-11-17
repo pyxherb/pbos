@@ -141,7 +141,7 @@ static km_result_t hn_mmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx
 		if (!(args->flags & MMAP_NORC)) {
 			mm_refpg(args->paddr);
 		}
-		args->paddr += DEFAULT_PAGESIZE;
+		args->paddr += PAGESIZE;
 	}
 
 	if (args->is_curpgtab)
@@ -184,16 +184,16 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 				void *map_addr;
 
 				if ((uintptr_t)vaddr >= KSPACE_VBASE) {
-					if ((map_addr = mm_vmalloc(ctxt, (void *)KSPACE_VBASE, vaddr, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
+					if ((map_addr = mm_vmalloc(ctxt, (void *)KSPACE_VBASE, vaddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
 						goto vmalloc_succeeded;
 					}
 				}
 				if ((uintptr_t)(((char *)vaddr) + size) > KSPACE_VBASE) {
-					if ((map_addr = mm_vmalloc(ctxt, ((char *)vaddr) + size, (void *)KSPACE_VTOP, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
+					if ((map_addr = mm_vmalloc(ctxt, ((char *)vaddr) + size, (void *)KSPACE_VTOP, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
 						goto vmalloc_succeeded;
 					}
 				} else {
-					if ((map_addr = mm_kvmalloc(ctxt, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
+					if ((map_addr = mm_kvmalloc(ctxt, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
 						goto vmalloc_succeeded;
 					}
 				}
@@ -207,7 +207,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 				hn_set_pgblk_used(PGROUNDDOWN(pgdir), MAD_ALLOC_KERNEL);
 				mad->mapped_pgtab_addr = (pgaddr_t)NULL;
 
-				result = mm_mmap(ctxt, map_addr, pgdir, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
+				result = mm_mmap(ctxt, map_addr, pgdir, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
 				kd_assert(KM_SUCCEEDED(result));
 
 				mad->mapped_pgtab_addr = PGROUNDDOWN(map_addr);
@@ -236,7 +236,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 		// Insert VPMs after free all previous VPMs.
 		char *rounded_vaddr = (char *)PGFLOOR(vaddr), *rounded_paddr = (char *)PGFLOOR(paddr);
 		size_t rounded_size = PGCEIL(size);
-		for (size_t i = 0; i < rounded_size; i += DEFAULT_PAGESIZE) {
+		for (size_t i = 0; i < rounded_size; i += PAGESIZE) {
 			void *cur_ptr = rounded_vaddr + i;
 			km_result_t result = kn_mm_insert_vpm(ctxt, cur_ptr);
 			kd_assert(KM_SUCCEEDED(result));
@@ -620,7 +620,7 @@ void kn_mm_free_pgdir(mm_context_t *ctxt, void *ptr, int level) {
 	switch (level) {
 		case 0: {
 			kd_assert(ctxt);
-			kdprintf("Freeing page directory for context %p at PDX %hu: \n", ctxt, PDX(ptr));
+			kd_printf("Freeing page directory for context %p at PDX %hu: \n", ctxt, PDX(ptr));
 			kd_assert(PDX(ptr) <= PDX_MAX);
 			kd_assert(ctxt->pdt[PDX(ptr)].mask & PDE_P);
 			mm_pgfree(UNPGADDR(ctxt->pdt[PDX(ptr)].address));

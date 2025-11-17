@@ -43,24 +43,24 @@ typedef size_t (*klog_logger_t)(uint16_t mode, const void *arg, va_list vargs);
 /// @brief Set current logger for kernel logger system.
 ///
 /// @param logger Logger callback (backend) to set.
-void klog_setlogger(klog_logger_t logger);
+void klog_set_logger(klog_logger_t logger);
 
 /// @brief Get default kernel logger.
 ///
 /// @return The default kernel logger.
-klog_logger_t klog_getdefault();
+klog_logger_t klog_get_default_logger();
 
 /// @brief Get current kernel logger.
 ///
 /// @return Current kernel logger.
-klog_logger_t klog_getlogger();
+klog_logger_t klog_get_logger();
 
 /// @brief Check if current kernel logger is capable of specified capability.
 ///
 /// @param cap Capability to check.
 /// @return true The logger is capable of the capability.
 /// @return false The logger is not capable of the capability.
-bool klog_iscapable(uint16_t cap);
+bool klog_is_capable(uint16_t cap);
 
 #define KLOG_EXCALL_COLOR 0x00000000
 
@@ -82,17 +82,17 @@ PBOS_PACKED_END
 /// @param ... Arguments for the extra function.
 void klog_excall(uint32_t id, ...);
 
-void kvprintf(const char *str, va_list args) PBOS_FMTARG(printf, 1, 0);
-void kprintf(const char *str, ...) PBOS_FMTARG(printf, 1, 2);
-void kputc(char ch);
-void kputs(const char *str);
+void klog_vprintf(const char *str, va_list args) PBOS_FMTARG(printf, 1, 0);
+void klog_printf(const char *str, ...) PBOS_FMTARG(printf, 1, 2);
+void klog_putc(char ch);
+void klog_puts(const char *str);
 
 #ifndef _NDEBUG
-	#define kdvprintf kvprintf
-	#define kdprintf kprintf
+	#define kd_vprintf klog_vprintf
+	#define kd_printf klog_printf
 #else
-	#define kdvprintf
-	#define kdprintf
+	#define kd_vprintf
+	#define kd_printf
 #endif
 
 PBOS_EXTERN_C_END

@@ -17,7 +17,7 @@ typedef struct _kima_vpgdesc_poolpg_header_t {
 
 typedef struct _kima_vpgdesc_poolpg_t {
 	kima_vpgdesc_poolpg_header_t header;
-	kima_vpgdesc_t slots[(DEFAULT_PAGESIZE - sizeof(kima_vpgdesc_poolpg_header_t)) / sizeof(kima_vpgdesc_t)];
+	kima_vpgdesc_t slots[(PAGESIZE - sizeof(kima_vpgdesc_poolpg_header_t)) / sizeof(kima_vpgdesc_t)];
 } kima_vpgdesc_poolpg_t;
 
 extern kima_vpgdesc_poolpg_t *kima_vpgdesc_poolpg_list;

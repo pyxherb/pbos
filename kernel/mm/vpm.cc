@@ -81,7 +81,7 @@ km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 	void *new_vpmpool_paddr = NULL,
 		 *new_vpmpool_vaddr = NULL;
 
-	if ((!(new_vpmpool_vaddr = mm_kvmalloc(context, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NOSETVPM)))) {
+	if ((!(new_vpmpool_vaddr = mm_kvmalloc(context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NOSETVPM)))) {
 		result = KM_RESULT_NO_MEM;
 		goto fail;
 	}
@@ -91,7 +91,7 @@ km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 		goto fail;
 	}
 
-	if (KM_FAILED(result = mm_mmap(context, new_vpmpool_vaddr, new_vpmpool_paddr, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_NOSETVPM))) {
+	if (KM_FAILED(result = mm_mmap(context, new_vpmpool_vaddr, new_vpmpool_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_NOSETVPM))) {
 		goto fail;
 	}
 
@@ -100,7 +100,7 @@ km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 
 		kd_assert(newpool != addr);
 
-		memset(newpool, 0, DEFAULT_PAGESIZE);
+		memset(newpool, 0, PAGESIZE);
 
 		newpool->header.used_num = 1;  // Self VPM is not included
 
@@ -132,7 +132,7 @@ fail:
 		mm_pgfree(new_vpmpool_paddr);
 	}
 	if (new_vpmpool_vaddr) {
-		mm_vmfree(context, new_vpmpool_vaddr, DEFAULT_PAGESIZE);
+		mm_vmfree(context, new_vpmpool_vaddr, PAGESIZE);
 	}
 
 	return KM_MAKEERROR(result);
@@ -167,7 +167,7 @@ void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 			mm_unmmap(
 				context,
 				kn_lookup_pgdir_mapped_addr(kn_lookup_pgdir(context, (void *)addr, level)),
-				DEFAULT_PAGESIZE,
+				PAGESIZE,
 				0);
 			kn_mm_free_pgdir(context, (void *)addr, 0);
 		}
@@ -190,7 +190,7 @@ void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 				pool->header.next->header.prev = pool->header.prev;
 
 			mm_pgfree(mm_getmap(context, pool, NULL));
-			mm_unmmap(context, pool, DEFAULT_PAGESIZE, MMAP_NOSETVPM);
+			mm_unmmap(context, pool, PAGESIZE, MMAP_NOSETVPM);
 		}
 	}
 }

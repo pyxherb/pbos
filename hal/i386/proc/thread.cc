@@ -55,8 +55,8 @@ void hn_thread_cleanup(ps_tcb_t *thread) {
 	thread->parent->thread_set.remove(thread);
 	while (thread->stack_size) {
 		mm_pgfree(mm_getmap(thread->parent->mm_context, thread->stack, NULL));
-		((char *&)thread->stack) += DEFAULT_PAGESIZE;
-		thread->stack_size -= DEFAULT_PAGESIZE;
+		((char *&)thread->stack) += PAGESIZE;
+		thread->stack_size -= PAGESIZE;
 	}
 }
 
@@ -108,20 +108,20 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 		size_t i = 0;
 
 		kfxx::scope_guard release_pages_guard([pcb, size, &i, ptr]() noexcept {
-			kprintf("Freeing stack page: %p-%p", ptr, ptr + (i - DEFAULT_PAGESIZE));
-			mm_vmfree(pcb->mm_context, ptr, (i - DEFAULT_PAGESIZE));
+			klog_printf("Freeing stack page: %p-%p", ptr, ptr + (i - PAGESIZE));
+			mm_vmfree(pcb->mm_context, ptr, (i - PAGESIZE));
 		});
 
-		for (; i < size; i += DEFAULT_PAGESIZE) {
+		for (; i < size; i += PAGESIZE) {
 			void *pg = mm_pgalloc(MM_PMEM_AVAILABLE);
 
 			if (!pg) {
-				kprintf("Error allocating physical page: %p", ptr + i);
+				klog_printf("Error allocating physical page: %p", ptr + i);
 				--i;
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
 			}
 
-			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, MMAP_ATOMIC))) {
+			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, MMAP_ATOMIC))) {
 				return result;
 			}
 		}
@@ -153,20 +153,20 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 		size_t i = 0;
 
 		kfxx::scope_guard release_pages_guard([pcb, size, &i, ptr]() noexcept {
-			for (size_t j = 0; j < i; j += DEFAULT_PAGESIZE) {
-				kprintf("Freeing kernel stack page: %p", ptr + j);
-				mm_vmfree(pcb->mm_context, ptr + j, DEFAULT_PAGESIZE);
+			for (size_t j = 0; j < i; j += PAGESIZE) {
+				klog_printf("Freeing kernel stack page: %p", ptr + j);
+				mm_vmfree(pcb->mm_context, ptr + j, PAGESIZE);
 			}
 		});
 
-		for (; i < size; i += DEFAULT_PAGESIZE) {
+		for (; i < size; i += PAGESIZE) {
 			void *pg = mm_pgalloc(MM_PMEM_AVAILABLE);
 
 			if (!pg) {
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
 			}
 
-			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, MMAP_ATOMIC))) {
+			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_USER, MMAP_ATOMIC))) {
 				return result;
 			}
 		}

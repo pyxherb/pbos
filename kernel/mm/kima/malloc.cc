@@ -17,7 +17,7 @@ void *mm_kmalloc(size_t size, size_t alignment) {
 
 		for (size_t j = 0;
 			j < PGCEIL(size);
-			j += DEFAULT_PAGESIZE) {
+			j += PAGESIZE) {
 			if (!kima_lookup_vpgdesc(((char *)cur_desc->rb_value) + j)) {
 				filter_base = ((char *)cur_desc->rb_value) + j;
 				it = kfxx::rbtree_t<void *>::iterator(kima_vpgdesc_query_tree.find_max_lteq(filter_base), &kima_vpgdesc_query_tree, kfxx::iterator_direction::forward);
@@ -53,7 +53,7 @@ void *mm_kmalloc(size_t size, size_t alignment) {
 
 				for (size_t j = 0;
 					j < PGCEIL(size);
-					j += DEFAULT_PAGESIZE) {
+					j += PAGESIZE) {
 					kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(((char *)cur_desc->rb_value) + j);
 
 					kd_assert(vpgdesc);
@@ -78,7 +78,7 @@ void *mm_kmalloc(size_t size, size_t alignment) {
 	kd_assert(new_free_pg);
 
 	for (size_t i = 0; i < PGROUNDUP(size); ++i) {
-		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(((char *)new_free_pg) + i * DEFAULT_PAGESIZE);
+		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(((char *)new_free_pg) + i * PAGESIZE);
 
 		kd_assert(vpgdesc);
 	}
@@ -96,7 +96,7 @@ void mm_kfree(void *ptr) {
 	kd_assert(ublk);
 	for (uintptr_t i = PGFLOOR(ublk->rb_value);
 		i < PGCEIL(((char *)ublk->rb_value) + ublk->size);
-		i += DEFAULT_PAGESIZE) {
+		i += PAGESIZE) {
 		kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc((void *)i);
 
 		kd_assert(vpgdesc);

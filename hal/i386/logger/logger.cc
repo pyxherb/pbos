@@ -14,48 +14,48 @@ hal_spinlock_t hn_logger_spinlock = HAL_SPINLOCK_UNLOCKED;
 static size_t _vga_logger(uint16_t mode, const void *arg, va_list vargs);
 
 void hn_klog_init() {
-	klog_setlogger(klog_getdefault());
+	klog_set_logger(klog_get_default_logger());
 
-	kdprintf("Initialized kernel logger\n");
+	kd_printf("Initialized kernel logger\n");
 }
 
-void klog_setlogger(klog_logger_t logger) {
+void klog_set_logger(klog_logger_t logger) {
 	(hn_active_logger = logger)(KLOG_MODE_INIT, NULL, NULL);
 }
-klog_logger_t klog_getlogger() {
+klog_logger_t klog_get_logger() {
 	return hn_active_logger;
 }
-klog_logger_t klog_getdefault() {
+klog_logger_t klog_get_default_logger() {
 	return _vga_logger;
 }
 
-void kvprintf(const char *str, va_list args) {
+void klog_vprintf(const char *str, va_list args) {
 	io::irq_disable_lock irq_lock;
 	hal_spinlock_lock(&hn_logger_spinlock);
 	hn_active_logger(KLOG_MODE_PRINTFMT, str, args);
 	hal_spinlock_unlock(&hn_logger_spinlock);
 }
 
-void kprintf(const char *str, ...) {
+void klog_printf(const char *str, ...) {
 	va_list args;
 	va_start(args, str);
 
-	kvprintf(str, args);
+	klog_vprintf(str, args);
 
 	va_end(args);
 }
 
-void kputc(char ch) {
+void klog_putc(char ch) {
 	char s[2] = { ch, '\0' };
 	hn_active_logger(KLOG_MODE_PRINT, s, NULL);
 }
 
-void kputs(const char *str) {
+void klog_puts(const char *str) {
 	hn_active_logger(KLOG_MODE_PRINT, str, NULL);
-	kputc('\n');
+	klog_putc('\n');
 }
 
-bool klog_iscapable(uint16_t id) {
+bool klog_is_capable(uint16_t id) {
 	return hn_active_logger(KLOG_MODE_GETCAP, (const char *)id, NULL);
 }
 

@@ -12,7 +12,7 @@
 #define PTX_MAX 0x3ff
 #define PTX_MIN 0
 
-#define PGOFF_MAX ((DEFAULT_PAGESIZE) - 1)
+#define PGOFF_MAX ((PAGESIZE) - 1)
 #define PGOFF_MIN 0
 
 #define NULLPG (PGADDR_MAX + 1)	 // Used for representing an invalid page
@@ -45,10 +45,6 @@ typedef uint32_t pgsize_t;
 	(((pgaddr_t)(addr) >> 12) + ((((pgaddr_t)(addr)) & PGOFF_MAX) ? 1 : 0))
 /// @brief Round down a linear address into a paged address
 #define PGROUNDDOWN(addr) ((((pgaddr_t)(addr))) >> 12)
-/// @brief Round up a linear address into page-aligned.
-#define PGCEIL(addr) ((uintptr_t)((((size_t)(addr)) + PGOFF_MAX) & (~PGOFF_MAX)))
-/// @brief Round down a linear address into page-aligned.
-#define PGFLOOR(addr) ((uintptr_t)(((size_t)(addr)) & (~PGOFF_MAX)))
 
 #define PDE_P 0x0001   // Present
 #define PDE_RW 0x0002  // Read/Write

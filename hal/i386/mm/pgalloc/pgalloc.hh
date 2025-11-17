@@ -64,10 +64,10 @@ typedef struct _hn_madpool_header_t {
 
 typedef struct _hn_madpool_t {
 	hn_madpool_header_t header;
-	hn_mad_t descs[(DEFAULT_PAGESIZE - sizeof(hn_madpool_header_t)) / sizeof(hn_mad_t)];
+	hn_mad_t descs[(PAGESIZE - sizeof(hn_madpool_header_t)) / sizeof(hn_mad_t)];
 } hn_madpool_t;
 
-static_assert(sizeof(hn_madpool_t) <= DEFAULT_PAGESIZE);
+static_assert(sizeof(hn_madpool_t) <= PAGESIZE);
 
 ///
 /// @brief Physical Memory Region Descriptor
