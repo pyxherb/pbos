@@ -17,6 +17,10 @@ typedef struct _km_init_binldr_registry_t {
 	km_binldr_t *binldr;
 } km_init_binldr_registry_t;
 
+typedef struct _km_binseg_t km_binseg_t;
+
+typedef struct _km_binproto_t km_binproto_t;
+
 km_result_t km_exec(
 	proc_id_t parent,
 	se_uid_t uid,

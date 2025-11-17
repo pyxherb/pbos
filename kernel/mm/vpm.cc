@@ -8,7 +8,7 @@ PBOS_EXTERN_C_BEGIN
 kn_mm_vpm_poolpg_t *hn_kspace_vpm_poolpg_list;
 
 void *kn_rounddown_to_page_leveled_addr(const void *const addr, int level) {
-	if (level > KN_MM_VPM_LEVEL_MAX)
+	if (level > (PAGE_TABLE_LEVEL_MAX - 1))
 		km_panic("Invalid page rounddown level: %d", level);
 	return (void *)kn_mm_vpm_rounddowners[level]((uintptr_t)addr);
 }
@@ -29,13 +29,13 @@ hn_vpm_t *kn_mm_lookup_vpm(mm_context_t *context, const void *addr, int level) {
 }
 
 km_result_t kn_mm_insert_vpm(mm_context_t *context, const void *addr) {
-	if (kn_mm_lookup_vpm(context, addr, KN_MM_VPM_LEVEL_MAX)) {
+	if (kn_mm_lookup_vpm(context, addr, (PAGE_TABLE_LEVEL_MAX - 1))) {
 		kd_assert("Inserting duplicated VPM, aborting");
 	}
 
-	bool inserted_flags_per_level[KN_MM_VPM_LEVEL_MAX + 1];
+	bool inserted_flags_per_level[(PAGE_TABLE_LEVEL_MAX - 1) + 1];
 	memset(inserted_flags_per_level, 0, sizeof(inserted_flags_per_level));
-	for (int i = 0; i <= KN_MM_VPM_LEVEL_MAX; ++i) {
+	for (int i = 0; i <= (PAGE_TABLE_LEVEL_MAX - 1); ++i) {
 		void *aligned_addr = kn_rounddown_to_page_leveled_addr(addr, i);
 
 		hn_vpm_t *cur_level_vpm = kn_mm_lookup_vpm(context, aligned_addr, i);
@@ -81,7 +81,7 @@ km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 	void *new_vpmpool_paddr = NULL,
 		 *new_vpmpool_vaddr = NULL;
 
-	if ((!(new_vpmpool_vaddr = mm_kvmalloc(context, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NOSETVPM)))) {
+	if ((!(new_vpmpool_vaddr = mm_kvmalloc(context, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NOSETVPM)))) {
 		result = KM_RESULT_NO_MEM;
 		goto fail;
 	}
@@ -91,7 +91,7 @@ km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 		goto fail;
 	}
 
-	if (KM_FAILED(result = mm_mmap(context, new_vpmpool_vaddr, new_vpmpool_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_NOSETVPM))) {
+	if (KM_FAILED(result = mm_mmap(context, new_vpmpool_vaddr, new_vpmpool_paddr, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_NOSETVPM))) {
 		goto fail;
 	}
 
@@ -100,7 +100,7 @@ km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 
 		kd_assert(newpool != addr);
 
-		memset(newpool, 0, PAGESIZE);
+		memset(newpool, 0, DEFAULT_PAGESIZE);
 
 		newpool->header.used_num = 1;  // Self VPM is not included
 
@@ -132,14 +132,14 @@ fail:
 		mm_pgfree(new_vpmpool_paddr);
 	}
 	if (new_vpmpool_vaddr) {
-		mm_vmfree(context, new_vpmpool_vaddr, PAGESIZE);
+		mm_vmfree(context, new_vpmpool_vaddr, DEFAULT_PAGESIZE);
 	}
 
 	return KM_MAKEERROR(result);
 }
 
 void kn_mm_free_vpm(mm_context_t *context, const void *addr) {
-	for (int i = 0; i <= KN_MM_VPM_LEVEL_MAX; ++i) {
+	for (int i = 0; i <= (PAGE_TABLE_LEVEL_MAX - 1); ++i) {
 		void *aligned_addr = kn_rounddown_to_page_leveled_addr(addr, i);
 
 #ifndef NDEBUG
@@ -163,11 +163,11 @@ void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 	target_desc = static_cast<hn_vpm_t *>(target_node);
 
 	if (!(--target_desc->subref_count)) {
-		if (level < KN_MM_VPM_LEVEL_MAX) {
+		if (level < (PAGE_TABLE_LEVEL_MAX - 1)) {
 			mm_unmmap(
 				context,
 				kn_lookup_pgdir_mapped_addr(kn_lookup_pgdir(context, (void *)addr, level)),
-				PAGESIZE,
+				DEFAULT_PAGESIZE,
 				0);
 			kn_mm_free_pgdir(context, (void *)addr, 0);
 		}
@@ -190,7 +190,7 @@ void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 				pool->header.next->header.prev = pool->header.prev;
 
 			mm_pgfree(mm_getmap(context, pool, NULL));
-			mm_unmmap(context, pool, PAGESIZE, MMAP_NOSETVPM);
+			mm_unmmap(context, pool, DEFAULT_PAGESIZE, MMAP_NOSETVPM);
 		}
 	}
 }

@@ -50,7 +50,7 @@ static void boot_init_paging() {
 		pde[i].mask = PDE_P | PDE_RW;
 		pde[i].address = PGROUNDDOWN(curptr);
 
-		for (uint32_t k = 0; (k < 1024) && (((uint32_t)VADDR(i, k, PAGESIZE - 1)) < KERNEL_PBASE); ++k) {
+		for (uint32_t k = 0; (k < 1024) && (((uint32_t)VADDR(i, k, DEFAULT_PAGESIZE - 1)) < KERNEL_PBASE); ++k) {
 			curptr[k].mask = PTE_P | PTE_RW;
 			curptr[k].address = PGROUNDDOWN(VADDR(i, k, 0));
 		}
@@ -65,7 +65,7 @@ static void boot_init_paging() {
 		pde[i].mask = PDE_P | PDE_RW;
 		pde[i].address = PGROUNDDOWN(curptr);
 
-		for (uint32_t k = 0; (k < 1024) && (((uint32_t)VADDR(i, k, PAGESIZE - 1)) <= INIT_CRITICAL_VTOP); ++k) {
+		for (uint32_t k = 0; (k < 1024) && (((uint32_t)VADDR(i, k, DEFAULT_PAGESIZE - 1)) <= INIT_CRITICAL_VTOP); ++k) {
 			curptr[k].mask = PTE_P | PTE_RW;
 			curptr[k].address = PGROUNDDOWN(INIT_CRITICAL_PBASE + ((uint32_t)VADDR(j, k, 0)));
 		}

@@ -30,7 +30,7 @@ typedef struct _hn_vpm_poolpg_header_t {
 
 typedef struct _kn_mm_vpm_poolpg_t {
 	hn_vpm_poolpg_header_t header;
-	hn_vpm_t descs[(PAGESIZE - sizeof(hn_vpm_poolpg_header_t)) / sizeof(hn_vpm_t)];
+	hn_vpm_t descs[(DEFAULT_PAGESIZE - sizeof(hn_vpm_poolpg_header_t)) / sizeof(hn_vpm_t)];
 } kn_mm_vpm_poolpg_t;
 
 typedef uintptr_t (*hn_vpm_level_rounddowner_t)(uintptr_t addr);

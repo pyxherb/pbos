@@ -14,7 +14,7 @@ void kima_free_vpgdesc(kima_vpgdesc_t* vpgdesc) {
 			poolpg->header.prev->header.next = poolpg->header.next;
 		if (poolpg->header.next)
 			poolpg->header.next->header.prev = poolpg->header.prev;
-		kima_vpgfree(poolpg, PAGESIZE);
+		kima_vpgfree(poolpg, DEFAULT_PAGESIZE);
 	}
 }
 
@@ -32,7 +32,7 @@ kima_vpgdesc_t* kima_alloc_vpgdesc(void* ptr) {
 		return desc;
 	}
 
-	kima_vpgdesc_poolpg_t* pg = (kima_vpgdesc_poolpg_t*)kima_vpgalloc(NULL, PAGESIZE);
+	kima_vpgdesc_poolpg_t* pg = (kima_vpgdesc_poolpg_t*)kima_vpgalloc(NULL, DEFAULT_PAGESIZE);
 
 	pg->header.prev = NULL;
 	pg->header.next = kima_vpgdesc_poolpg_list;

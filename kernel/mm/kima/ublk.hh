@@ -17,7 +17,7 @@ typedef struct _kima_ublk_poolpg_header_t {
 
 typedef struct _kima_ublk_poolpg_t {
 	kima_ublk_poolpg_header_t header;
-	kima_ublk_t slots[(PAGESIZE - sizeof(kima_ublk_poolpg_header_t)) / sizeof(kima_ublk_t)];
+	kima_ublk_t slots[(DEFAULT_PAGESIZE - sizeof(kima_ublk_poolpg_header_t)) / sizeof(kima_ublk_t)];
 } kima_ublk_poolpg_t;
 
 extern kima_ublk_poolpg_t *kima_ublk_poolpg_list;

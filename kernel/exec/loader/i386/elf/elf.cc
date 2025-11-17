@@ -89,12 +89,12 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 		mm_context_t *prev_context = mm_get_cur_context();
 		{
 			// Allocate pages for current segment.
-			for (Elf32_Word j = 0; j < ph.p_memsz; j += PAGESIZE) {
-				if (!mm_getmap(ps_mm_context_of(proc), vaddr + PAGESIZE * j, NULL)) {
+			for (Elf32_Word j = 0; j < ph.p_memsz; j += DEFAULT_PAGESIZE) {
+				if (!mm_getmap(ps_mm_context_of(proc), vaddr + DEFAULT_PAGESIZE * j, NULL)) {
 					void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
 					if (!paddr)
 						return KM_RESULT_NO_MEM;
-					if (!KM_SUCCEEDED(result = mm_mmap(ps_mm_context_of(proc), vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0)))
+					if (!KM_SUCCEEDED(result = mm_mmap(ps_mm_context_of(proc), vaddr + DEFAULT_PAGESIZE * j, paddr, DEFAULT_PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0)))
 						return result;
 				}
 			}

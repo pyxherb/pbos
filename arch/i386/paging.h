@@ -4,12 +4,7 @@
 #include <pbos/common.h>
 #include <stdint.h>
 
-#define PAGESIZE 4096
-
-#define KN_MM_VPM_LEVEL_MAX 1
-
-#define PGADDR_MAX 0xfffff
-#define PGADDR_MIN 0
+#include "memconf.h"
 
 #define PDX_MAX 0x3ff
 #define PDX_MIN 0
@@ -17,11 +12,8 @@
 #define PTX_MAX 0x3ff
 #define PTX_MIN 0
 
-#define PGOFF_MAX ((PAGESIZE) - 1)
+#define PGOFF_MAX ((DEFAULT_PAGESIZE) - 1)
 #define PGOFF_MIN 0
-
-#define PAGESIZE_MAX 0x100000
-#define PAGESIZE_MIN 0
 
 #define NULLPG (PGADDR_MAX + 1)	 // Used for representing an invalid page
 

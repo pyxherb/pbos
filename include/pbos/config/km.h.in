@@ -1,8 +1,8 @@
 #ifndef _PBOS_CONFIG_KM_H_
 #define _PBOS_CONFIG_KM_H_
 
-#define PROC_MAX @PBOS_PROC_MAX@
 #define MM_MAXORD @PBOS_ORDER_MAX@
 #define PROC_SCHEDULER_NAME @PBOS_SCHEDULER_NAME@
+#define KN_ARCH_MEMCONF_HEADER_PATH <arch/@PBOS_ARCH@/memconf.h>
 
 #endif
