@@ -4,7 +4,7 @@
 #include <pbos/km/exec.h>
 #include <pbos/km/mm.h>
 #include <pbos/km/panic.h>
-#include "initcar.h"
+#include "initcar.hh"
 #include "irq.h"
 #include "logger.h"
 #include "misc.h"

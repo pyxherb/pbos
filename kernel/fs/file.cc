@@ -1,8 +1,8 @@
 #include <pbos/kf/hash.h>
 #include <pbos/kf/string.h>
 #include <pbos/km/mm.h>
-#include <pbos/kn/fs/file.hh>
 #include <pbos/kn/fs/fs.hh>
+#include <pbos/kn/fs/file.hh>
 #include <pbos/km/objmgr.hh>
 
 km_result_t kn_alloc_file(
@@ -33,7 +33,7 @@ km_result_t kn_alloc_file(
 	if (file_out)
 		*file_out = file;
 
-	om_init_object(&file->object_header, fs_file_class, 0);
+	om_init_object(file, fs_file_class, 0);
 
 	return KM_RESULT_OK;
 }
@@ -67,13 +67,11 @@ km_result_t fs_child_of(fs_file_t *file, const char *filename, size_t filename_l
 }
 
 km_result_t fs_resolve_path(fs_file_t *cur_dir, const char *path, size_t path_len, fs_file_t **file_out) {
-	fs_file_t *file = cur_dir ? fs_abs_root_dir : cur_dir;
+	om::object_ptr<fs_file_t> file = cur_dir ? fs_abs_root_dir : cur_dir;
 	km_result_t result;
 
-	om_incref(&file->object_header);
-
 	const char *i = path, *last_divider = path;
-	fs_file_t *new_file;
+	om::object_ptr<fs_file_t> new_file;
 
 	while (i - path < path_len) {
 		switch (*i) {
@@ -84,14 +82,10 @@ km_result_t fs_resolve_path(fs_file_t *cur_dir, const char *path, size_t path_le
 					if (last_divider == path) {
 						new_file = fs_abs_root_dir;
 					}
-				} else if (KM_FAILED(result = fs_child_of(file, last_divider, filename_len, &new_file))) {
-					om_decref(&file->object_header);
+				} else if (KM_FAILED(result = fs_child_of(file.get(), last_divider, filename_len, new_file.get_addr())))
 					return result;
-				}
 
 				last_divider = i + 1;
-				om_decref(&file->object_header);
-				om_incref(&new_file->object_header);
 				file = new_file;
 				break;
 			}
@@ -105,15 +99,11 @@ km_result_t fs_resolve_path(fs_file_t *cur_dir, const char *path, size_t path_le
 end:;
 	size_t filename_len = i - last_divider;
 	if (filename_len) {
-		if (KM_FAILED(result = fs_child_of(file, last_divider, filename_len, &new_file))) {
-			om_decref(&file->object_header);
+		if (KM_FAILED(result = fs_child_of(file.get(), last_divider, filename_len, new_file.get_addr())))
 			return result;
-		}
 	}
 
-	om_decref(&file->object_header);
-	om_incref(&new_file->object_header);
-	*file_out = new_file;
+	*file_out = new_file.release();
 	return KM_RESULT_OK;
 }
 
@@ -125,11 +115,11 @@ km_result_t fs_open(fs_file_t *base_dir, const char *path, size_t path_len, fs_f
 		return result;
 
 	if (KM_FAILED(result = file->fs->ops.open(file, fcb_out))) {
-		om_decref(&file->object_header);
+		om_decref(file);
 		return result;
 	}
 
-	om_decref(&file->object_header);
+	om_decref(file);
 
 	return KM_RESULT_OK;
 }
@@ -150,7 +140,11 @@ km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {
 	return fcb->file->fs->ops.size(fcb, size_out);
 }
 
+om_object_t *fs_file_to_object(fs_file_t *file) {
+	return file;
+}
+
 void kn_file_destructor(om_object_t *obj) {
-	fs_file_t *file = PBOS_CONTAINER_OF(fs_file_t, object_header, obj);
+	fs_file_t *file = static_cast<fs_file_t *>(obj);
 	file->fs->ops.offload(file);
 }

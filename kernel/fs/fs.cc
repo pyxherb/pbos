@@ -43,10 +43,10 @@ void fs_init() {
 
 	kd_printf("Registered root file system\n");
 
-	if (KM_FAILED(result = kn_alloc_file(fs_rootfs, "/", strlen("/"), FS_FILETYPE_DIR, sizeof(fs_rootfs_dir_exdata_t), &fs_abs_root_dir)))
+	if (KM_FAILED(result = kn_alloc_file(fs_rootfs, "/", strlen("/"), FS_FILETYPE_DIR, sizeof(fs_rootfs_dir_t) - sizeof(fs_file_t), &fs_abs_root_dir)))
 		km_panic("Error creating the root directory, error code = %.0x", result);
 
-	kf_hashmap_init(&((fs_rootfs_dir_exdata_t *)fs_abs_root_dir->exdata)->children, kn_fs_rootfs_file_hasher, kn_fs_rootfs_file_nodefree, kn_fs_rootfs_file_nodecmp, NULL);
+	kf_hashmap_init(&((fs_rootfs_dir_t *)fs_abs_root_dir)->children, kn_fs_rootfs_file_hasher, kn_fs_rootfs_file_nodefree, kn_fs_rootfs_file_nodecmp, NULL);
 
 	kd_printf("Created the root directory\n");
 }

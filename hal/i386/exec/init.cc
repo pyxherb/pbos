@@ -1,5 +1,4 @@
 #include <arch/i386/kargs.h>
-#include <hal/i386/initcar.h>
 #include <pbos/km/panic.h>
 #include <string.h>
 #include <pbos/kn/km/exec.hh>

@@ -1,4 +1,4 @@
-#include <hal/i386/initcar.h>
+#include <hal/i386/initcar.hh>
 #include <pbos/km/logger.h>
 #include <pbos/kn/fs/file.hh>
 #include <pbos/kn/fs/fs.hh>
@@ -61,7 +61,7 @@ km_result_t initcar_mount(fs_file_t *parent, fs_file_t *file) {
 		dir_entry->name = file->filename;
 		dir_entry->name_len = file->filename_len;
 		dir_entry->file = file;
-		km_result_t result = kf_hashmap_insert(&((initcar_dir_exdata_t *)parent->exdata)->children, &dir_entry->node_header);
+		km_result_t result = kf_hashmap_insert(&((initcar_dir_file_t *)parent)->children, &dir_entry->node_header);
 		kd_assert(KM_SUCCEEDED(result));
 		return KM_RESULT_OK;
 	}
@@ -129,10 +129,10 @@ void initcar_init() {
 	if (((p_cur - (const char *)initcar_ptr) + size) > initcar_size) \
 		km_panic("Prematured end of file\n");
 
-	if (KM_FAILED(result = kn_alloc_file(initcar_fs, "initcar", sizeof("initcar") - 1, FS_FILETYPE_DIR, sizeof(initcar_dir_exdata_t), &initcar_dir)))
+	if (KM_FAILED(result = kn_alloc_file(initcar_fs, "initcar", sizeof("initcar") - 1, FS_FILETYPE_DIR, sizeof(initcar_dir_file_t) - sizeof(fs_file_t), &initcar_dir)))
 		km_panic("Error creating initcar directory, error code = %.0x", result);
 	kf_hashmap_init(
-		&((initcar_dir_exdata_t *)initcar_dir->exdata)->children,
+		&((initcar_dir_file_t *)initcar_dir)->children,
 		kn_initcar_file_hasher,
 		kn_initcar_file_nodefree,
 		kn_initcar_file_nodecmp,
@@ -163,11 +163,11 @@ void initcar_init() {
 				initcar_fs,
 				fe->filename, filename_len,
 				FS_FILETYPE_FILE,
-				sizeof(initcar_file_exdata_t) + filename_len,
+				sizeof(initcar_file_t) - sizeof(fs_file_t),
 				&file)))
 			km_panic("Error creating file object for initcar file: %s\n", fe->filename);
 
-		initcar_file_exdata_t *exdata = (initcar_file_exdata_t *)fs_file_exdata(file);
+		initcar_file_t *exdata = (initcar_file_t *)file;
 
 		exdata->ptr = p_cur;
 		exdata->sz_total = fe->size;

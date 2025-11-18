@@ -10,10 +10,9 @@ extern fs_fsops_t kn_rootfs_ops;
 extern fs_filesys_t *fs_rootfs;
 
 /// @brief Extra data for directory files.
-typedef struct _fs_rootfs_dir_exdata_t {
+typedef struct _fs_rootfs_dir_t : public fs_file_t {
 	kf_hashmap_t children;
-	char exdata[];
-} fs_rootfs_dir_exdata_t;
+} fs_rootfs_dir_t;
 
 typedef struct _fs_rootfs_dir_entry_t {
 	kf_hashmap_node_t node_header;

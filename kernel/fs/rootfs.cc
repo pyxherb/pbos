@@ -2,6 +2,7 @@
 #include <pbos/km/mm.h>
 #include <string.h>
 #include <pbos/kn/fs/rootfs.hh>
+#include <pbos/km/objmgr.hh>
 
 size_t kn_fs_rootfs_file_hasher(size_t bucket_num, const void *target, bool is_target_key) {
 	fs_rootfs_dir_entry_t *entry = PBOS_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, target);
@@ -10,7 +11,7 @@ size_t kn_fs_rootfs_file_hasher(size_t bucket_num, const void *target, bool is_t
 
 void kn_fs_rootfs_file_nodefree(kf_hashmap_node_t *node) {
 	fs_rootfs_dir_entry_t *entry = PBOS_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, node);
-	om_decref(&entry->file->object_header);
+	om_decref(entry->file);
 }
 
 bool kn_fs_rootfs_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs) {
@@ -52,16 +53,15 @@ km_result_t kn_rootfs_subnode(fs_file_t *parent, const char *name, size_t name_l
 				.name_len = name_len
 			};
 
-			kf_hashmap_node_t *node = kf_hashmap_find(&((fs_rootfs_dir_exdata_t *)(parent->exdata))->children, &k);
+			kf_hashmap_node_t *node = kf_hashmap_find(&((fs_rootfs_dir_t *)(parent))->children, &k);
 			if (!node) {
 				result = KM_MAKEERROR(KM_RESULT_NOT_FOUND);
 				goto cleanup;
 			}
 
-			fs_file_t *file = PBOS_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, node)->file;
+			om::object_ptr<fs_file_t> file = PBOS_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, node)->file;
 
-			om_incref(&file->object_header);
-			*file_out = file;
+			*file_out = file.release();
 			break;
 		}
 		case FS_FILETYPE_LINK:
@@ -95,7 +95,7 @@ km_result_t kn_rootfs_open(fs_file_t *file, fs_fcb_t **fcb_out) {
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	memset(fcb, 0, sizeof(fs_fcb_t));
 	fcb->file = file;
-	om_incref(&file->object_header);
+	om_incref(file);
 
 	*fcb_out = fcb;
 
@@ -104,7 +104,7 @@ km_result_t kn_rootfs_open(fs_file_t *file, fs_fcb_t **fcb_out) {
 
 km_result_t kn_rootfs_close(fs_fcb_t *fcb) {
 	// TODO: Do some checks.
-	om_decref(&fcb->file->object_header);
+	om_decref(fcb->file);
 	mm_kfree(fcb);
 	return KM_RESULT_OK;
 }
@@ -131,7 +131,7 @@ km_result_t kn_rootfs_mount(fs_file_t *parent, fs_file_t *file) {
 	dir_entry->name = file->filename;
 	dir_entry->name_len = file->filename_len;
 	dir_entry->file = file;
-	km_result_t result = kf_hashmap_insert(&((fs_rootfs_dir_exdata_t *)parent->exdata)->children, &dir_entry->node_header);
+	km_result_t result = kf_hashmap_insert(&((fs_rootfs_dir_t *)parent)->children, &dir_entry->node_header);
 	kd_assert(KM_SUCCEEDED(result));
 	return KM_RESULT_OK;
 }

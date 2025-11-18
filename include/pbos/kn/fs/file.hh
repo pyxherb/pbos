@@ -9,6 +9,16 @@
 
 PBOS_EXTERN_C_BEGIN
 
+typedef struct _fs_file_t : public om_object_t {
+	_fs_file_t *parent;
+
+	fs_filesys_t *fs;
+	fs_filetype_t filetype;
+
+	size_t filename_len;
+	char *filename;
+} fs_file_t;
+
 ///
 /// @brief Allocate a new file node.
 ///
@@ -26,7 +36,7 @@ km_result_t kn_alloc_file(
 	size_t filename_len,
 	fs_filetype_t filetype,
 	size_t exdata_size,
-	fs_file_t** file_out);
+	fs_file_t **file_out);
 
 void kn_file_destructor(om_object_t *obj);
 

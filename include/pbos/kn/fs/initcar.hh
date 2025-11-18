@@ -1,19 +1,18 @@
-#ifndef _PBOS_KM_INITCAR_H_
-#define _PBOS_KM_INITCAR_H_
+#ifndef _PBOS_KN_FS_INITCAR_HH_
+#define _PBOS_KN_FS_INITCAR_HH_
 
 #include <hal/i386/mm.h>
 #include <pbos/fmt/pbcar.h>
-#include <pbos/fs/file.h>
-#include <pbos/fs/fs.h>
+#include <pbos/kn/fs/file.hh>
+#include <pbos/kn/fs/fs.hh>
 
 PBOS_EXTERN_C_BEGIN
 
 #define INITCAR_UUID UUID(44417a9f, 01be, fd99, 93d2, 010a9fc70042)
 
-typedef struct _initcar_dir_exdata_t {
+typedef struct _initcar_dir_file_t : public fs_file_t {
 	kf_hashmap_t children;
-	char exdata[];
-} initcar_dir_exdata_t;
+} initcar_dir_file_t;
 
 typedef struct _initcar_dir_entry_t {
 	kf_hashmap_node_t node_header;
@@ -22,12 +21,10 @@ typedef struct _initcar_dir_entry_t {
 	fs_file_t *file;
 } initcar_dir_entry_t;
 
-typedef struct _initcar_file_exdata_t {
+typedef struct _initcar_file_t : public fs_file_t {
 	const char *ptr;
 	size_t sz_total;
-	size_t name_len;
-	char name[];
-} initcar_file_exdata_t;
+} initcar_file_t;
 
 km_result_t initcar_subnode(fs_file_t *parent, const char *name, size_t name_len, fs_file_t **file_out);
 void initcar_offload(fs_file_t *file);

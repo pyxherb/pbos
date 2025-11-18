@@ -3,6 +3,9 @@
 #include <pbos/km/mm.h>
 #include <pbos/km/panic.h>
 #include <pbos/kn/km/objmgr.h>
+#include <pbos/kfxx/rbtree.hh>
+
+PBOS_EXTERN_C_BEGIN
 
 om_class_t *kn_class_list = NULL;
 
@@ -18,7 +21,7 @@ static void _kn_unused_object_nodefree(kf_rbtree_node_t *p) {
 }
 
 om_class_t *om_register_class(kf_uuid_t *uuid, om_destructor_t destructor) {
-	om_class_t *cls = mm_kmalloc(sizeof(om_class_t), alignof(om_class_t));
+	om_class_t *cls = (om_class_t *)mm_kmalloc(sizeof(om_class_t), alignof(om_class_t));
 	if (!cls)
 		return NULL;
 
@@ -99,3 +102,5 @@ void om_init() {
 		_kn_object_nodecmp,
 		_kn_unused_object_nodefree);
 }
+
+PBOS_EXTERN_C_END

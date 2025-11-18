@@ -34,18 +34,7 @@ typedef uint16_t fs_faccess_t;
 
 typedef struct _fs_filesys_t fs_filesys_t;
 
-typedef struct _fs_file_t {
-	om_object_t object_header;
-	struct _fs_file_t *parent;
-
-	fs_filesys_t *fs;
-	fs_filetype_t filetype;
-
-	size_t filename_len;
-	char *filename;
-
-	char exdata[];
-} fs_file_t;
+typedef struct _fs_file_t fs_file_t;
 
 typedef struct _fs_finddata_t {
 	kf_hashmap_node_t *node;
@@ -61,9 +50,6 @@ typedef struct _fs_fcb_t {
 } fs_fcb_t;
 
 typedef struct _fs_finddata_t fs_finddata_t;
-
-#define fs_file_exdata(file) ((file)->exdata)
-#define fs_dir_exdata(file) (((fs_dir_exdata_t *)(file)->exdata)->exdata)
 
 km_result_t fs_create_file(
 	fs_file_t *parent,
@@ -92,7 +78,18 @@ km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out);
 
 km_result_t fs_child_of(fs_file_t *file, const char *filename, size_t filename_len, fs_file_t **file_out);
 
+///
+/// @brief Resolve a path to a file.
+///
+/// @param cur_dir Current directory for resolution.
+/// @param path Path to be resolved.
+/// @param path_len Length of the path.
+/// @param file_out Where the file object is received, note that the file will be reference counted.
+/// @return Result of the resolution.
+///
 km_result_t fs_resolve_path(fs_file_t *cur_dir, const char *path, size_t path_len, fs_file_t **file_out);
+
+om_object_t *fs_file_to_object(fs_file_t *file);
 
 extern om_class_t *fs_file_class;
 

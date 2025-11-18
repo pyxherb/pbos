@@ -1,12 +1,10 @@
-#include <hal/i386/debug.h>
-#include <hal/i386/initcar.h>
 #include <pbos/hal/init.h>
 #include <pbos/hal/irq.h>
 #include <pbos/km/logger.h>
 #include <pbos/km/mm.h>
 #include <pbos/km/panic.h>
 #include <pbos/kn/fs/fs.hh>
-#include <pbos/kn/fs/initcar.h>
+#include <pbos/kn/fs/initcar.hh>
 #include <pbos/kn/km/exec.hh>
 #include <pbos/kn/km/smp.h>
 #include <pbos/kn/km/objmgr.h>
