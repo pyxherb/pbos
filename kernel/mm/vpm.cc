@@ -1,3 +1,4 @@
+#include <alloca.h>
 #include <pbos/km/logger.h>
 #include <string.h>
 #include <pbos/hal/irq.hh>
@@ -5,12 +6,14 @@
 
 PBOS_EXTERN_C_BEGIN
 
+const kn_paging_config_t *kn_cur_paging_config;
+
 kn_mm_vpm_poolpg_t *hn_kspace_vpm_poolpg_list;
 
 void *kn_rounddown_to_page_leveled_addr(const void *const addr, int level) {
-	if (level > (PAGE_TABLE_LEVEL_MAX - 1))
+	if (level >= kn_cur_paging_config->pgtab_level)
 		km_panic("Invalid page rounddown level: %d", level);
-	return (void *)kn_mm_vpm_rounddowners[level]((uintptr_t)addr);
+	return (void *)kn_cur_paging_config->vpm_rounddowners[level]((uintptr_t)addr);
 }
 
 void kn_vpm_nodefree(hn_vpm_t *p) {
@@ -29,13 +32,14 @@ hn_vpm_t *kn_mm_lookup_vpm(mm_context_t *context, const void *addr, int level) {
 }
 
 km_result_t kn_mm_insert_vpm(mm_context_t *context, const void *addr) {
-	if (kn_mm_lookup_vpm(context, addr, (PAGE_TABLE_LEVEL_MAX - 1))) {
+	if (kn_mm_lookup_vpm(context, addr, (kn_cur_paging_config->pgtab_level - 1))) {
 		kd_assert("Inserting duplicated VPM, aborting");
 	}
 
-	bool inserted_flags_per_level[(PAGE_TABLE_LEVEL_MAX - 1) + 1];
-	memset(inserted_flags_per_level, 0, sizeof(inserted_flags_per_level));
-	for (int i = 0; i <= (PAGE_TABLE_LEVEL_MAX - 1); ++i) {
+	size_t levels = kn_cur_paging_config->pgtab_level;
+	bool *inserted_flags_per_level = (bool *)alloca(levels);
+	memset(inserted_flags_per_level, 0, levels * sizeof(bool));
+	for (int i = 0; i < levels; ++i) {
 		void *aligned_addr = kn_rounddown_to_page_leveled_addr(addr, i);
 
 		hn_vpm_t *cur_level_vpm = kn_mm_lookup_vpm(context, aligned_addr, i);
@@ -64,7 +68,7 @@ km_result_t kn_mm_insert_vpm(mm_context_t *context, const void *addr) {
 
 km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const addr, int level) {
 	// Check if the address is page-aligned.
-	kd_assert(!(((uintptr_t)addr) % hn_vpm_level_size[level]));
+	kd_assert(!(((uintptr_t)addr) % kn_cur_paging_config->vpm_level_size[level]));
 
 	kfxx::rbtree_t<void *> *query_tree = kn_mm_get_vpm_lookup_tree(context, addr, level);
 	kn_mm_vpm_poolpg_t **pool_list = kn_mm_get_vpm_pool_list(context, addr, level);
@@ -139,7 +143,7 @@ fail:
 }
 
 void kn_mm_free_vpm(mm_context_t *context, const void *addr) {
-	for (int i = 0; i <= (PAGE_TABLE_LEVEL_MAX - 1); ++i) {
+	for (int i = 0; i <= kn_cur_paging_config->pgtab_level - 1; ++i) {
 		void *aligned_addr = kn_rounddown_to_page_leveled_addr(addr, i);
 
 #ifndef NDEBUG
@@ -163,7 +167,7 @@ void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 	target_desc = static_cast<hn_vpm_t *>(target_node);
 
 	if (!(--target_desc->subref_count)) {
-		if (level < (PAGE_TABLE_LEVEL_MAX - 1)) {
+		if (level < kn_cur_paging_config->pgtab_level - 1) {
 			mm_unmmap(
 				context,
 				kn_lookup_pgdir_mapped_addr(kn_lookup_pgdir(context, (void *)addr, level)),

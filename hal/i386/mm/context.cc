@@ -40,17 +40,36 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 		 *pdt_vaddr = NULL;
 
 	if (!(pdt_paddr = mm_pgalloc(MM_PMEM_AVAILABLE))) {
-		return KM_RESULT_NO_MEM;
+		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	}
 	kfxx::scope_guard free_pdt_paddr_guard([pdt_paddr]() noexcept {
 		mm_pgfree(pdt_paddr);
 	});
 
 	if (!(pdt_vaddr = mm_kvmalloc(mm_get_cur_context(), PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0))) {
-		return KM_RESULT_NO_MEM;
+		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	}
 	kfxx::scope_guard free_pdt_vaddr_guard([pdt_vaddr]() noexcept {
 		mm_vmfree(mm_get_cur_context(), pdt_vaddr, PAGESIZE);
+	});
+
+	kfxx::rbtree_t<void *> *vpm_query_tree;
+
+	if (!(vpm_query_tree = (kfxx::rbtree_t<void *> *)mm_kmalloc(
+			  sizeof(kfxx::rbtree_t<void *>) * kn_cur_paging_config->pgtab_level,
+			  alignof(kfxx::rbtree_t<void *>)))) {
+		return KM_MAKEERROR(KM_RESULT_NO_MEM);
+	}
+
+	for (size_t i = 0; i < kn_cur_paging_config->pgtab_level; ++i) {
+		kfxx::construct_at<kfxx::rbtree_t<void *>>(vpm_query_tree + i);
+	}
+
+	kfxx::scope_guard free_vpm_query_tree_guard([vpm_query_tree]() noexcept {
+		for (size_t i = 0; i < kn_cur_paging_config->pgtab_level; ++i) {
+			kfxx::destroy_at<kfxx::rbtree_t<void *>>(vpm_query_tree + i);
+		}
+		mm_kfree(vpm_query_tree);
 	});
 
 	kfxx::construct_at<mm_context_t>(context);
@@ -58,9 +77,11 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 		return result;
 	}
 
+	free_vpm_query_tree_guard.release();
 	free_pdt_paddr_guard.release();
 	free_pdt_vaddr_guard.release();
 
+	context->uspace_vpm_query_tree = vpm_query_tree;
 	memset(pdt_vaddr, 0, PAGESIZE);
 	context->pdt = (arch_pde_t *)pdt_vaddr;
 
@@ -78,7 +99,7 @@ void mm_free_context(mm_context_t *context) {
 	}
 
 	// Free VPD query tree and pools.
-	for (size_t i = 0; i < PBOS_ARRAYSIZE(context->uspace_vpm_query_tree); ++i) {
+	for (size_t i = 0; i < kn_cur_paging_config->pgtab_level; ++i) {
 		context->uspace_vpm_query_tree[i].clear([](kfxx::rbtree_t<void *>::node_t *node) noexcept {
 			kn_vpm_nodefree(static_cast<hn_vpm_t *>(node));
 		});

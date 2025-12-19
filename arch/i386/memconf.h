@@ -1,9 +1,11 @@
 #ifndef _ARCH_I386_MEMCONF_H_
 #define _ARCH_I386_MEMCONF_H_
 
-#define PAGESIZE 4096
+#include <pbos/kn/km/memconf.h>
 
-#define PAGE_TABLE_LEVEL_MAX 2
+PBOS_EXTERN_C_BEGIN
+
+#define PAGESIZE 4096
 
 #define PGADDR_MAX 0xfffff
 #define PGADDR_MIN 0
@@ -12,5 +14,9 @@
 #define PGCEIL(addr) ((uintptr_t)((((size_t)(addr)) + (PAGESIZE - 1)) & (~(PAGESIZE - 1))))
 /// @brief Round down a linear address into page-aligned.
 #define PGFLOOR(addr) ((uintptr_t)(((size_t)(addr)) & (~(PAGESIZE - 1))))
+
+extern const kn_paging_config_t KN_PAGING_CONFIG_32BIT;
+
+PBOS_EXTERN_C_END
 
 #endif

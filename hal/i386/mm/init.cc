@@ -502,6 +502,8 @@ static void hn_mm_init_paging() {
 	// Load PDT.
 	arch_lpdt(PGROUNDDOWN(KPDT_PBASE));
 
+	kn_cur_paging_config = &KN_PAGING_CONFIG_32BIT;
+
 	kd_printf("Initialized paging\n");
 }
 

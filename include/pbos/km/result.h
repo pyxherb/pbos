@@ -3,12 +3,6 @@
 
 #include <stdint.h>
 
-#define KM_RESULT_TYPE_SUCCESS 0x00000000  // Succeeded
-#define KM_RESULT_TYPE_NOTICE 0x20000000   // Notice
-#define KM_RESULT_TYPE_WARNING 0x40000000  // Warning
-#define KM_RESULT_TYPE_ERROR 0x60000000	   // Error
-#define KM_RESULT_TYPE_FATAL 0x80000000	   // Fatal error
-
 typedef enum _km_results {
 	KM_RESULT_OK = 0,  // Success
 
@@ -34,19 +28,9 @@ typedef enum _km_results {
 
 typedef uint32_t km_result_t;
 
-#define KM_RESULT_TYPE(result) ((result) & 0xe0000000)
-#define KM_RESULT_CODE(result) ((result) & 0x1fffffff)
-
 #define KM_SUCCEEDED(result) (!(result))
-#define KM_NOTICED(result) (KM_RESULT_TYPE(result) == KM_RESULT_TYPE_INFO)
-#define KM_WARNED(result) (KM_RESULT_TYPE(result) == KM_RESULT_TYPE_WARNING)
-#define KM_FAILED(result) (KM_RESULT_TYPE(result) >= KM_RESULT_TYPE_ERROR)
-#define KM_ISCRITICAL(result) (KM_RESULT_TYPE(result) >= KM_RESULT_TYPE_CRITICAL)
-#define KM_ISFATAL(result) (KM_RESULT_TYPE(result) >= KM_RESULT_TYPE_FATAL)
+#define KM_FAILED(result) (result)
 
-#define KM_MAKENOTICE(result) ((result) | KM_RESULT_TYPE_NOTICE)
-#define KM_MAKEWARNING(result) ((result) | KM_RESULT_TYPE_WARNING)
-#define KM_MAKEERROR(result) ((result) | KM_RESULT_TYPE_ERROR)
-#define KM_MAKEFATAL(result) ((result) | KM_RESULT_TYPE_FATAL)
+#define KM_MAKEERROR(result) ((result))
 
 #endif

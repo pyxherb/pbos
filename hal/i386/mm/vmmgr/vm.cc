@@ -134,6 +134,11 @@ static km_result_t hn_mmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx
 		}
 	}*/
 
+	// Why does 0x05025000 remains constant?
+	// Because the TLB has not updated yet.
+	if (args->paddr == (void *)0x05025000)
+		asm volatile("xchg %bx, %bx");
+	arch_invlpg(pte);
 	pte->address = PGROUNDDOWN(args->paddr);
 	pte->mask = args->mask;
 
@@ -170,7 +175,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 			void *pgdir = kn_mm_alloc_pgdir(ctxt, VADDR(i, 0, 0), 0);
 			if (!pgdir) {
 				mm_unmmap(ctxt, vaddr, size, flags);
-				return KM_RESULT_NO_MEM;
+				return KM_MAKEERROR(KM_RESULT_NO_MEM);
 			} else {
 				{
 					pgaddr_t mapped_pgdir = hn_tmpmap(PGROUNDDOWN(pgdir), 1, PTE_P | PTE_RW);
@@ -198,7 +203,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 					}
 				}
 				mm_unmmap(ctxt, vaddr, size, flags);
-				return KM_RESULT_NO_MEM;
+				return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
 			vmalloc_succeeded:
 				ctxt->pdt[i].mask = PDE_P | PDE_RW | PDE_U;
@@ -210,7 +215,8 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 				result = mm_mmap(ctxt, map_addr, pgdir, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
 				kd_assert(KM_SUCCEEDED(result));
 
-				mad->mapped_pgtab_addr = PGROUNDDOWN(map_addr);
+				if (map_addr >= (void*)KSPACE_VBASE)
+					mad->mapped_pgtab_addr = PGROUNDDOWN(map_addr);
 			}
 		}
 	}
@@ -393,8 +399,10 @@ succeeded:
 	if (flags & VMALLOC_NOSETVPM)
 		mmap_flags |= VMALLOC_NOSETVPM;
 
-	if (!(flags & VMALLOC_NORESERVE))
-		mm_mmap(ctxt, p_found, NULL, size, access, mmap_flags);
+	if (!(flags & VMALLOC_NORESERVE)) {
+		if (KM_FAILED(mm_mmap(ctxt, p_found, NULL, size, access, mmap_flags)))
+			kd_assert(false);
+	}
 	return p_found;
 }
 
@@ -484,10 +492,9 @@ alloc_succeeded:
 			&hn_kernel_pgt[i + PGROUNDDOWN(((char *)UNPGADDR(vaddr)) - KERNEL_VBASE)];
 		pte->address = pgpaddr + i;
 		pte->mask = mask;
-	}
 
-	for (pgsize_t i = 0; i < pg_num; ++i)
 		arch_invlpg(((char *)UNPGADDR(vaddr)) + (i << 12));
+	}
 
 	for (uint8_t i = 0; i < PBOS_ARRAYSIZE(_tmpmap_slots); ++i) {
 		if (!_tmpmap_slots[i].addr) {

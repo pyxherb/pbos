@@ -1,12 +1,10 @@
 #include "mb.h"
-
+#include <hal/i386/display/vga.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-
 #include "error.h"
 #include "misc.h"
-#include <hal/i386/display/vga.h>
 
 void *boot_p_info;
 int boot_mb_magic;
@@ -64,21 +62,28 @@ int boot_infoscan() {
 					ARCH_KARGS_PTR->mmaps[i].base = mmap->base;
 					ARCH_KARGS_PTR->mmaps[i].size = mmap->length;
 
+					vga_printf("Area #%d: %p - %p\n", (uint32_t)i, (uint32_t)mmap->base, (uint32_t)mmap->base + mmap->length);
+
 					switch (mmap->type) {
 						case MB_ARCH_MEM_AVAILABLE:
 							ARCH_KARGS_PTR->mmaps[i].type = ARCH_MEM_AVAILABLE;
+							vga_printf("Type: Available\n");
 							break;
 						case MB_MEMTYPE_DEFECTIVE:
 							ARCH_KARGS_PTR->mmaps[i].type = ARCH_MEM_BAD;
+							vga_printf("Type: Defective\n");
 							break;
 						case MB_ARCH_MEM_ACPI_INFO:
 							ARCH_KARGS_PTR->mmaps[i].type = ARCH_MEM_ACPI;
+							vga_printf("Type: ACPI Info\n");
 							break;
 						case MB_ARCH_MEM_HIBERNATION:
 							ARCH_KARGS_PTR->mmaps[i].type = ARCH_MEM_HIBERNATION;
+							vga_printf("Type: Hibernation\n");
 							break;
 						default:
 							ARCH_KARGS_PTR->mmaps[i].type = ARCH_MEM_RESERVED;
+							vga_printf("Type: Reserved\n");
 					}
 				}
 				break;
@@ -150,6 +155,8 @@ tagscan_end:
 	ARCH_KARGS_PTR->magic[1] = KARG_MAGIC1;
 	ARCH_KARGS_PTR->magic[2] = KARG_MAGIC2;
 	ARCH_KARGS_PTR->magic[3] = KARG_MAGIC3;
+
+	asm volatile("xchg %bx, %bx");
 
 	return 0;
 }

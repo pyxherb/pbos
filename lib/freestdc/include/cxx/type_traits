@@ -49,6 +49,7 @@
 #include "_type_traits/is_signed.hh"
 #include "_type_traits/is_standard_layout.hh"
 #include "_type_traits/is_swappable.hh"
+#include "_type_traits/is_trivial.hh"
 #include "_type_traits/is_trivially_copyable.hh"
 #include "_type_traits/is_unbounded_array.hh"
 #include "_type_traits/is_union.hh"

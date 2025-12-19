@@ -67,7 +67,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	for (Elf32_Half i = 0; i < phdr_num; ++i) {
 		// Current program header.
 		Elf32_Phdr ph;
-		if (!KM_SUCCEEDED(result = fs_read(file_fp, &ph, sizeof(ph), ehdr.e_phoff + ehdr.e_phentsize * i, &bytes_read))) {
+		if (KM_FAILED(result = fs_read(file_fp, &ph, sizeof(ph), ehdr.e_phoff + ehdr.e_phentsize * i, &bytes_read))) {
 			// TODO: free allocated resources here.
 			return result;
 		}
@@ -82,40 +82,71 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 		if (ph.p_filesz > ph.p_memsz)
 			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
 
-		char *vaddr = (char *)PGFLOOR(ph.p_vaddr);
+		char *vaddr = (char *)ph.p_vaddr;
+
+		if (((uintptr_t)vaddr) % PAGESIZE)
+			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
 
 		off = ph.p_offset;
 
 		mm_context_t *prev_context = mm_get_cur_context();
 		{
-			// Allocate pages for current segment.
-			for (Elf32_Word j = 0; j < ph.p_memsz; j += PAGESIZE) {
-				if (!mm_getmap(ps_mm_context_of(proc), vaddr + PAGESIZE * j, NULL)) {
-					void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
-					if (!paddr)
-						return KM_RESULT_NO_MEM;
-					if (!KM_SUCCEEDED(result = mm_mmap(ps_mm_context_of(proc), vaddr + PAGESIZE * j, paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0)))
-						return result;
-				}
-			}
+			void *tmp_pgvaddr;
 
-			// Read the whole segment into the memory.
+			tmp_pgvaddr = mm_kvmalloc(prev_context, PAGESIZE, PAGE_MAPPED | PAGE_WRITE, 0);
+			if (!tmp_pgvaddr)
+				return KM_MAKEERROR(KM_RESULT_NO_MEM);
+
 			{
-				io::irq_disable_lock irq_disable_lock;
-				kfxx::scope_guard restore_context_guard([prev_context]() noexcept {
-					mm_switch_context(prev_context);
+				io::irq_disable_lock lock;
+				kfxx::scope_guard restore_context_guard([prev_context, tmp_pgvaddr]() noexcept {
+					mm_vmfree(prev_context, tmp_pgvaddr, PAGESIZE);
 				});
-				mm_switch_context(ps_mm_context_of(proc));
-				memset((void *)ph.p_vaddr, 0, ph.p_memsz);
-				if (!KM_SUCCEEDED(result = fs_read(file_fp, (void *)ph.p_vaddr, ph.p_filesz, ph.p_offset, &bytes_read))) {
-					// TODO: free allocated resources here.
-					return result;
+
+				// Allocate pages for current segment.
+				for (size_t j = 0; j < ph.p_memsz; j += PAGESIZE) {
+					void *paddr;
+					if (!(paddr = mm_getmap(ps_mm_context_of(proc), vaddr + j, NULL))) {
+						paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
+						klog_printf("paddr: %p\n", paddr);
+						if (!paddr)
+							return KM_MAKEERROR(KM_RESULT_NO_MEM);
+						if(paddr == (void*)0x05025000) {
+							asm volatile("xchg %bx, %bx");
+							klog_puts("");
+						}
+					}
+
+					if (KM_FAILED(result = mm_mmap(ps_mm_context_of(proc), vaddr + j, paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0)))
+						return result;
+					kd_assert(mm_getmap(ps_mm_context_of(proc), vaddr + j, NULL) == paddr);
+					if (KM_FAILED(
+							result = mm_mmap(
+								prev_context,
+								tmp_pgvaddr,
+								paddr,
+								PAGESIZE,
+								PAGE_WRITE | PAGE_MAPPED,
+								0)))
+						return result;
+					memset((void *)tmp_pgvaddr, 0, PAGESIZE);
+					if (j < ph.p_filesz) {
+						if (KM_FAILED(result = fs_read(
+											  file_fp,
+											  tmp_pgvaddr,
+											  PBOS_MIN(ph.p_filesz - j, PAGESIZE),
+											  off,
+											  &bytes_read))) {
+							// TODO: free allocated resources here.
+							return result;
+						}
+						off += bytes_read;
+					}
 				}
 			}
-			off += bytes_read;
 
 			// Mark the pages as executable.
-			mm_set_page_access(ps_mm_context_of(proc), vaddr, ph.p_memsz, PAGE_EXEC);
+			// mm_set_page_access(ps_mm_context_of(proc), vaddr, ph.p_memsz, PAGE_MAPPED | PAGE_EXEC);
 		}
 	}
 

@@ -51,12 +51,12 @@ typedef struct _fs_fcb_t {
 
 typedef struct _fs_finddata_t fs_finddata_t;
 
-km_result_t fs_create_file(
+PBOS_NODISCARD km_result_t fs_create_file(
 	fs_file_t *parent,
 	const char *filename,
 	size_t filename_len,
 	fs_file_t **file_out);
-km_result_t fs_create_dir(
+PBOS_NODISCARD km_result_t fs_create_dir(
 	fs_file_t *parent,
 	const char *filename,
 	size_t filename_len,
@@ -66,17 +66,17 @@ km_result_t fs_create_dir(
 /// @param parent Parent directory to mount.
 /// @param file Handle of file to be mounted, the parent directory will take the ownership.
 /// @return Execution result of the operation.
-km_result_t fs_mount_file(fs_file_t *parent, fs_file_t *file);
-km_result_t fs_unmount_file(fs_file_t *file);
+PBOS_NODISCARD km_result_t fs_mount_file(fs_file_t *parent, fs_file_t *file);
+PBOS_NODISCARD km_result_t fs_unmount_file(fs_file_t *file);
 
-km_result_t fs_close(fs_fcb_t *fcb);
+PBOS_NODISCARD km_result_t fs_close(fs_fcb_t *fcb);
 
-km_result_t fs_open(fs_file_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out);
-km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out);
-km_result_t fs_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out);
-km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out);
+PBOS_NODISCARD km_result_t fs_open(fs_file_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out);
+PBOS_NODISCARD km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out);
+PBOS_NODISCARD km_result_t fs_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out);
+PBOS_NODISCARD km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out);
 
-km_result_t fs_child_of(fs_file_t *file, const char *filename, size_t filename_len, fs_file_t **file_out);
+PBOS_NODISCARD km_result_t fs_child_of(fs_file_t *file, const char *filename, size_t filename_len, fs_file_t **file_out);
 
 ///
 /// @brief Resolve a path to a file.
@@ -87,7 +87,7 @@ km_result_t fs_child_of(fs_file_t *file, const char *filename, size_t filename_l
 /// @param file_out Where the file object is received, note that the file will be reference counted.
 /// @return Result of the resolution.
 ///
-km_result_t fs_resolve_path(fs_file_t *cur_dir, const char *path, size_t path_len, fs_file_t **file_out);
+PBOS_NODISCARD km_result_t fs_resolve_path(fs_file_t *cur_dir, const char *path, size_t path_len, fs_file_t **file_out);
 
 om_object_t *fs_file_to_object(fs_file_t *file);
 

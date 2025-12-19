@@ -88,6 +88,15 @@ namespace std {
 	template <typename T>
 	inline constexpr bool is_nothrow_copy_constructible_v =
 		is_nothrow_copy_constructible<T>::value;
+	template <typename T>
+	inline constexpr bool is_move_constructible_v =
+		is_move_constructible<T>::value;
+	template <typename T>
+	inline constexpr bool is_trivially_move_constructible_v =
+		is_trivially_move_constructible<T>::value;
+	template <typename T>
+	inline constexpr bool is_nothrow_move_constructible_v =
+		is_nothrow_move_constructible<T>::value;
 }
 
 #endif

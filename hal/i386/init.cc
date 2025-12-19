@@ -4,19 +4,23 @@
 #include <pbos/km/exec.h>
 #include <pbos/km/mm.h>
 #include <pbos/km/panic.h>
+#include <pbos/kn/km/proc.hh>
 #include "initcar.hh"
 #include "irq.h"
 #include "logger.h"
 #include "misc.h"
-#include <pbos/kn/km/proc.hh>
 
 PBOS_EXTERN_C_BEGIN
 
-alignas(hn_ctor_t) hn_ctor_t KN_CTORS_BEGIN[0] = { };
-alignas(hn_ctor_t) hn_ctor_t KN_CTORS_END[0] = { };
+alignas(hn_ctor_t) hn_ctor_t KN_CTORS_BEGIN[0] = {};
+alignas(hn_ctor_t) hn_ctor_t KN_CTORS_END[0] = {};
 
-alignas(hn_dtor_t) hn_dtor_t KN_DTORS_BEGIN[0] = { };
-alignas(hn_dtor_t) hn_dtor_t KN_DTORS_END[0] = { };
+alignas(hn_dtor_t) hn_dtor_t KN_DTORS_BEGIN[0] = {};
+alignas(hn_dtor_t) hn_dtor_t KN_DTORS_END[0] = {};
+
+extern "C" void __cxa_pure_virtual() {
+	km_panic("Attempting to call a pure virtual function!");
+}
 
 void hal_call_ctors() {
 	kd_printf("Global ctor ptr: %p-%p\n", KN_CTORS_BEGIN, KN_CTORS_END);

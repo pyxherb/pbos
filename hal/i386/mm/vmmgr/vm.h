@@ -28,7 +28,7 @@ void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr, uint16_t *mask_out);
 /// @param pg_num Number of pages
 /// @param mask PTE mask for the pages.
 /// @return Paged virtual address to the first mapped page, NULLPG if failed.
-pgaddr_t hn_tmpmap(pgaddr_t pgpaddr, pgsize_t pg_num, uint16_t mask);
+PBOS_NODISCARD pgaddr_t hn_tmpmap(pgaddr_t pgpaddr, pgsize_t pg_num, uint16_t mask);
 
 /// @brief Map a temporary-mapped page previously
 /// @param addr Paged virtual address to the first mapped page.

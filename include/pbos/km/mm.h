@@ -46,7 +46,7 @@ void mm_pgfree(void *ptr);
 
 typedef uint32_t mm_iommap_flags_t;
 
-km_result_t mm_iommap(
+PBOS_NODISCARD km_result_t mm_iommap(
 	mm_context_t *context,
 	void *vaddr,
 	void *paddr,
@@ -134,7 +134,7 @@ typedef uint32_t mmap_flags_t;
 /// @param flags Flags for mapping.
 /// @return The result code for the mapping operation.
 ///
-km_result_t mm_mmap(
+PBOS_NODISCARD km_result_t mm_mmap(
 	mm_context_t *context,
 	void *vaddr,
 	void *paddr,

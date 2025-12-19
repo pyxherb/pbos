@@ -1,5 +1,5 @@
-#include "../mm.h"
 #include <pbos/hal/irq.hh>
+#include "../mm.h"
 
 PBOS_EXTERN_C_BEGIN
 
@@ -20,7 +20,8 @@ bool mm_probe_user_space(mm_context_t *mm_context, const void *ptr, size_t size)
 	if ((uintptr_t)p < (uintptr_t)USPACE_VBASE)
 		return true;
 
-	if ((p >= (char *)KERNEL_VBASE) || (limit >= (char *)KERNEL_VBASE))
+	if (((p >= (char *)KERNEL_VBASE) || (limit >= (char *)KERNEL_VBASE)) &&
+		(p >= (char *)KBOTTOM_VTOP))
 		return true;
 
 	for (size_t i = 0; i < PGCEIL(size); ++i) {

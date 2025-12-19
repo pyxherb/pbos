@@ -15,13 +15,13 @@ km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint3
 	ps_pcb_t *pcb = ps_get_cur_proc();
 
 	if (mm_probe_user_space(pcb->mm_context, path, path_len))
-		return KM_RESULT_ACCESS_VIOLATION;
+		return KM_MAKEERROR(KM_RESULT_ACCESS_VIOLATION);
 	if (mm_probe_user_space(pcb->mm_context, ufd_out, sizeof(*ufd_out)))
-		return KM_RESULT_ACCESS_VIOLATION;
+		return KM_MAKEERROR(KM_RESULT_ACCESS_VIOLATION);
 
 	ps_ufd_t fd = ps_alloc_fd(pcb);
 	if (fd < 0)
-		return KM_RESULT_NO_SLOT;
+		return KM_MAKEERROR(KM_RESULT_NO_SLOT);
 
 	fs_fcb_t *fcb;
 	{
@@ -33,7 +33,7 @@ km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint3
 	ps_ufcb_t *ufcb;
 	if (!(ufcb = ps_alloc_ufcb(pcb, fcb, fd))) {
 		fs_close(fcb);
-		return KM_RESULT_NO_MEM;
+		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	}
 
 	*ufd_out = fd;
@@ -48,7 +48,7 @@ km_result_t sysent_close(ps_ufd_t ufd, uint32_t flags) {
 	ps_ufcb_t *ufcb = ps_lookup_ufcb(pcb, ufd);
 
 	if (!ufcb)
-		return KM_RESULT_INVALID_ARGS;
+		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
 
 	ps_remove_ufcb(pcb, ufcb);
 
@@ -71,15 +71,15 @@ km_result_t sysent_exec_child(
 	km_result_t result;
 
 	if (mm_probe_user_space(pcb->mm_context, args, args_len))
-		return KM_RESULT_ACCESS_VIOLATION;
+		return KM_MAKEERROR(KM_RESULT_ACCESS_VIOLATION);
 
 	if (mm_probe_user_space(pcb->mm_context, proc_id_out, sizeof(proc_id_t)))
-		return KM_RESULT_ACCESS_VIOLATION;
+		return KM_MAKEERROR(KM_RESULT_ACCESS_VIOLATION);
 
 	ps_ufcb_t *ufcb = ps_lookup_ufcb(pcb, file_ufd);
 
 	if (!ufcb)
-		return KM_RESULT_INVALID_ARGS;
+		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
 
 	return km_exec(pcb->rb_value, 0, ufcb->kernel_fcb, proc_id_out);
 }

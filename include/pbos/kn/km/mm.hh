@@ -1,6 +1,8 @@
 #ifndef _PBOS_KN_KM_MM_H_
 #define _PBOS_KN_KM_MM_H_
 
+#include "memconf.h"
+
 #include <pbos/km/mm.h>
 #include <pbos/km/panic.h>
 #include <pbos/kfxx/rbtree.hh>
@@ -33,10 +35,6 @@ typedef struct _kn_mm_vpm_poolpg_t {
 	hn_vpm_t descs[(PAGESIZE - sizeof(hn_vpm_poolpg_header_t)) / sizeof(hn_vpm_t)];
 } kn_mm_vpm_poolpg_t;
 
-typedef uintptr_t (*hn_vpm_level_rounddowner_t)(uintptr_t addr);
-extern hn_vpm_level_rounddowner_t kn_mm_vpm_rounddowners[];
-extern size_t hn_vpm_level_size[];
-
 void kn_mm_init_kima();
 
 void kn_mm_sync_global_mappings(const mm_context_t *src);
@@ -57,7 +55,7 @@ void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 
 void *kn_lookup_pgdir_mapped_addr(void *addr);
 void *kn_lookup_pgdir(mm_context_t *ctxt, void *addr, int level);
-void *kn_mm_alloc_pgdir(mm_context_t *ctxt, void *addr, int level);
+PBOS_NODISCARD void *kn_mm_alloc_pgdir(mm_context_t *ctxt, void *addr, int level);
 void kn_mm_free_pgdir(mm_context_t *ctxt, void *addr, int level);
 
 PBOS_EXTERN_C_END
