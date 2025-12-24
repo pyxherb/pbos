@@ -7,6 +7,14 @@ void mm_invlpg(void *ptr) {
 	arch_invlpg(ptr);
 }
 
+bool mm_is_user_space(const void *ptr) {
+	if (((ptr >= (char *)KERNEL_VBASE) ||
+		(ptr <= (char *)KBOTTOM_VTOP)))
+		return false;
+
+	return true;
+}
+
 bool mm_probe_user_space(mm_context_t *mm_context, const void *ptr, size_t size) {
 	io::irq_disable_lock irq_lock;
 
@@ -17,11 +25,7 @@ bool mm_probe_user_space(mm_context_t *mm_context, const void *ptr, size_t size)
 	if (UINTPTR_MAX - (uintptr_t)p < PGCEIL(size))
 		return true;
 
-	if ((uintptr_t)p < (uintptr_t)USPACE_VBASE)
-		return true;
-
-	if (((p >= (char *)KERNEL_VBASE) || (limit >= (char *)KERNEL_VBASE)) &&
-		(p >= (char *)KBOTTOM_VTOP))
+	if((!mm_is_user_space(ptr)) || (!mm_is_user_space(limit)))
 		return true;
 
 	for (size_t i = 0; i < PGCEIL(size); ++i) {

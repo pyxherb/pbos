@@ -47,8 +47,6 @@ typedef struct _hn_mad_t : public kfxx::rbtree_t<pgaddr_t>::node_t {
 
 	uint32_t ref_count;
 
-	uint32_t mapped_pgtab_addr : 20;
-
 	uint8_t flags : 8;
 	uint8_t type : 8;
 } hn_mad_t;

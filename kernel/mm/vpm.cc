@@ -170,7 +170,7 @@ void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 		if (level < kn_cur_paging_config->pgtab_level - 1) {
 			mm_unmmap(
 				context,
-				kn_lookup_pgdir_mapped_addr(kn_lookup_pgdir(context, (void *)addr, level)),
+				(void *)addr,
 				PAGESIZE,
 				0);
 			kn_mm_free_pgdir(context, (void *)addr, 0);

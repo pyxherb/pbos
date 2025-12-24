@@ -203,6 +203,8 @@ void mm_switch_context(mm_context_t *context);
 ///
 void mm_invlpg(void *ptr);
 
+bool mm_is_user_space(const void *ptr);
+
 ///
 /// @brief Check if accessing a space of memory in user mode violates the memory protection.
 ///

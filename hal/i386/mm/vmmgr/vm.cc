@@ -72,12 +72,8 @@ km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_wal
 		} else {
 			hn_mad_t *mad = hn_get_mad(pde->address);
 			kd_assert(mad);
-			if (mad->mapped_pgtab_addr) {
-				tmpaddr = UNPGADDR(mad->mapped_pgtab_addr);
-			} else {
-				tmpaddr = UNPGADDR(hn_tmpmap(pde->address, 1, PTE_P | PTE_RW));
-				is_tmpmap = true;
-			}
+			tmpaddr = UNPGADDR(hn_tmpmap(pde->address, 1, PTE_P | PTE_RW));
+			is_tmpmap = true;
 		}
 
 		for (uint16_t ti = VADDR(di, 0, 0) >= vaddr ? 0 : PTX(vaddr);
@@ -136,9 +132,8 @@ static km_result_t hn_mmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx
 
 	// Why does 0x05025000 remains constant?
 	// Because the TLB has not updated yet.
-	if (args->paddr == (void *)0x05025000)
-		asm volatile("xchg %bx, %bx");
-	arch_invlpg(pte);
+	// if (args->paddr == (void *)0x05025000)
+	// asm volatile("xchg %bx, %bx");
 	pte->address = PGROUNDDOWN(args->paddr);
 	pte->mask = args->mask;
 
@@ -172,51 +167,29 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	for (uint16_t i = PDX(vaddr); i <= PDX(vaddr_limit); ++i) {
 		if (!(ctxt->pdt[i].mask & PDE_P)) {
 			kd_assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
-			void *pgdir = kn_mm_alloc_pgdir(ctxt, VADDR(i, 0, 0), 0);
+			void *pgdir = kn_mm_alloc_pgdir_page(ctxt, VADDR(i, 0, 0), 0);
+
 			if (!pgdir) {
+				// Cancel previously mapped pages.
 				mm_unmmap(ctxt, vaddr, size, flags);
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
 			} else {
 				{
 					pgaddr_t mapped_pgdir = hn_tmpmap(PGROUNDDOWN(pgdir), 1, PTE_P | PTE_RW);
-					arch_pte_t *pgdir_entries = (arch_pte_t *)UNPGADDR(mapped_pgdir);
+					arch_pte_t *pte = (arch_pte_t *)UNPGADDR(mapped_pgdir);
 
-					memset(pgdir_entries, 0, sizeof(arch_pte_t) * (PTX_MAX + 1));
+					memset(pte, 0, sizeof(arch_pte_t) * (PTX_MAX + 1));
 
 					hn_tmpunmap(mapped_pgdir);
 				}
-
-				void *map_addr;
-
-				if ((uintptr_t)vaddr >= KSPACE_VBASE) {
-					if ((map_addr = mm_vmalloc(ctxt, (void *)KSPACE_VBASE, vaddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
-						goto vmalloc_succeeded;
-					}
-				}
-				if ((uintptr_t)(((char *)vaddr) + size) > KSPACE_VBASE) {
-					if ((map_addr = mm_vmalloc(ctxt, ((char *)vaddr) + size, (void *)KSPACE_VTOP, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
-						goto vmalloc_succeeded;
-					}
-				} else {
-					if ((map_addr = mm_kvmalloc(ctxt, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, VMALLOC_NORESERVE))) {
-						goto vmalloc_succeeded;
-					}
-				}
-				mm_unmmap(ctxt, vaddr, size, flags);
-				return KM_MAKEERROR(KM_RESULT_NO_MEM);
-
-			vmalloc_succeeded:
 				ctxt->pdt[i].mask = PDE_P | PDE_RW | PDE_U;
 
 				hn_mad_t *mad = hn_get_mad(PGROUNDDOWN(pgdir));
 				hn_set_pgblk_used(PGROUNDDOWN(pgdir), MAD_ALLOC_KERNEL);
-				mad->mapped_pgtab_addr = (pgaddr_t)NULL;
+			}
 
-				result = mm_mmap(ctxt, map_addr, pgdir, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
-				kd_assert(KM_SUCCEEDED(result));
-
-				if (map_addr >= (void*)KSPACE_VBASE)
-					mad->mapped_pgtab_addr = PGROUNDDOWN(map_addr);
+			if (!mm_is_user_space(VADDR(i, 0, 0))) {
+				mm_get_cur_context()->pdt[i] = ctxt->pdt[i];
 			}
 		}
 	}
@@ -603,7 +576,7 @@ void *kn_lookup_pgdir(mm_context_t *ctxt, void *addr, int level) {
 	}
 }
 
-void *kn_mm_alloc_pgdir(mm_context_t *ctxt, void *ptr, int level) {
+void *kn_mm_alloc_pgdir_page(mm_context_t *ctxt, void *ptr, int level) {
 	switch (level) {
 		case 0: {
 			kd_assert(ctxt);

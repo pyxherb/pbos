@@ -83,10 +83,4 @@ void hn_set_pgblk_free(pgaddr_t addr) {
 	return;
 }
 
-void *kn_lookup_pgdir_mapped_addr(void *addr) {
-	hn_mad_t *mad = hn_get_mad(PGROUNDDOWN(addr));
-
-	return UNPGADDR(mad->mapped_pgtab_addr);
-}
-
 PBOS_EXTERN_C_END

@@ -53,9 +53,8 @@ km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const 
 void kn_mm_free_vpm(mm_context_t *context, const void *addr);
 void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level);
 
-void *kn_lookup_pgdir_mapped_addr(void *addr);
 void *kn_lookup_pgdir(mm_context_t *ctxt, void *addr, int level);
-PBOS_NODISCARD void *kn_mm_alloc_pgdir(mm_context_t *ctxt, void *addr, int level);
+PBOS_NODISCARD void *kn_mm_alloc_pgdir_page(mm_context_t *ctxt, void *addr, int level);
 void kn_mm_free_pgdir(mm_context_t *ctxt, void *addr, int level);
 
 PBOS_EXTERN_C_END

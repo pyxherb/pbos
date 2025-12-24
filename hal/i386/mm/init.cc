@@ -157,7 +157,6 @@ static void hn_mm_init_areas() {
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = init_pgtab_paddr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].mapped_pgtab_addr = (pgaddr_t)NULL;
 				++hn_global_mad_pool_list->header.used_num;
 				init_pgtab_pmad->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				++cur_madpool_slot_index;
@@ -198,7 +197,7 @@ static void hn_mm_init_areas() {
 					}
 
 					if (new_poolpg_need_pgtab) {
-						if (!kn_mm_alloc_pgdir(mm_kernel_context, (void *)PDX(new_poolpg_vaddr), 0)) {
+						if (!kn_mm_alloc_pgdir_page(mm_kernel_context, (void *)PDX(new_poolpg_vaddr), 0)) {
 							km_panic("No enough memory for new MAD pool page's corresponding page table");
 						}
 					}
@@ -259,7 +258,7 @@ static void hn_mm_init_areas() {
 					}
 
 					if (new_poolpg_need_pgtab) {
-						if (!kn_mm_alloc_pgdir(mm_kernel_context, (void *)PDX(new_poolpg_vaddr), 0)) {
+						if (!kn_mm_alloc_pgdir_page(mm_kernel_context, (void *)PDX(new_poolpg_vaddr), 0)) {
 							km_panic("No enough memory for new MAD pool page's corresponding page table");
 						}
 					}
@@ -296,14 +295,6 @@ static void hn_mm_init_areas() {
 
 				++cur_madpool_slot_index;
 			}
-		}
-	}
-
-	for (uint16_t i = 0; i < PDX_MAX; ++i) {
-		if (mm_kernel_context->pdt[i].mask & PDE_P) {
-			hn_mad_t *mad = hn_get_mad(mm_kernel_context->pdt[i].address);
-
-			mad->mapped_pgtab_addr = (pgaddr_t)NULL;
 		}
 	}
 

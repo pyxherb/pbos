@@ -14,8 +14,6 @@ PBOS_EXTERN_C_BEGIN
 typedef struct _hn_iomd_t : public kfxx::rbtree_t<pgaddr_t>::node_t {
 	uint32_t ref_count;
 
-	uint32_t mapped_pgtab_addr : 20;
-
 	uint8_t flags : 8;
 } hn_iomd_t;
 
