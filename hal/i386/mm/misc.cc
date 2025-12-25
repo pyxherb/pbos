@@ -3,6 +3,10 @@
 
 PBOS_EXTERN_C_BEGIN
 
+arch_pde_t *const hn_kernel_pdt = ((arch_pde_t *)KPDT_VBASE);
+arch_pte_t *const hn_kernel_pgt = ((arch_pte_t *)KPGT_VBASE);
+arch_pte_t *const hn_bottom_pgt = ((arch_pte_t *)KBOTTOMPGT_VBASE);
+
 void mm_invlpg(void *ptr) {
 	arch_invlpg(ptr);
 }

@@ -47,7 +47,7 @@ static void boot_init_paging() {
 	// In this area, virtual address is the physical address.
 	//
 	for (uint32_t i = PDX(0x00000000); ((uint32_t)VADDR(i, 0, 0)) < KERNEL_PBASE; ++i) {
-		pde[i].mask = PDE_P | PDE_RW;
+		pde[i].mask = PDE_P | PDE_RW | PDE_U;
 		pde[i].address = PGROUNDDOWN(curptr);
 
 		for (uint32_t k = 0; (k < 1024) && (((uint32_t)VADDR(i, k, PAGESIZE - 1)) < KERNEL_PBASE); ++k) {
@@ -62,7 +62,7 @@ static void boot_init_paging() {
 	// Build the initial page table for the kernel.
 	//
 	for (uint32_t i = PDX(INIT_CRITICAL_VBASE), j = 0; ((uint32_t)VADDR(i, 0, 0)) <= INIT_CRITICAL_VTOP; ++i, j++) {
-		pde[i].mask = PDE_P | PDE_RW;
+		pde[i].mask = PDE_P | PDE_RW | PDE_U;
 		pde[i].address = PGROUNDDOWN(curptr);
 
 		for (uint32_t k = 0; (k < 1024) && (((uint32_t)VADDR(i, k, PAGESIZE - 1)) <= INIT_CRITICAL_VTOP); ++k) {

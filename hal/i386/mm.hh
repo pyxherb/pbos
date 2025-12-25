@@ -12,6 +12,10 @@ typedef struct _mm_context_t {
 	kfxx::rbtree_t<void *> *uspace_vpm_query_tree = nullptr;
 } mm_context_t;
 
+///
+/// @brief Mapped kernel page table entry table.
+///
+extern arch_pte_t *const mm_kernel_ptt;
 extern kn_mm_vpm_poolpg_t *hn_kspace_vpm_poolpg_list;
 
 PBOS_EXTERN_C_END

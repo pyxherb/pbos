@@ -23,9 +23,9 @@ typedef struct PBOS_PACKED _hn_kgdt_t {
 	arch_gdt_desc_t tss_desc;
 } hn_kgdt_t;
 
-#define hn_kernel_pdt ((arch_pde_t *)KPDT_VBASE)
-#define hn_kernel_pgt ((arch_pte_t *)KPGT_VBASE)
-#define hn_bottom_pgt ((arch_pte_t *)KBOTTOMPGT_VBASE)
+extern arch_pde_t *const hn_kernel_pdt;
+extern arch_pte_t *const hn_kernel_pgt;
+extern arch_pte_t *const hn_bottom_pgt;
 
 extern hn_kgdt_t hn_kgdt;
 

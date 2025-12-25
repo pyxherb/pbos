@@ -19,7 +19,6 @@ pgaddr_t hn_kvpgalloc(const arch_pde_t *pgdir);
 pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr);
 
 typedef km_result_t (*hn_pgtab_walker)(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs);
-km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_walker walker, void *exargs);
 
 void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr, uint16_t *mask_out);
 

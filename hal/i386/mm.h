@@ -26,6 +26,19 @@ extern uint8_t hn_mm_init_stage;
 
 typedef struct _mm_context_t mm_context_t;
 
+PBOS_NODISCARD void *mm_vmalloc_early(
+	mm_context_t *context,
+	const void *minaddr,
+	const void *maxaddr,
+	size_t size,
+	mm_pgaccess_t access);
+PBOS_NODISCARD km_result_t hn_mm_mmap_early(
+	mm_context_t *context,
+	void *vaddr,
+	void *paddr,
+	size_t size,
+	mm_pgaccess_t access);
+
 void hn_mm_init();
 
 PBOS_EXTERN_C_END

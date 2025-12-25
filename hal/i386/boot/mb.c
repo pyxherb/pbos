@@ -156,7 +156,7 @@ tagscan_end:
 	ARCH_KARGS_PTR->magic[2] = KARG_MAGIC2;
 	ARCH_KARGS_PTR->magic[3] = KARG_MAGIC3;
 
-	asm volatile("xchg %bx, %bx");
+	// asm volatile("xchg %bx, %bx");
 
 	return 0;
 }

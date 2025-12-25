@@ -20,6 +20,50 @@ static void hn_mm_init_paging();
 static void hn_mm_init_pmadlist();
 static void hn_mm_init_areas();
 static void hn_init_tss();
+static void hn_map_ptt();
+
+static void hn_map_ptt() {
+	// Map all existing page table map to the PTT area.
+	for (uint16_t i = 0; i < PDX_MAX + 1; ++i) {
+		arch_pde_t *pde = &hn_kernel_pdt[i];
+		if (pde->mask & PDE_P) {
+			void *target_ptr = ((char*)KPTT_VBASE) + PAGESIZE * i;
+			if (!(hn_kernel_pdt[PDX(target_ptr)].mask & PDE_P)) {
+				void *pde_paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
+				if (!pde_paddr)
+					km_panic("No memory for PTT initialization");
+				hn_kernel_pdt[PDX(target_ptr)].mask = PDE_P | PDE_RW | PDE_U;
+				hn_kernel_pdt[PDX(target_ptr)].address = PGROUNDDOWN(pde_paddr);
+
+				i = 0;
+				continue;
+			}
+		}
+	}
+
+	// We want to map existing page tables to the KPTT area.
+	for (uint16_t i = 0; i < PDX_MAX + 1; ++i) {
+		void *vaddr = VADDR(i, 0, 0);
+		// One PDE manages 4MB.
+		arch_pde_t *pde = &hn_kernel_pdt[i];
+		if (pde->mask & PDE_P) {
+			void *target_ptr = ((char*)KPTT_VBASE) + PAGESIZE * i;
+			arch_pde_t *target_pde = &hn_kernel_pdt[PDX(target_ptr)];
+			arch_pte_t *mapped_pt = (arch_pte_t *)UNPGADDR(hn_tmpmap(target_pde->address, 1, PTE_P | PTE_RW));
+
+			uintptr_t kptt_addr = (uintptr_t)KPTT_VBASE + i * PAGESIZE;
+
+			for (uint16_t j = 0; j < PTX_MAX + 1; ++j) {
+				mapped_pt[PTX(target_ptr)].address = pde->address;
+				mapped_pt[PTX(target_ptr)].mask = PTE_P | PTE_RW;
+			}
+
+			arch_invlpg(target_ptr);
+
+			hn_tmpunmap(PGROUNDDOWN(mapped_pt));
+		}
+	}
+}
 
 void hn_mm_init() {
 	mm_kernel_context->pdt = hn_kernel_pdt;
@@ -121,20 +165,20 @@ static void hn_mm_init_areas() {
 
 				{
 					pgaddr_t init_pgtab_tmpmap_vaddr = hn_tmpmap(init_pgtab_paddr, 1, PTE_P | PTE_RW);
-					memset(UNPGADDR(init_pgtab_tmpmap_vaddr), 0, PAGESIZE);
+					void *ptr = UNPGADDR(init_pgtab_tmpmap_vaddr);
+					memset(ptr, 0, PAGESIZE);
 					hn_tmpunmap(init_pgtab_tmpmap_vaddr);
 				}
-				mm_kernel_context->pdt[PDX(init_madpool_vaddr)].mask = PDE_P | PDE_RW;
+				mm_kernel_context->pdt[PDX(init_madpool_vaddr)].mask = PDE_P | PDE_RW | PDE_U;
 				mm_kernel_context->pdt[PDX(init_madpool_vaddr)].address = init_pgtab_paddr;
 			}
 
-			km_result_t result = mm_mmap(
+			km_result_t result = hn_mm_mmap_early(
 				mm_kernel_context,
 				init_madpool_vaddr,
 				UNPGADDR(init_madpool_paddr),
 				PAGESIZE,
-				PAGE_MAPPED | PAGE_READ | PAGE_WRITE,
-				MMAP_NORC | MMAP_NOSETVPM);
+				PAGE_MAPPED | PAGE_READ | PAGE_WRITE);
 			kd_assert(KM_SUCCEEDED(result));
 
 			hn_global_mad_pool_list = (hn_madpool_t *)init_madpool_vaddr;
@@ -177,11 +221,6 @@ static void hn_mm_init_areas() {
 					continue;
 
 				if (cur_madpool_slot_index >= PBOS_ARRAYSIZE(hn_global_mad_pool_list->descs)) {
-					if (!last_madpool) {
-						km_result_t result = kn_mm_insert_vpm(mm_kernel_context, hn_global_mad_pool_list);
-						kd_assert(KM_SUCCEEDED(result));
-					}
-
 					void *new_poolpg_paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
 					if (!new_poolpg_paddr)
 						km_panic("No enough physical memory for new MAD pool page");
@@ -196,13 +235,7 @@ static void hn_mm_init_areas() {
 						new_poolpg_need_pgtab = true;
 					}
 
-					if (new_poolpg_need_pgtab) {
-						if (!kn_mm_alloc_pgdir_page(mm_kernel_context, (void *)PDX(new_poolpg_vaddr), 0)) {
-							km_panic("No enough memory for new MAD pool page's corresponding page table");
-						}
-					}
-
-					km_result_t result = mm_mmap(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
+					km_result_t result = hn_mm_mmap_early(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE);
 					kd_assert(KM_SUCCEEDED(result));
 
 					cur_madpool_slot_index = 0;
@@ -236,6 +269,13 @@ static void hn_mm_init_areas() {
 			}
 		}
 
+		hn_map_ptt();
+
+		for (hn_madpool_t *j = hn_global_mad_pool_list; j; j = j->header.next) {
+			km_result_t result = kn_mm_insert_vpm(mm_kernel_context, j);
+			kd_assert(KM_SUCCEEDED(result));
+		}
+
 		PMAD_FOREACH(i) {
 			if (i->attribs.type == KN_PMEM_AVAILABLE)
 				continue;
@@ -255,12 +295,6 @@ static void hn_mm_init_areas() {
 
 					if (!(mm_kernel_context->pdt[PDX(new_poolpg_vaddr)].mask & PDE_P)) {
 						new_poolpg_need_pgtab = true;
-					}
-
-					if (new_poolpg_need_pgtab) {
-						if (!kn_mm_alloc_pgdir_page(mm_kernel_context, (void *)PDX(new_poolpg_vaddr), 0)) {
-							km_panic("No enough memory for new MAD pool page's corresponding page table");
-						}
 					}
 
 					km_result_t result = mm_mmap(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
@@ -416,7 +450,7 @@ static void hn_mm_init_pmadlist() {
 			case ARCH_MEM_ACPI:
 				if (!((entry->base > INIT_CRITICAL_PTOP) ||
 						(entry->base + entry->size < INIT_CRITICAL_PBASE))) {
-					km_panic("Critical memory area has been occupied by ACPI");
+					km_panic("Critical memory area has been used by ACPI");
 				}
 				pmad.attribs.base = PGROUNDDOWN(entry->base);
 				pmad.attribs.len = PGROUNDUP(entry->size);
@@ -425,7 +459,7 @@ static void hn_mm_init_pmadlist() {
 			case ARCH_MEM_HIBERNATION:
 				if (!((entry->base > INIT_CRITICAL_PTOP) ||
 						(entry->base + entry->size < INIT_CRITICAL_PBASE))) {
-					km_panic("Critical memory area has been occupied by hibernation");
+					km_panic("Critical memory area has been used by hibernation");
 				}
 				pmad.attribs.base = PGROUNDDOWN(entry->base);
 				pmad.attribs.len = PGROUNDUP(entry->size);
@@ -465,7 +499,7 @@ static void hn_mm_init_paging() {
 		((size_t)VADDR(vi, 0, 0)) < KBOTTOM_VTOP; vi++, pi++, pdi++) {
 		arch_pte_t *cur = hn_bottom_pgt + (pdi << 10);
 		arch_pte_t *pcur = ((arch_pte_t *)KBOTTOMPGT_PBASE) + (pdi << 10);
-		hn_kernel_pdt[vi].mask = PDE_P | PDE_RW;
+		hn_kernel_pdt[vi].mask = PDE_P | PDE_RW | PDE_U;
 		hn_kernel_pdt[vi].address = PGROUNDDOWN(pcur);
 
 		for (uint32_t j = 0; j < 1024; ++j) {
@@ -481,7 +515,7 @@ static void hn_mm_init_paging() {
 		((size_t)VADDR(vi, 0, 0)) <= INIT_CRITICAL_VTOP; vi++, pi++, pdi++) {
 		arch_pte_t *vcur = hn_kernel_pgt + (pdi << 10);
 		arch_pte_t *pcur = ((arch_pte_t *)KPGT_PBASE) + (pdi << 10);
-		hn_kernel_pdt[vi].mask = PDE_P | PDE_RW;
+		hn_kernel_pdt[vi].mask = PDE_P | PDE_RW | PDE_U;
 		hn_kernel_pdt[vi].address = PGROUNDDOWN(pcur);
 
 		for (uint32_t j = 0; (j < 1024) && ((size_t)VADDR(vi, j, PGOFF_MAX)) <= INIT_CRITICAL_VTOP; ++j) {

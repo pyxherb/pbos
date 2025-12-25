@@ -7,6 +7,8 @@
 
 PBOS_EXTERN_C_BEGIN
 
+arch_pte_t *const mm_kernel_ptt = (arch_pte_t *)KPTT_VBASE;
+
 static uint16_t hn_pgaccess_to_pgmask(mm_pgaccess_t access) {
 	uint16_t mask = 0;
 
@@ -53,100 +55,34 @@ void mm_vmfree(mm_context_t *ctxt, void *addr, size_t size) {
 	mm_unmmap(ctxt, addr, size, 0);
 }
 
-km_result_t hn_walkpgtab(arch_pde_t *pdt, void *vaddr, size_t size, hn_pgtab_walker walker, void *exargs) {
-	km_result_t result;
+PBOS_NODISCARD km_result_t hn_mm_mmap_early(
+	mm_context_t *context,
+	void *vaddr,
+	void *paddr,
+	size_t size,
+	mm_pgaccess_t access) {
+	uint16_t mask = hn_pgaccess_to_pgmask(access);
+	{
+		size_t i = PGROUNDDOWN(vaddr), end = PGROUNDUP(((uintptr_t)vaddr) + size);
+		uintptr_t pi = (uintptr_t)PGROUNDDOWN(paddr);
+		ptrdiff_t pi_diff = paddr ? 1 : 0;
+		while (i < end) {
+			kd_assert(context->pdt[PDX(UNPGADDR(i))].mask & PDE_P);
+			pgaddr_t t = hn_tmpmap(context->pdt[PDX(UNPGADDR(i))].address, 1, PTE_P | PTE_RW);
+			arch_pte_t *const pte = &((arch_pte_t *)UNPGADDR(t))[PTX(UNPGADDR(i))];
 
-	uint16_t limit = (PDX(((char *)vaddr) + size));
+			pte->address = pi;
+			pte->mask = mask;
 
-	for (uint16_t di = PDX(vaddr); di <= limit;
-		di++) {
-		arch_pde_t *const pde = &pdt[di];
-		kd_assert(pde->mask & PDE_P);
+			arch_invlpg(UNPGADDR((uintptr_t)i));
 
-		void *tmpaddr;
-		bool is_tmpmap = false;
+			++i;
 
-		if (hn_mm_init_stage < HN_MM_INIT_STAGE_AREAS_INITED) {
-			tmpaddr = UNPGADDR(hn_tmpmap(pde->address, 1, PTE_P | PTE_RW));
-			is_tmpmap = true;
-		} else {
-			hn_mad_t *mad = hn_get_mad(pde->address);
-			kd_assert(mad);
-			tmpaddr = UNPGADDR(hn_tmpmap(pde->address, 1, PTE_P | PTE_RW));
-			is_tmpmap = true;
-		}
+			pi += pi_diff;
 
-		for (uint16_t ti = VADDR(di, 0, 0) >= vaddr ? 0 : PTX(vaddr);
-			(ti <= PTX_MAX);
-			++ti) {
-			if ((((char *)VADDR(di, ti, 0)) - ((char *)vaddr)) >= size) {
-				break;
-			}
-
-			// The page table will be mapped temporarily.
-			arch_pte_t *const pte = &(((arch_pte_t *)tmpaddr)[ti]);
-
-			if (KM_FAILED(result = walker(pde, pte, di, ti, exargs)))
-				return result;
-		}
-
-		if (is_tmpmap) {
-			hn_tmpunmap(PGROUNDDOWN(tmpaddr));
+			hn_tmpunmap(t);
 		}
 	}
-
-	return KM_RESULT_OK;
-}
-
-typedef struct _hn_mmap_walker_args {
-	mm_context_t *context;
-	char *paddr;
-	uint16_t mask;
-	bool is_curpgtab;
-	mmap_flags_t flags;
-} hn_mmap_walker_args;
-
-static km_result_t hn_mmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs) {
-	hn_mmap_walker_args *args = (hn_mmap_walker_args *)exargs;
-
-	if (pte->mask & PTE_P) {
-		// Free previous mapping.
-		if (pte->address) {
-			if (!(args->flags & MMAP_NORC)) {
-				mm_pgfree(UNPGADDR(pte->address));
-			}
-		}
-
-		if (!(args->mask & PTE_P))
-			if (!(args->flags & MMAP_NOSETVPM)) {
-				kn_mm_free_vpm(args->context, VADDR(pdx, ptx, 0));
-			}
-	}
-
-	/*if (args->mask & PTE_P) {
-		if (!(args->flags & MMAP_NOSETVPM)) {
-			km_result_t result = kn_mm_insert_vpm(args->context, VADDR(pdx, ptx, 0));
-			kd_assert(KM_SUCCEEDED(result));
-		}
-	}*/
-
-	// Why does 0x05025000 remains constant?
-	// Because the TLB has not updated yet.
-	// if (args->paddr == (void *)0x05025000)
-	// asm volatile("xchg %bx, %bx");
-	pte->address = PGROUNDDOWN(args->paddr);
-	pte->mask = args->mask;
-
-	if (args->paddr) {
-		if (!(args->flags & MMAP_NORC)) {
-			mm_refpg(args->paddr);
-		}
-		args->paddr += PAGESIZE;
-	}
-
-	if (args->is_curpgtab)
-		arch_invlpg((void *)VADDR(pdx, ptx, 0));
-
 	return KM_RESULT_OK;
 }
 
@@ -156,6 +92,8 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	size_t size,
 	mm_pgaccess_t access,
 	mmap_flags_t flags) {
+	kd_assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
+
 	io::irq_disable_lock irq_lock;
 
 	kd_assert(ctxt);
@@ -166,7 +104,8 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 	for (uint16_t i = PDX(vaddr); i <= PDX(vaddr_limit); ++i) {
 		if (!(ctxt->pdt[i].mask & PDE_P)) {
-			kd_assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
+			void *target_ptr = ((char *)KPTT_VBASE) + PAGESIZE * i;
+			// This manages 4MB size of memory.
 			void *pgdir = kn_mm_alloc_pgdir_page(ctxt, VADDR(i, 0, 0), 0);
 
 			if (!pgdir) {
@@ -186,29 +125,58 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 				hn_mad_t *mad = hn_get_mad(PGROUNDDOWN(pgdir));
 				hn_set_pgblk_used(PGROUNDDOWN(pgdir), MAD_ALLOC_KERNEL);
+
+				km_result_t result = mm_mmap(ctxt, target_ptr, pgdir, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
+				kd_assert(KM_SUCCEEDED(result));
 			}
 
 			if (!mm_is_user_space(VADDR(i, 0, 0))) {
-				mm_get_cur_context()->pdt[i] = ctxt->pdt[i];
+				mm_get_cur_context()->pdt[i].address = ctxt->pdt[i].address;
+				mm_get_cur_context()->pdt[i].mask = PDE_P | PDE_RW | PDE_U;
+				arch_invlpg(target_ptr);
 			}
 		}
 	}
 
-	hn_mmap_walker_args args = {
-		.context = ctxt,
-		.paddr = (char *)paddr,
-		.mask = hn_pgaccess_to_pgmask(access),
-		.is_curpgtab = ctxt == mm_get_cur_context(),
-		.flags = flags
-	};
-	if (KM_FAILED(result = hn_walkpgtab(
-					  ctxt->pdt,
-					  vaddr,
-					  size,
-					  hn_mmap_walker,
-					  &args))) {
-		mm_unmmap(ctxt, vaddr, (size_t)(args.paddr - (char *)paddr), flags);
-		return result;
+	bool is_cur_pgtab = (ctxt == mm_get_cur_context());
+	uint16_t mask = hn_pgaccess_to_pgmask(access);
+	{
+		uintptr_t i = (uintptr_t)PGFLOOR(vaddr), end = PGCEIL(((uintptr_t)vaddr) + size);
+		uintptr_t pi = (uintptr_t)PGFLOOR(paddr);
+		ptrdiff_t pi_diff = paddr ? PAGESIZE : 0;
+		while (i < end) {
+			arch_pte_t *const pte = &mm_kernel_ptt[i / PAGESIZE];
+
+			if (pte->mask & PTE_P) {
+				// Free previous mapping.
+				if (pte->address) {
+					if (!(flags & MMAP_NORC)) {
+						mm_pgfree(UNPGADDR(pte->address));
+					}
+				}
+
+				if (!(mask & PTE_P))
+					if (!(flags & MMAP_NOSETVPM)) {
+						kn_mm_free_vpm(ctxt, (const void *)i);
+					}
+			}
+
+			pte->address = PGROUNDDOWN(pi);
+			pte->mask = mask;
+
+			if (is_cur_pgtab)
+				arch_invlpg(i);
+
+			if (paddr) {
+				if (!(flags & MMAP_NORC)) {
+					mm_refpg((void *)pi);
+				}
+			}
+
+			i += PAGESIZE;
+
+			pi += pi_diff;
+		}
 	}
 
 	if (!(flags & MMAP_NOSETVPM)) {
@@ -225,48 +193,35 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	return KM_RESULT_OK;
 }
 
-typedef struct _hn_unmmap_walker_args {
-	mm_context_t *context;
-	bool is_curpgtab;
-	mmap_flags_t flags;
-	bool rawmap;
-} hn_unmmap_walker_args;
-
-km_result_t hn_unmmap_walker(arch_pde_t *pde, arch_pte_t *pte, uint16_t pdx, uint16_t ptx, void *exargs) {
-	hn_unmmap_walker_args *args = (hn_unmmap_walker_args *)exargs;
-
-	if (pte->mask & PTE_P) {
-		if (pte->address) {
-			if (!(args->flags & MMAP_NORC)) {
-				mm_pgfree(UNPGADDR(pte->address));
-			}
-		}
-		if (!(args->flags & MMAP_NOSETVPM)) {
-			kn_mm_free_vpm(args->context, VADDR(pdx, ptx, 0));
-		}
-	}
-
-	pte->mask &= ~PTE_P;
-
-	if (args->is_curpgtab)
-		arch_invlpg((void *)VADDR(pdx, ptx, 0));
-
-	return KM_RESULT_OK;
-}
-
 void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
 	kd_assert(ctxt);
 
 	io::irq_disable_lock irq_lock;
 
-	const void *vaddr_limit = ((const char *)vaddr) + size;
-	hn_unmmap_walker_args args = {
-		.context = ctxt,
-		.is_curpgtab = ctxt == mm_get_cur_context(),
-		.flags = flags
-	};
-	km_result_t result = hn_walkpgtab(ctxt->pdt, vaddr, size, hn_unmmap_walker, &args);
-	kd_assert(KM_SUCCEEDED(result));
+	bool is_cur_pgtab = (ctxt == mm_get_cur_context());
+
+	{
+		size_t i = PGROUNDDOWN(vaddr), end = PGROUNDUP(((uintptr_t)vaddr) + size);
+		while (i < end) {
+			arch_pte_t *const pte = &mm_kernel_ptt[i];
+			if (pte->mask & PTE_P) {
+				if (pte->address) {
+					if (!(flags & MMAP_NORC)) {
+						mm_pgfree(UNPGADDR(pte->address));
+					}
+				}
+				if (!(flags & MMAP_NOSETVPM)) {
+					kn_mm_free_vpm(ctxt, UNPGADDR(i));
+				}
+			}
+
+			pte->mask &= ~PTE_P;
+
+			if (is_cur_pgtab)
+				arch_invlpg(UNPGADDR((uintptr_t)vaddr));
+			++i;
+		}
+	}
 }
 
 void mm_set_page_access(
