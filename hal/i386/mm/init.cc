@@ -44,7 +44,7 @@ static void hn_map_ptt() {
 				arch_invlpg(target_ptr);
 
 				if (PDX(target_ptr) < i) {
-					i = PDX(target_ptr);
+					i = PDX(target_ptr) - 1;
 					continue;
 				}
 			}
