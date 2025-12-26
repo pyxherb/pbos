@@ -5,7 +5,7 @@ message(CHECK_START "Finding ${CMAKE_SYSTEM_PROCESSOR} specializations for FreeS
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${CMAKE_SYSTEM_PROCESSOR}/CMakeLists.txt")
     if(${FREESTDC_ENABLE_SPECIALIZATION})
         message(CHECK_PASS "enabled")
-        # add_subdirectory(${CMAKE_SYSTEM_PROCESSOR})
+        add_subdirectory(${CMAKE_SYSTEM_PROCESSOR})
     else()
         message(CHECK_FAIL "disabled")
     endif()

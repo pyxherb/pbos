@@ -113,7 +113,7 @@
 //
 // Kernel Top-level Page Directory
 //
-#define KTOPPGTAB_VBASE (KTMPMAP_VTOP + 1)
+#define KTOPPGTAB_VBASE (KPTT_VTOP + 1)
 #define KTOPPGTAB_SIZE 0x00200000
 #define KTOPPGTAB_VTOP (KTOPPGTAB_VBASE + KTOPPGTAB_SIZE - 1)
 

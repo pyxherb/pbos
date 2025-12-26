@@ -126,7 +126,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 				hn_mad_t *mad = hn_get_mad(PGROUNDDOWN(pgdir));
 				hn_set_pgblk_used(PGROUNDDOWN(pgdir), MAD_ALLOC_KERNEL);
 
-				km_result_t result = mm_mmap(ctxt, target_ptr, pgdir, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0);
+				km_result_t result = mm_mmap(ctxt, target_ptr, pgdir, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_NOREMAP);
 				kd_assert(KM_SUCCEEDED(result));
 			}
 
@@ -141,13 +141,17 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	bool is_cur_pgtab = (ctxt == mm_get_cur_context());
 	uint16_t mask = hn_pgaccess_to_pgmask(access);
 	{
-		uintptr_t i = (uintptr_t)PGFLOOR(vaddr), end = PGCEIL(((uintptr_t)vaddr) + size);
-		uintptr_t pi = (uintptr_t)PGFLOOR(paddr);
-		ptrdiff_t pi_diff = paddr ? PAGESIZE : 0;
+		pgaddr_t i = PGROUNDDOWN(vaddr), end = PGROUNDUP(((uintptr_t)vaddr) + size);
+		pgaddr_t pi = PGROUNDDOWN(paddr);
+		pgaddr_t pi_diff = paddr ? 1 : 0;
 		while (i < end) {
-			arch_pte_t *const pte = &mm_kernel_ptt[i / PAGESIZE];
+			arch_pte_t *const pte = &mm_kernel_ptt[i];
 
 			if (pte->mask & PTE_P) {
+				if (flags & MMAP_NOREMAP) {
+					km_panic("Remapping virtual address %p with MMAP_NOREMAP", i);
+				}
+
 				// Free previous mapping.
 				if (pte->address) {
 					if (!(flags & MMAP_NORC)) {
@@ -157,23 +161,23 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 				if (!(mask & PTE_P))
 					if (!(flags & MMAP_NOSETVPM)) {
-						kn_mm_free_vpm(ctxt, (const void *)i);
+						kn_mm_free_vpm(ctxt, UNPGADDR(i));
 					}
 			}
 
-			pte->address = PGROUNDDOWN(pi);
+			pte->address = pi;
 			pte->mask = mask;
 
 			if (is_cur_pgtab)
-				arch_invlpg(i);
+				arch_invlpg(UNPGADDR(i));
 
 			if (paddr) {
 				if (!(flags & MMAP_NORC)) {
-					mm_refpg((void *)pi);
+					mm_refpg(UNPGADDR(pi));
 				}
 			}
 
-			i += PAGESIZE;
+			i += 1;
 
 			pi += pi_diff;
 		}

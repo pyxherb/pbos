@@ -27,7 +27,7 @@ static void hn_map_ptt() {
 	for (uint16_t i = 0; i < PDX_MAX + 1; ++i) {
 		arch_pde_t *pde = &hn_kernel_pdt[i];
 		if (pde->mask & PDE_P) {
-			void *target_ptr = ((char*)KPTT_VBASE) + PAGESIZE * i;
+			void *target_ptr = ((char *)KPTT_VBASE) + PAGESIZE * i;
 			if (!(hn_kernel_pdt[PDX(target_ptr)].mask & PDE_P)) {
 				void *pde_paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
 				if (!pde_paddr)
@@ -35,8 +35,18 @@ static void hn_map_ptt() {
 				hn_kernel_pdt[PDX(target_ptr)].mask = PDE_P | PDE_RW | PDE_U;
 				hn_kernel_pdt[PDX(target_ptr)].address = PGROUNDDOWN(pde_paddr);
 
-				i = 0;
-				continue;
+				arch_pte_t *mapped_pt = (arch_pte_t *)UNPGADDR(hn_tmpmap(PGROUNDDOWN(pde_paddr), 1, PTE_P | PTE_RW));
+
+				memset(mapped_pt, 0, PAGESIZE);
+
+				hn_tmpunmap(PGROUNDDOWN(pde_paddr));
+
+				arch_invlpg(target_ptr);
+
+				if (PDX(target_ptr) < i) {
+					i = PDX(target_ptr);
+					continue;
+				}
 			}
 		}
 	}
@@ -47,16 +57,14 @@ static void hn_map_ptt() {
 		// One PDE manages 4MB.
 		arch_pde_t *pde = &hn_kernel_pdt[i];
 		if (pde->mask & PDE_P) {
-			void *target_ptr = ((char*)KPTT_VBASE) + PAGESIZE * i;
+			void *target_ptr = ((char *)KPTT_VBASE) + PAGESIZE * i;
 			arch_pde_t *target_pde = &hn_kernel_pdt[PDX(target_ptr)];
 			arch_pte_t *mapped_pt = (arch_pte_t *)UNPGADDR(hn_tmpmap(target_pde->address, 1, PTE_P | PTE_RW));
 
 			uintptr_t kptt_addr = (uintptr_t)KPTT_VBASE + i * PAGESIZE;
 
-			for (uint16_t j = 0; j < PTX_MAX + 1; ++j) {
-				mapped_pt[PTX(target_ptr)].address = pde->address;
-				mapped_pt[PTX(target_ptr)].mask = PTE_P | PTE_RW;
-			}
+			mapped_pt[PTX(target_ptr)].address = pde->address;
+			mapped_pt[PTX(target_ptr)].mask = PTE_P | PTE_RW;
 
 			arch_invlpg(target_ptr);
 
