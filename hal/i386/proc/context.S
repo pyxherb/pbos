@@ -1,5 +1,3 @@
-#include <arch/i386/asm/mm.h>
-
 .global hn_load_user_context
 
 hn_load_user_context:

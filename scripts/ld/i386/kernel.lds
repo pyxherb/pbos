@@ -7,7 +7,7 @@ OUTPUT_FORMAT(elf32-i386)
 
 SECTIONS
 {
-	. = 0x80000000;
+	. = 0x80400000;
 
 	KN_KCODE_BEGIN = .;
 	.text :

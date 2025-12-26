@@ -119,7 +119,10 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 
 					if (KM_FAILED(result = mm_mmap(ps_mm_context_of(proc), vaddr + j, paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE | PAGE_EXEC | PAGE_USER, 0)))
 						return result;
-					kd_assert(mm_getmap(ps_mm_context_of(proc), vaddr + j, NULL) == paddr);
+					if(mm_getmap(ps_mm_context_of(proc), vaddr + j, NULL) != paddr) {
+						mm_getmap(ps_mm_context_of(proc), vaddr + j, NULL);
+						km_panic("Assertion failed!");
+					}
 					if (KM_FAILED(
 							result = mm_mmap(
 								prev_context,

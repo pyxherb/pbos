@@ -77,9 +77,10 @@ typedef struct PBOS_PACKED _arch_pte_t {
 	pgaddr_t address : 20;
 } arch_pte_t;
 
-#define arch_invlpg(addr)                                      \
+PBOS_FORCEINLINE void arch_invlpg(void *addr) {
 	__asm__ __volatile__("invlpg (%0)" ::"b"((uint32_t)(addr)) \
-						 : "memory")
+						 : "memory");
+}
 #define arch_lpdt(paddr) \
 	arch_wcr3((arch_rcr3() & ~0xfffff000) | (((uint32_t)(paddr)) << 12))
 #define arch_spdt() (arch_rcr3() & 0xfffff000)

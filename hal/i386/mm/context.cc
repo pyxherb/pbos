@@ -17,9 +17,9 @@ void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 		src->pdt + PDX(KBOTTOM_VBASE),
 		sizeof(arch_pde_t) * PDX(KBOTTOM_SIZE));
 	memcpy(
-		dest->pdt + PDX(KSPACE_VBASE),
-		src->pdt + PDX(KSPACE_VBASE),
-		sizeof(arch_pde_t) * PDX(KSPACE_SIZE));
+		dest->pdt + PDX(KERNEL_VBASE),
+		src->pdt + PDX(KERNEL_VBASE),
+		sizeof(arch_pde_t) * PDX((PDX_MAX + 1) - KERNEL_VBASE));
 }
 
 void kn_mm_sync_global_mappings(const mm_context_t *src) {
@@ -87,6 +87,31 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 
 	kn_mm_copy_global_mappings(context, mm_get_cur_context());
 
+	// Map all valid page tables.
+	// See init.cc for initial mapping code.
+	for (size_t i = 0; i < PDX_MAX; ++i) {
+		// One PDE manages 4MB.
+		arch_pde_t *pde = &context->pdt[i];
+		if (pde->mask & PDE_P) {
+			void *target_ptr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * i;
+			arch_pde_t *target_pde = &context->pdt[PDX(target_ptr)];
+
+			void *vptr = mm_kvmalloc(mm_get_cur_context(), PAGESIZE, PAGE_READ | PAGE_WRITE, 0);
+			if (!vptr)
+				return KM_RESULT_NO_MEM;
+			km_unwrap_result(mm_mmap(mm_get_cur_context(), vptr, UNPGADDR(target_pde->address), PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0));
+
+			kfxx::oneshot_scope_guard sg([vptr]() noexcept {
+				mm_unmmap(mm_get_cur_context(), vptr, PAGESIZE, 0);
+			});
+
+			arch_pte_t *mapped_pt = (arch_pte_t *)vptr;
+
+			mapped_pt[PTX(target_ptr)].address = pde->address;
+			mapped_pt[PTX(target_ptr)].mask = PTE_P | PTE_RW;
+		}
+	}
+
 	// kn_mm_copy_global_mappings(context, mm_kernel_context);
 	return KM_RESULT_OK;
 }
@@ -119,9 +144,10 @@ void mm_switch_context(mm_context_t *context) {
 
 	mm_context_t *prev_context = mm_get_cur_context();
 	mm_cur_contexts[ps_get_cur_euid()] = context;
-	kn_mm_sync_global_mappings(prev_context);
-	kn_mm_copy_global_mappings(mm_kernel_context, prev_context);
-	arch_lpdt(PGROUNDDOWN(hn_getmap(mm_kernel_context->pdt, context->pdt, NULL)));
+	kn_mm_copy_global_mappings(context, prev_context);
+	// kn_mm_copy_global_mappings(mm_kernel_context, prev_context);
+	asm volatile("xchg %bx, %bx");
+	arch_lpdt(PGROUNDDOWN(mm_getmap(prev_context, context->pdt, NULL)));
 }
 
 PBOS_EXTERN_C_END

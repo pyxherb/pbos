@@ -139,10 +139,8 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 	ps_pcb_t *pcb = tcb->parent;
 
 	char *ptr;
-	if (!(ptr = (char *)mm_vmalloc(
+	if (!(ptr = (char *)mm_kvmalloc(
 			  pcb->mm_context,
-			  (void *)KSPACE_VBASE,
-			  (void *)KSPACE_VTOP,
 			  size,
 			  PAGE_MAPPED | PAGE_READ | PAGE_WRITE,
 			  VMALLOC_ATOMIC))) {

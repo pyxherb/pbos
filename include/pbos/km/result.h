@@ -2,6 +2,7 @@
 #define _PBOS_KM_RESULT_H_
 
 #include <stdint.h>
+#include "panic.h"
 
 typedef enum _km_results {
 	KM_RESULT_OK = 0,  // Success
@@ -32,5 +33,10 @@ typedef uint32_t km_result_t;
 #define KM_FAILED(result) (result)
 
 #define KM_MAKEERROR(result) ((result))
+
+PBOS_FORCEINLINE void km_unwrap_result(km_result_t result) {
+	if(KM_FAILED(result))
+		km_panic("Unwrap failed!");
+}
 
 #endif
