@@ -14,7 +14,7 @@ namespace kfxx {
     /// @brief The dynamic array type.
     /// @tparam T Type of the elements.
     template <typename T>
-    class dyn_array {
+    class dynarray {
     public:
         using iterator = T *;
         using const_iterator = const T *;
@@ -397,17 +397,17 @@ namespace kfxx {
             return gap_start;
         }
 
-        using this_type = dyn_array<T>;
+        using this_type = dynarray<T>;
 
     public:
-        PBOS_FORCEINLINE dyn_array(allocator *allocator) : _allocator(allocator), _data(nullptr) {
+        PBOS_FORCEINLINE dynarray(allocator *allocator) : _allocator(allocator), _data(nullptr) {
         }
-        PBOS_FORCEINLINE dyn_array(this_type &&rhs) noexcept : _allocator(std::move(rhs._allocator)), _data(std::move(rhs._data)), _length(rhs._length), _capacity(rhs._capacity) {
+        PBOS_FORCEINLINE dynarray(this_type &&rhs) noexcept : _allocator(std::move(rhs._allocator)), _data(std::move(rhs._data)), _length(rhs._length), _capacity(rhs._capacity) {
             rhs._data = nullptr;
             rhs._length = 0;
             rhs._capacity = 0;
         }
-        PBOS_FORCEINLINE ~dyn_array() {
+        PBOS_FORCEINLINE ~dynarray() {
             _clear();
         }
 

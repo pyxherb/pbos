@@ -96,6 +96,8 @@ void hn_mm_init() {
 		mm_cur_contexts[i] = mm_kernel_context;
 	}
 
+	hn_mm_init_stage = HN_MM_INIT_STAGE_CUR_CONTEXT_LIST_INITED;
+
 	hn_init_tss();
 
 	kd_printf("Initialized memory manager\n");

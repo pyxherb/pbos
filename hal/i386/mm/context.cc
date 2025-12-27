@@ -19,7 +19,7 @@ void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 	memcpy(
 		dest->pdt + PDX(KERNEL_VBASE),
 		src->pdt + PDX(KERNEL_VBASE),
-		sizeof(arch_pde_t) * ((PDX_MAX + 1) - PDX(KERNEL_VBASE)));
+		sizeof(arch_pde_t) * (PDX(KALLPGTAB_VBASE) - PDX(KERNEL_VBASE)));
 }
 
 void kn_mm_sync_global_mappings(const mm_context_t *src) {

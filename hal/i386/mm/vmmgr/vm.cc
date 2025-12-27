@@ -48,7 +48,7 @@ static mm_pgaccess_t hn_pgmask_to_pgaccess(uint16_t mask) {
 
 void *mm_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags) {
 	return mm_vmalloc(ctxt, ((uint8_t *)KRESERVED_VTOP) + 1,
-		(void *)KSPACE_VTOP, size, access, flags);
+		(void *)((char *)KALLPGTAB_VBASE - 1), size, access, flags);
 }
 
 void mm_vmfree(mm_context_t *ctxt, void *addr, size_t size) {
@@ -119,69 +119,19 @@ PBOS_NODISCARD km_result_t hn_mm_mmap_early(
 	return KM_RESULT_OK;
 }
 
-km_result_t mm_mmap(mm_context_t *ctxt,
+[[nodiscard]] static km_result_t hn_do_mmap(
+	mm_context_t *ctxt,
 	void *vaddr,
 	void *paddr,
 	size_t size,
 	mm_pgaccess_t access,
 	mmap_flags_t flags) {
-	io::irq_disable_lock irq_lock;
-
-	if (!ctxt)
-		km_panic("Cannot call mm_mmap with null context");
-	if (!size)
-		km_panic("Cannot call mm_mmap with size == 0");
-
-	kd_assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
-
 	bool is_user_space = mm_is_user_space(vaddr);
-	if (is_user_space !=
-		mm_is_user_space((void *)(((uintptr_t)vaddr) + (size - 1))))
-		km_panic("Cannot map across user and kernel spaces");
-
 	bool is_cur_pgtab = (ctxt == mm_get_cur_context());
 	uint16_t mask = hn_pgaccess_to_pgmask(access);
 	pgaddr_t i = PGROUNDDOWN(vaddr), end = PGROUNDUP(((uintptr_t)vaddr) + size);
 	pgaddr_t pi = PGROUNDDOWN(paddr);
 	pgaddr_t pi_diff = paddr ? 1 : 0;
-
-	const void *vaddr_limit = ((const char *)vaddr) + (size - 1);
-
-	kfxx::scope_guard unmap_guard([ctxt, vaddr, size, flags]() noexcept {
-		mm_unmmap(ctxt, vaddr, size, flags);
-	});
-
-	// Create non-existent page tables.
-	for (uint16_t i = PDX(vaddr); i <= PDX(vaddr_limit); ++i) {
-		arch_pde_t *pde = &ctxt->pdt[i];
-		if (!(pde->mask & PDE_P)) {
-			void *target_ptr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * i;
-			// This manages 4MB size of memory.
-			void *pgdir = kn_mm_alloc_pgdir_page(ctxt, VADDR(i, 0, 0), 0);
-
-			if (!pgdir)
-				return KM_MAKEERROR(KM_RESULT_NO_MEM);
-			else {
-				{
-					pgaddr_t mapped_pgdir = hn_tmpmap(PGROUNDDOWN(pgdir), 1, PTE_P | PTE_RW);
-					arch_pte_t *pte = (arch_pte_t *)UNPGADDR(mapped_pgdir);
-
-					memset(pte, 0, sizeof(arch_pte_t) * (PTX_MAX + 1));
-
-					hn_tmpunmap(mapped_pgdir);
-				}
-				pde->mask = PDE_P | PDE_RW | PDE_U;
-
-				hn_mad_t *mad = hn_get_mad(PGROUNDDOWN(pgdir));
-				hn_set_pgblk_used(PGROUNDDOWN(pgdir), MAD_ALLOC_KERNEL);
-
-				km_unwrap_result(mm_mmap(ctxt, target_ptr, pgdir, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_NOREMAP));
-			}
-
-			if (is_cur_pgtab || (!is_user_space))
-				arch_invlpg(target_ptr);
-		}
-	}
 
 	while (i < end) {
 		arch_pte_t *pte;
@@ -205,7 +155,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 				return KM_RESULT_NO_MEM;
 			}
 			km_unwrap_result(
-				mm_mmap(mm_get_cur_context(), pte, UNPGADDR(ctxt->pdt[PDX(UNPGADDR(i))].address), PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_NOREMAP));
+				mm_mmap(mm_get_cur_context(), pte, UNPGADDR(ctxt->pdt[PDX(UNPGADDR(i))].address), PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0));
 			pte += PTX(UNPGADDR(i));
 		}
 
@@ -243,6 +193,94 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 		pi += pi_diff;
 	}
+
+	return KM_RESULT_OK;
+}
+
+km_result_t mm_mmap(mm_context_t *ctxt,
+	void *vaddr,
+	void *paddr,
+	size_t size,
+	mm_pgaccess_t access,
+	mmap_flags_t flags) {
+	io::irq_disable_lock irq_lock;
+
+	if (!ctxt)
+		km_panic("Cannot call mm_mmap with null context");
+	if (!size)
+		km_panic("Cannot call mm_mmap with size == 0");
+
+	kd_assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
+
+	bool is_user_space = mm_is_user_space(vaddr);
+	if (is_user_space !=
+		mm_is_user_space((void *)(((uintptr_t)vaddr) + (size - 1))))
+		km_panic("Cannot map across user and kernel spaces");
+
+	const void *vaddr_limit = ((const char *)vaddr) + (size - 1);
+
+	kfxx::scope_guard unmap_guard([ctxt, vaddr, size, flags]() noexcept {
+		mm_unmmap(ctxt, vaddr, size, flags);
+	});
+
+	while (true) {
+		const char *pgtab_vaddr = (char *)vaddr, *pgtab_vaddr_limit = (char *)vaddr_limit;
+		void *target_ptr;
+		bool detected_at_least_once = false, detected_unmapped_pgtab = false;
+
+	realloc_pgtab:
+		for (uint16_t i = PDX(pgtab_vaddr); i <= PDX(pgtab_vaddr_limit); ++i) {
+			target_ptr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * i;
+			arch_pde_t *pde = &ctxt->pdt[i];
+			if (!(pde->mask & PDE_P)) {
+				// This manages 4MB size of memory.
+				void *pgdir = kn_mm_alloc_pgdir_page(ctxt, VADDR(i, 0, 0), 0);
+
+				detected_unmapped_pgtab = true;
+
+				if (!pgdir)
+					return KM_MAKEERROR(KM_RESULT_NO_MEM);
+				else {
+					{
+						pgaddr_t mapped_pgdir = hn_tmpmap(PGROUNDDOWN(pgdir), 1, PTE_P | PTE_RW);
+						arch_pte_t *pte = (arch_pte_t *)UNPGADDR(mapped_pgdir);
+
+						memset(pte, 0, sizeof(arch_pte_t) * (PTX_MAX + 1));
+
+						hn_tmpunmap(mapped_pgdir);
+					}
+					pde->mask = PDE_P | PDE_RW | PDE_U;
+
+					hn_mad_t *mad = hn_get_mad(PGROUNDDOWN(pgdir));
+					hn_set_pgblk_used(PGROUNDDOWN(pgdir), MAD_ALLOC_KERNEL);
+				}
+
+				break;
+			}
+		}
+
+		pgtab_vaddr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(pgtab_vaddr);
+		pgtab_vaddr_limit = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(pgtab_vaddr_limit);
+
+		if (detected_unmapped_pgtab) {
+			detected_at_least_once = true;
+			detected_unmapped_pgtab = false;
+			goto realloc_pgtab;
+		}
+
+		if (!detected_at_least_once)
+			break;
+
+		// The pgtab_vaddr will converge to one address, it's the first page table need to be mapped.
+		km_unwrap_result(hn_do_mmap(ctxt, (void *)pgtab_vaddr, UNPGADDR(ctxt->pdt[PDX(pgtab_vaddr)].address), PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_NOREMAP));
+
+		detected_at_least_once = false;
+	}
+
+	km_result_t result = hn_do_mmap(ctxt, vaddr, paddr, size, access, flags);
+
+	if (KM_FAILED(result))
+		return result;
 
 	if (!(flags & MMAP_NOSETVPM)) {
 		// Insert VPMs after free all previous VPMs.
@@ -395,7 +433,7 @@ succeeded:
 		mmap_flags |= VMALLOC_NOSETVPM;
 
 	if (!(flags & VMALLOC_NORESERVE)) {
-		if (KM_FAILED(mm_mmap(ctxt, p_found, NULL, size, access, mmap_flags | MMAP_NOREMAP)))
+		if (KM_FAILED(mm_mmap(ctxt, p_found, NULL, size, PAGE_MAPPED | access, mmap_flags | MMAP_NOREMAP)))
 			kd_assert(false);
 	}
 	return p_found;
