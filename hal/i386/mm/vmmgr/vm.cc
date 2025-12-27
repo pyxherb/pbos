@@ -212,6 +212,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 	kd_assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
 
+	bool is_cur_pgtab = (ctxt == mm_get_cur_context());
 	bool is_user_space = mm_is_user_space(vaddr);
 	if (is_user_space !=
 		mm_is_user_space((void *)(((uintptr_t)vaddr) + (size - 1))))
@@ -224,57 +225,63 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	});
 
 	while (true) {
-		const char *pgtab_vaddr = (char *)vaddr, *pgtab_vaddr_limit = (char *)vaddr_limit;
+		const char *prev_prev_pgtab_vaddr = nullptr,
+				   *prev_pgtab_vaddr = nullptr,
+				   *pgtab_vaddr = (char *)vaddr, *pgtab_vaddr_limit = (char *)vaddr_limit;
 		void *target_ptr;
-		bool detected_at_least_once = false, detected_unmapped_pgtab = false;
+		bool detected_unmapped_pgtab = false;
+		size_t iteration_times = 0;
 
 	realloc_pgtab:
 		for (uint16_t i = PDX(pgtab_vaddr); i <= PDX(pgtab_vaddr_limit); ++i) {
 			target_ptr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * i;
 			arch_pde_t *pde = &ctxt->pdt[i];
 			if (!(pde->mask & PDE_P)) {
-				// This manages 4MB size of memory.
-				void *pgdir = kn_mm_alloc_pgdir_page(ctxt, VADDR(i, 0, 0), 0);
-
+				++iteration_times;
 				detected_unmapped_pgtab = true;
-
-				if (!pgdir)
-					return KM_MAKEERROR(KM_RESULT_NO_MEM);
-				else {
-					{
-						pgaddr_t mapped_pgdir = hn_tmpmap(PGROUNDDOWN(pgdir), 1, PTE_P | PTE_RW);
-						arch_pte_t *pte = (arch_pte_t *)UNPGADDR(mapped_pgdir);
-
-						memset(pte, 0, sizeof(arch_pte_t) * (PTX_MAX + 1));
-
-						hn_tmpunmap(mapped_pgdir);
-					}
-					pde->mask = PDE_P | PDE_RW | PDE_U;
-
-					hn_mad_t *mad = hn_get_mad(PGROUNDDOWN(pgdir));
-					hn_set_pgblk_used(PGROUNDDOWN(pgdir), MAD_ALLOC_KERNEL);
-				}
-
 				break;
 			}
 		}
 
-		pgtab_vaddr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(pgtab_vaddr);
-		pgtab_vaddr_limit = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(pgtab_vaddr_limit);
+		prev_prev_pgtab_vaddr = prev_pgtab_vaddr;
+		prev_pgtab_vaddr = pgtab_vaddr;
+		pgtab_vaddr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(target_ptr);
+		pgtab_vaddr_limit = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(target_ptr);
 
 		if (detected_unmapped_pgtab) {
-			detected_at_least_once = true;
-			detected_unmapped_pgtab = false;
-			goto realloc_pgtab;
+			if (prev_pgtab_vaddr != pgtab_vaddr) {
+				detected_unmapped_pgtab = false;
+				goto realloc_pgtab;
+			}
 		}
 
-		if (!detected_at_least_once)
+		if (iteration_times) {
+			klog_printf("Allocating pgdir: %p\n", VADDR(PDX(prev_prev_pgtab_vaddr), 0, 0));
+			target_ptr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(prev_prev_pgtab_vaddr);
+			// This manages 4MB size of memory.
+			void *pgdir = kn_mm_alloc_pgdir_page(ctxt, VADDR(PDX(prev_prev_pgtab_vaddr), 0, 0), 0);
+
+			if (!pgdir)
+				return KM_MAKEERROR(KM_RESULT_NO_MEM);
+			else {
+				{
+					pgaddr_t mapped_pgdir = hn_tmpmap(PGROUNDDOWN(pgdir), 1, PTE_P | PTE_RW);
+					arch_pte_t *pte = (arch_pte_t *)UNPGADDR(mapped_pgdir);
+
+					memset(pte, 0, sizeof(arch_pte_t) * (PTX_MAX + 1));
+
+					hn_tmpunmap(mapped_pgdir);
+				}
+				ctxt->pdt[PDX(prev_prev_pgtab_vaddr)].mask = PDE_P | PDE_RW | PDE_U;
+
+				hn_mad_t *mad = hn_get_mad(PGROUNDDOWN(pgdir));
+				hn_set_pgblk_used(PGROUNDDOWN(pgdir), MAD_ALLOC_KERNEL);
+			}
+
+			// The pgtab_vaddr will converge to one address, it's the first page table need to be mapped.
+			km_unwrap_result(hn_do_mmap(ctxt, (void *)target_ptr, UNPGADDR(ctxt->pdt[PDX(prev_pgtab_vaddr)].address), PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_NOREMAP));
+		} else
 			break;
-
-		// The pgtab_vaddr will converge to one address, it's the first page table need to be mapped.
-		km_unwrap_result(hn_do_mmap(ctxt, (void *)pgtab_vaddr, UNPGADDR(ctxt->pdt[PDX(pgtab_vaddr)].address), PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, MMAP_NOREMAP));
-
-		detected_at_least_once = false;
 	}
 
 	km_result_t result = hn_do_mmap(ctxt, vaddr, paddr, size, access, flags);
