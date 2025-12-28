@@ -98,7 +98,6 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
 			{
-				io::irq_disable_lock lock;
 				kfxx::scope_guard restore_context_guard([prev_context, tmp_pgvaddr]() noexcept {
 					mm_vmfree(prev_context, tmp_pgvaddr, PAGESIZE);
 				});

@@ -32,9 +32,7 @@ hn_vpm_t *kn_mm_lookup_vpm(mm_context_t *context, const void *addr, int level) {
 }
 
 km_result_t kn_mm_insert_vpm(mm_context_t *context, const void *addr) {
-	if (kn_mm_lookup_vpm(context, addr, (kn_cur_paging_config->pgtab_level - 1))) {
-		kd_assert("Inserting duplicated VPM, aborting");
-	}
+	kd_assert(!kn_mm_lookup_vpm(context, addr, (kn_cur_paging_config->pgtab_level - 1)));
 
 	size_t levels = kn_cur_paging_config->pgtab_level;
 	bool *inserted_flags_per_level = (bool *)alloca(levels);
@@ -142,7 +140,8 @@ fail:
 	return KM_MAKEERROR(result);
 }
 
-void kn_mm_free_vpm(mm_context_t *context, const void *addr) {
+bool kn_mm_free_vpm(mm_context_t *context, const void *addr) {
+	bool need_freeing_pgtab = false;
 	for (int i = 0; i <= kn_cur_paging_config->pgtab_level - 1; ++i) {
 		void *aligned_addr = kn_rounddown_to_page_leveled_addr(addr, i);
 
@@ -151,11 +150,13 @@ void kn_mm_free_vpm(mm_context_t *context, const void *addr) {
 		kd_assert(cur_level_vpm);
 #endif
 
-		kn_mm_free_vpm_unchecked(context, aligned_addr, i);
+		if (kn_mm_free_vpm_unchecked(context, aligned_addr, i))
+			need_freeing_pgtab = true;
 	}
+	return need_freeing_pgtab;
 }
 
-void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level) {
+bool kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level) {
 	io::irq_disable_lock irq_lock;
 	kfxx::rbtree_t<void *> *query_tree = kn_mm_get_vpm_lookup_tree(context, addr, level);
 	kn_mm_vpm_poolpg_t **pool_list = kn_mm_get_vpm_pool_list(context, addr, level);
@@ -167,14 +168,6 @@ void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 	target_desc = static_cast<hn_vpm_t *>(target_node);
 
 	if (!(--target_desc->subref_count)) {
-		if (level < kn_cur_paging_config->pgtab_level - 1) {
-			mm_unmmap(
-				context,
-				(void *)addr,
-				PAGESIZE,
-				0);
-			kn_mm_free_pgdir(context, (void *)addr, 0);
-		}
 		query_tree->remove(target_desc);
 
 		target_desc->flags &= ~KM_MM_VPM_ALLOC;
@@ -196,7 +189,9 @@ void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level
 			mm_pgfree(mm_getmap(context, pool, NULL));
 			mm_unmmap(context, pool, PAGESIZE, MMAP_NOSETVPM);
 		}
+		return true;
 	}
+	return false;
 }
 
 hn_vpm_t *kn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr, int level) {

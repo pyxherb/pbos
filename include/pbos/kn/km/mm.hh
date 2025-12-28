@@ -50,8 +50,15 @@ hn_vpm_t *kn_mm_lookup_vpm(mm_context_t *context, const void* addr, int level);
 hn_vpm_t *kn_mm_alloc_vpm_slot(mm_context_t *context, const void *addr, int level);
 km_result_t kn_mm_insert_vpm(mm_context_t *context, const void *addr);
 km_result_t kn_mm_insert_vpm_unchecked(mm_context_t *context, const void *const addr, int level);
-void kn_mm_free_vpm(mm_context_t *context, const void *addr);
-void kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level);
+///
+/// @brief Free a VPM.
+///
+/// @param context Context of the VPM to be freed.
+/// @param addr Address of the VPM to be freed.
+/// @return Whether the page table has to be freed.
+///
+PBOS_NODISCARD bool kn_mm_free_vpm(mm_context_t *context, const void *addr);
+PBOS_NODISCARD bool kn_mm_free_vpm_unchecked(mm_context_t *context, const void *addr, int level);
 
 void *kn_lookup_pgdir(mm_context_t *ctxt, void *addr, int level);
 PBOS_NODISCARD void *kn_mm_alloc_pgdir_page(mm_context_t *ctxt, void *addr, int level);

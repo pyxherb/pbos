@@ -69,7 +69,7 @@ PBOS_NODISCARD km_result_t hn_mm_mmap_early(
 			kd_assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
 			void *target_ptr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * i;
 			// This manages 4MB size of memory.
-			void *pgdir = kn_mm_alloc_pgdir_page(context, VADDR(i, 0, 0), 0);
+			void *pgdir = kn_mm_alloc_pgdir_page(context, VADDR(i, 0, 0), PAGING_LEVEL_PGDIR);
 
 			if (!pgdir)
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
@@ -84,8 +84,7 @@ PBOS_NODISCARD km_result_t hn_mm_mmap_early(
 				}
 				pde->mask = PDE_P | PDE_RW | PDE_U;
 
-				hn_mad_t *mad = hn_get_mad(PGROUNDDOWN(pgdir));
-				hn_set_pgblk_used(PGROUNDDOWN(pgdir), MAD_ALLOC_KERNEL);
+				mm_refpg(pgdir);
 
 				km_unwrap_result(hn_mm_mmap_early(context, target_ptr, pgdir, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE));
 			}
@@ -137,7 +136,7 @@ PBOS_NODISCARD km_result_t hn_mm_mmap_early(
 		arch_pte_t *pte;
 
 		kfxx::scope_guard sg([&pte]() noexcept {
-			mm_unmmap(mm_get_cur_context(), pte, PAGESIZE, 0);
+			mm_unmmap(mm_get_cur_context(), (void*)PGFLOOR(pte), PAGESIZE, 0);
 		});
 
 		if ((is_cur_pgtab || (!is_user_space))) {
@@ -159,22 +158,22 @@ PBOS_NODISCARD km_result_t hn_mm_mmap_early(
 			pte += PTX(UNPGADDR(i));
 		}
 
-		if (pte->mask & PTE_P) {
+		// Free previous mapping.
+		if ((pte->mask & PTE_P) && pte->address) {
 			if (flags & MMAP_NOREMAP) {
 				km_panic("Remapping virtual address %p with MMAP_NOREMAP", UNPGADDR(i));
 			}
 
-			// Free previous mapping.
-			if (pte->address) {
-				if (!(flags & MMAP_NORC)) {
-					mm_pgfree(UNPGADDR(pte->address));
+			if (!(flags & MMAP_NORC)) {
+				mm_pgfree(UNPGADDR(pte->address));
+			}
+		} else {
+			if (pi) {
+				if (!(flags & MMAP_NOSETVPM)) {
+					km_result_t result = kn_mm_insert_vpm(ctxt, UNPGADDR(i));
+					kd_assert(KM_SUCCEEDED(result));
 				}
 			}
-
-			if (!(mask & PTE_P))
-				if (!(flags & MMAP_NOSETVPM)) {
-					kn_mm_free_vpm(ctxt, UNPGADDR(i));
-				}
 		}
 
 		pte->address = pi;
@@ -230,7 +229,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 		void *target_ptr;
 		size_t iteration_times = 0;
 
-	realloc_pgtab:
+	rescan_pgtab:
 		for (uint16_t i = PDX(pgtab_vaddr); i <= PDX(pgtab_vaddr_limit); ++i) {
 			target_ptr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * i;
 			arch_pde_t *pde = &ctxt->pdt[i];
@@ -242,16 +241,15 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 					pgtab_vaddr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(target_ptr);
 					pgtab_vaddr_limit = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(target_ptr);
 
-					goto realloc_pgtab;
+					goto rescan_pgtab;
 				}
 			}
 		}
 
 		if (iteration_times) {
-			klog_printf("Allocating pgdir: %p\n", VADDR(PDX(prev_pgtab_vaddr), 0, 0));
 			target_ptr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(prev_pgtab_vaddr);
 			// This manages 4MB size of memory.
-			void *pgdir = kn_mm_alloc_pgdir_page(ctxt, (void *)prev_pgtab_vaddr, 0);
+			void *pgdir = kn_mm_alloc_pgdir_page(ctxt, (void *)prev_pgtab_vaddr, PAGING_LEVEL_PGDIR);
 
 			if (!pgdir)
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
@@ -276,21 +274,10 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 			break;
 	}
 
-	km_result_t result = hn_do_mmap(ctxt, vaddr, paddr, size, access, flags);
+	km_result_t result = hn_do_mmap(ctxt, vaddr, paddr, size, access | PAGE_MAPPED, flags);
 
 	if (KM_FAILED(result))
 		return result;
-
-	if (!(flags & MMAP_NOSETVPM)) {
-		// Insert VPMs after free all previous VPMs.
-		char *rounded_vaddr = (char *)PGFLOOR(vaddr), *rounded_paddr = (char *)PGFLOOR(paddr);
-		size_t rounded_size = PGCEIL(size);
-		for (size_t i = 0; i < rounded_size; i += PAGESIZE) {
-			void *cur_ptr = rounded_vaddr + i;
-			km_result_t result = kn_mm_insert_vpm(ctxt, cur_ptr);
-			kd_assert(KM_SUCCEEDED(result));
-		}
-	}
 
 	unmap_guard.release();
 
@@ -308,14 +295,50 @@ void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 		size_t i = PGROUNDDOWN(vaddr), end = PGROUNDUP(((uintptr_t)vaddr) + size);
 		while (i < end) {
 			arch_pte_t *const pte = &mm_kernel_ptt[i];
-			if (pte->mask & PTE_P) {
+			bool p = pte->mask & PTE_P;
+
+			if (p) {
 				if (pte->address) {
 					if (!(flags & MMAP_NORC)) {
 						mm_pgfree(UNPGADDR(pte->address));
 					}
 				}
-				if (!(flags & MMAP_NOSETVPM)) {
-					kn_mm_free_vpm(ctxt, UNPGADDR(i));
+			}
+
+			if (p && !(flags & MMAP_NOSETVPM)) {
+				while (true) {
+					const char *prev_pgtab_vaddr = nullptr,
+							   *pgtab_vaddr = (char *)UNPGADDR(i);
+					arch_pte_t *target_ptr;
+					uint16_t prev_mask = ~PDE_P;
+
+				rescan_pgtab:
+					target_ptr = (arch_pte_t *)(((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(pgtab_vaddr));
+					arch_pde_t *pde = &ctxt->pdt[PDX(pgtab_vaddr)];
+					if (!(pde->mask & PDE_P)) {
+						if (prev_pgtab_vaddr != pgtab_vaddr) {
+							prev_pgtab_vaddr = pgtab_vaddr;
+							pgtab_vaddr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(target_ptr);
+
+							goto rescan_pgtab;
+						}
+					}
+
+					if (kn_mm_free_vpm_unchecked(ctxt, pgtab_vaddr, PAGING_LEVEL_PGTAB)) {
+						void *pgdir_vaddr = VADDR(PDX(pgtab_vaddr), 0, 0);
+
+						if (!kn_mm_free_vpm_unchecked(ctxt, pgdir_vaddr, PAGING_LEVEL_PGDIR))
+							break;
+
+						kn_mm_free_pgdir(ctxt, (void *)pgdir_vaddr, PAGING_LEVEL_PGDIR);
+
+						mm_pgfree(UNPGADDR(ctxt->pdt[PDX(pgdir_vaddr)].address));
+						ctxt->pdt[PDX(pgdir_vaddr)].mask &= ~PDE_P;
+
+						if (is_cur_pgtab)
+							arch_invlpg(target_ptr);
+					} else
+						break;
 				}
 			}
 
@@ -637,7 +660,7 @@ void *kn_lookup_pgdir(mm_context_t *ctxt, void *addr, int level) {
 
 void *kn_mm_alloc_pgdir_page(mm_context_t *ctxt, void *ptr, int level) {
 	switch (level) {
-		case 0: {
+		case PAGING_LEVEL_PGDIR: {
 			kd_assert(ctxt);
 			kd_assert(PDX(ptr) <= PDX_MAX);
 			arch_pde_t *pde = &(ctxt->pdt[PDX(ptr)]);
@@ -657,12 +680,12 @@ void *kn_mm_alloc_pgdir_page(mm_context_t *ctxt, void *ptr, int level) {
 
 void kn_mm_free_pgdir(mm_context_t *ctxt, void *ptr, int level) {
 	switch (level) {
-		case 0: {
+		case PAGING_LEVEL_PGDIR: {
 			kd_assert(ctxt);
 			kd_printf("Freeing page directory for context %p at PDX %hu: \n", ctxt, PDX(ptr));
 			kd_assert(PDX(ptr) <= PDX_MAX);
 			kd_assert(ctxt->pdt[PDX(ptr)].mask & PDE_P);
-			mm_unmmap(ctxt, (void *)(KPDT_VBASE + PAGESIZE * PDX(ptr)), PAGESIZE, 0);
+			// mm_unmmap(ctxt, (void *)(KPDT_VBASE + PAGESIZE * PDX(ptr)), PAGESIZE, 0);
 			mm_pgfree(UNPGADDR(ctxt->pdt[PDX(ptr)].address));
 			ctxt->pdt[PDX(ptr)].mask &= ~PDE_P;
 			break;

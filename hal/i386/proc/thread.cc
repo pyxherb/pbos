@@ -31,7 +31,6 @@ thread_id_t ps_create_thread(
 	ps_proc_access_t access,
 	ps_pcb_t *pcb,
 	size_t stack_size) {
-	io::irq_disable_lock irq_disable_lock;
 	if (!stack_size)
 		return -1;
 

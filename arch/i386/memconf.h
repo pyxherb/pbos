@@ -15,6 +15,9 @@ PBOS_EXTERN_C_BEGIN
 /// @brief Round down a linear address into page-aligned.
 #define PGFLOOR(addr) ((uintptr_t)(((size_t)(addr)) & (~(PAGESIZE - 1))))
 
+#define PAGING_LEVEL_PGDIR 0
+#define PAGING_LEVEL_PGTAB 1
+
 extern const kn_paging_config_t KN_PAGING_CONFIG_32BIT;
 
 PBOS_EXTERN_C_END
