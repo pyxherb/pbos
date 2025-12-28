@@ -11,7 +11,7 @@
 #include <pbos/kn/km/proc.hh>
 
 // Because the operating system will never exit normally,
-// we just using a dummy procedure to register the destructors.
+// we just designed a dummy procedure to register the destructors.
 PBOS_EXTERN_C int atexit(void (*func)(void)) {
 	return 0;
 }

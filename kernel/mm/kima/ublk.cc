@@ -1,11 +1,11 @@
 #include "ublk.hh"
 #include <string.h>
 
-kima_ublk_poolpg_t* kima_ublk_poolpg_list = NULL;
-kfxx::rbtree_t<void*> kima_ublk_query_tree, kima_ublk_free_tree;
+kima_ublk_poolpg_t *kima_ublk_poolpg_list = NULL;
+kfxx::rbtree_t<void *> kima_ublk_query_tree, kima_ublk_free_tree;
 
-void kima_free_ublk(kima_ublk_t* ublk) {
-	kima_ublk_poolpg_t* poolpg = (kima_ublk_poolpg_t*)PGFLOOR(ublk);
+void kima_free_ublk(kima_ublk_t *ublk) {
+	kima_ublk_poolpg_t *poolpg = (kima_ublk_poolpg_t *)PGFLOOR(ublk);
 
 	kima_ublk_query_tree.remove(ublk);
 
@@ -18,9 +18,9 @@ void kima_free_ublk(kima_ublk_t* ublk) {
 	}
 }
 
-kima_ublk_t* kima_alloc_ublk(void* ptr, size_t size) {
+kima_ublk_t *kima_alloc_ublk(void *ptr, size_t size) {
 	if (kima_ublk_free_tree.size()) {
-		kima_ublk_t* desc = static_cast<kima_ublk_t*>(kima_ublk_free_tree.begin().node);
+		kima_ublk_t *desc = static_cast<kima_ublk_t *>(kima_ublk_free_tree.begin().node);
 
 		kima_ublk_free_tree.remove(desc);
 
@@ -32,7 +32,10 @@ kima_ublk_t* kima_alloc_ublk(void* ptr, size_t size) {
 		return desc;
 	}
 
-	kima_ublk_poolpg_t* pg = (kima_ublk_poolpg_t*)kima_vpgalloc(NULL, PAGESIZE);
+	kima_ublk_poolpg_t *pg = (kima_ublk_poolpg_t *)kima_vpgalloc(NULL, PAGESIZE);
+
+	if (!pg)
+		return NULL;
 
 	pg->header.next = kima_ublk_poolpg_list;
 	if (kima_ublk_poolpg_list) {

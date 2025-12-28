@@ -136,7 +136,7 @@ PBOS_NODISCARD km_result_t hn_mm_mmap_early(
 		arch_pte_t *pte;
 
 		kfxx::scope_guard sg([&pte]() noexcept {
-			mm_unmmap(mm_get_cur_context(), (void*)PGFLOOR(pte), PAGESIZE, 0);
+			mm_unmmap(mm_get_cur_context(), (void *)PGFLOOR(pte), PAGESIZE, 0);
 		});
 
 		if ((is_cur_pgtab || (!is_user_space))) {
@@ -419,6 +419,13 @@ void *mm_vmalloc(mm_context_t *ctxt,
 				p_found = VADDR(i, 0, 0);
 			sz_found += PTX_MAX + 1;
 			continue;
+		}
+
+		hn_vpm_t *vpm = kn_mm_lookup_vpm(ctxt, VADDR(i, 0, 0), PAGING_LEVEL_PGDIR);
+
+		if (vpm) {
+			if (vpm->subref_count >= (PTX_MAX + 1))
+				continue;
 		}
 
 		io::irq_disable_lock irq_lock;

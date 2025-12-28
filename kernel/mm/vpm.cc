@@ -47,6 +47,7 @@ km_result_t kn_mm_insert_vpm(mm_context_t *context, const void *addr) {
 			if (KM_FAILED(result)) {
 				for (int j = 0; j < i; ++j) {
 					if (inserted_flags_per_level[j]) {
+						// Should it be unused?
 						kn_mm_free_vpm_unchecked(context, kn_rounddown_to_page_leveled_addr(addr, j), j);
 					}
 				}

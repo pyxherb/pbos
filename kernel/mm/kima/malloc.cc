@@ -1,5 +1,6 @@
 #include "malloc.hh"
 #include <pbos/hal/irq.hh>
+#include <pbos/kfxx/scope_guard.hh>
 
 void *mm_kmalloc(size_t size, size_t alignment) {
 	io::irq_disable_lock irq_lock;
@@ -49,14 +50,16 @@ void *mm_kmalloc(size_t size, size_t alignment) {
 				}
 
 				kima_ublk_t *ublk = kima_alloc_ublk(cur_base, size);
-				kd_assert(ublk);
+				if (!ublk)
+					return NULL;
 
 				for (size_t j = 0;
 					j < PGCEIL(size);
 					j += PAGESIZE) {
 					kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(((char *)cur_desc->rb_value) + j);
 
-					kd_assert(vpgdesc);
+					if (!vpgdesc)
+						return NULL;
 
 					++vpgdesc->ref_count;
 				}
@@ -69,22 +72,34 @@ void *mm_kmalloc(size_t size, size_t alignment) {
 	noncontinuous:;
 	}
 
-	char *new_free_pg = (char*)kima_vpgalloc(NULL, PGCEIL(size + alignment));
+	char *new_free_pg = (char *)kima_vpgalloc(NULL, PGCEIL(size + alignment));
 
 	if (size_t aligned_diff = ((uintptr_t)new_free_pg) % alignment; aligned_diff) {
 		new_free_pg += alignment - aligned_diff;
 	}
 
-	kd_assert(new_free_pg);
+	if (!new_free_pg)
+		return NULL;
 
-	for (size_t i = 0; i < PGROUNDUP(size); ++i) {
+	size_t i = 0;
+	kfxx::scope_guard release_vpgdesc_sg([new_free_pg, &i]() noexcept {
+		for (size_t j = 0; j < i; ++i) {
+			kima_free_vpgdesc(kima_lookup_vpgdesc(((char *)new_free_pg) + j * PAGESIZE));
+		}
+	});
+
+	for (; i < PGROUNDUP(size); ++i) {
 		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(((char *)new_free_pg) + i * PAGESIZE);
 
-		kd_assert(vpgdesc);
+		if (!vpgdesc)
+			return NULL;
 	}
 
 	kima_ublk_t *ublk = kima_alloc_ublk(new_free_pg, size);
-	kd_assert(ublk);
+	if (!ublk)
+		return NULL;
+
+	release_vpgdesc_sg.release();
 
 	return new_free_pg;
 }

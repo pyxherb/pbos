@@ -7,7 +7,8 @@ void *kima_vpgalloc(void *addr, size_t size) {
 	kd_assert(vaddr);
 	for (size_t i = 0; i < PGCEIL(size); i += PAGESIZE) {
 		void *paddr = mm_pgalloc(MM_PMEM_AVAILABLE);
-		kd_assert(paddr);
+		if (!paddr)
+			return NULL;
 		if (KM_FAILED(mm_mmap(mm_kernel_context, vaddr + i, paddr, PAGESIZE, PAGE_MAPPED | PAGE_READ | PAGE_WRITE, 0)))
 			kd_assert(false);
 	}

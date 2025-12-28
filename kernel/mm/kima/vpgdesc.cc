@@ -1,11 +1,11 @@
 #include "vpgdesc.hh"
 #include <string.h>
 
-kima_vpgdesc_poolpg_t* kima_vpgdesc_poolpg_list = NULL;
-kfxx::rbtree_t<void*> kima_vpgdesc_query_tree, kima_vpgdesc_free_tree;
+kima_vpgdesc_poolpg_t *kima_vpgdesc_poolpg_list = NULL;
+kfxx::rbtree_t<void *> kima_vpgdesc_query_tree, kima_vpgdesc_free_tree;
 
-void kima_free_vpgdesc(kima_vpgdesc_t* vpgdesc) {
-	kima_vpgdesc_poolpg_t* poolpg = (kima_vpgdesc_poolpg_t*)PGFLOOR(vpgdesc);
+void kima_free_vpgdesc(kima_vpgdesc_t *vpgdesc) {
+	kima_vpgdesc_poolpg_t *poolpg = (kima_vpgdesc_poolpg_t *)PGFLOOR(vpgdesc);
 
 	kima_vpgdesc_query_tree.remove(vpgdesc);
 
@@ -18,9 +18,9 @@ void kima_free_vpgdesc(kima_vpgdesc_t* vpgdesc) {
 	}
 }
 
-kima_vpgdesc_t* kima_alloc_vpgdesc(void* ptr) {
+kima_vpgdesc_t *kima_alloc_vpgdesc(void *ptr) {
 	if (kima_vpgdesc_free_tree.size()) {
-		kima_vpgdesc_t* desc = static_cast<kima_vpgdesc_t*>(kima_vpgdesc_free_tree.begin().node);
+		kima_vpgdesc_t *desc = static_cast<kima_vpgdesc_t *>(kima_vpgdesc_free_tree.begin().node);
 
 		kima_vpgdesc_free_tree.remove(desc);
 
@@ -32,7 +32,10 @@ kima_vpgdesc_t* kima_alloc_vpgdesc(void* ptr) {
 		return desc;
 	}
 
-	kima_vpgdesc_poolpg_t* pg = (kima_vpgdesc_poolpg_t*)kima_vpgalloc(NULL, PAGESIZE);
+	kima_vpgdesc_poolpg_t *pg = (kima_vpgdesc_poolpg_t *)kima_vpgalloc(NULL, PAGESIZE);
+
+	if (!pg)
+		return NULL;
 
 	pg->header.prev = NULL;
 	pg->header.next = kima_vpgdesc_poolpg_list;
