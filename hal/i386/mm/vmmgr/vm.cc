@@ -225,11 +225,9 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	});
 
 	while (true) {
-		const char *prev_prev_pgtab_vaddr = nullptr,
-				   *prev_pgtab_vaddr = nullptr,
+		const char *prev_pgtab_vaddr = nullptr,
 				   *pgtab_vaddr = (char *)vaddr, *pgtab_vaddr_limit = (char *)vaddr_limit;
 		void *target_ptr;
-		bool detected_unmapped_pgtab = false;
 		size_t iteration_times = 0;
 
 	realloc_pgtab:
@@ -238,28 +236,22 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 			arch_pde_t *pde = &ctxt->pdt[i];
 			if (!(pde->mask & PDE_P)) {
 				++iteration_times;
-				detected_unmapped_pgtab = true;
-				break;
-			}
-		}
 
-		prev_prev_pgtab_vaddr = prev_pgtab_vaddr;
-		prev_pgtab_vaddr = pgtab_vaddr;
-		pgtab_vaddr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(target_ptr);
-		pgtab_vaddr_limit = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(target_ptr);
+				if (prev_pgtab_vaddr != pgtab_vaddr) {
+					prev_pgtab_vaddr = pgtab_vaddr;
+					pgtab_vaddr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(target_ptr);
+					pgtab_vaddr_limit = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(target_ptr);
 
-		if (detected_unmapped_pgtab) {
-			if (prev_pgtab_vaddr != pgtab_vaddr) {
-				detected_unmapped_pgtab = false;
-				goto realloc_pgtab;
+					goto realloc_pgtab;
+				}
 			}
 		}
 
 		if (iteration_times) {
-			klog_printf("Allocating pgdir: %p\n", VADDR(PDX(prev_prev_pgtab_vaddr), 0, 0));
-			target_ptr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(prev_prev_pgtab_vaddr);
+			klog_printf("Allocating pgdir: %p\n", VADDR(PDX(prev_pgtab_vaddr), 0, 0));
+			target_ptr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(prev_pgtab_vaddr);
 			// This manages 4MB size of memory.
-			void *pgdir = kn_mm_alloc_pgdir_page(ctxt, VADDR(PDX(prev_prev_pgtab_vaddr), 0, 0), 0);
+			void *pgdir = kn_mm_alloc_pgdir_page(ctxt, VADDR(PDX(prev_pgtab_vaddr), 0, 0), 0);
 
 			if (!pgdir)
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
@@ -272,7 +264,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 					hn_tmpunmap(mapped_pgdir);
 				}
-				ctxt->pdt[PDX(prev_prev_pgtab_vaddr)].mask = PDE_P | PDE_RW | PDE_U;
+				ctxt->pdt[PDX(prev_pgtab_vaddr)].mask = PDE_P | PDE_RW | PDE_U;
 
 				hn_mad_t *mad = hn_get_mad(PGROUNDDOWN(pgdir));
 				hn_set_pgblk_used(PGROUNDDOWN(pgdir), MAD_ALLOC_KERNEL);
