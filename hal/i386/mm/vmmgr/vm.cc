@@ -251,7 +251,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 			klog_printf("Allocating pgdir: %p\n", VADDR(PDX(prev_pgtab_vaddr), 0, 0));
 			target_ptr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(prev_pgtab_vaddr);
 			// This manages 4MB size of memory.
-			void *pgdir = kn_mm_alloc_pgdir_page(ctxt, VADDR(PDX(prev_pgtab_vaddr), 0, 0), 0);
+			void *pgdir = kn_mm_alloc_pgdir_page(ctxt, (void *)prev_pgtab_vaddr, 0);
 
 			if (!pgdir)
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
