@@ -1,0 +1,53 @@
+#ifndef _PBOS_KFXX_UTILS_HH_
+#define _PBOS_KFXX_UTILS_HH_
+
+#include "basedefs.hh"
+#include <memory>
+#include <new>
+#include <type_traits>
+
+namespace kfxx {
+#if __cplusplus >= 202002L
+	template <typename T, typename... Args>
+	// requires std::constructible_from<T, Args...>
+#else
+	template <typename T, typename... Args>
+#endif
+		PBOS_FORCEINLINE void construct_at(T *ptr, Args &&...args) {
+#ifdef new
+	#if __cplusplus >= 202002L
+		std::construct_at<T>(ptr, std::forward<Args>(args)...);
+	#else
+		#if defined(_MSC_VER) || (defined(__GNUC__)) || (defined(__clang__))
+			#pragma push_macro("new")
+			#undef new
+		new (ptr) T(std::forward<Args>(args)...);
+			#pragma pop_macro("new")
+		#else
+		std::allocator_traits<std::allocator<T>> allocator;
+		allocator.construct(ptr, std::forward<Args>(args)...);
+		#endif
+	#endif
+#else
+		new (ptr) T(std::forward<Args>(args)...);
+#endif
+	}
+
+	template <typename T>
+	PBOS_FORCEINLINE void destroy_at(T *const ptr) {
+		std::destroy_at<T>(ptr);
+	}
+
+	template<typename T>
+	PBOS_FORCEINLINE void move_assign_or_move_construct(T &lhs, T &&rhs) noexcept {
+		if constexpr (std::is_move_assignable_v<T>) {
+			lhs = std::move(rhs);
+		} else {
+			static_assert(std::is_move_constructible_v<T>, "The type must at least be move-constructible");
+			std::destroy_at<T>(&lhs);
+			construct_at<T>(&lhs, std::move(lhs));
+		}
+	}
+}
+
+#endif

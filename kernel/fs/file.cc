@@ -1,0 +1,150 @@
+#include <pbos/kf/hash.h>
+#include <pbos/kf/string.h>
+#include <pbos/mm/mm.h>
+#include <pbos/kn/fs/fs.hh>
+#include <pbos/kn/fs/file.hh>
+#include <pbos/km/objmgr.hh>
+
+km_result_t kn_alloc_fnode(
+	fs_filesys_t *fs,
+	const char *filename,
+	size_t filename_len,
+	fs_filetype_t filetype,
+	size_t exdata_size,
+	fs_fnode_t **file_out) {
+	if (!filename_len)
+		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
+
+	// Allocate the file object.
+	fs_fnode_t *file = (fs_fnode_t *)mm_kmalloc(sizeof(fs_fnode_t) + exdata_size, alignof(fs_fnode_t));
+	if (!file)
+		return KM_MAKEERROR(KM_RESULT_NO_MEM);
+	memset(file, 0, sizeof(fs_fnode_t));
+
+	if (!(file->filename = (char *)mm_kmalloc(filename_len, sizeof(char)))) {
+		mm_kfree(file);
+		return KM_MAKEERROR(KM_RESULT_NO_MEM);
+	}
+	memcpy(file->filename, filename, filename_len);
+	file->filename_len = filename_len;
+
+	file->fs = fs;
+	file->filetype = filetype;
+	if (file_out)
+		*file_out = file;
+
+	om_init_object(file, fs_file_class, 0);
+
+	return KM_RESULT_OK;
+}
+
+km_result_t fs_create_file(
+	fs_fnode_t *parent,
+	const char *filename,
+	size_t filename_len,
+	fs_fnode_t **file_out) {
+	return parent->fs->ops.create_file(parent, filename, filename_len, file_out);
+}
+
+km_result_t fs_create_dir(
+	fs_fnode_t *parent,
+	const char *filename,
+	size_t filename_len,
+	fs_fnode_t **file_out) {
+	return parent->fs->ops.create_dir(parent, filename, filename_len, file_out);
+}
+
+km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
+	return parent->fs->ops.mount(parent, file);
+}
+
+km_result_t fs_unmount_file(fs_fnode_t *file) {
+	return file->parent->fs->ops.unmount(file);
+}
+
+km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_len, fs_fnode_t **file_out) {
+	return file->fs->ops.subnode(file, filename, filename_len, file_out);
+}
+
+km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out) {
+	om::object_ptr<fs_fnode_t> file = cur_dir ? fs_abs_root_dir : cur_dir;
+	km_result_t result;
+
+	const char *i = path, *last_divider = path;
+	om::object_ptr<fs_fnode_t> new_file;
+
+	while (i - path < path_len) {
+		switch (*i) {
+			case '/': {
+				size_t filename_len = i - last_divider;
+
+				if (!filename_len) {
+					if (last_divider == path) {
+						new_file = fs_abs_root_dir;
+					}
+				} else if (KM_FAILED(result = fs_child_of(file.get(), last_divider, filename_len, new_file.get_addr())))
+					return result;
+
+				last_divider = i + 1;
+				file = new_file;
+				break;
+			}
+			case '\0':
+				goto end;
+		}
+
+		++i;
+	}
+
+end:;
+	size_t filename_len = i - last_divider;
+	if (filename_len) {
+		if (KM_FAILED(result = fs_child_of(file.get(), last_divider, filename_len, new_file.get_addr())))
+			return result;
+	}
+
+	*file_out = new_file.release();
+	return KM_RESULT_OK;
+}
+
+km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out) {
+	fs_fnode_t *file;
+	km_result_t result;
+
+	if (KM_FAILED(result = fs_resolve_path(base_dir, path, path_len, &file)))
+		return result;
+
+	if (KM_FAILED(result = file->fs->ops.open(file, fcb_out))) {
+		om_decref(file);
+		return result;
+	}
+
+	om_decref(file);
+
+	return KM_RESULT_OK;
+}
+
+km_result_t fs_close(fs_fcb_t *fcb) {
+	return fcb->file->fs->ops.close(fcb);
+}
+
+km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
+	return fcb->file->fs->ops.read(fcb, (char *)dest, size, off, bytes_read_out);
+}
+
+km_result_t fs_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out) {
+	return fcb->file->fs->ops.write(fcb, src, size, off, bytes_written_out);
+}
+
+km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {
+	return fcb->file->fs->ops.size(fcb, size_out);
+}
+
+om_object_t *fs_fnode_to_object(fs_fnode_t *file) {
+	return file;
+}
+
+void kn_file_destructor(om_object_t *obj) {
+	fs_fnode_t *file = static_cast<fs_fnode_t *>(obj);
+	file->fs->ops.offload(file);
+}

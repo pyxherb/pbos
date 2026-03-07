@@ -1,0 +1,11 @@
+#ifndef _FREESTDC_CXX_NEW_
+#define _FREESTDC_CXX_NEW_
+
+#include "cxx_basedefs.hh"
+
+PBOS_FORCEINLINE void *operator new(size_t, void *p) noexcept { return p; }
+PBOS_FORCEINLINE void *operator new[](size_t, void *p) noexcept { return p; }
+PBOS_FORCEINLINE void operator delete(void *, void *) noexcept {};
+PBOS_FORCEINLINE void operator delete[](void *, void *) noexcept {};
+
+#endif

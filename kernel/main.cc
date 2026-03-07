@@ -1,0 +1,49 @@
+#include <pbos/hal/init.h>
+#include <pbos/hal/irq.h>
+#include <pbos/km/logger.h>
+#include <pbos/mm/mm.h>
+#include <pbos/km/panic.h>
+#include <pbos/kn/fs/fs.hh>
+#include <pbos/kn/fs/initcar.hh>
+#include <pbos/kn/km/exec.hh>
+#include <pbos/kn/km/smp.h>
+#include <pbos/kn/km/objmgr.h>
+#include <pbos/kn/km/proc.hh>
+
+// Because the operating system will never exit normally,
+// we just designed a dummy procedure to register the destructors.
+PBOS_EXTERN_C int atexit(void (*func)(void)) {
+	return 0;
+}
+
+// Test variables and functions, should be removed later.
+uint32_t ps_eu_num;
+ps_euid_t ps_get_cur_euid() {
+	return 0;
+}
+
+PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
+	km_result_t result;
+
+	hal_init();
+	// hal_irq_init();
+
+	/*om_init();
+	fs_init();
+	ps_init();
+
+	smp_init();
+
+	initcar_init();
+
+	fs_fcb_t *init_fp;
+	if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pbinit", sizeof("/initcar/pbinit") - 1, &init_fp)))
+		km_panic("Error opening the init executable");
+
+	proc_id_t pid;
+
+	if (KM_FAILED(result = km_exec(0, 0, init_fp, &pid)))
+		km_panic("Error starting the init process");
+
+	kn_enter_sched(0);*/
+}

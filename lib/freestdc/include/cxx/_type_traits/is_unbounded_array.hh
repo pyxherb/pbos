@@ -1,0 +1,21 @@
+#ifndef _FREESTDC_CXX_TYPE_TRAITS_IS_UNBOUNDED_ARRAY_
+#define _FREESTDC_CXX_TYPE_TRAITS_IS_UNBOUNDED_ARRAY_
+
+#include "integral_constant.hh"
+#include "is_same.hh"
+#include "remove_cv.hh"
+
+namespace std {
+#if __cplusplus >= 202002L
+	template <typename T>
+	struct is_unbounded_array : std::false_type {};
+
+	template <typename T>
+	struct is_unbounded_array<T[]> : std::true_type {};
+
+	template <typename T>
+	constexpr bool is_unbounded_array_v = is_unbounded_array<T>::value;
+#endif
+}
+
+#endif

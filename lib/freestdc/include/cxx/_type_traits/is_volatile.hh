@@ -1,0 +1,16 @@
+#ifndef _FREESTDC_CXX_TYPE_TRAITS_IS_VOLATILE_
+#define _FREESTDC_CXX_TYPE_TRAITS_IS_VOLATILE_
+
+#include "integral_constant.hh"
+
+namespace std {
+	template <typename T>
+	struct is_volatile : std::false_type {};
+	template <typename T>
+	struct is_volatile<volatile T> : std::true_type {};
+
+	template <typename T>
+	constexpr bool is_volatile_v = is_volatile<T>::value;
+}
+
+#endif

@@ -1,0 +1,54 @@
+#ifndef _PBOS_FS_FS_H_
+#define _PBOS_FS_FS_H_
+
+#include <pbos/km/objmgr.h>
+#include <pbos/km/result.h>
+
+PBOS_EXTERN_C_BEGIN
+
+#define ROOTFS_UUID UUID(8ad4b63d, f097, 48e0, 9c68, 77c8606143e9)
+
+typedef struct _fs_fnode_t fs_fnode_t;
+typedef struct _fs_fcb_t fs_fcb_t;
+
+typedef struct _fs_fsops_t {
+	/// @brief Access subnode.
+	km_result_t (*subnode)(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+	/// @brief Offload a file node from the memory.
+	void (*offload)(fs_fnode_t *file);
+	/// @brief Create a new file.
+	km_result_t (*create_file)(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+	/// @brief Create a new directory.
+	km_result_t (*create_dir)(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+	/// @brief Open a file.
+	km_result_t (*open)(fs_fnode_t *file, fs_fcb_t **fcb_out);
+	/// @brief Close a FCB.
+	km_result_t (*close)(fs_fcb_t *fcb);
+	/// @brief Read data from a file.
+	km_result_t (*read)(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
+	/// @brief Write data into a file.
+	km_result_t (*write)(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out);
+	/// @brief Get size of a file.
+	km_result_t (*size)(fs_fcb_t *fcb, size_t *size_out);
+
+	km_result_t (*mount)(fs_fnode_t *parent, fs_fnode_t *file);
+	km_result_t (*premount)(fs_fnode_t *parent, fs_fnode_t *file);
+	km_result_t (*postmount)(fs_fnode_t *parent, fs_fnode_t *file);
+	void (*mountfail)(fs_fnode_t *parent, fs_fnode_t *file);
+	km_result_t (*unmount)(fs_fnode_t *file);
+
+	/// @brief Destructor of the file system.
+	km_result_t (*destructor)();
+} fs_fsops_t;
+
+typedef struct _fs_filesys_t fs_filesys_t;
+
+fs_filesys_t *fs_register_filesys(
+	const char *name,
+	size_t name_len,
+	kf_uuid_t *uuid,
+	fs_fsops_t *ops);
+
+PBOS_EXTERN_C_END
+
+#endif

@@ -1,0 +1,83 @@
+#ifndef _ARCH_X86_64_MLAYOUT_H_
+#define _ARCH_X86_64_MLAYOUT_H_
+
+#define PADDR_TOP(prefix) ((prefix##_PBASE) + ((prefix##_SIZE) - 1))
+#define VADDR_TOP(prefix) ((prefix##_VBASE) + ((prefix##_SIZE) - 1))
+
+//
+// Kernel Bottom Area
+//
+#define KBOTTOM_PBASE 0x0000000000000000ULL
+#define KBOTTOM_VBASE 0xffffffff00000000ULL
+#define KBOTTOM_SIZE 0x00400000
+#define KBOTTOM_PTOP PADDR_TOP(KBOTTOM)
+#define KBOTTOM_VTOP VADDR_TOP(KBOTTOM)
+
+//
+// User Image Area
+//
+#define UIMAGE_VBASE 0x0000000000400000ULL
+#define UIMAGE_SIZE (0x0000000030000000ULL - UIMAGE_VBASE)
+#define UIMAGE_VTOP VADDR_TOP(UIMAGE)
+
+//
+// Direct Physical Memory Mapping
+//
+#define DIRECTPHYMEM_VBASE 0xffff800000000000ULL
+#define DIRECTPHYMEM_SIZE 0x0000400000000000ULL
+#define DIRECTPHYMEM_VTOP (DIRECTPHYMEM_VBASE + DIRECTPHYMEM_SIZE - 1)
+
+//
+// Kernel Image
+//
+#define KERNEL_VBASE 0xffffffff80000000ULL
+#define KERNEL_SIZE 0x0000000010000000ULL
+#define KERNEL_VTOP (KERNEL_VBASE + KERNEL_SIZE - 1)
+
+//
+// Kernel Top Page Tables
+//
+#define KINITPTT_SIZE 0x00800000  // Maps the bottom 2GB area
+
+//
+// Kernel Initial Page Directory Table
+//
+#define KINITPDT_SIZE 0x00008000  // Maps the bottom 4GB area
+
+//
+// Kernel Initial PDP Table
+//
+#define KINITPDPT_SIZE 0x00004000  // Maps the bottom 4GB area
+
+//
+// Kernel PML4 Table
+//
+#define KINITPML4T_SIZE 0x00001000	// Maps the bottom 4GB area
+
+//
+// Initializable Part of Critical Area
+//
+#define INIT_CRITICAL_PBASE CRITICAL_PBASE
+#define INIT_CRITICAL_VBASE CRITICAL_VBASE
+#define INIT_CRITICAL_SIZE \
+	(KERNEL_SIZE + KINITPML4T_SIZE + KINITPDPT_SIZE + KINITPDT_SIZE + KINITPTT_SIZE)
+#define INIT_CRITICAL_PTOP \
+	(INIT_CRITICAL_PBASE + INIT_CRITICAL_SIZE - 1)
+#define INIT_CRITICAL_VTOP \
+	(INIT_CRITICAL_VBASE + INIT_CRITICAL_SIZE - 1)
+
+//
+// Kernel Temporary Mapping Area
+//
+#define KINITTMPMAP_VBASE (INIT_CRITICAL_VTOP + 1)
+#define KINITTMPMAP_SIZE 0x00100000
+#define KINITTMPMAP_VTOP (KINITTMPMAP_VBASE + KINITTMPMAP_SIZE - 1)
+
+//
+// Critical Area
+//
+#define CRITICAL_VBASE KERNEL_VBASE
+#define CRITICAL_SIZE ((INIT_CRITICAL_SIZE) + (KINITTMPMAP_SIZE))
+#define CRITICAL_VTOP (CRITICAL_VBASE + CRITICAL_SIZE - 1)
+
+#endif

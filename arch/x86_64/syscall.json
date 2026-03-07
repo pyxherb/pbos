@@ -1,0 +1,35 @@
+{
+	"registers": {
+		"eax": {
+			"width": "int"
+		},
+		"ebx": {
+			"width": "int"
+		},
+		"ecx": {
+			"width": "int"
+		},
+		"edx": {
+			"width": "int"
+		},
+		"esi": {
+			"width": "int"
+		},
+		"edi": {
+			"width": "int"
+		}
+	},
+	"sysent_id_register": "eax",
+	"arg_registers": [
+		"ebx",
+		"ecx",
+		"edx",
+		"esi",
+		"edi"
+	],
+	"overflow_arg_struct_ptr_register": "ebx",
+	"return_value_register": [
+		"eax",
+		"edx"
+	]
+}

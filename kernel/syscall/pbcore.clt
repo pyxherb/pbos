@@ -1,0 +1,22 @@
+// Types:
+// int8_t - 8-bit integer
+// int16_t - 16-bit integer
+// int32_t - 32-bit integer
+// int64_t - 64-bit integer
+// uint8_t - 8-bit unsigned integer
+// uint16_t - 16-bit unsigned integer
+// uint32_t - 32-bit unsigned integer
+// uint64_t - 64-bit unsigned integer
+// uintptr_t - Pointer
+// size_t - Platform-width unsigned integer
+// ssize_t - Platform-width integer
+namespace pbcore;
+prefix sysent;
+
+0 = exit(int32_t);
+1 = open(uintptr_t, size_t, uint32_t, uint32_t, uintptr_t);
+2 = close(int32_t, uint32_t);
+3 = read(int32_t, uintptr_t, uint32_t);
+4 = write(int32_t, uintptr_t, uint32_t);
+5 = exec_child(int32_t, int32_t, const uintptr_t, size_t, ptr);
+6 = fork() -> result_t;

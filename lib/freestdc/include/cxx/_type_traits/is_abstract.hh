@@ -1,0 +1,14 @@
+#ifndef _FREESTDC_CXX_TYPE_TRAITS_IS_ABSTRACT_
+#define _FREESTDC_CXX_TYPE_TRAITS_IS_ABSTRACT_
+
+#include "integral_constant.hh"
+
+namespace std {
+	template <typename T>
+	struct is_abstract : std::bool_constant<__is_abstract(T)> {};
+
+	template <typename T>
+	constexpr bool is_abstract_v = is_abstract<T>::value;
+}
+
+#endif
