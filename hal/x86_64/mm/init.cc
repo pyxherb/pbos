@@ -87,6 +87,13 @@ void hn_mm_init() {
 
 	kd_printf("Initialized memory manager\n");
 
+	void *p = mm_kmalloc(1024, 1);
+	kd_printf("p=%p\n", p);
+	p = mm_krealloc(p, 768, 1);
+	kd_printf("p=%p\n", p);
+	p = mm_kmalloc(256, 1);
+	kd_printf("p=%p\n", p);
+
 	asm volatile("hlt");
 }
 

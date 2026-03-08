@@ -71,6 +71,8 @@ void mm_refpg(void *ptr);
 ///
 PBOS_NODISCARD void *mm_kmalloc(size_t size, size_t alignment);
 
+PBOS_NODISCARD void *mm_krealloc(void *old_ptr, size_t size, size_t alignment);
+
 ///
 /// @brief Free a memory block from the default pool.
 ///

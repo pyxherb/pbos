@@ -15,7 +15,7 @@ namespace kfxx {
 		virtual size_t dec_ref() noexcept = 0;
 
 		virtual void *alloc(size_t size, size_t alignment) noexcept = 0;
-		virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t newSize, size_t newAlignment) noexcept = 0;
+		virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept = 0;
 		virtual void release(void *ptr, size_t size, size_t alignment) noexcept = 0;
 
 		virtual void *type_identity() const noexcept = 0;

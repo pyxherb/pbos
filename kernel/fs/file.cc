@@ -1,9 +1,46 @@
 #include <pbos/kf/hash.h>
 #include <pbos/kf/string.h>
 #include <pbos/mm/mm.h>
-#include <pbos/kn/fs/fs.hh>
-#include <pbos/kn/fs/file.hh>
 #include <pbos/km/objmgr.hh>
+#include <pbos/kn/fs/file.hh>
+#include <pbos/kn/fs/fs.hh>
+
+PBOS_API kn_fs_filename_allocator_t::kn_fs_filename_allocator_t() {
+}
+
+PBOS_API kn_fs_filename_allocator_t::~kn_fs_filename_allocator_t() {
+}
+
+PBOS_API size_t kn_fs_filename_allocator_t::inc_ref() noexcept {
+	return 0;
+}
+
+PBOS_API size_t kn_fs_filename_allocator_t::dec_ref() noexcept {
+	return 0;
+}
+
+PBOS_API void *kn_fs_filename_allocator_t::alloc(size_t size, size_t alignment) noexcept {
+	kd_assert(alignment >= alignof(max_align_t));
+	return mm_kmalloc(size, alignof(max_align_t));
+}
+
+PBOS_API void *kn_fs_filename_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
+	// TODO: Implement mm_krealloc and rewrite this with it.
+	kd_assert(alignment >= alignof(max_align_t));
+	return mm_krealloc(ptr, new_size, new_alignment);
+}
+
+PBOS_API void kn_fs_filename_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {
+	mm_kfree(ptr);
+}
+
+int kn_fs_filename_allocator_identity;
+
+PBOS_API void *kn_fs_filename_allocator_t::type_identity() const noexcept {
+	return &kn_fs_filename_allocator_identity;
+}
+
+kn_fs_filename_allocator_t kn_fs_filename_allocator;
 
 km_result_t kn_alloc_fnode(
 	fs_filesys_t *fs,

@@ -62,11 +62,11 @@ namespace kfxx {
 			} else {
 				if (new_data + length < old_data) {
 					for (size_t i = 0; i < length; ++i) {
-						new_data[i] = std::move(old_data[i]);
+						move_assign_or_move_construct<T>(new_data[i], std::move(old_data[i]));
 					}
 				} else {
 					for (size_t i = length; i > 0; --i) {
-						new_data[i - 1] = std::move(old_data[i - 1]);
+						move_assign_or_move_construct<T>(new_data[i - 1], std::move(old_data[i - 1]));
 					}
 				}
 			}
