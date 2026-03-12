@@ -2,12 +2,12 @@
 #define _PBOS_KFXX_HASH_H_
 
 #include "basedefs.hh"
+#include <type_traits>
 
 namespace kfxx {
-	namespace kfxx {
 	template <typename T>
 	struct hash {
-		static_assert(!std::false_type::value, "Hasher not found");
+		static_assert(std::false_type::value, "Hasher not found");
 	};
 
 	template <>
@@ -86,7 +86,6 @@ namespace kfxx {
 			return (size_t)x;
 		}
 	};
-}
 }
 
 #endif

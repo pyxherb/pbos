@@ -4,7 +4,6 @@
 #include <pbos/fs/fs.h>
 #include <pbos/kf/hashmap.h>
 #include <pbos/kfxx/rbtree.hh>
-#include <pbos/km/objmgr.h>
 #include <pbos/kfxx/rbtree.hh>
 #include <pbos/kfxx/uuid.hh>
 #include <pbos/kfxx/string_view.hh>

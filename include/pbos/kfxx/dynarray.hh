@@ -21,7 +21,7 @@ namespace kfxx {
 
 		size_t _length = 0;
 		size_t _capacity = 0;
-		rc_object_ptr<allocator_t> _allocator;
+		rc_object_ptr_t<allocator_t> _allocator;
 		T *_data;
 
 		PBOS_FORCEINLINE static size_t _get_grown_capacity(size_t length, size_t old_capacity) {
@@ -105,7 +105,7 @@ namespace kfxx {
 		}
 
 		template <bool construct>
-		[[nodiscard]] PBOS_FORCEINLINE bool _expand_to(
+		[[nodiscard]] PBOS_FORCEINLINE void _expand_to(
 			T *new_data,
 			size_t length) {
 			kd_assert(length > _length);
@@ -137,8 +137,6 @@ namespace kfxx {
 				if (_data)
 					_move_data_uninit(new_data, _data, _length);
 			}
-
-			return true;
 		}
 
 		PBOS_FORCEINLINE void _shrink(
@@ -185,18 +183,47 @@ namespace kfxx {
 							return false;
 					}
 				} else {
-					if (!(new_data = (T *)_allocator->alloc(new_capacity_total_size, alignof(T))))
-						return false;
-
-					scope_guard scope_guard(
-						[this, new_capacity_total_size, new_data]() noexcept {
-							_allocator->release(new_data, new_capacity_total_size, alignof(T));
-						});
-
-					if (!_expand_to<construct>(new_data, length))
-						return false;
-
-					scope_guard.release();
+					if (_data) {
+						if (!(new_data = (T *)_allocator->alloc(new_capacity_total_size, alignof(T))))
+							return false;
+						if constexpr (std::is_nothrow_constructible_v<T>) {
+							_expandTo<construct>(new_data, length);
+						} else {
+							scope_guard sg(
+								[this, new_capacity_total_size, new_data]() noexcept {
+									_allocator->release(new_data, new_capacity_total_size, alignof(T));
+								});
+							_expandTo<construct>(new_data, length);
+							sg.release();
+						}
+					} else {
+						if constexpr (std::is_nothrow_constructible_v<T>) {
+							if ((new_data = (T *)_allocator->realloc_in_place(
+									 _data,
+									 sizeof(T) * _capacity, alignof(T),
+									 new_capacity_total_size, alignof(T)))) {
+								_expandTo<construct>(new_data, length);
+							} else {
+								if (!(new_data = (T *)_allocator->alloc(new_capacity_total_size, alignof(T))))
+									return false;
+								scope_guard sg(
+									[this, new_capacity_total_size, new_data]() noexcept {
+										_allocator->release(new_data, new_capacity_total_size, alignof(T));
+									});
+								_expandTo<construct>(new_data, length);
+								sg.release();
+							}
+						} else {
+							if (!(new_data = (T *)_allocator->alloc(new_capacity_total_size, alignof(T))))
+								return false;
+							scope_guard sg(
+								[this, new_capacity_total_size, new_data]() noexcept {
+									_allocator->release(new_data, new_capacity_total_size, alignof(T));
+								});
+							_expandTo<construct>(new_data, length);
+							sg.release();
+						}
+					}
 				}
 
 				if (clear_old_data)
@@ -551,8 +578,15 @@ namespace kfxx {
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool pop_front_and_shrink() {
-			_move_data(_data, _data + 1, _length - 1);
-			return resize_and_shrink(_length - 1);
+			T front_data = std::move(front());
+			size_t len = _length - 1;
+			_move_data(_data, _data + 1, len);
+			if (!resize(len)) {
+				_move_data(_data + 1, _data, len);
+				construct_at(&_data[0], std::move(front_data));
+				return false;
+			}
+			return true;
 		}
 
 		PBOS_FORCEINLINE void pop_front() {

@@ -2,7 +2,6 @@
 #define _PBOS_FS_FILE_H_
 
 #include <pbos/kf/hashmap.h>
-#include <pbos/km/objmgr.h>
 #include <stdint.h>
 
 PBOS_EXTERN_C_BEGIN
@@ -40,14 +39,12 @@ typedef struct _fs_finddata_t {
 	kf_hashmap_node_t *node;
 } fs_finddata_t;
 
+typedef size_t fs_fhandle_t;
+
 ///
 /// @brief File Context Block (FCB).
 ///
-typedef struct _fs_fcb_t {
-	kf_rbtree_node_t node_header;  // Node header for process's opened FCB set.
-	fs_fnode_t *file;
-	char exdata[];
-} fs_fcb_t;
+typedef struct _fs_fcb_t fs_fcb_t;
 
 typedef struct _fs_finddata_t fs_finddata_t;
 
@@ -95,10 +92,6 @@ PBOS_NODISCARD km_result_t fs_child_of(fs_fnode_t *file, const char *filename, s
 /// @return Result of the resolution.
 ///
 PBOS_NODISCARD km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out);
-
-om_object_t *fs_fnode_to_object(fs_fnode_t *file);
-
-extern om_class_t *fs_file_class;
 
 PBOS_EXTERN_C_END
 

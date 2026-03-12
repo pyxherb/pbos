@@ -28,8 +28,7 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 	hal_init();
 	// hal_irq_init();
 
-	/*om_init();
-	fs_init();
+	/*fs_init();
 	ps_init();
 
 	smp_init();

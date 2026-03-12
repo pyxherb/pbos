@@ -1,0 +1,31 @@
+{
+	"arch_name": "i386",
+	"addr_width": 32,
+	"size_width": 32,
+	"syscall_params": [
+		{
+			"reg_name": "eax",
+			"type": "uint32"
+		},
+		{
+			"reg_name": "ebx",
+			"type": "uint32"
+		},
+		{
+			"reg_name": "ecx",
+			"type": "uint32"
+		},
+		{
+			"reg_name": "edx",
+			"type": "uint32"
+		},
+		{
+			"reg_name": "esi",
+			"type": "uint32"
+		},
+		{
+			"reg_name": "edi",
+			"type": "uint32"
+		}
+	]
+}

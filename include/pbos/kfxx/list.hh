@@ -30,7 +30,7 @@ namespace kfxx {
 
 		node_t *_first = nullptr, *_last = nullptr;
 		size_t _length = 0;
-		rc_object_ptr<allocator_t> _allocator;
+		rc_object_ptr_t<allocator_t> _allocator;
 
 		[[nodiscard]] PBOS_FORCEINLINE node_t *_alloc_node(T &&data) {
 			node_t *node = (node_t *)_allocator->alloc(sizeof(node_t), alignof(node_t));

@@ -29,7 +29,6 @@ namespace kfxx {
 	// PBOS_REQUIRES_CONCEPT(std::invocable<EqCmp, const T &, const T &>)
 	class hash_set_impl_t {
 	public:
-		static_assert(std::is_move_assignable_v<T>, "The element must be move-assignable");
 		static_assert(std::is_move_constructible_v<T>, "The element must be move-constructible");
 		using hasher_result_t = decltype(std::declval<Hasher>()(std::declval<T>()));
 		using hash_code_t = typename details::hash_code_result_type_extractor_t<hasher_result_t>::type;
@@ -49,7 +48,7 @@ namespace kfxx {
 	public:
 		using remove_result_t = typename std::conditional_t<Fallible, bool, void>;
 		using element_query_result_t = typename std::conditional_t<Fallible, option_t<T &>, T &>;
-		using bucket_node_handle_query_result_t = typename std::conditional_t<Fallible, option_t<typename bucket_t::NodeHandle>, typename bucket_t::NodeHandle>;
+		using bucket_node_handle_query_result_t = typename std::conditional_t<Fallible, option_t<typename bucket_t::node_handle_t>, typename bucket_t::node_handle_t>;
 		using const_element_query_result_t = typename std::conditional_t<Fallible, option_t<const T &>, const T &>;
 		using contains_result_t = typename std::conditional_t<Fallible, option_t<bool>, bool>;
 
@@ -91,7 +90,7 @@ namespace kfxx {
 				for (size_t i = 0; i < new_size; ++i) {
 					bucket_t &bucket = new_buckets.at(i);
 
-					for (typename bucket_t::NodeHandle j = bucket.firstNode(); j; j = j->next) {
+					for (typename bucket_t::node_handle_t j = bucket.firstNode(); j; j = j->next) {
 						size_t index = ((size_t)j->data.hash_code) % n_old_buckets;
 
 						bucket.detach(j);
@@ -104,8 +103,8 @@ namespace kfxx {
 			for (size_t i = 0; i < n_old_buckets; ++i) {
 				bucket_t &bucket = old_buckets.at(i);
 
-				for (typename bucket_t::NodeHandle j = bucket.firstNode(); j;) {
-					typename bucket_t::NodeHandle next = j->next;
+				for (typename bucket_t::node_handle_t j = bucket.firstNode(); j;) {
+					typename bucket_t::node_handle_t next = j->next;
 					size_t index = ((size_t)j->data.hash_code) % new_size;
 
 					bucket.detach(j);
@@ -134,7 +133,7 @@ namespace kfxx {
 				}
 			}
 
-			return bucket_t::nullNodeHandle();
+			return bucket_t::nullnode_handle_t();
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool _check_and_resize_buckets() {
@@ -236,9 +235,9 @@ namespace kfxx {
 			}
 			size_t index = ((size_t)hash_code) % _buckets.size();
 			bucket_t &bucket = _buckets.at(index);
-			rc_object_ptr<allocator_t> alloc = bucket.allocator();
+			rc_object_ptr_t<allocator_t> alloc = bucket.allocator();
 
-			typename bucket_t::NodeHandle node;
+			typename bucket_t::node_handle_t node;
 
 			if constexpr (Fallible) {
 				bucket_node_handle_query_result_t maybe_node = _get_bucket_slot(bucket, data);
@@ -252,7 +251,7 @@ namespace kfxx {
 			}
 
 			if (node) {
-				typename bucket_t::NodeHandle next_node = bucket_t::next(node, 1);
+				typename bucket_t::node_handle_t next_node = bucket_t::next(node, 1);
 
 				bucket.detach(node);
 				bucket.deleteNode(node);
@@ -267,7 +266,7 @@ namespace kfxx {
 
 		[[nodiscard]] PBOS_FORCEINLINE bucket_node_handle_query_result_t _get(const T &data, size_t &index) const {
 			if (!_buckets.size()) {
-				return bucket_t::nullNodeHandle();
+				return bucket_t::nullnode_handle_t();
 			}
 
 			hash_code_t hash_code;
@@ -366,14 +365,14 @@ namespace kfxx {
 
 		struct iterator {
 			size_t idx_cur_bucket;
-			typename bucket_t::NodeHandle bucket_node_handle;
+			typename bucket_t::node_handle_t bucket_node_handle;
 			this_type *hash_set;
 			iterator_direction direction;
 
 			PBOS_FORCEINLINE iterator(
 				this_type *hash_set,
 				size_t idx_cur_bucket,
-				typename bucket_t::NodeHandle bucket_node_handle,
+				typename bucket_t::node_handle_t bucket_node_handle,
 				iterator_direction direction)
 				: idx_cur_bucket(idx_cur_bucket),
 				  bucket_node_handle(bucket_node_handle),
@@ -388,7 +387,7 @@ namespace kfxx {
 				direction = it.direction;
 
 				it.idx_cur_bucket = SIZE_MAX;
-				it.bucket_node_handle = bucket_t::nullNodeHandle();
+				it.bucket_node_handle = bucket_t::nullnode_handle_t();
 				it.hash_set = nullptr;
 				it.direction = iterator_direction::invalid;
 			}
@@ -417,7 +416,7 @@ namespace kfxx {
 					km_panic("Increasing the end iterator");
 
 				if (direction == iterator_direction::forward) {
-					typename bucket_t::NodeHandle next_node = bucket_t::next(bucket_node_handle, 1);
+					typename bucket_t::node_handle_t next_node = bucket_t::next(bucket_node_handle, 1);
 					if (!next_node) {
 						while ((!next_node) && (idx_cur_bucket != SIZE_MAX)) {
 							if (++idx_cur_bucket >= hash_set->_buckets.size()) {
@@ -430,7 +429,7 @@ namespace kfxx {
 					}
 					bucket_node_handle = next_node;
 				} else {
-					typename bucket_t::NodeHandle next_node = bucket_t::prev(bucket_node_handle, 1);
+					typename bucket_t::node_handle_t next_node = bucket_t::prev(bucket_node_handle, 1);
 					if (!next_node) {
 						while ((!next_node) && (idx_cur_bucket != SIZE_MAX)) {
 							if (!idx_cur_bucket) {
@@ -460,7 +459,7 @@ namespace kfxx {
 						idx_cur_bucket = hash_set->_buckets.size();
 						bucket_node_handle = hash_set->_buckets.at(idx_cur_bucket).lastNode();
 					} else {
-						typename bucket_t::NodeHandle next_node = bucket_t::prev(bucket_node_handle, 1);
+						typename bucket_t::node_handle_t next_node = bucket_t::prev(bucket_node_handle, 1);
 						if (!next_node) {
 							while (!next_node) {
 								if (!idx_cur_bucket) {
@@ -478,7 +477,7 @@ namespace kfxx {
 						idx_cur_bucket = 0;
 						bucket_node_handle = hash_set->_buckets.at(0).firstNode();
 					} else {
-						typename bucket_t::NodeHandle next_node = bucket_t::next(bucket_node_handle, 1);
+						typename bucket_t::node_handle_t next_node = bucket_t::next(bucket_node_handle, 1);
 						if (!next_node) {
 							while (!next_node) {
 								if (++idx_cur_bucket >= hash_set->_buckets.size()) {
@@ -551,7 +550,7 @@ namespace kfxx {
 		PBOS_FORCEINLINE iterator begin() {
 			for (size_t i = 0; i < _buckets.size(); ++i) {
 				auto &cur_bucket = _buckets.at(i);
-				typename bucket_t::NodeHandle node = cur_bucket.firstNode();
+				typename bucket_t::node_handle_t node = cur_bucket.firstNode();
 				if (node) {
 					return iterator(this, i, node, iterator_direction::forward);
 				}
@@ -564,14 +563,14 @@ namespace kfxx {
 		PBOS_FORCEINLINE iterator begin_reversed() {
 			for (size_t i = _buckets.size(); i; --i) {
 				auto &cur_bucket = _buckets.at(i);
-				typename bucket_t::NodeHandle node = cur_bucket.lastNode();
+				typename bucket_t::node_handle_t node = cur_bucket.lastNode();
 				if (node) {
 					return iterator(this, i, node, iterator_direction::reversed);
 				}
 			}
 
 			auto &cur_bucket = _buckets.at(0);
-			typename bucket_t::NodeHandle node = cur_bucket.lastNode();
+			typename bucket_t::node_handle_t node = cur_bucket.lastNode();
 			if (node) {
 				return iterator(this, 0, node, iterator_direction::reversed);
 			}
@@ -648,11 +647,11 @@ namespace kfxx {
 				bucket_node_handle_query_result_t node = _get(value, index);
 				if (!node.hasValue())
 					return end();
-				if (typename bucket_t::NodeHandle handle = node.value(); handle)
+				if (typename bucket_t::node_handle_t handle = node.value(); handle)
 					return iterator(this, index, handle, iterator_direction::forward);
 				return end();
 			} else {
-				typename bucket_t::NodeHandle node = _get(value, index);
+				typename bucket_t::node_handle_t node = _get(value, index);
 				if (!node)
 					return end();
 				return iterator(this, index, node, iterator_direction::forward);
@@ -665,7 +664,7 @@ namespace kfxx {
 
 		PBOS_FORCEINLINE element_query_result_t at(const T &value) {
 			size_t index;
-			typename bucket_t::NodeHandle node;
+			typename bucket_t::node_handle_t node;
 			if constexpr (Fallible) {
 				auto maybe_node = _get(value, index);
 
@@ -683,7 +682,7 @@ namespace kfxx {
 
 		PBOS_FORCEINLINE const_element_query_result_t at(const T &value) const {
 			size_t index;
-			typename bucket_t::NodeHandle node;
+			typename bucket_t::node_handle_t node;
 			if constexpr (Fallible) {
 				auto maybe_node = _get(value, index);
 

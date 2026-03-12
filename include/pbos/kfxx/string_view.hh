@@ -1,9 +1,11 @@
 #ifndef _PBOS_KFXX_STRING_VIEW_HH_
 #define _PBOS_KFXX_STRING_VIEW_HH_
 
+#include <pbos/kf/hash.h>
 #include <pbos/km/assert.h>
 #include <string.h>
 #include "basedefs.hh"
+#include "hash.hh"
 
 namespace kfxx {
 	class string_view {
@@ -14,31 +16,31 @@ namespace kfxx {
 	public:
 		constexpr static size_t NPOS = SIZE_MAX;
 
-		PBOS_FORCEINLINE constexpr string_view() : _ptr(nullptr), _size(0) {
+		PBOS_FORCEINLINE constexpr string_view() noexcept : _ptr(nullptr), _size(0) {
 		}
 
-		PBOS_FORCEINLINE constexpr string_view(const char *s) : _ptr(s), _size(strlen(s)) {
+		PBOS_FORCEINLINE constexpr string_view(const char *s) noexcept : _ptr(s), _size(strlen(s)) {
 		}
 
-		PBOS_FORCEINLINE constexpr string_view(const char *s, size_t len) : _ptr(s), _size(len) {
+		PBOS_FORCEINLINE constexpr string_view(const char *s, size_t len) noexcept : _ptr(s), _size(len) {
 		}
 
-		PBOS_FORCEINLINE constexpr string_view(const string_view &other) : _ptr(other._ptr), _size(other._size) {
+		PBOS_FORCEINLINE constexpr string_view(const string_view &other) noexcept : _ptr(other._ptr), _size(other._size) {
 		}
 
-		PBOS_FORCEINLINE constexpr string_view(string_view &&other) : _ptr(other._ptr), _size(other._size) {
+		PBOS_FORCEINLINE constexpr string_view(string_view &&other) noexcept : _ptr(other._ptr), _size(other._size) {
 			other._ptr = nullptr;
 			other._size = 0;
 		}
 
-		PBOS_FORCEINLINE constexpr string_view &operator=(const string_view &other) {
+		PBOS_FORCEINLINE constexpr string_view &operator=(const string_view &other) noexcept {
 			_ptr = other._ptr;
 			_size = other._size;
 
 			return *this;
 		}
 
-		PBOS_FORCEINLINE constexpr string_view &operator=(string_view &&other) {
+		PBOS_FORCEINLINE constexpr string_view &operator=(string_view &&other) noexcept {
 			_ptr = other._ptr;
 			_size = other._size;
 			other._ptr = nullptr;
@@ -93,6 +95,17 @@ namespace kfxx {
 			if (_size < rhs._size)
 				return true;
 			return memcmp(_ptr, rhs._ptr, _size) < 0;
+		}
+	};
+
+	template <>
+	struct hash<string_view> {
+		PBOS_FORCEINLINE size_t operator()(const string_view &x) const {
+			if constexpr (sizeof(size_t) == sizeof(uint32_t)) {
+				return kf_djb_hash32(x.data(), x.size());
+			} else {
+				return kf_djb_hash64(x.data(), x.size());
+			}
 		}
 	};
 }

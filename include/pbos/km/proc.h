@@ -4,7 +4,6 @@
 #include <pbos/fs/fs.h>
 #include <pbos/generated/km.h>
 #include <pbos/mm/mm.h>
-#include "objmgr.h"
 
 PBOS_EXTERN_C_BEGIN
 
@@ -48,7 +47,6 @@ typedef struct _ps_tcb_t ps_tcb_t;
 
 typedef void (*thread_proc_t)(void *args);
 
-extern om_class_t *ps_proc_class, *ps_thread_class;
 extern uint32_t ps_eu_num;
 extern ps_pcb_t **ps_cur_proc_per_eu;
 extern ps_tcb_t **ps_cur_thread_per_eu;

@@ -1,0 +1,22 @@
+#ifndef _ARCH_I386_MSR_H_
+#define _ARCH_I386_MSR_H_
+
+#include "cpuid.h"
+
+#define ARCH_MSR_APIC_BASE 0x1b
+
+PBOS_FORCEINLINE void arch_rdmsr(uint32_t msr, uint32_t *l, uint32_t *h) {
+	asm volatile("rdmsr" : "=a"(*l), "=d"(*h) : "c"(msr));
+}
+
+PBOS_FORCEINLINE void arch_wrmsr(uint32_t msr, uint32_t l, uint32_t h) {
+	asm volatile("wrmsr" : : "a"(l), "d"(h), "c"(msr));
+}
+
+PBOS_FORCEINLINE static bool arch_has_msr() {
+	uint32_t a, b, c, d;
+	arch_cpuid(1, &a, &b, &c, &d);
+	return d & ARCH_CPUID_FEATURE_EDX_MSR;
+}
+
+#endif

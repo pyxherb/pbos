@@ -76,10 +76,10 @@ namespace kfxx {
 		using this_type_t = hash_map_impl_t<K, V, Eq, Hasher, Fallible>;
 
 	public:
-		using remove_result_type_t = typename set_type_t::remove_result_type_t;
+		using remove_result_t = typename set_type_t::remove_result_t;
 		using element_query_result_type_t = typename std::conditional_t<Fallible, option_t<V &>, V &>;
 		using const_element_query_result_type_t = typename std::conditional_t<Fallible, option_t<const V &>, const V &>;
-		using contains_result_type_t = typename set_type_t::contains_result_type_t;
+		using contains_result_t = typename set_type_t::contains_result_t;
 
 		PBOS_FORCEINLINE hash_map_impl_t(allocator_t *allocator) : _set(allocator) {}
 		PBOS_FORCEINLINE hash_map_impl_t(this_type_t &&rhs) : comparator(std::move(rhs.comparator)), _set(std::move(rhs._set)) {
@@ -114,7 +114,7 @@ namespace kfxx {
 			return _set.insert(std::move(pair));
 		}
 
-		[[nodiscard]] PBOS_FORCEINLINE remove_result_type_t remove(const K &key) {
+		[[nodiscard]] PBOS_FORCEINLINE remove_result_t remove(const K &key) {
 			if constexpr (Fallible) {
 				return _set.remove(query_pair_t(&key));
 			} else {
@@ -122,7 +122,7 @@ namespace kfxx {
 			}
 		}
 
-		PBOS_FORCEINLINE contains_result_type_t contains(const K &key) const {
+		PBOS_FORCEINLINE contains_result_t contains(const K &key) const {
 			return _set.contains(query_pair_t(&key));
 		}
 
@@ -315,9 +315,9 @@ namespace kfxx {
 		}
 	};
 
-	template <typename K, typename V, typename Eq = std::equal_to<K>, typename Hasher = kfxx::hash<K>>
+	template <typename K, typename V, typename Eq = std::equal_to<K>, typename Hasher = hash<K>>
 	using hash_map_t = hash_map_impl_t<K, V, Eq, Hasher, false>;
-	template <typename K, typename V, typename Eq = std::equal_to<K>, typename Hasher = kfxx::hash<K>>
+	template <typename K, typename V, typename Eq = std::equal_to<K>, typename Hasher = hash<K>>
 	using fallible_hash_map_t = hash_map_impl_t<K, V, Eq, Hasher, true>;
 }
 

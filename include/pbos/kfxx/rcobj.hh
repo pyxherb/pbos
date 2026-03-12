@@ -16,9 +16,9 @@ namespace kfxx {
 #endif
 
 	template <typename T>
-	class rc_object_ptr {
+	class rc_object_ptr_t {
 	private:
-		using ThisType = rc_object_ptr<T>;
+		using this_t = rc_object_ptr_t<T>;
 
 		T *_ptr = nullptr;
 
@@ -36,39 +36,39 @@ namespace kfxx {
 			_ptr = nullptr;
 		}
 
-		PBOS_FORCEINLINE rc_object_ptr() : _ptr(nullptr) {
+		PBOS_FORCEINLINE rc_object_ptr_t() : _ptr(nullptr) {
 		}
-		PBOS_FORCEINLINE rc_object_ptr(T *ptr) noexcept : _ptr(nullptr) {
+		PBOS_FORCEINLINE rc_object_ptr_t(T *ptr) noexcept : _ptr(nullptr) {
 			if (ptr) {
 				_set_and_inc_ref(ptr);
 			}
 		}
-		PBOS_FORCEINLINE rc_object_ptr(const ThisType &other) noexcept : _ptr(nullptr) {
+		PBOS_FORCEINLINE rc_object_ptr_t(const this_t &other) noexcept : _ptr(nullptr) {
 			if (other._ptr) {
 				_set_and_inc_ref(other._ptr);
 			}
 		}
-		PBOS_FORCEINLINE rc_object_ptr(ThisType &&other) noexcept {
+		PBOS_FORCEINLINE rc_object_ptr_t(this_t &&other) noexcept {
 			_ptr = other._ptr;
 			other._ptr = nullptr;
 		}
-		PBOS_FORCEINLINE ~rc_object_ptr() {
+		PBOS_FORCEINLINE ~rc_object_ptr_t() {
 			reset();
 		}
 
-		PBOS_FORCEINLINE rc_object_ptr<T> &operator=(T *_ptr) noexcept {
+		PBOS_FORCEINLINE rc_object_ptr_t<T> &operator=(T *_ptr) noexcept {
 			reset();
 			if (_ptr) {
 				_set_and_inc_ref(_ptr);
 			}
 			return *this;
 		}
-		PBOS_FORCEINLINE rc_object_ptr<T> &operator=(const rc_object_ptr<T> &other) noexcept {
+		PBOS_FORCEINLINE rc_object_ptr_t<T> &operator=(const this_t &other) noexcept {
 			reset();
 			_set_and_inc_ref(other._ptr);
 			return *this;
 		}
-		PBOS_FORCEINLINE rc_object_ptr<T> &operator=(rc_object_ptr<T> &&other) noexcept {
+		PBOS_FORCEINLINE rc_object_ptr_t<T> &operator=(this_t &&other) noexcept {
 			reset();
 
 			_ptr = other._ptr;
@@ -81,31 +81,31 @@ namespace kfxx {
 		PBOS_FORCEINLINE T *get() const noexcept {
 			return _ptr;
 		}
-		PBOS_FORCEINLINE T *&getRef() noexcept {
+		PBOS_FORCEINLINE T *&get_ref() noexcept {
 			reset();
 			return _ptr;
 		}
-		PBOS_FORCEINLINE T *&getRefWithoutRelease() noexcept {
+		PBOS_FORCEINLINE T *&get_ref_without_release() noexcept {
 			return _ptr;
 		}
-		PBOS_FORCEINLINE T *const &getRefWithoutRelease() const noexcept {
+		PBOS_FORCEINLINE T *const &get_Ref_without_release() const noexcept {
 			return _ptr;
 		}
-		PBOS_FORCEINLINE T **getAddressOf() noexcept {
+		PBOS_FORCEINLINE T **get_addr() noexcept {
 			reset();
 			return &_ptr;
 		}
-		PBOS_FORCEINLINE T **getAddressOfWithoutRelease() noexcept {
+		PBOS_FORCEINLINE T **get_addr_without_release() noexcept {
 			return &_ptr;
 		}
-		PBOS_FORCEINLINE T *const *getAddressOfWithoutRelease() const noexcept {
+		PBOS_FORCEINLINE T *const *get_addr_without_release() const noexcept {
 			return &_ptr;
 		}
 		PBOS_FORCEINLINE T *operator->() const noexcept {
 			return _ptr;
 		}
 
-		PBOS_FORCEINLINE bool operator<(const ThisType &rhs) const noexcept {
+		PBOS_FORCEINLINE bool operator<(const this_t &rhs) const noexcept {
 			return _ptr < rhs._ptr;
 		}
 
@@ -113,11 +113,11 @@ namespace kfxx {
 			return _ptr;
 		}
 
-		PBOS_FORCEINLINE bool operator==(const ThisType &rhs) const noexcept {
+		PBOS_FORCEINLINE bool operator==(const this_t &rhs) const noexcept {
 			return _ptr == rhs._ptr;
 		}
 
-		PBOS_FORCEINLINE bool operator!=(const ThisType &rhs) const noexcept {
+		PBOS_FORCEINLINE bool operator!=(const this_t &rhs) const noexcept {
 			return _ptr != rhs._ptr;
 		}
 	};

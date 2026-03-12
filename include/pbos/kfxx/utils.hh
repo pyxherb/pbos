@@ -2,6 +2,7 @@
 #define _PBOS_KFXX_UTILS_HH_
 
 #include "basedefs.hh"
+#include <utility>
 #include <memory>
 #include <new>
 #include <type_traits>

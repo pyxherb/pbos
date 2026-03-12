@@ -86,7 +86,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 				sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 				PTE_P | PTE_RW);
 
-		kfxx::oneshot_scope_guard release_pdpt_guard([&pdpt]() noexcept {
+		kfxx::deferred release_pdpt_guard([&pdpt]() noexcept {
 			hn_tmpunmap_early((void *)pdpt, PAGESIZE);
 		});
 
@@ -118,7 +118,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 					sizeof(arch_pde_t) * (PTX_MAX + 1),
 					PTE_P | PTE_RW);
 
-			kfxx::oneshot_scope_guard release_pde_guard([&pdt]() noexcept {
+			kfxx::deferred release_pde_guard([&pdt]() noexcept {
 				hn_tmpunmap_early((void *)pdt, PAGESIZE);
 			});
 
@@ -157,7 +157,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 				if (init_ptt)
 					memset(ptt, 0, PAGESIZE);
 
-				kfxx::oneshot_scope_guard release_pte_guard([&ptt]() noexcept {
+				kfxx::deferred release_pte_guard([&ptt]() noexcept {
 					hn_tmpunmap_early((void *)ptt, PAGESIZE);
 				});
 
@@ -754,7 +754,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 				sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 				PTE_P | PTE_RW);
 
-		kfxx::oneshot_scope_guard release_pdpt_guard([pdpt]() noexcept {
+		kfxx::deferred release_pdpt_guard([pdpt]() noexcept {
 			hn_tmpunmap_early((void *)pdpt, PAGESIZE);
 		});
 
@@ -783,7 +783,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 					sizeof(arch_pde_t) * (PTX_MAX + 1),
 					PTE_P | PTE_RW);
 
-			kfxx::oneshot_scope_guard release_pde_guard([pdt]() noexcept {
+			kfxx::deferred release_pde_guard([pdt]() noexcept {
 				hn_tmpunmap_early((void *)pdt, PAGESIZE);
 			});
 
@@ -816,7 +816,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 						sizeof(arch_pte_t) * (PTX_MAX + 1),
 						PTE_P | PTE_RW);
 
-				kfxx::oneshot_scope_guard release_pte_guard([ptt]() noexcept {
+				kfxx::deferred release_pte_guard([ptt]() noexcept {
 					hn_tmpunmap_early((void *)ptt, PAGESIZE);
 				});
 

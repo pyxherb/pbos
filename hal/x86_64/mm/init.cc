@@ -93,8 +93,6 @@ void hn_mm_init() {
 	kd_printf("p=%p\n", p);
 	p = mm_kmalloc(256, 1);
 	kd_printf("p=%p\n", p);
-
-	asm volatile("hlt");
 }
 
 static void hn_init_tss() {

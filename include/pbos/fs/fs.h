@@ -1,7 +1,7 @@
 #ifndef _PBOS_FS_FS_H_
 #define _PBOS_FS_FS_H_
 
-#include <pbos/km/objmgr.h>
+#include <pbos/kf/uuid.h>
 #include <pbos/km/result.h>
 
 PBOS_EXTERN_C_BEGIN

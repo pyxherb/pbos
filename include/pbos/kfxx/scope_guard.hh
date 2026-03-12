@@ -27,15 +27,15 @@ namespace kfxx {
 	};
 
 	template <typename T>
-	struct oneshot_scope_guard {
+	struct deferred {
 		T callback;
 		static_assert(std::is_nothrow_invocable_v<T>, "The callback must be noexcept");
 
-		oneshot_scope_guard() = delete;
-		PBOS_FORCEINLINE oneshot_scope_guard(T &&callback)
+		deferred() = delete;
+		PBOS_FORCEINLINE deferred(T &&callback)
 			: callback(std::move(callback)) {
 		}
-		PBOS_FORCEINLINE ~oneshot_scope_guard() {
+		PBOS_FORCEINLINE ~deferred() {
 			callback();
 		}
 	};

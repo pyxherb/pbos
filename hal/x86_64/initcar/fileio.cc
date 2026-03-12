@@ -1,7 +1,6 @@
 #include <pbos/kf/hash.h>
 #include <pbos/km/panic.h>
 #include <hal/x86_64/initcar.hh>
-#include <pbos/km/objmgr.hh>
 #include <string.h>
 
 PBOS_EXTERN_C_BEGIN
