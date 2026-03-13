@@ -7,7 +7,6 @@
 #include <pbos/kn/fs/initcar.hh>
 #include <pbos/kn/km/exec.hh>
 #include <pbos/kn/km/smp.h>
-#include <pbos/kn/km/objmgr.h>
 #include <pbos/kn/km/proc.hh>
 
 // Because the operating system will never exit normally,
