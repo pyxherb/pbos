@@ -2,29 +2,6 @@
 #include <pbos/mm/mm.h>
 #include <string.h>
 #include <pbos/kn/fs/rootfs.hh>
-#include <pbos/km/objmgr.hh>
-
-size_t kn_fs_rootfs_file_hasher(size_t bucket_num, const void *target, bool is_target_key) {
-	fs_rootfs_dir_entry_t *entry = PBOS_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, target);
-	return kf_hash_djb(entry->name, entry->name_len) % bucket_num;
-}
-
-void kn_fs_rootfs_file_nodefree(kf_hashmap_node_t *node) {
-	fs_rootfs_dir_entry_t *entry = PBOS_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, node);
-	om_decref(entry->file);
-}
-
-bool kn_fs_rootfs_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs) {
-	fs_rootfs_dir_entry_t *_lhs = PBOS_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, lhs),
-						  *_rhs = PBOS_CONTAINER_OF(fs_rootfs_dir_entry_t, node_header, rhs);
-
-	fs_fnode_t *lhs_file = _lhs->file, *rhs_file = _rhs->file;
-
-	uint64_t lhs_hash = kf_hash_djb(_lhs->name, _lhs->name_len),
-			 rhs_hash = kf_hash_djb(_rhs->name, _rhs->name_len);
-
-	return lhs_hash == rhs_hash;
-}
 
 fs_fsops_t kn_rootfs_ops = {
 	.subnode = kn_rootfs_subnode,

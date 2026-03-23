@@ -1,17 +1,17 @@
 #ifndef _PEFF_BASE_RCOBJ_H_
 #define _PEFF_BASE_RCOBJ_H_
 
-#include "basedefs.hh"
-#include <cstddef>
 #include <pbos/km/assert.h>
+#include <cstddef>
 #include <type_traits>
+#include "basedefs.hh"
 
 namespace kfxx {
 #if __cplusplus >= 202002L
 	template <typename T>
-	concept rc_object_trait = requires(T * rcObject) {
-		rcObject->inc_ref(0);
-		rcObject->dec_ref(0);
+	concept rc_object_trait = requires(T *rcObject) {
+		rcObject->inc_ref();
+		rcObject->dec_ref();
 	};
 #endif
 
@@ -24,6 +24,7 @@ namespace kfxx {
 
 		PBOS_FORCEINLINE void _set_and_inc_ref(T *_ptr)
 			PBOS_REQUIRES_CONCEPT(rc_object_trait<T>) {
+			_ptr->inc_ref();
 			this->_ptr = _ptr;
 		}
 
@@ -31,7 +32,7 @@ namespace kfxx {
 		PBOS_FORCEINLINE void reset() noexcept
 			PBOS_REQUIRES_CONCEPT(rc_object_trait<T>) {
 			if (_ptr) {
-				_ptr->decRef();
+				_ptr->dec_ref();
 			}
 			_ptr = nullptr;
 		}
@@ -100,6 +101,11 @@ namespace kfxx {
 		}
 		PBOS_FORCEINLINE T *const *get_addr_without_release() const noexcept {
 			return &_ptr;
+		}
+		PBOS_FORCEINLINE T *release() noexcept {
+			T *ptr = _ptr;
+			_ptr = nullptr;
+			return ptr;
 		}
 		PBOS_FORCEINLINE T *operator->() const noexcept {
 			return _ptr;

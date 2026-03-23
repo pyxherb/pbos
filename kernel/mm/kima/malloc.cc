@@ -235,6 +235,106 @@ PBOS_NODISCARD void *mm_krealloc(void *old_ptr, size_t size, size_t alignment) {
 	return new_free_pg;
 }
 
+PBOS_NODISCARD void *mm_krealloc_in_place(void *old_ptr, size_t size, size_t alignment) {
+	kd_assert(size);
+	char *continuous_area_base = nullptr;
+
+	kima_ublk_t *old_ublk = static_cast<kima_ublk_t *>(kima_ublk_query_tree.find(old_ptr));
+	kd_assert(old_ublk);
+
+	kima_vpgdesc_t *cur_desc = static_cast<kima_vpgdesc_t *>(kima_vpgdesc_query_tree.find(old_ptr));
+
+	for (size_t j = 0;
+		j < PGCEIL(size);
+		j += PAGESIZE) {
+		// Look up for a continuous existing allocated virtual page area for allocation.
+		if (!kima_lookup_vpgdesc(((char *)cur_desc->rb_value) + j)) {
+			continuous_area_base = ((char *)cur_desc->rb_value) + j;
+			return nullptr;
+		}
+	}
+
+	{
+		void *const limit = ((char *)cur_desc->rb_value) + (PGCEIL(size) - size);
+
+		if (size_t aligned_diff = ((uintptr_t)old_ptr) % alignment; aligned_diff)
+			return nullptr;
+
+		kima_ublk_t *nearest_ublk;
+		if ((nearest_ublk = kima_lookup_nearest_ublk(((char *)old_ptr) + size - 1))) {
+			if (nearest_ublk != old_ublk) {
+				if (PBOS_ISOVERLAPPED((char *)old_ptr, size, (char *)nearest_ublk->rb_value, nearest_ublk->size)) {
+					return nullptr;
+				}
+			}
+		}
+
+		kima_ublk_query_tree.remove(old_ublk);
+
+		for (size_t j = 0;
+			j < PGCEIL(size);
+			j += PAGESIZE) {
+			kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(((char *)cur_desc->rb_value) + j);
+
+			if (!vpgdesc)
+				km_panic("BUG: vpgdesc == nullptr, please report this bug to the developer");
+
+			++vpgdesc->ref_count;
+		}
+
+		// Release unused old pages if the new size is smaller than the old size.
+		for (size_t i = PGCEIL(old_ublk->size);
+			i > PGCEIL(size);
+			++i) {
+			kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(((char*)old_ptr) + i);
+
+			kd_assert(vpgdesc);
+
+			if (!(--vpgdesc->ref_count))
+				kima_free_vpgdesc(vpgdesc);
+		}
+
+		old_ublk->size = size;
+
+		if (!kima_ublk_query_tree.insert(old_ublk))
+			km_panic("Error inserting old ublk in mm_krealloc, please report this bug");
+
+		return old_ptr;
+	}
+
+	// Allocate new pages if there is no suitable continuous virtual memory area.
+	char *new_free_pg = (char *)kima_vpgalloc(NULL, PGCEIL(size + alignment));
+
+	if (size_t aligned_diff = ((uintptr_t)new_free_pg) % alignment; aligned_diff) {
+		new_free_pg += alignment - aligned_diff;
+	}
+
+	if (!new_free_pg)
+		return NULL;
+
+	size_t i = 0;
+	kfxx::scope_guard release_vpgdesc_sg([new_free_pg, &i]() noexcept {
+		for (size_t j = 0; j < i; ++j) {
+			kima_free_vpgdesc(kima_lookup_vpgdesc(((char *)new_free_pg) + j * PAGESIZE));
+		}
+	});
+
+	for (; i < PGROUNDUP(size); ++i) {
+		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(((char *)new_free_pg) + i * PAGESIZE);
+
+		if (!vpgdesc)
+			return NULL;
+	}
+
+	kima_ublk_t *ublk = kima_alloc_ublk(new_free_pg, size);
+	if (!ublk)
+		return NULL;
+
+	release_vpgdesc_sg.release();
+
+	return new_free_pg;
+}
+
 void mm_kfree(void *ptr) {
 	// io::irq_disable_lock irq_lock;
 

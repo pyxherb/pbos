@@ -1,20 +1,16 @@
 #ifndef _PBOS_KFXX_UTILS_HH_
 #define _PBOS_KFXX_UTILS_HH_
 
-#include "basedefs.hh"
-#include <utility>
 #include <memory>
 #include <new>
 #include <type_traits>
+#include <utility>
+#include "basedefs.hh"
 
 namespace kfxx {
-#if __cplusplus >= 202002L
 	template <typename T, typename... Args>
-	// requires std::constructible_from<T, Args...>
-#else
-	template <typename T, typename... Args>
-#endif
-		PBOS_FORCEINLINE void construct_at(T *ptr, Args &&...args) {
+	// PBOS_REQUIRES_CONCEPT(std::constructible_from<T, Args...>)
+	PBOS_FORCEINLINE void construct_at(T *ptr, Args &&...args) {
 #ifdef new
 	#if __cplusplus >= 202002L
 		std::construct_at<T>(ptr, std::forward<Args>(args)...);
@@ -39,7 +35,7 @@ namespace kfxx {
 		std::destroy_at<T>(ptr);
 	}
 
-	template<typename T>
+	template <typename T>
 	PBOS_FORCEINLINE void move_assign_or_move_construct(T &lhs, T &&rhs) noexcept {
 		if constexpr (std::is_move_assignable_v<T>) {
 			lhs = std::move(rhs);

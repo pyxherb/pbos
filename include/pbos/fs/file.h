@@ -6,8 +6,6 @@
 
 PBOS_EXTERN_C_BEGIN
 
-#define FILE_CLASS_UUID UUID(f11e5157, f11e, c1a5, 1d0f, f11e0b15)
-
 enum {
 	FS_FILETYPE_FILE = 0,  // Regular file
 	FS_FILETYPE_DIR,	   // Directory Entry
@@ -33,6 +31,11 @@ typedef uint16_t fs_faccess_t;
 
 typedef struct _fs_filesys_t fs_filesys_t;
 
+///
+/// @brief The file node structure.
+///
+/// @note We didn't design a built-in extra data system, which means you should maintain your extra data relationship by your own.
+///
 typedef struct _fs_fnode_t fs_fnode_t;
 
 typedef struct _fs_finddata_t {
@@ -57,13 +60,6 @@ PBOS_NODISCARD km_result_t fs_create_dir(
 	fs_fnode_t *parent,
 	const char *filename,
 	size_t filename_len,
-	fs_fnode_t **file_out);
-
-km_result_t fs_alloc_file_fnode(
-	fs_filesys_t *fs,
-	const char *filename,
-	size_t filename_len,
-	size_t exdata_size,
 	fs_fnode_t **file_out);
 
 /// @brief Mount a file onto a directory.
@@ -92,6 +88,9 @@ PBOS_NODISCARD km_result_t fs_child_of(fs_fnode_t *file, const char *filename, s
 /// @return Result of the resolution.
 ///
 PBOS_NODISCARD km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out);
+
+void fs_inc_fnode_ref(fs_fnode_t *fnode);
+void fs_dec_fnode_ref(fs_fnode_t *fnode);
 
 PBOS_EXTERN_C_END
 

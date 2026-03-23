@@ -5,9 +5,9 @@
 #include <pbos/km/panic.h>
 #include <pbos/kn/fs/fs.hh>
 #include <pbos/kn/fs/initcar.hh>
-#include <pbos/kn/km/exec.hh>
+// #include <pbos/kn/km/exec.hh>
 #include <pbos/kn/km/smp.h>
-#include <pbos/kn/km/proc.hh>
+// #include <pbos/kn/km/proc.hh>
 
 // Because the operating system will never exit normally,
 // we just designed a dummy procedure to register the destructors.
@@ -27,8 +27,8 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 	hal_init();
 	// hal_irq_init();
 
-	/*fs_init();
-	ps_init();
+	fs_init();
+	/*ps_init();
 
 	smp_init();
 

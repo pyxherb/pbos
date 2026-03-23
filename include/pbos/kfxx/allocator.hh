@@ -2,7 +2,7 @@
 #define _PBOS_KFXX_ALLOCATOR_H_
 
 #include <pbos/km/assert.h>
-#include "basedefs.hh"
+#include "utils.hh"
 
 #ifdef __cplusplus
 namespace kfxx {
@@ -25,8 +25,24 @@ namespace kfxx {
 	PBOS_FORCEINLINE void verify_allocator(const allocator_t *x, const allocator_t *y) {
 		if (x && y) {
 			// Check if the allocators have the same type.
-			kd_assert(("Incompatible allocators", x->type_identity() == y->type_identity()));
+			kd_dbgcheck(x->type_identity() == y->type_identity(), "Incompatible allocators");
 		}
+	}
+
+	template <typename T, typename... Args>
+	// PBOS_REQUIRES_CONCEPT(std::constructible_from<T, Args...>)
+	PBOS_FORCEINLINE T *alloc_and_construct(allocator_t *alloc, Args &&...args) {
+		char *p = (char *)alloc->alloc(sizeof(T), alignof(T));
+		if (!p)
+			return nullptr;
+		construct_at<T>((T*)p, std::forward<Args>(args)...);
+		return (T*)p;
+	}
+
+	template <typename T>
+	PBOS_FORCEINLINE void destroy_and_release(allocator_t *alloc, T *const ptr) {
+		std::destroy_at<T>(ptr);
+		alloc->release(ptr, sizeof(T), alignof(T));
 	}
 }
 #endif

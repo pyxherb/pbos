@@ -6,6 +6,7 @@
 #include "remove_cv.hh"
 #include "void_t.hh"
 #include <_functional/invoke.hh>
+#include <_utility/move.hh>
 
 namespace std {
 	template <typename T, typename = void>

@@ -9,18 +9,6 @@ PBOS_EXTERN_C_BEGIN
 extern fs_fsops_t kn_rootfs_ops;
 extern fs_filesys_t *fs_rootfs;
 
-/// @brief Extra data for directory files.
-typedef struct _fs_rootfs_dir_t : public fs_fnode_t {
-	kf_hashmap_t children;
-} fs_rootfs_dir_t;
-
-typedef struct _fs_rootfs_dir_entry_t {
-	kf_hashmap_node_t node_header;
-	char *name;
-	size_t name_len;
-	fs_fnode_t *file;
-} fs_rootfs_dir_entry_t;
-
 km_result_t kn_rootfs_subnode(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
 void kn_rootfs_offload(fs_fnode_t *file);
 km_result_t kn_rootfs_create_file(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);

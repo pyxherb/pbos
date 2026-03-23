@@ -317,7 +317,7 @@ namespace kfxx {
 
 	template <typename K, typename V, typename Eq = std::equal_to<K>, typename Hasher = hash<K>>
 	using hash_map_t = hash_map_impl_t<K, V, Eq, Hasher, false>;
-	template <typename K, typename V, typename Eq = std::equal_to<K>, typename Hasher = hash<K>>
+	template <typename K, typename V, typename Eq = fallible_equal_to<K>, typename Hasher = hash<K>>
 	using fallible_hash_map_t = hash_map_impl_t<K, V, Eq, Hasher, true>;
 }
 

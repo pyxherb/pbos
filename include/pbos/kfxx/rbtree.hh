@@ -745,9 +745,9 @@ namespace kfxx {
 		}
 	};
 
-	template <typename T, typename Comparator = std::less<T>, bool IsThreeway = false>
+	template <typename T, typename Comparator = cmp<T>, bool IsThreeway = true>
 	using rbtree_t = _rbtree_impl<T, Comparator, false, IsThreeway>;
-	template <typename T, typename Comparator = fallible_less<T>, bool IsThreeway = false>
+	template <typename T, typename Comparator = fallible_cmp<T>, bool IsThreeway = true>
 	using fallible_rbtree_t = _rbtree_impl<T, Comparator, true, IsThreeway>;
 }
 #endif

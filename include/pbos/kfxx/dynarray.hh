@@ -483,9 +483,11 @@ namespace kfxx {
 						return false;
 				} else {
 					_expand_to<true>(_data, length);
+					_length = length;
 				}
 			} else if (length < _length) {
 				_shrink(_data, length);
+				_length = length;
 			}
 			return true;
 		}
@@ -526,9 +528,11 @@ namespace kfxx {
 						return false;
 				} else {
 					_expand_to<false>(_data, length);
+					_length = length;
 				}
 			} else if (length < _length) {
 				_shrink(_data, length);
+				_length = length;
 			}
 			return true;
 		}
@@ -539,7 +543,7 @@ namespace kfxx {
 		/// @return PBOS_FORCEINLINE
 		///
 		[[nodiscard]] PBOS_FORCEINLINE bool shrink_to_fit() {
-			if(_length > _capacity)
+			if (_length > _capacity)
 				return _shrink_capacity(_length, _length);
 			return true;
 		}

@@ -19,7 +19,7 @@ namespace kfxx {
 		PBOS_FORCEINLINE constexpr string_view() noexcept : _ptr(nullptr), _size(0) {
 		}
 
-		PBOS_FORCEINLINE constexpr string_view(const char *s) noexcept : _ptr(s), _size(strlen(s)) {
+		PBOS_FORCEINLINE string_view(const char *s) noexcept : _ptr(s), _size(strlen(s)) {
 		}
 
 		PBOS_FORCEINLINE constexpr string_view(const char *s, size_t len) noexcept : _ptr(s), _size(len) {
@@ -108,6 +108,15 @@ namespace kfxx {
 			}
 		}
 	};
+
+	namespace literal_suffixes {
+		constexpr kfxx::string_view operator""_sv(const char *s) {
+			size_t index = 0;
+			while(s[index])
+				++index;
+			return kfxx::string_view(s, index);
+		}
+	}
 }
 
 #endif

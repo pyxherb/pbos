@@ -35,8 +35,14 @@ typedef uint32_t km_result_t;
 #define KM_MAKEERROR(result) ((result))
 
 PBOS_FORCEINLINE void km_unwrap_result(km_result_t result) {
-	if(KM_FAILED(result))
+	if (KM_FAILED(result))
 		km_panic("Unwrap failed!");
 }
+
+#define KM_RETURN_IF_FAILED(expr)       \
+	{                                  \
+		km_result_t _ = (expr);        \
+		if (KM_FAILED(expr)) return _; \
+	}
 
 #endif
