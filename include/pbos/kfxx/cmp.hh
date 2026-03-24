@@ -13,7 +13,7 @@ namespace kfxx {
 #else
 			if (lhs < rhs)
 				return -1;
-			if (lhs > rhs)
+			if (rhs < lhs)
 				return 1;
 			return 0;
 #endif

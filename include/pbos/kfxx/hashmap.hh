@@ -310,6 +310,10 @@ namespace kfxx {
 			return _set.size();
 		}
 
+		PBOS_FORCEINLINE bool empty() const {
+			return !_set.size();
+		}
+
 		PBOS_FORCEINLINE bool shrink_buckets() {
 			return _set.shrink_buckets();
 		}

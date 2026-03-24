@@ -92,6 +92,56 @@ PBOS_API void *kn_fs_fnode_allocator_t::type_identity() const noexcept {
 
 kn_fs_fnode_allocator_t kn_fs_fnode_allocator;
 
+PBOS_API kn_fs_fcb_allocator_t::kn_fs_fcb_allocator_t() {
+}
+
+PBOS_API kn_fs_fcb_allocator_t::~kn_fs_fcb_allocator_t() {
+}
+
+PBOS_API size_t kn_fs_fcb_allocator_t::inc_ref() noexcept {
+	return 0;
+}
+
+PBOS_API size_t kn_fs_fcb_allocator_t::dec_ref() noexcept {
+	return 0;
+}
+
+PBOS_API void *kn_fs_fcb_allocator_t::alloc(size_t size, size_t alignment) noexcept {
+	kd_assert(alignment >= alignof(max_align_t));
+	return mm_kmalloc(size, alignof(max_align_t));
+}
+
+PBOS_API void *kn_fs_fcb_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
+	// TODO: Implement mm_krealloc and rewrite this with it.
+	kd_assert(alignment >= alignof(max_align_t));
+	return mm_krealloc(ptr, new_size, new_alignment);
+}
+
+PBOS_API void *kn_fs_fcb_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
+	// TODO: Implement mm_krealloc and rewrite this with it.
+	kd_assert(alignment >= alignof(max_align_t));
+	// return mm_krealloc(ptr, new_size, new_alignment);
+	return nullptr;
+}
+
+PBOS_API void kn_fs_fcb_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {
+	mm_kfree(ptr);
+}
+
+int kn_fs_fcb_allocator_identity;
+
+PBOS_API void *kn_fs_fcb_allocator_t::type_identity() const noexcept {
+	return &kn_fs_fcb_allocator_identity;
+}
+
+kn_fs_fcb_allocator_t kn_fs_fcb_allocator;
+
+_fs_fcb_t::_fs_fcb_t(fs_fnode_t *fnode) : fnode(fnode) {
+}
+
+_fs_fcb_t::~_fs_fcb_t() {
+}
+
 _fs_fnode_t::_fs_fnode_t(fs_filetype_t file_type)
 	: file_type(file_type) {
 }
@@ -102,7 +152,7 @@ _fs_fnode_t::~_fs_fnode_t() {
 
 _fs_file_t::_fs_file_t() : _fs_fnode_t(FS_FILETYPE_FILE) {}
 
-_fs_dir_t::_fs_dir_t(kfxx::allocator_t *allocator) : _fs_fnode_t(FS_FILETYPE_DIR), children_map(allocator) {}
+_fs_dir_t::_fs_dir_t(kfxx::allocator_t *allocator) : _fs_fnode_t(FS_FILETYPE_DIR), subnodes(allocator) {}
 
 PBOS_NODISCARD km_result_t kn_alloc_file_fnode(fs_fnode_t **file_out) {
 	fs_file_t *ptr = kfxx::alloc_and_construct<fs_file_t>(&kn_fs_filename_allocator);
@@ -130,30 +180,41 @@ PBOS_NODISCARD km_result_t kn_alloc_dir_fnode(fs_fnode_t **file_out) {
 	return KM_RESULT_OK;
 }
 
-PBOS_NODISCARD void kn_do_unname_fnode(fs_fnode_t *file_node) {
-	if (file_node->filename) {
-		kn_fs_filename_allocator.release(file_node->filename, file_node->filename_len, alignof(char));
-		file_node->filename = nullptr;
-		file_node->filename_len = 0;
+PBOS_NODISCARD km_result_t kn_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t *fcb_out) {
+	fs_fcb_t *ptr = kfxx::alloc_and_construct<fs_fcb_t>(&kn_fs_filename_allocator, file_in);
+
+	if (!ptr)
+		return KM_RESULT_NO_MEM;
+
+	ptr->fnode = file_in;
+
+	return KM_RESULT_OK;
+}
+
+PBOS_NODISCARD void kn_do_unname_fnode(fs_fnode_t *file) {
+	if (file->filename) {
+		kn_fs_filename_allocator.release(file->filename, file->filename_len, alignof(char));
+		file->filename = nullptr;
+		file->filename_len = 0;
 	}
 }
 
-km_result_t kn_do_rename_fnode(fs_fnode_t *file_node, const char *name, size_t name_len) {
+km_result_t kn_do_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len) {
 	kd_dbgcheck(name_len, "The file name must not be empty");
 	char *new_name;
-	if (file_node->filename)
+	if (file->filename)
 		new_name = (char *)kn_fs_filename_allocator.realloc(
-			file_node->filename,
-			file_node->filename_len, alignof(char),
+			file->filename,
+			file->filename_len, alignof(char),
 			name_len, alignof(char));
 	else
 		new_name = (char *)kn_fs_filename_allocator.alloc(
-			file_node->filename_len,
+			file->filename_len,
 			alignof(char));
 	if (!new_name)
 		return KM_RESULT_NO_MEM;
-	file_node->filename = new_name;
-	file_node->filename_len = name_len;
+	file->filename = new_name;
+	file->filename_len = name_len;
 	return KM_RESULT_OK;
 }
 
@@ -177,24 +238,63 @@ km_result_t fs_create_dir(
 	return parent->fs->ops.create_dir(parent, filename, filename_len, file_out);
 }
 
+PBOS_NODISCARD km_result_t fs_create_fcb(
+	fs_fnode_t *file,
+	fs_fcb_t **fcb_out) {
+}
+
 km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
-	return parent->fs->ops.mount(parent, file);
+	// The mount point should be a directory.
+	if (file->file_type != FS_FILETYPE_DIR)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
+
+	fs_dir_t *f = static_cast<fs_dir_t *>(file);
+
+	// The mount point should be empty.
+	if (f->subnodes.size())
+		return KM_RESULT_DIR_NOT_EMPTY;
+
+	if (!f->subnodes.shrink_buckets())
+		return KM_RESULT_NO_MEM;
+
+	fs_filesys_t *fs = parent->fs;
+
+	KM_RETURN_IF_FAILED(fs->ops.premount(parent, file));
+
+	{
+		kfxx::scope_guard mount_fail_guard([fs, parent, file]() noexcept {
+			fs->ops.mount_fail(parent, file);
+		});
+
+		if (!f->subnodes.insert(kfxx::string_view(file->filename, file->filename_len), +file))
+			return KM_RESULT_NO_MEM;
+
+		mount_fail_guard.release();
+	}
+	return KM_RESULT_OK;
 }
 
 km_result_t fs_unmount_file(fs_fnode_t *file) {
-	return file->parent->fs->ops.unmount(file);
+	KM_RETURN_IF_FAILED(file->parent->fs->ops.unmount_cleanup(file));
+
+	kd_assert(file->parent);
+
+	fs_dir_t *parent = static_cast<fs_dir_t *>(file->parent);
+
+	parent->subnodes.remove(kfxx::string_view(file->filename, file->filename_len));
+
+	return KM_RESULT_OK;
 }
 
 km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_len, fs_fnode_t **file_out) {
 	switch (file->file_type) {
 		case FS_FILETYPE_DIR: {
 			fs_dir_t *f = static_cast<fs_dir_t *>(file);
-			if (auto it = f->children_map.find(kfxx::string_view(filename, filename_len)); it != f->children_map.end()) {
+			if (auto it = f->subnodes.find(kfxx::string_view(filename, filename_len)); it != f->subnodes.end()) {
 				fs::fnode_ptr_t node = it.value();
 				*file_out = node.get();
 				fs_inc_fnode_ref(node.get());
-			}
-			else
+			} else
 				KM_RETURN_IF_FAILED(file->fs->ops.subnode(file, filename, filename_len, file_out));
 			break;
 		}
@@ -250,36 +350,33 @@ end:;
 }
 
 km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out) {
-	fs_fnode_t *file;
+	fs::fnode_ptr_t file;
 	km_result_t result;
 
-	if (KM_FAILED(result = fs_resolve_path(base_dir, path, path_len, &file)))
+	if (KM_FAILED(result = fs_resolve_path(base_dir, path, path_len, file.get_addr_without_release())))
 		return result;
 
-	if (KM_FAILED(result = file->fs->ops.open(file, fcb_out))) {
-		fs_inc_fnode_ref(file);
+	if (KM_FAILED(result = file->fs->ops.open(file.get(), fcb_out))) {
 		return result;
 	}
-
-	fs_dec_fnode_ref(file);
 
 	return KM_RESULT_OK;
 }
 
-km_result_t fs_close(fs_fcb_t *fcb) {
-	return fcb->file->fs->ops.close(fcb);
+void fs_close(fs_fcb_t *fcb) {
+	fs_dec_fcb_ref(fcb);
 }
 
 km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
-	return fcb->file->fs->ops.read(fcb, (char *)dest, size, off, bytes_read_out);
+	return fcb->fnode->fs->ops.read(fcb, (char *)dest, size, off, bytes_read_out);
 }
 
 km_result_t fs_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out) {
-	return fcb->file->fs->ops.write(fcb, src, size, off, bytes_written_out);
+	return fcb->fnode->fs->ops.write(fcb, src, size, off, bytes_written_out);
 }
 
 km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {
-	return fcb->file->fs->ops.size(fcb, size_out);
+	return fcb->fnode->fs->ops.size(fcb, size_out);
 }
 
 void fs_inc_fnode_ref(fs_fnode_t *fnode) {
@@ -292,6 +389,15 @@ void fs_dec_fnode_ref(fs_fnode_t *fnode) {
 		kn_destroy_fnode(fnode);
 }
 
+void fs_inc_fcb_ref(fs_fcb_t *fcb) {
+	++fcb->ref_num;
+}
+
+void fs_dec_fcb_ref(fs_fcb_t *fcb) {
+	if (!--fcb->ref_num)
+		kn_destroy_fcb(fcb);
+}
+
 void kn_destroy_fnode(fs_fnode_t *fnode) {
 	// TODO: Implement this.
 	switch (fnode->file_type) {
@@ -299,5 +405,11 @@ void kn_destroy_fnode(fs_fnode_t *fnode) {
 			kfxx::destroy_and_release<fs_file_t>(&kn_fs_fnode_allocator, static_cast<fs_file_t *>(fnode));
 		case FS_FILETYPE_DIR:
 			kfxx::destroy_and_release<fs_dir_t>(&kn_fs_fnode_allocator, static_cast<fs_dir_t *>(fnode));
+		default:
+			km_panic("Unknown file node type, panicking");
 	}
+}
+
+void kn_destroy_fcb(fs_fcb_t *fcb) {
+	kfxx::destroy_and_release<fs_fcb_t>(&kn_fs_fcb_allocator, fcb);
 }

@@ -61,15 +61,18 @@ PBOS_NODISCARD km_result_t fs_create_dir(
 	const char *filename,
 	size_t filename_len,
 	fs_fnode_t **file_out);
+PBOS_NODISCARD km_result_t fs_create_fcb(
+	fs_fnode_t *file,
+	fs_fcb_t **fcb_out);
 
 /// @brief Mount a file onto a directory.
-/// @param parent Parent directory to mount.
-/// @param file Handle of file to be mounted, the parent directory will take the ownership.
+/// @param parent Parent directory to mount, the directory must be empty.
+/// @param file Handle of file to be mounted.
 /// @return Execution result of the operation.
 PBOS_NODISCARD km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file);
 PBOS_NODISCARD km_result_t fs_unmount_file(fs_fnode_t *file);
 
-PBOS_NODISCARD km_result_t fs_close(fs_fcb_t *fcb);
+PBOS_NODISCARD void fs_close(fs_fcb_t *fcb);
 
 PBOS_NODISCARD km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out);
 PBOS_NODISCARD km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out);
@@ -91,6 +94,9 @@ PBOS_NODISCARD km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path
 
 void fs_inc_fnode_ref(fs_fnode_t *fnode);
 void fs_dec_fnode_ref(fs_fnode_t *fnode);
+
+void fs_inc_fcb_ref(fs_fcb_t *fcb);
+void fs_dec_fcb_ref(fs_fcb_t *fcb);
 
 PBOS_EXTERN_C_END
 
