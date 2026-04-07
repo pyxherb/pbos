@@ -11,8 +11,12 @@
 PBOS_EXTERN_C_BEGIN
 
 typedef struct _fs_filesys_t : public kfxx::rbtree_t<kf_uuid_t>::node_t {
-	kfxx::string_view name;
+	char *name;
+	size_t name_len;
 	fs_fsops_t ops;
+
+	_fs_filesys_t();
+	~_fs_filesys_t();
 } fs_filesys_t;
 
 typedef struct _fs_context_t {

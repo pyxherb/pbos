@@ -22,6 +22,28 @@ namespace kfxx {
 		virtual void *type_identity() const noexcept = 0;
 	};
 
+	class kernel_allocator_t : public kfxx::allocator_t {
+	public:
+		PBOS_API kernel_allocator_t();
+		PBOS_API virtual ~kernel_allocator_t();
+
+		PBOS_API virtual size_t inc_ref() noexcept override;
+		PBOS_API virtual size_t dec_ref() noexcept override;
+
+		PBOS_API virtual void *alloc(size_t size, size_t alignment) noexcept override;
+		PBOS_API virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+		PBOS_API virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+		PBOS_API virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
+
+		PBOS_API virtual void *type_identity() const noexcept override;
+	};
+
+	extern kernel_allocator_t g_kernel_allocator;
+
+	PBOS_FORCEINLINE kernel_allocator_t *kernel_allocator() noexcept {
+		return &g_kernel_allocator;
+	}
+
 	PBOS_FORCEINLINE void verify_allocator(const allocator_t *x, const allocator_t *y) {
 		if (x && y) {
 			// Check if the allocators have the same type.
@@ -35,8 +57,8 @@ namespace kfxx {
 		char *p = (char *)alloc->alloc(sizeof(T), alignof(T));
 		if (!p)
 			return nullptr;
-		construct_at<T>((T*)p, std::forward<Args>(args)...);
-		return (T*)p;
+		construct_at<T>((T *)p, std::forward<Args>(args)...);
+		return (T *)p;
 	}
 
 	template <typename T>

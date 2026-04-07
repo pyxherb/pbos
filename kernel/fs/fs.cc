@@ -1,8 +1,8 @@
 #include <pbos/km/logger.h>
 #include <pbos/mm/mm.h>
-#include <pbos/kn/fs/rootfs.hh>
 #include <pbos/kn/fs/file.hh>
 #include <pbos/kn/fs/fs.hh>
+#include <pbos/kn/fs/rootfs.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -10,20 +10,36 @@ kfxx::rbtree_t<kf_uuid_t> kn_registered_fs;
 fs_fnode_t *fs_abs_root_dir;
 fs_filesys_t *fs_rootfs;
 
+_fs_filesys_t::_fs_filesys_t() {
+}
+
+_fs_filesys_t::~_fs_filesys_t() {
+	if (name)
+		kfxx::kernel_allocator()->release(name, name_len, alignof(char));
+}
+
 fs_filesys_t *fs_register_filesys(
 	const char *name,
 	size_t name_len,
 	kf_uuid_t *uuid,
 	fs_fsops_t *ops) {
-	fs_filesys_t *fs = (fs_filesys_t *)mm_kmalloc(sizeof(fs_filesys_t), alignof(fs_filesys_t));
+	fs_filesys_t *fs = (fs_filesys_t *)kfxx::alloc_and_construct<fs_filesys_t>(kfxx::kernel_allocator());
 	if (!fs)
-		return NULL;
+		return nullptr;
 
-	fs->name = kfxx::string_view(name, name_len);
-	fs->rb_value = *uuid;
+	kfxx::scope_guard release_fs_guard([fs]() noexcept {
+		kfxx::destroy_and_release<fs_filesys_t>(kfxx::kernel_allocator(), fs);
+	});
+
+	if(!(fs->name = (char*)kfxx::kernel_allocator()->alloc(name_len, alignof(char))))
+		return nullptr;
+	fs->name_len = name_len;
 	memcpy(&fs->ops, ops, sizeof(fs_fsops_t));
 
-	kn_registered_fs.insert(fs);
+	if (!kn_registered_fs.insert(fs))
+		return nullptr;
+
+	release_fs_guard.release();
 
 	return fs;
 }
