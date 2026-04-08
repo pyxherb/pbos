@@ -15,18 +15,18 @@ typedef struct _ps_ufcb_t : public kfxx::rbtree_t<ps_ufd_t>::node_t {
 } ps_ufcb_t;
 
 typedef struct _ps_tcb_t : public kfxx::rbtree_t<thread_id_t>::node_t {
-	ps_pcb_t *parent;
+	ps_pcb_t *parent = nullptr;
 
 	uint8_t priority, flags;
 
-	kh_user_context_t *context;
-	void *stack;
-	size_t stack_size;
+	kh_user_context_t *context = nullptr;
+	void *stack = nullptr;
+	size_t stack_size = 0;
 
-	void *kernel_stack;
-	size_t kernel_stack_size;
+	void *kernel_stack = nullptr;
+	size_t kernel_stack_size = 0;
 
-	se_uid_t user_id;
+	se_uid_t user_id = SE_UID_ANY;
 
 	_ps_tcb_t() = default;
 	~_ps_tcb_t() = default;

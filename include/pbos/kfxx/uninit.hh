@@ -48,10 +48,10 @@ namespace kfxx {
 			return (T *)_buf;
 		}
 		PBOS_FORCEINLINE void moveFrom(T &&src) {
-			constructAt((T *)_buf, std::move(src));
+			construct_at((T *)_buf, std::move(src));
 		}
 		PBOS_FORCEINLINE uninit_t<T> &operator=(T &&rhs) noexcept {
-			constructAt((T *)_buf, std::move(rhs));
+			construct_at((T *)_buf, std::move(rhs));
 			return *this;
 		}
 	};

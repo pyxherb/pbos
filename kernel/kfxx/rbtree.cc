@@ -240,10 +240,10 @@ PBOS_KFXX_API _rbtree_base::node_base* _rbtree_base::_remove_fixup(node_base* no
 	return y;
 }
 
-PBOS_KFXX_API _rbtree_base::node_base* _rbtree_base::_get_next(const node_base* node, const node_base* lastNode) noexcept {
+PBOS_KFXX_API _rbtree_base::node_base* _rbtree_base::_get_next(const node_base* node, const node_base* last_node) noexcept {
 	kd_assert(node);
 
-	if (node != lastNode) {
+	if (node != last_node) {
 		if (node->r) {
 			return _get_min_node(node->r);
 		}
@@ -257,10 +257,10 @@ PBOS_KFXX_API _rbtree_base::node_base* _rbtree_base::_get_next(const node_base* 
 	return nullptr;
 }
 
-PBOS_KFXX_API _rbtree_base::node_base* _rbtree_base::_get_prev(const node_base* node, const node_base* firstNode) noexcept {
+PBOS_KFXX_API _rbtree_base::node_base* _rbtree_base::_get_prev(const node_base* node, const node_base* first_node) noexcept {
 	kd_assert(node);
 
-	if (node != firstNode) {
+	if (node != first_node) {
 		if (node->l) {
 			return _get_max_node(node->l);
 		}

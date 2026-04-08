@@ -91,7 +91,7 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE void _remove(node_t *dest) {
-			assert(dest);
+			kd_assert(dest);
 
 			if (dest == _first) {
 				_first = dest->next;
@@ -133,7 +133,7 @@ namespace kfxx {
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE node_handle_t insert_front(node_handle_t node, node_handle_t new_node) {
-			assert(node);
+			kd_assert(node);
 
 			_prepend(node, new_node);
 
@@ -141,7 +141,7 @@ namespace kfxx {
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE node_handle_t insert_back(node_handle_t node, node_handle_t new_node) {
-			assert(node);
+			kd_assert(node);
 
 			_append(node, new_node);
 
@@ -191,7 +191,7 @@ namespace kfxx {
 
 		PBOS_FORCEINLINE static node_t *next(node_handle_t cur_node, size_t index) {
 			while (index) {
-				assert(cur_node);
+				kd_assert(cur_node);
 				cur_node = cur_node->next;
 				--index;
 			}
@@ -201,7 +201,7 @@ namespace kfxx {
 
 		PBOS_FORCEINLINE static node_t *prev(node_handle_t cur_node, size_t index) {
 			while (index) {
-				assert(cur_node);
+				kd_assert(cur_node);
 				cur_node = cur_node->prev;
 				--index;
 			}

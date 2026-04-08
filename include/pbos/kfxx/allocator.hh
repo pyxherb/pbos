@@ -40,6 +40,11 @@ namespace kfxx {
 
 	extern kernel_allocator_t g_kernel_allocator;
 
+	///
+	/// @brief Get the global kernel allocator.
+	///
+	/// @return Pointer to the global kernel allocaotr.
+	///
 	PBOS_FORCEINLINE kernel_allocator_t *kernel_allocator() noexcept {
 		return &g_kernel_allocator;
 	}
@@ -54,6 +59,7 @@ namespace kfxx {
 	template <typename T, typename... Args>
 	// PBOS_REQUIRES_CONCEPT(std::constructible_from<T, Args...>)
 	PBOS_FORCEINLINE T *alloc_and_construct(allocator_t *alloc, Args &&...args) {
+		static_assert(std::is_constructible_v<T, Args...>, "Cannot construct from provided arguments!");
 		char *p = (char *)alloc->alloc(sizeof(T), alignof(T));
 		if (!p)
 			return nullptr;

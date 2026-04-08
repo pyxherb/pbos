@@ -168,7 +168,7 @@ PBOS_NODISCARD km_result_t kn_alloc_file_fnode(fs_fnode_t **file_out) {
 }
 
 PBOS_NODISCARD km_result_t kn_alloc_dir_fnode(fs_fnode_t **file_out) {
-	fs_file_t *ptr = kfxx::alloc_and_construct<fs_file_t>(&kn_fs_filename_allocator, &kn_fs_filename_allocator);
+	fs_dir_t *ptr = kfxx::alloc_and_construct<fs_dir_t>(&kn_fs_filename_allocator, &kn_fs_filename_allocator);
 
 	if (!ptr)
 		return KM_RESULT_NO_MEM;
@@ -191,7 +191,7 @@ PBOS_NODISCARD km_result_t kn_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t *fcb_out) 
 	return KM_RESULT_OK;
 }
 
-PBOS_NODISCARD void kn_do_unname_fnode(fs_fnode_t *file) {
+void kn_do_unname_fnode(fs_fnode_t *file) {
 	if (file->filename) {
 		kn_fs_filename_allocator.release(file->filename, file->filename_len, alignof(char));
 		file->filename = nullptr;

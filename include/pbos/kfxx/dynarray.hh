@@ -62,27 +62,27 @@ namespace kfxx {
 			} else {
 				if (new_data + length <= old_data) {
 					for (size_t i = 0; i < length; ++i) {
-						moveAssignOrMoveConstruct<T>(new_data[i], std::move(old_data[i]));
+						move_assign_or_move_construct<T>(new_data[i], std::move(old_data[i]));
 					}
 				} else {
 					for (size_t i = length; i > 0; --i) {
-						moveAssignOrMoveConstruct<T>(new_data[i - 1], std::move(old_data[i - 1]));
+						move_assign_or_move_construct<T>(new_data[i - 1], std::move(old_data[i - 1]));
 					}
 				}
 			}
 		}
 
-		PBOS_FORCEINLINE void _move_data_uninitialized(T *new_data, T *old_data, size_t length) noexcept {
+		PBOS_FORCEINLINE void _move_data_uninit(T *new_data, T *old_data, size_t length) noexcept {
 			if constexpr (std::is_trivially_move_constructible_v<T>) {
 				memmove(new_data, old_data, sizeof(T) * length);
 			} else {
 				if (new_data + length < old_data) {
 					for (size_t i = 0; i < length; ++i) {
-						constructAt<T>(&new_data[i], std::move(old_data[i]));
+						construct_at<T>(&new_data[i], std::move(old_data[i]));
 					}
 				} else {
 					for (size_t i = length; i > 0; --i) {
-						constructAt<T>(&new_data[i - 1], std::move(old_data[i - 1]));
+						construct_at<T>(&new_data[i - 1], std::move(old_data[i - 1]));
 					}
 				}
 			}
@@ -91,7 +91,7 @@ namespace kfxx {
 		PBOS_FORCEINLINE void _construct_data(T *new_data, size_t length) {
 			if constexpr (!std::is_trivially_constructible_v<T>) {
 				for (size_t i = 0; i < length; ++i) {
-					constructAt<T>(&new_data[i]);
+					construct_at<T>(&new_data[i]);
 				}
 			}
 		}
@@ -129,7 +129,7 @@ namespace kfxx {
 						i < length;
 						++i) {
 						idx_last_constructed_object = i;
-						constructAt<T>(&new_data[i]);
+						construct_at<T>(&new_data[i]);
 					}
 
 					scope_guard.release();
@@ -138,7 +138,7 @@ namespace kfxx {
 
 			if (new_data != _data) {
 				if (_data)
-					_move_data_uninitialized(new_data, _data, _length);
+					_move_data_uninit(new_data, _data, _length);
 			}
 		}
 
@@ -155,7 +155,7 @@ namespace kfxx {
 
 			if (new_data != _data) {
 				if (_data)
-					_move_data_uninitialized(new_data, _data, length);
+					_move_data_uninit(new_data, _data, length);
 			}
 		}
 
@@ -392,7 +392,7 @@ namespace kfxx {
 				}
 			} else {
 				if (index < old_length) {
-					_move_data_uninitialized(
+					_move_data_uninit(
 						&_data[index + length],
 						gap_start,
 						old_length - index);
@@ -498,7 +498,7 @@ namespace kfxx {
 		/// @param length New length for resizing.
 		/// @return Whether the resizing operation is performed successfully.
 		///
-		[[nodiscard]] PBOS_FORCEINLINE bool resize_and_shrink_uninitialized(size_t length) {
+		[[nodiscard]] PBOS_FORCEINLINE bool resize_and_shrink_uninit(size_t length) {
 			if (length > _length) {
 				if (length > _capacity) {
 					if (!_grow_capacity<false>(length, length))
@@ -521,7 +521,7 @@ namespace kfxx {
 		/// @param length New length for resizing.
 		/// @return Whether the resizing operation is performed successfully.
 		///
-		[[nodiscard]] PBOS_FORCEINLINE bool resize_uninitialized(size_t length) {
+		[[nodiscard]] PBOS_FORCEINLINE bool resize_uninit(size_t length) {
 			if (length > _length) {
 				if (length > _capacity) {
 					if (!_auto_grow_capacity<false>(length))
@@ -551,7 +551,7 @@ namespace kfxx {
 		[[nodiscard]] PBOS_FORCEINLINE bool build(const this_t &rhs) {
 			clear();
 
-			if (!resize_uninitialized(rhs.size())) {
+			if (!resize_uninit(rhs.size())) {
 				return false;
 			}
 
@@ -578,7 +578,7 @@ namespace kfxx {
 		[[nodiscard]] PBOS_FORCEINLINE bool build(const std::initializer_list<T> &rhs) {
 			clear();
 
-			if (!resize_uninitialized(rhs.size())) {
+			if (!resize_uninit(rhs.size())) {
 				return false;
 			}
 
@@ -618,7 +618,7 @@ namespace kfxx {
 		/// @brief Clear the dynamic array, but don't clear the capacity.
 		///
 		PBOS_FORCEINLINE void clear() {
-			if (!resize_uninitialized(0))
+			if (!resize_uninit(0))
 				km_panic("BUG: clearing dynarray failed");
 		}
 
@@ -646,7 +646,7 @@ namespace kfxx {
 			return true;
 		}
 
-		[[nodiscard]] PBOS_FORCEINLINE bool insert_range_uninitialized(size_t index, size_t length) {
+		[[nodiscard]] PBOS_FORCEINLINE bool insert_range_uninit(size_t index, size_t length) {
 			if (!_insert_range<true>(index, length))
 				return false;
 			return true;
@@ -658,7 +658,7 @@ namespace kfxx {
 			if (!gap)
 				return false;
 
-			constructAt<T>(gap, std::move(data));
+			construct_at<T>(gap, std::move(data));
 
 			return true;
 		}
@@ -688,11 +688,11 @@ namespace kfxx {
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool pop_back_and_shrink() {
-			return resize_uninitialized(_length - 1);
+			return resize_uninit(_length - 1);
 		}
 
 		PBOS_FORCEINLINE void pop_back() {
-			bool unused = resize_uninitialized(_length - 1);
+			bool unused = resize_uninit(_length - 1);
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool pop_front_and_shrink() {
@@ -701,7 +701,7 @@ namespace kfxx {
 			_move_data(_data, _data + 1, len);
 			if (!_shrink_capacity(len, len)) {
 				_move_data(_data + 1, _data, len);
-				constructAt(&_data[0], std::move(front_data));
+				construct_at(&_data[0], std::move(front_data));
 				return false;
 			}
 			return true;

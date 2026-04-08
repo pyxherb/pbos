@@ -1,28 +1,42 @@
 #include <pbos/km/logger.h>
 #include <hal/x86_64/proc.hh>
 #include <pbos/hal/irq.hh>
+#include <pbos/kfxx/allocator.hh>
 #include <pbos/kfxx/scope_guard.hh>
 
-void kn_thread_destructor(om_object_t *obj) {
-	ps_tcb_t *tcb = static_cast<ps_tcb_t *>(obj);
-	hn_thread_cleanup(tcb);
-	kfxx::destroy_at<ps_tcb_t>(tcb);
+void kn_destroy_thread(ps_tcb_t *tcb) {
+	if (tcb->parent) {
+		ps_cur_sched->drop_thread(ps_cur_sched, tcb);
+		tcb->parent->thread_set.remove(tcb);
+	}
+	while (tcb->stack_size) {
+		mm_pgfree(mm_getmap(tcb->parent->mm_context, tcb->stack, NULL));
+		((char *&)tcb->stack) += PAGESIZE;
+		tcb->stack_size -= PAGESIZE;
+	}
+
+	if (tcb->context)
+		ps_destroy_context(tcb->context);
+
+	kfxx::destroy_and_release<ps_tcb_t>(kfxx::kernel_allocator(), tcb);
 	mm_kfree(tcb);
 }
 
 ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb) {
-	ps_tcb_t *t = (ps_tcb_t *)mm_kmalloc(sizeof(ps_tcb_t), alignof(ps_tcb_t));
+	ps_tcb_t *t = (ps_tcb_t *)kfxx::alloc_and_construct<ps_tcb_t>(kfxx::kernel_allocator());
 	if (!t)
 		return NULL;
-	memset(t, 0, sizeof(ps_tcb_t));
-	if (!(t->context = (kh_user_context_t *)mm_kmalloc(sizeof(kh_user_context_t), alignof(kh_user_context_t)))) {
+	kfxx::scope_guard release_tcb_guard([t]() noexcept {
+		kn_destroy_thread(t);
+	});
+	if (!(t->context = ps_alloc_context())) {
 		mm_kfree(t);
 		return NULL;
 	}
-	memset(t->context, 0, sizeof(kh_user_context_t));
-	om_init_object(t, ps_thread_class, 0);
 	t->parent = pcb;
-	t->context->eflags |= (1 << 9);	 // IF
+	t->context->rflags |= (1 << 9);	 // IF
+
+	release_tcb_guard.release();
 
 	return t;
 }
@@ -49,16 +63,6 @@ thread_id_t ps_create_thread(
 	pcb->thread_set.insert(t);
 }
 
-void hn_thread_cleanup(ps_tcb_t *thread) {
-	ps_cur_sched->drop_thread(ps_cur_sched, thread);
-	thread->parent->thread_set.remove(thread);
-	while (thread->stack_size) {
-		mm_pgfree(mm_getmap(thread->parent->mm_context, thread->stack, NULL));
-		((char *&)thread->stack) += PAGESIZE;
-		thread->stack_size -= PAGESIZE;
-	}
-}
-
 void ps_user_thread_init(ps_tcb_t *tcb) {
 	tcb->context->cs = SELECTOR_UCODE;
 	tcb->context->ds = SELECTOR_UDATA;
@@ -68,7 +72,7 @@ void ps_user_thread_init(ps_tcb_t *tcb) {
 }
 
 void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr) {
-	tcb->context->eip = ptr;
+	tcb->context->rip = ptr;
 }
 
 void kn_thread_set_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
@@ -76,8 +80,8 @@ void kn_thread_set_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
 	const void *sp = ((char *)ptr) + size;
 	tcb->stack = ptr;
 	tcb->stack_size = size;
-	tcb->context->esp = (uint32_t)sp;
-	tcb->context->ebp = (uint32_t)sp;
+	tcb->context->rsp = (uint64_t)sp;
+	tcb->context->rbp = (uint64_t)sp;
 }
 
 void kn_thread_set_kernel_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
@@ -85,7 +89,7 @@ void kn_thread_set_kernel_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
 	const void *sp = ((char *)ptr) + size;
 	tcb->kernel_stack = ptr;
 	tcb->kernel_stack_size = size;
-	tcb->context->esp0 = (uint32_t)sp;
+	tcb->context->rsp0 = (uint64_t)sp;
 }
 
 km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
@@ -95,8 +99,8 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 	char *ptr;
 	if (!(ptr = (char *)mm_vmalloc(
 			  pcb->mm_context,
-			  (void *)UFREE_VBASE,
-			  (void *)UFREE_VTOP,
+			  (void *)USER_VBASE,
+			  (void *)USER_VTOP,
 			  size,
 			  MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER,
 			  VMALLOC_ATOMIC))) {
@@ -175,7 +179,7 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 
 	// stub
 	if (!ps_global_proc_set.size()) {
-		hn_tss_storage_ptr[ps_get_cur_euid()].esp0 = tcb->context->esp0;
+		hn_tss_storage_ptr[ps_get_cur_euid()].esp0 = tcb->context->rsp0;
 		hn_tss_storage_ptr[ps_get_cur_euid()].ss0 = SELECTOR_KDATA;
 	}
 

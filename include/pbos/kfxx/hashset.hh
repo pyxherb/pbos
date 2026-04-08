@@ -77,7 +77,7 @@ namespace kfxx {
 
 		[[nodiscard]] PBOS_FORCEINLINE static bool _resize_buckets(size_t new_size, buckets_type &old_buckets, buckets_type &new_buckets) {
 			{
-				if (!new_buckets.resizeUninitialized(new_size)) {
+				if (!new_buckets.resize_uninit(new_size)) {
 					return false;
 				}
 				for (size_t i = 0; i < new_buckets.size(); ++i) {
@@ -90,25 +90,25 @@ namespace kfxx {
 				for (size_t i = 0; i < new_size; ++i) {
 					bucket_t &bucket = new_buckets.at(i);
 
-					for (typename bucket_t::node_handle_t j = bucket.firstNode(); j; j = j->next) {
+					for (typename bucket_t::node_handle_t j = bucket.first_node(); j; j = j->next) {
 						size_t index = ((size_t)j->data.hash_code) % n_old_buckets;
 
 						bucket.detach(j);
-						old_buckets.at(index).pushFront(j);
+						old_buckets.at(index).push_front(j);
 					}
 				}
-				new_buckets.clearAndShrink();
+				new_buckets.clear_and_shrink();
 			});
 
 			for (size_t i = 0; i < n_old_buckets; ++i) {
 				bucket_t &bucket = old_buckets.at(i);
 
-				for (typename bucket_t::node_handle_t j = bucket.firstNode(); j;) {
+				for (typename bucket_t::node_handle_t j = bucket.first_node(); j;) {
 					typename bucket_t::node_handle_t next = j->next;
 					size_t index = ((size_t)j->data.hash_code) % new_size;
 
 					bucket.detach(j);
-					new_buckets.at(index).pushFront(j);
+					new_buckets.at(index).push_front(j);
 					j = next;
 				}
 			}
@@ -119,7 +119,7 @@ namespace kfxx {
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bucket_node_handle_query_result_t _get_bucket_slot(const bucket_t &bucket, const T &data) const {
-			for (auto i = bucket.firstNode(); i; i = i->next) {
+			for (auto i = bucket.first_node(); i; i = i->next) {
 				if constexpr (Fallible) {
 					if (auto result = _equality_comparator(i->data.data, data); result.hasValue()) {
 						return i;
@@ -133,7 +133,7 @@ namespace kfxx {
 				}
 			}
 
-			return bucket_t::nullnode_handle_t();
+			return bucket_t::null_node_handle();
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool _check_and_resize_buckets() {
@@ -173,7 +173,7 @@ namespace kfxx {
 		/// @return true for succeeded, false if failed.
 		[[nodiscard]] PBOS_FORCEINLINE bool _insert(T &&data, bool force_resize_buckets) {
 			if (!_buckets.size()) {
-				if (!_buckets.resizeUninitialized(1)) {
+				if (!_buckets.resize_uninit(1)) {
 					return false;
 				}
 
@@ -200,13 +200,13 @@ namespace kfxx {
 					goto inserted;
 				}
 			}
-			if (!bucket.pushFront(element_t(std::move(tmp_data), hash_code)))
+			if (!bucket.push_front(element_t(std::move(tmp_data), hash_code)))
 				return false;
 		inserted:
 
 			if (!_check_and_resize_buckets()) {
 				if (force_resize_buckets) {
-					bucket.popFront();
+					bucket.pop_front();
 					return false;
 				}
 			}
@@ -254,7 +254,7 @@ namespace kfxx {
 				typename bucket_t::node_handle_t next_node = bucket_t::next(node, 1);
 
 				bucket.detach(node);
-				bucket.deleteNode(node);
+				bucket.delete_node(node);
 
 				--_size;
 			}
@@ -266,7 +266,7 @@ namespace kfxx {
 
 		[[nodiscard]] PBOS_FORCEINLINE bucket_node_handle_query_result_t _get(const T &data, size_t &index) const {
 			if (!_buckets.size()) {
-				return bucket_t::nullnode_handle_t();
+				return bucket_t::null_node_handle();
 			}
 
 			hash_code_t hash_code;
@@ -349,7 +349,7 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE void clear_and_shrink() {
-			_buckets.clearAndShrink();
+			_buckets.clear_and_shrink();
 		}
 
 		PBOS_FORCEINLINE allocator_t *allocator() const {
@@ -387,7 +387,7 @@ namespace kfxx {
 				direction = it.direction;
 
 				it.idx_cur_bucket = SIZE_MAX;
-				it.bucket_node_handle = bucket_t::nullnode_handle_t();
+				it.bucket_node_handle = bucket_t::null_node_handle();
 				it.hash_set = nullptr;
 				it.direction = iterator_direction::invalid;
 			}
@@ -423,7 +423,7 @@ namespace kfxx {
 								idx_cur_bucket = SIZE_MAX;
 								next_node = nullptr;
 							} else {
-								next_node = hash_set->_buckets.at(idx_cur_bucket).firstNode();
+								next_node = hash_set->_buckets.at(idx_cur_bucket).first_node();
 							}
 						}
 					}
@@ -437,7 +437,7 @@ namespace kfxx {
 								next_node = nullptr;
 							} else {
 								--idx_cur_bucket;
-								next_node = hash_set->_buckets.at(idx_cur_bucket).lastNode();
+								next_node = hash_set->_buckets.at(idx_cur_bucket).last_node();
 							}
 						}
 					}
@@ -457,7 +457,7 @@ namespace kfxx {
 				if (direction == iterator_direction::forward) {
 					if (idx_cur_bucket == SIZE_MAX) {
 						idx_cur_bucket = hash_set->_buckets.size();
-						bucket_node_handle = hash_set->_buckets.at(idx_cur_bucket).lastNode();
+						bucket_node_handle = hash_set->_buckets.at(idx_cur_bucket).last_node();
 					} else {
 						typename bucket_t::node_handle_t next_node = bucket_t::prev(bucket_node_handle, 1);
 						if (!next_node) {
@@ -466,7 +466,7 @@ namespace kfxx {
 									km_panic("Decreasing the beginning iterator");
 								} else {
 									--idx_cur_bucket;
-									next_node = hash_set->_buckets.at(idx_cur_bucket).lastNode();
+									next_node = hash_set->_buckets.at(idx_cur_bucket).last_node();
 								}
 							}
 						}
@@ -475,7 +475,7 @@ namespace kfxx {
 				} else {
 					if (idx_cur_bucket == SIZE_MAX) {
 						idx_cur_bucket = 0;
-						bucket_node_handle = hash_set->_buckets.at(0).firstNode();
+						bucket_node_handle = hash_set->_buckets.at(0).first_node();
 					} else {
 						typename bucket_t::node_handle_t next_node = bucket_t::next(bucket_node_handle, 1);
 						if (!next_node) {
@@ -483,7 +483,7 @@ namespace kfxx {
 								if (++idx_cur_bucket >= hash_set->_buckets.size()) {
 									km_panic("Decreasing the beginning iterator");
 								} else {
-									next_node = hash_set->_buckets.at(idx_cur_bucket).firstNode();
+									next_node = hash_set->_buckets.at(idx_cur_bucket).first_node();
 								}
 							}
 						}
@@ -550,7 +550,7 @@ namespace kfxx {
 		PBOS_FORCEINLINE iterator begin() {
 			for (size_t i = 0; i < _buckets.size(); ++i) {
 				auto &cur_bucket = _buckets.at(i);
-				typename bucket_t::node_handle_t node = cur_bucket.firstNode();
+				typename bucket_t::node_handle_t node = cur_bucket.first_node();
 				if (node) {
 					return iterator(this, i, node, iterator_direction::forward);
 				}
@@ -563,14 +563,14 @@ namespace kfxx {
 		PBOS_FORCEINLINE iterator begin_reversed() {
 			for (size_t i = _buckets.size(); i; --i) {
 				auto &cur_bucket = _buckets.at(i);
-				typename bucket_t::node_handle_t node = cur_bucket.lastNode();
+				typename bucket_t::node_handle_t node = cur_bucket.last_node();
 				if (node) {
 					return iterator(this, i, node, iterator_direction::reversed);
 				}
 			}
 
 			auto &cur_bucket = _buckets.at(0);
-			typename bucket_t::node_handle_t node = cur_bucket.lastNode();
+			typename bucket_t::node_handle_t node = cur_bucket.last_node();
 			if (node) {
 				return iterator(this, 0, node, iterator_direction::reversed);
 			}
@@ -703,7 +703,7 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE bool shrink_buckets() {
-			return _buckets.shrinkToFit();
+			return _buckets.shrink_to_fit();
 		}
 	};
 

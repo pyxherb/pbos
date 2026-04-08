@@ -9,9 +9,9 @@
 namespace kfxx {
 #if __cplusplus >= 202002L
 	template <typename T>
-	concept rc_object_trait = requires(T *rcObject) {
-		rcObject->inc_ref();
-		rcObject->dec_ref();
+	concept rc_object_trait = requires(T *rc_object) {
+		rc_object->inc_ref();
+		rc_object->dec_ref();
 	};
 #endif
 

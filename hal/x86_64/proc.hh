@@ -30,8 +30,9 @@ typedef struct _kh_user_context_t {
 
 #define PS_TCB_SCHEDULED 0x01
 
-void hn_proc_cleanup(ps_pcb_t *proc);
-void hn_thread_cleanup(ps_tcb_t *thread);
+kh_user_context_t *ps_alloc_context();
+void ps_destroy_context(kh_user_context_t *context);
+
 void ps_save_context(kh_user_context_t *ctxt);
 PBOS_NORETURN void ps_load_user_context(const kh_user_context_t *ctxt);
 PBOS_NORETURN void ps_load_kernel_context(const kh_user_context_t *ctxt);

@@ -3,6 +3,7 @@
 #include <pbos/km/logger.h>
 #include <hal/x86_64/proc.hh>
 #include <pbos/hal/irq.hh>
+#include <pbos/kfxx/allocator.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -46,6 +47,14 @@ PBOS_NORETURN void hn_load_kernel_context(
 	uint64_t ds,
 
 	kn_ctxtsw_tmp_t *ctxtsw_tmp);
+
+kh_user_context_t *ps_alloc_context() {
+	return kfxx::alloc_and_construct<kh_user_context_t>(kfxx::kernel_allocator());
+}
+
+void ps_destroy_context(kh_user_context_t *context) {
+	kfxx::destroy_and_release<kh_user_context_t>(kfxx::kernel_allocator(), context);
+}
 
 PBOS_NORETURN void ps_load_user_context(const kh_user_context_t *ctxt) {
 	hn_load_user_context(

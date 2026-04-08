@@ -51,6 +51,7 @@ namespace kfxx {
 	public:
 		static_assert(std::is_move_assignable_v<T>, "The key must be move-assignable");
 		static_assert(std::is_move_constructible_v<T>, "The key must be move-constructible");
+		static_assert(std::is_invocable_v<Comparator, T&, T&>, "The type is not comparable with the comparator");
 		struct node_t : public _rbtree_base::node_base {
 			T rb_value;
 		};

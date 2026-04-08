@@ -4,6 +4,10 @@
 #define PADDR_TOP(prefix) ((prefix##_PBASE) + ((prefix##_SIZE) - 1))
 #define VADDR_TOP(prefix) ((prefix##_VBASE) + ((prefix##_SIZE) - 1))
 
+#define USER_VBASE 0x0000000000000000ULL
+#define USER_SIZE 0x0008000000000000ULL
+#define USER_VTOP VADDR_TOP(USER)
+
 //
 // Kernel Bottom Area
 //
