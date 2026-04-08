@@ -20,9 +20,9 @@ PBOS_EXTERN_C_BEGIN
 
 typedef uint32_t ps_proc_access_t;
 
-typedef int32_t proc_id_t;
-typedef int32_t thread_id_t;
-typedef uint16_t ps_euid_t;
+typedef uint32_t proc_id_t;
+typedef uint32_t thread_id_t;
+typedef uint32_t ps_euid_t;
 
 typedef int ps_ufd_t;
 
@@ -37,7 +37,7 @@ void ps_add_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb);
 void ps_remove_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb);
 ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd);
 
-typedef struct _ps_user_context_t ps_user_context_t;
+typedef struct _kh_user_context_t kh_user_context_t;
 
 // Thread Control Block (TCB)
 typedef struct _ps_tcb_t ps_tcb_t;
@@ -51,8 +51,8 @@ extern uint32_t ps_eu_num;
 extern ps_pcb_t **ps_cur_proc_per_eu;
 extern ps_tcb_t **ps_cur_thread_per_eu;
 
-#define PROC_CLASSID UUID(88e8f612, 0b0c, 4f75, 921b, 88110ca3b116)
-#define THREAD_CLASSID UUID(5dd4ece1, 89a0, 4bec, b14b, 62e11312723d)
+#define PS_PROC_P 0x01	// Present
+#define PS_PROC_A 0x02	// Available
 
 void ps_create_proc(
 	ps_pcb_t *pcb,

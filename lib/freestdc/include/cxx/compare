@@ -1,0 +1,311 @@
+#ifndef _FREESTDC_CXX_COMPARE_
+#define _FREESTDC_CXX_COMPARE_
+
+#include <cstdint>
+#include <cxx_basedefs.hh>
+
+namespace std {
+	class partial_ordering;
+	class weak_ordering;
+	class strong_ordering;
+
+	class partial_ordering {
+	public:
+		int _order;
+
+		constexpr partial_ordering(const partial_ordering &) = default;
+		constexpr partial_ordering(int order) : _order(order) {}
+
+		static const partial_ordering less;
+		static const partial_ordering equivalent;
+		static const partial_ordering greater;
+		static const partial_ordering unordered;
+
+		constexpr operator int() const noexcept {
+			return _order;
+		}
+
+		friend constexpr bool operator==(partial_ordering v, int u) noexcept;
+		friend constexpr bool operator==(partial_ordering v, partial_ordering w) noexcept;
+
+		friend constexpr bool operator<(partial_ordering v, int u) noexcept;
+		friend constexpr bool operator<(int u, partial_ordering v) noexcept;
+
+		friend constexpr bool operator<=(partial_ordering v, int u) noexcept;
+		friend constexpr bool operator<=(int u, partial_ordering v) noexcept;
+
+		friend constexpr bool operator>(partial_ordering v, int u) noexcept;
+		friend constexpr bool operator>(int u, partial_ordering v) noexcept;
+
+		friend constexpr bool operator>=(partial_ordering v, int u) noexcept;
+		friend constexpr bool operator>=(int u, partial_ordering v) noexcept;
+
+		friend constexpr partial_ordering operator<=>(partial_ordering v, int u) noexcept;
+		friend constexpr partial_ordering operator<=>(int u, partial_ordering v) noexcept;
+	};
+
+	class weak_ordering {
+	public:
+		int _order;
+
+		constexpr weak_ordering(const weak_ordering &) = default;
+		constexpr weak_ordering(int order) : _order(order) {}
+
+		static const weak_ordering less;
+		static const weak_ordering equivalent;
+		static const weak_ordering greater;
+
+		constexpr operator int() const noexcept {
+			return _order;
+		}
+
+		constexpr operator partial_ordering() const noexcept {
+			if (_order == less)
+				return partial_ordering::less;
+			if (_order == greater)
+				return partial_ordering::greater;
+			return partial_ordering::equivalent;
+		}
+
+		friend constexpr bool operator==(weak_ordering v, int u) noexcept;
+		friend constexpr bool operator==(weak_ordering v, weak_ordering w) noexcept;
+
+		friend constexpr bool operator<(weak_ordering v, int u) noexcept;
+		friend constexpr bool operator<(int u, weak_ordering v) noexcept;
+
+		friend constexpr bool operator<=(weak_ordering v, int u) noexcept;
+		friend constexpr bool operator<=(int u, weak_ordering v) noexcept;
+
+		friend constexpr bool operator>(weak_ordering v, int u) noexcept;
+		friend constexpr bool operator>(int u, weak_ordering v) noexcept;
+
+		friend constexpr bool operator>=(weak_ordering v, int u) noexcept;
+		friend constexpr bool operator>=(int u, weak_ordering v) noexcept;
+
+		friend constexpr weak_ordering operator<=>(weak_ordering v, int u) noexcept;
+		friend constexpr weak_ordering operator<=>(int u, weak_ordering v) noexcept;
+	};
+
+	class strong_ordering {
+	public:
+		int _order;
+
+		constexpr strong_ordering(const strong_ordering &) = default;
+		constexpr strong_ordering(int order) : _order(order) {}
+
+		static const strong_ordering less;
+		static const strong_ordering equivalent;
+		static const strong_ordering equal;
+		static const strong_ordering greater;
+
+		constexpr operator int() const noexcept {
+			return _order;
+		}
+
+		constexpr operator partial_ordering() const noexcept {
+			if (_order == less)
+				return partial_ordering::less;
+			if (_order == greater)
+				return partial_ordering::greater;
+			return partial_ordering::equivalent;
+		}
+
+		constexpr operator weak_ordering() const noexcept {
+			if (_order == less)
+				return weak_ordering::less;
+			if (_order == greater)
+				return weak_ordering::greater;
+			return weak_ordering::equivalent;
+		}
+
+		friend constexpr bool operator==(strong_ordering v, int u) noexcept;
+		friend constexpr bool operator==(strong_ordering v, strong_ordering w) noexcept;
+
+		friend constexpr bool operator<(strong_ordering v, int u) noexcept;
+		friend constexpr bool operator<(int u, strong_ordering v) noexcept;
+
+		friend constexpr bool operator<=(strong_ordering v, int u) noexcept;
+		friend constexpr bool operator<=(int u, strong_ordering v) noexcept;
+
+		friend constexpr bool operator>(strong_ordering v, int u) noexcept;
+		friend constexpr bool operator>(int u, strong_ordering v) noexcept;
+
+		friend constexpr bool operator>=(strong_ordering v, int u) noexcept;
+		friend constexpr bool operator>=(int u, strong_ordering v) noexcept;
+
+		friend constexpr strong_ordering operator<=>(strong_ordering v, int u) noexcept;
+		friend constexpr strong_ordering operator<=>(int u, strong_ordering v) noexcept;
+	};
+
+	inline constexpr partial_ordering partial_ordering::less = partial_ordering(-1);
+	inline constexpr partial_ordering partial_ordering::equivalent = partial_ordering(0);
+	inline constexpr partial_ordering partial_ordering::greater = partial_ordering(1);
+	inline constexpr partial_ordering partial_ordering::unordered = partial_ordering(INT8_MIN);
+
+	inline constexpr weak_ordering weak_ordering::less = weak_ordering(-1);
+	inline constexpr weak_ordering weak_ordering::equivalent = weak_ordering(0);
+	inline constexpr weak_ordering weak_ordering::greater = weak_ordering(1);
+
+	inline constexpr strong_ordering strong_ordering::less = strong_ordering(-1);
+	inline constexpr strong_ordering strong_ordering::equivalent = strong_ordering(0);
+	inline constexpr strong_ordering strong_ordering::equal = equivalent;
+	inline constexpr strong_ordering strong_ordering::greater = strong_ordering(1);
+
+	constexpr bool operator==(partial_ordering v, int u) noexcept {
+		return v._order == u;
+	}
+
+	constexpr bool operator==(partial_ordering v, partial_ordering w) noexcept {
+		return v._order == w._order;
+	}
+
+	constexpr bool operator<(partial_ordering v, int u) noexcept {
+		return v._order < u;
+	}
+
+	constexpr bool operator<(int u, partial_ordering v) noexcept {
+		return u < v._order;
+	}
+
+	constexpr bool operator<=(partial_ordering v, int u) noexcept {
+		return v._order <= u;
+	}
+
+	constexpr bool operator<=(int u, partial_ordering v) noexcept {
+		return u <= v._order;
+	}
+
+	constexpr bool operator>(partial_ordering v, int u) noexcept {
+		return v._order > u;
+	}
+
+	constexpr bool operator>(int u, partial_ordering v) noexcept {
+		return u > v._order;
+	}
+
+	constexpr bool operator>=(partial_ordering v, int u) noexcept {
+		return v._order >= u;
+	}
+
+	constexpr bool operator>=(int u, partial_ordering v) noexcept {
+		return u >= v._order;
+	}
+
+	constexpr partial_ordering operator<=>(partial_ordering v, int u) noexcept {
+		return v;
+	}
+
+	constexpr partial_ordering operator<=>(int u, partial_ordering v) noexcept {
+		if (v._order < u)
+			return partial_ordering::greater;
+		if (v._order > u)
+			return partial_ordering::less;
+		return v;
+	}
+
+	constexpr bool operator==(weak_ordering v, int u) noexcept {
+		return v._order == u;
+	}
+
+	constexpr bool operator==(weak_ordering v, weak_ordering w) noexcept {
+		return v._order == w._order;
+	}
+
+	constexpr bool operator<(weak_ordering v, int u) noexcept {
+		return v._order < u;
+	}
+
+	constexpr bool operator<(int u, weak_ordering v) noexcept {
+		return u < v._order;
+	}
+
+	constexpr bool operator<=(weak_ordering v, int u) noexcept {
+		return v._order <= u;
+	}
+
+	constexpr bool operator<=(int u, weak_ordering v) noexcept {
+		return u <= v._order;
+	}
+
+	constexpr bool operator>(weak_ordering v, int u) noexcept {
+		return v._order > u;
+	}
+
+	constexpr bool operator>(int u, weak_ordering v) noexcept {
+		return u > v._order;
+	}
+
+	constexpr bool operator>=(weak_ordering v, int u) noexcept {
+		return v._order >= u;
+	}
+
+	constexpr bool operator>=(int u, weak_ordering v) noexcept {
+		return u >= v._order;
+	}
+
+	constexpr weak_ordering operator<=>(weak_ordering v, int u) noexcept {
+		return v;
+	}
+
+	constexpr weak_ordering operator<=>(int u, weak_ordering v) noexcept {
+		if (v._order < u)
+			return weak_ordering::greater;
+		if (v._order > u)
+			return weak_ordering::less;
+		return v;
+	}
+
+	constexpr bool operator==(strong_ordering v, int u) noexcept {
+		return v._order == u;
+	}
+
+	constexpr bool operator==(strong_ordering v, strong_ordering w) noexcept {
+		return v._order == w._order;
+	}
+
+	constexpr bool operator<(strong_ordering v, int u) noexcept {
+		return v._order < u;
+	}
+
+	constexpr bool operator<(int u, strong_ordering v) noexcept {
+		return u < v._order;
+	}
+
+	constexpr bool operator<=(strong_ordering v, int u) noexcept {
+		return v._order <= u;
+	}
+
+	constexpr bool operator<=(int u, strong_ordering v) noexcept {
+		return u <= v._order;
+	}
+
+	constexpr bool operator>(strong_ordering v, int u) noexcept {
+		return v._order > u;
+	}
+
+	constexpr bool operator>(int u, strong_ordering v) noexcept {
+		return u > v._order;
+	}
+
+	constexpr bool operator>=(strong_ordering v, int u) noexcept {
+		return v._order >= u;
+	}
+
+	constexpr bool operator>=(int u, strong_ordering v) noexcept {
+		return u >= v._order;
+	}
+
+	constexpr strong_ordering operator<=>(strong_ordering v, int u) noexcept {
+		return v;
+	}
+
+	constexpr strong_ordering operator<=>(int u, strong_ordering v) noexcept {
+		if (v._order < u)
+			return strong_ordering::greater;
+		if (v._order > u)
+			return strong_ordering::less;
+		return v;
+	}
+}
+
+#endif

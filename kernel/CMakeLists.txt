@@ -2,7 +2,7 @@ file(GLOB SRC *.c *.cc *.h *.S)
 add_executable(pbkern ${SRC})
 
 #find_package(kimgen REQUIRED)
-#find_package(cargen REQUIRED)
+find_package(cargen REQUIRED)
 
 get_property(FREESTDC_INCLUDE_DIR GLOBAL PROPERTY FREESTDC_INCLUDE_DIR)
 get_property(FREESTDC_INCLUDE_DIR_CXX GLOBAL PROPERTY FREESTDC_INCLUDE_DIR_CXX)
@@ -19,12 +19,12 @@ target_link_options(pbkern PRIVATE "-T${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/k
 #    BYPRODUCTS ${PBOS_BINARY_DIR}/pbkim
 #    DEPENDS bootldr pbinit)
 
-#add_custom_target(
-#    initcar
-#    COMMAND ${CARGEN_EXECUTABLE} -c ${PBOS_BINARY_DIR}/initcar _ $<TARGET_FILE:pbinit>
-#    BYPRODUCTS ${PBOS_BINARY_DIR}/initcar
-#    DEPENDS pbkim
-#)
+add_custom_target(
+    initcar
+    COMMAND ${CARGEN_EXECUTABLE} -c ${PBOS_BINARY_DIR}/initcar _ $<TARGET_FILE:pbinit>
+    BYPRODUCTS ${PBOS_BINARY_DIR}/initcar
+    DEPENDS pbkim
+)
 
 # add_subdirectory("exec")
 add_subdirectory("io")

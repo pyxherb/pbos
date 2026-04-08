@@ -3,6 +3,7 @@
 
 #include "basedefs.hh"
 #include "option.hh"
+#include <compare>
 
 namespace kfxx {
 	template <typename T>

@@ -27,7 +27,7 @@ PBOS_USED char mm_kernel_initial_stack alignas(PAGESIZE)[1024 * 96];
 PBOS_USED arch_pte_t mm_kernel_initial_ptt alignas(PAGESIZE)[KINITPTT_SIZE / sizeof(arch_pte_t)];
 PBOS_USED arch_pde_t mm_kernel_initial_pdt alignas(PAGESIZE)[KINITPDT_SIZE / sizeof(arch_pde_t)];
 PBOS_USED arch_pdpte_t mm_kernel_initial_pdpt alignas(PAGESIZE)[KINITPDPT_SIZE / sizeof(arch_pdpte_t)];
-PBOS_USED arch_pml4e_t mm_kernel_initial_pml4t alignas(PAGESIZE)[KINITPML4T_SIZE / sizeof(arch_pml4e_t)];
+PBOS_USED arch_pml4te_t mm_kernel_initial_pml4t alignas(PAGESIZE)[KINITPML4T_SIZE / sizeof(arch_pml4te_t)];
 
 void *mm_kernel_initial_bottom_ptt_paddr = nullptr;
 void *mm_kernel_initial_bottom_pdt_paddr = nullptr;
@@ -610,14 +610,14 @@ static void hn_mm_init_paging() {
 		const uint32_t pml4x = PML4X(KBOTTOM_VBASE);
 		char *const vaddr_pml4 = (char *)KVADDR(pml4x, 0, 0, 0, 0);
 
-		arch_pml4e_t *vpml4e = &mm_kernel_initial_pml4t[pml4x];
+		arch_pml4te_t *vpml4te = &mm_kernel_initial_pml4t[pml4x];
 
-		vpml4e->mask = PML4E_P | PML4E_RW | PML4E_U;
-		vpml4e->address = PGROUNDDOWN(
+		vpml4te->mask = PML4E_P | PML4E_RW | PML4E_U;
+		vpml4te->address = PGROUNDDOWN(
 			((arch_pdpte_t *)mm_kernel_initial_pdpt_paddr) +
 			((PML4X(vaddr_pml4) - PML4X(KBOTTOM_VBASE)) * 512));
 
-		kd_assert(UNPGADDR(vpml4e->address) < ((arch_pdpte_t *)mm_kernel_initial_pdpt_paddr) + PBOS_ARRAYSIZE(mm_kernel_initial_ptt));
+		kd_assert(UNPGADDR(vpml4te->address) < ((arch_pdpte_t *)mm_kernel_initial_pdpt_paddr) + PBOS_ARRAYSIZE(mm_kernel_initial_ptt));
 
 		// Fill the PDP Table.
 		for (uint32_t pdptx = (pml4x == PML4X(KBOTTOM_VBASE) ? PDPTX(KBOTTOM_VBASE) : 0); pdptx < PDPTX_MAX + 1; ++pdptx) {

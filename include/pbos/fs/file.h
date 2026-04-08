@@ -72,7 +72,7 @@ PBOS_NODISCARD km_result_t fs_create_fcb(
 PBOS_NODISCARD km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file);
 PBOS_NODISCARD km_result_t fs_unmount_file(fs_fnode_t *file);
 
-PBOS_NODISCARD void fs_close(fs_fcb_t *fcb);
+void fs_close(fs_fcb_t *fcb);
 
 PBOS_NODISCARD km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out);
 PBOS_NODISCARD km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out);

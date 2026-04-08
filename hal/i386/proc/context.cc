@@ -47,7 +47,7 @@ PBOS_NORETURN void hn_load_kernel_context(
 
 	kn_ctxtsw_tmp_t *ctxtsw_tmp);
 
-PBOS_NORETURN void ps_load_user_context(const ps_user_context_t *ctxt) {
+PBOS_NORETURN void ps_load_user_context(const kh_user_context_t *ctxt) {
 	hn_load_user_context(
 		ctxt->edi,
 		ctxt->esi,
@@ -67,7 +67,7 @@ PBOS_NORETURN void ps_load_user_context(const ps_user_context_t *ctxt) {
 		ctxt->ss);
 }
 
-PBOS_NORETURN void ps_load_kernel_context(const ps_user_context_t *ctxt) {
+PBOS_NORETURN void ps_load_kernel_context(const kh_user_context_t *ctxt) {
 	kn_ctxtsw_tmp_t tmp = {
 		.eax = ctxt->eax,
 		.esp = ctxt->esp,
@@ -93,7 +93,7 @@ PBOS_NORETURN void ps_load_kernel_context(const ps_user_context_t *ctxt) {
 		&tmp);
 }
 
-void ps_save_context(ps_user_context_t *ctxt) {
+void ps_save_context(kh_user_context_t *ctxt) {
 }
 
 PBOS_EXTERN_C_END

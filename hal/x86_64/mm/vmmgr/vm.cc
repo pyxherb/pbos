@@ -37,13 +37,13 @@ static void *hn_get_direct_phy_map_addr(void *paddr, size_t size) {
 	return nullptr;
 }
 
-void *mm_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags) {
-	return mm_vmalloc(ctxt, (void *)(DIRECTPHYMEM_VTOP + 1),
+void *kh_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags) {
+	return kh_vmalloc(ctxt, (void *)(DIRECTPHYMEM_VTOP + 1),
 		(void *)KERNEL_VBASE, size, access, flags);
 }
 
 void mm_vmfree(mm_context_t *ctxt, void *addr, size_t size) {
-	mm_unmmap(ctxt, addr, size, 0);
+	kh_unmmap(ctxt, addr, size, 0);
 }
 
 PBOS_NODISCARD uint8_t hn_mm_mmap_early(
@@ -62,7 +62,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 	void *const addr_limit = (void *)PGCEIL((char *)vaddr + size);
 	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
 
-	arch_pml4e_t *pml4t = context->pml4t;
+	arch_pml4te_t *pml4t = context->pml4t;
 
 	size_t sz_mapped = 0;
 	for (uint16_t pml4x = PML4X(vaddr); pml4x < PML4X(addr_limit) + 1; ++pml4x) {
@@ -70,7 +70,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 		if (sz_mapped >= size)
 			break;
 
-		arch_pml4e_t *pml4te = &pml4t[pml4x];
+		arch_pml4te_t *pml4te = &pml4t[pml4x];
 		bool init_pdpt = false;
 
 		if (!(pml4te->mask & PML4E_P)) {
@@ -192,7 +192,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 	return result;
 }
 
-km_result_t mm_mmap(mm_context_t *ctxt,
+km_result_t kh_mmap(mm_context_t *ctxt,
 	void *vaddr,
 	void *paddr,
 	size_t size,
@@ -201,15 +201,15 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	// io::irq_disable_lock irq_lock;
 
 	if (!ctxt)
-		km_panic("Cannot call mm_mmap with null context");
+		km_panic("Cannot call mmap with null context");
 	if (!size)
-		km_panic("Cannot call mm_mmap with size == 0");
+		km_panic("Cannot call mmap with size == 0");
 
 	kd_assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
 
 	void *const addr_limit = (char *)vaddr + size;
 	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
-	arch_pml4e_t *pml4t = ctxt->pml4t;
+	arch_pml4te_t *pml4t = ctxt->pml4t;
 	bool is_cur_pgtab = ctxt == mm_get_cur_context();
 	bool is_user_space = mm_is_user_space(vaddr);
 
@@ -222,12 +222,12 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	uint8_t mask = hn_pgaccess_to_pgmask(access);
 
 	kfxx::scope_guard unmmap_guard([ctxt, vaddr, size]() noexcept {
-		mm_unmmap(ctxt, vaddr, size, 0);
+		kh_unmmap(ctxt, vaddr, size, 0);
 	});
 
 	// Walk each PML4E.
 	for (uint16_t pml4x = PML4X(vaddr); pml4x < PML4X(addr_limit) + 1; ++pml4x) {
-		arch_pml4e_t *pml4te = &pml4t[pml4x];
+		arch_pml4te_t *pml4te = &pml4t[pml4x];
 
 		if (!(pml4te->mask & PML4E_P)) {
 			if (flags & MMAP_NO_PGTAB_ALLOC)
@@ -362,18 +362,18 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	return KM_RESULT_OK;
 }
 
-void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
+void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
 	kd_assert(ctxt);
 
 	// io::irq_disable_lock irq_lock;
-	arch_pml4e_t *pml4t = ctxt->pml4t;
+	arch_pml4te_t *pml4t = ctxt->pml4t;
 	void *const addr_limit = (char *)vaddr + size;
 	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
 	bool is_cur_pgtab = ctxt == mm_get_cur_context();
 
 	// Walk each PML4E.
 	for (uint16_t pml4x = PML4X(vaddr); pml4x < PML4X(addr_limit) + 1; ++pml4x) {
-		arch_pml4e_t *pml4te = &pml4t[pml4x];
+		arch_pml4te_t *pml4te = &pml4t[pml4x];
 
 		if (!(pml4te->mask & PML4E_P))
 			continue;
@@ -538,7 +538,7 @@ void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 	}
 }
 
-void mm_set_page_access(
+void kh_set_page_access(
 	mm_context_t *context,
 	const void *vaddr,
 	size_t size,
@@ -549,7 +549,7 @@ void mm_set_page_access(
 	// TODO: Implement it.
 }
 
-void *mm_vmalloc(mm_context_t *context,
+void *kh_vmalloc(mm_context_t *context,
 	const void *minaddr,
 	const void *maxaddr,
 	size_t size,
@@ -561,7 +561,7 @@ void *mm_vmalloc(mm_context_t *context,
 	kd_dbgcheck(
 		addr_prefix == ADDR_PREFIX(maxaddr),
 		"The address prefix of the minimum address and the maximum address does not match");
-	arch_pml4e_t *pml4t = context->pml4t;
+	arch_pml4te_t *pml4t = context->pml4t;
 
 	void *p_found = NULL;  // Pointer to the free area.
 	size_t sz_found = 0;   // Size of free area found.
@@ -572,7 +572,7 @@ void *mm_vmalloc(mm_context_t *context,
 		if (sz_found >= size)
 			break;
 
-		arch_pml4e_t *pml4te = &pml4t[pml4x];
+		arch_pml4te_t *pml4te = &pml4t[pml4x];
 
 		// Skip if does not present
 		if (!(pml4te->mask & PML4E_P)) {
@@ -696,7 +696,7 @@ void *mm_vmalloc(mm_context_t *context,
 
 	if (sz_found >= size) {
 		km_unwrap_result(
-			mm_mmap(context, p_found, nullptr, size, access, flags | MMAP_NO_REMAP));
+			kh_mmap(context, p_found, nullptr, size, access, flags | MMAP_NO_REMAP));
 		return p_found;
 	}
 
@@ -719,7 +719,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 	kd_dbgcheck(
 		addr_prefix == ADDR_PREFIX(maxaddr),
 		"The address prefix of the minimum address and the maximum address does not match");
-	arch_pml4e_t *pml4t = context->pml4t;
+	arch_pml4te_t *pml4t = context->pml4t;
 
 	void *p_found = NULL;  // Pointer to the free area.
 	size_t sz_found = 0;   // Size of free area found.
@@ -730,7 +730,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 		if (sz_found >= size)
 			break;
 
-		arch_pml4e_t *pml4te = &pml4t[pml4x];
+		arch_pml4te_t *pml4te = &pml4t[pml4x];
 
 		// Skip if does not present
 		if (!(pml4te->mask & PML4E_P)) {
@@ -854,13 +854,13 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 	return nullptr;
 }
 
-void *mm_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
+void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
 	// io::irq_disable_lock irq_lock;
 
 	kd_assert(ctxt);
 
 	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
-	arch_pml4e_t *pml4t = ctxt->pml4t;
+	arch_pml4te_t *pml4t = ctxt->pml4t;
 
 	void *p_found = NULL;  // Pointer to the free area.
 	size_t sz_found = 0;   // Size of free area found.
@@ -868,7 +868,7 @@ void *mm_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 	// Walk PML4E.
 	uint16_t pml4x = PML4X(vaddr);
 
-	arch_pml4e_t *pml4te = &pml4t[pml4x];
+	arch_pml4te_t *pml4te = &pml4t[pml4x];
 
 	if (!(pml4te->mask & PML4E_P))
 		return nullptr;
@@ -967,7 +967,7 @@ PBOS_NODISCARD void *hn_tmpmap_early(void *paddr, size_t size, uint16_t mask) {
 
 	size_t sz_found = 0;
 	for (uint16_t pml4x = PML4X(KINITTMPMAP_VBASE); pml4x < PML4X(KINITTMPMAP_VTOP + 1) + 1; ++pml4x) {
-		arch_pml4e_t *pml4te = &mm_kernel_initial_pml4t[pml4x];
+		arch_pml4te_t *pml4te = &mm_kernel_initial_pml4t[pml4x];
 
 		kd_assert(pml4te->mask & PML4E_P);
 
@@ -1045,8 +1045,8 @@ alloc_succeeded:
 
 	size_t off_paddr = 0;
 	for (uint32_t pml4x = PML4X(vaddr); pml4x < PML4X(addr_limit - PAGESIZE) + 1; ++pml4x) {
-		arch_pml4e_t *pml4e = &mm_kernel_initial_pml4t[pml4x];
-		kd_assert(pml4e->mask & PML4E_P);
+		arch_pml4te_t *pml4te = &mm_kernel_initial_pml4t[pml4x];
+		kd_assert(pml4te->mask & PML4E_P);
 
 		for (uint32_t pdptx = (pml4x == PML4X(vaddr) ? PDPTX(vaddr) : 0);
 			pdptx < PDPTX_MAX + 1;
@@ -1119,7 +1119,7 @@ void hn_tmpunmap_early(void *vaddr, size_t size) {
 
 	size_t off_paddr = 0;
 	for (uint32_t pml4x = PML4X(vaddr); pml4x < PML4X(addr_limit - PAGESIZE) + 1; ++pml4x) {
-		arch_pml4e_t *pml4e = &mm_kernel_initial_pml4t[pml4x];
+		arch_pml4te_t *pml4te = &mm_kernel_initial_pml4t[pml4x];
 
 		for (uint32_t pdptx = (pml4x == PML4X(vaddr) ? PDPTX(vaddr) : 0);
 			pdptx < PDPTX_MAX + 1;

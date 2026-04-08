@@ -6,17 +6,6 @@ PBOS_EXTERN_C_BEGIN
 void ps_init() {
 	hal_prepare_ps();
 
-	kf_uuid_t uuid;
-	uuid = PROC_CLASSID;
-
-	if (!(ps_proc_class = om_register_class(&uuid, kn_proc_destructor)))
-		km_panic("Error registering process kernel class");
-
-	uuid = THREAD_CLASSID;
-
-	if (!(ps_thread_class = om_register_class(&uuid, kn_thread_destructor)))
-		km_panic("Error registering thread kernel class");
-
 	kn_init_binldrs();
 
 	km_result_t result = ps_set_sched(&ps_simploop_sched);

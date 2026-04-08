@@ -3,7 +3,7 @@
 
 #include <arch/x86_64/mlayout.h>
 #include <pbos/kfxx/rbtree.hh>
-#include <pbos/kn/mm/mm.hh>
+#include <pbos/kh/mm.hh>
 #include "mm.h"
 #include "mm/pgalloc/pgalloc.hh"
 
@@ -15,7 +15,7 @@ typedef struct _hn_tmpmap_info_t {
 } hn_tmpmap_info_t;
 
 typedef struct _mm_context_t {
-	arch_pml4e_t *pml4t = nullptr;
+	arch_pml4te_t *pml4t = nullptr;
 } mm_context_t;
 
 ///
@@ -24,7 +24,7 @@ typedef struct _mm_context_t {
 extern arch_pte_t mm_kernel_initial_ptt[KINITPTT_SIZE / sizeof(arch_pte_t)];
 extern arch_pde_t mm_kernel_initial_pdt[KINITPDT_SIZE / sizeof(arch_pde_t)];
 extern arch_pdpte_t mm_kernel_initial_pdpt[KINITPDPT_SIZE / sizeof(arch_pdpte_t)];
-extern arch_pml4e_t mm_kernel_initial_pml4t[KINITPML4T_SIZE / sizeof(arch_pml4e_t)];
+extern arch_pml4te_t mm_kernel_initial_pml4t[KINITPML4T_SIZE / sizeof(arch_pml4te_t)];
 static_assert(sizeof(mm_kernel_initial_pdt) == KINITPDT_SIZE);
 static_assert(sizeof(mm_kernel_initial_pdpt) == KINITPDPT_SIZE);
 static_assert(sizeof(mm_kernel_initial_pml4t) == KINITPML4T_SIZE);

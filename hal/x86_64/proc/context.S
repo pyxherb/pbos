@@ -1,55 +1,55 @@
 .global hn_load_user_context
 
 hn_load_user_context:
-	popl %eax // Eliminate extraneous previous EIP
+	popq %rax // Eliminate extraneous previous RIP
 
-	popl %edi
-	popl %esi
-	popl %ebp
-	popl %ebx
-	popl %edx
-	popl %ecx
+	popq %rdi
+	popq %rsi
+	popq %rbp
+	popq %rbx
+	popq %rdx
+	popq %rcx
 
-	popl %eax
+	popq %rax
 	movw %ax, %fs
-	popl %eax
+	popq %rax
 	movw %ax, %es
-	popl %eax
+	popq %rax
 	movw %ax, %gs
-	popl %eax
+	popq %rax
 	movw %ax, %ds
 
-	popl %eax
+	popq %rax
 
-	iretl
+	iretq
 
 .global hn_load_kernel_context
 
 hn_load_kernel_context:
-	popl %eax // Eliminate extraneous previous EIP
+	popq %rax // Eliminate extraneous previous EIP
 
-	popl %edi
-	popl %esi
-	popl %ebp
-	popl %ebx
-	popl %edx
-	popl %ecx
+	popq %rdi
+	popq %rsi
+	popq %rbp
+	popq %rbx
+	popq %rdx
+	popq %rcx
 
-	popl %eax
+	popq %rax
 	movw %ax, %fs
-	popl %eax
+	popq %rax
 	movw %ax, %es
-	popl %eax
+	popq %rax
 	movw %ax, %gs
-	popl %eax
+	popq %rax
 	movw %ax, %ds
 
-	popl %eax
+	popq %rax
 
-	movl 4(%eax), %esp
-	pushl 8(%eax) // EFLAGS
-	pushl 16(%eax) // CS
-	pushl 12(%eax) // EIP
-	movl 0(%eax), %eax
+	movl 8(%rax), %esp
+	pushq 16(%rax) // EFLAGS
+	pushq 24(%rax) // CS
+	pushq 32(%rax) // EIP
+	movl 0(%rax), %eax
 
-	iretl
+	iretq

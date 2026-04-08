@@ -187,7 +187,7 @@ void *mm_getmap(mm_context_t *context, const void *vaddr, mm_pgaccess_t *pgacces
 /// @param context Pointer to the memory context buffer.
 /// @return The result code for the initialization operation.
 ///
-PBOS_NODISCARD km_result_t kn_mm_init_context(mm_context_t *context);
+PBOS_NODISCARD km_result_t kn_mm_alloc_context(mm_context_t *cur_context, mm_context_t **new_context_out);
 ///
 /// @brief Free a memory context and its associated resource.
 ///

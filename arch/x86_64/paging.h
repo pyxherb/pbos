@@ -12,13 +12,13 @@
 #define PML4E_CD (1ULL << 4)   // Cache Disabled
 #define PML4E_A (1ULL << 5)	   // Accessed
 
-typedef struct PBOS_PACKED _arch_pml4e_t {
+typedef struct PBOS_PACKED _arch_pml4te_t {
 	uint16_t mask : 12;
 	pgaddr_t address : 40;
 	uint8_t _reserved1 : 7;
 	uint8_t pk : 4;
 	bool xd : 1;
-} arch_pml4e_t;
+} arch_pml4te_t;
 
 #define PDPTE_P (1ULL << 0)	   // Present
 #define PDPTE_RW (1ULL << 1)   // Read/Write

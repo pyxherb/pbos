@@ -101,7 +101,7 @@ PBOS_NODISCARD km_result_t kn_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t *fcb_out);
 void kn_destroy_fnode(fs_fnode_t *fnode);
 void kn_destroy_fcb(fs_fcb_t *fcb);
 
-PBOS_NODISCARD void kn_do_unname_fnode(fs_fnode_t *file);
+void kn_do_unname_fnode(fs_fnode_t *file);
 PBOS_NODISCARD km_result_t kn_do_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len);
 
 PBOS_EXTERN_C_END

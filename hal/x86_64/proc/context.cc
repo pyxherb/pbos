@@ -7,84 +7,84 @@
 PBOS_EXTERN_C_BEGIN
 
 typedef struct _kn_ctxtsw_tmp_t {
-	uint32_t eax;
-	uint32_t esp;
-	uint32_t eflags;
-	uint32_t eip;
-	uint32_t cs;
+	uint64_t rax;
+	uint64_t rsp;
+	uint64_t rflags;
+	uint64_t rip;
+	uint64_t cs;
 } kn_ctxtsw_tmp_t;
 
 PBOS_NORETURN void hn_load_user_context(
-	uint32_t edi,
-	uint32_t esi,
-	uint32_t ebp,
-	uint32_t ebx,
-	uint32_t edx,
-	uint32_t ecx,
-	uint32_t fs,
-	uint32_t es,
-	uint32_t gs,
-	uint32_t ds,
-	uint32_t eax,
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rbp,
+	uint64_t rbx,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t fs,
+	uint64_t es,
+	uint64_t gs,
+	uint64_t ds,
+	uint64_t rax,
 
 	void *eip,
-	uint32_t cs,
-	uint32_t eflags,
-	uint32_t esp,
-	uint32_t ss);
+	uint64_t cs,
+	uint64_t rflags,
+	uint64_t rsp,
+	uint64_t ss);
 
 PBOS_NORETURN void hn_load_kernel_context(
-	uint32_t edi,
-	uint32_t esi,
-	uint32_t ebp,
-	uint32_t ebx,
-	uint32_t edx,
-	uint32_t ecx,
-	uint32_t fs,
-	uint32_t es,
-	uint32_t gs,
-	uint32_t ds,
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rbp,
+	uint64_t rbx,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t fs,
+	uint64_t es,
+	uint64_t gs,
+	uint64_t ds,
 
 	kn_ctxtsw_tmp_t *ctxtsw_tmp);
 
-PBOS_NORETURN void ps_load_user_context(const ps_user_context_t *ctxt) {
+PBOS_NORETURN void ps_load_user_context(const kh_user_context_t *ctxt) {
 	hn_load_user_context(
-		ctxt->edi,
-		ctxt->esi,
-		ctxt->ebp,
-		ctxt->ebx,
-		ctxt->edx,
-		ctxt->ecx,
+		ctxt->rdi,
+		ctxt->rsi,
+		ctxt->rbp,
+		ctxt->rbx,
+		ctxt->rdx,
+		ctxt->rcx,
 		ps_get_cur_euid(),
 		ctxt->es,
 		ctxt->gs,
 		ctxt->ds,
-		ctxt->eax,
-		ctxt->eip,
+		ctxt->rax,
+		ctxt->rip,
 		ctxt->cs,
-		ctxt->eflags,
-		ctxt->esp,
+		ctxt->rflags,
+		ctxt->rsp,
 		ctxt->ss);
 }
 
-PBOS_NORETURN void ps_load_kernel_context(const ps_user_context_t *ctxt) {
+PBOS_NORETURN void ps_load_kernel_context(const kh_user_context_t *ctxt) {
 	kn_ctxtsw_tmp_t tmp = {
-		.eax = ctxt->eax,
-		.esp = ctxt->esp,
-		.eflags = ctxt->eflags,
-		.eip = (uint32_t)ctxt->eip,
-		.cs = (uint32_t)ctxt->cs
+		.rax = ctxt->rax,
+		.rsp = ctxt->rsp,
+		.rflags = ctxt->rflags,
+		.rip = (uint64_t)ctxt->rip,
+		.cs = (uint64_t)ctxt->cs
 	};
 
 	kd_assert(ctxt->cs == SELECTOR_KCODE);
 
 	hn_load_kernel_context(
-		ctxt->edi,
-		ctxt->esi,
-		ctxt->ebp,
-		ctxt->ebx,
-		ctxt->edx,
-		ctxt->ecx,
+		ctxt->rdi,
+		ctxt->rsi,
+		ctxt->rbp,
+		ctxt->rbx,
+		ctxt->rdx,
+		ctxt->rcx,
 		ps_get_cur_euid(),
 		ctxt->es,
 		ctxt->gs,
@@ -93,7 +93,7 @@ PBOS_NORETURN void ps_load_kernel_context(const ps_user_context_t *ctxt) {
 		&tmp);
 }
 
-void ps_save_context(ps_user_context_t *ctxt) {
+void ps_save_context(kh_user_context_t *ctxt) {
 }
 
 PBOS_EXTERN_C_END

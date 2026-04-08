@@ -15,11 +15,11 @@ ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb) {
 	if (!t)
 		return NULL;
 	memset(t, 0, sizeof(ps_tcb_t));
-	if (!(t->context = (ps_user_context_t *)mm_kmalloc(sizeof(ps_user_context_t), alignof(ps_user_context_t)))) {
+	if (!(t->context = (kh_user_context_t *)mm_kmalloc(sizeof(kh_user_context_t), alignof(kh_user_context_t)))) {
 		mm_kfree(t);
 		return NULL;
 	}
-	memset(t->context, 0, sizeof(ps_user_context_t));
+	memset(t->context, 0, sizeof(kh_user_context_t));
 	om_init_object(t, ps_thread_class, 0);
 	t->parent = pcb;
 	t->context->eflags |= (1 << 9);	 // IF

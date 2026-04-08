@@ -3,17 +3,13 @@
 #include <pbos/km/logger.h>
 #include <hal/x86_64/proc.hh>
 #include <pbos/hal/irq.hh>
+#include <pbos/kfxx/allocator.hh>
+#include <pbos/kfxx/scope_guard.hh>
 
 PBOS_EXTERN_C_BEGIN
 
 ps_pcb_t **ps_cur_proc_per_eu;
 ps_tcb_t **ps_cur_thread_per_eu;
-
-static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
-static void _parp_nodefree(kf_rbtree_node_t *p);
-
-static bool _ufcb_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
-static void _ufcb_nodefree(kf_rbtree_node_t *p);
 
 ps_ufd_t ps_alloc_fd(ps_pcb_t *pcb) {
 	return pcb->last_fd++;
@@ -31,7 +27,8 @@ ps_ufcb_t *ps_alloc_ufcb(ps_pcb_t *pcb, fs_fcb_t *kernel_fcb, ps_ufd_t fd) {
 }
 
 void ps_add_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
-	pcb->ufcb_set.insert(ufcb);
+	if(!pcb->ufcb_set.insert(ufcb))
+		km_panic("Error inserting new UFCB");
 }
 
 void ps_remove_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
@@ -42,11 +39,16 @@ ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd) {
 	return static_cast<ps_ufcb_t *>(pcb->ufcb_set.find(fd));
 }
 
-void kn_proc_destructor(om_object_t *obj) {
-	ps_pcb_t *pcb = static_cast<ps_pcb_t *>(obj);
-	hn_proc_cleanup(pcb);
-	kfxx::destroy_at<ps_pcb_t>(pcb);
-	mm_kfree(pcb);
+void kn_destroy_proc(ps_pcb_t *pcb) {
+	ps_cur_sched->drop_proc(ps_cur_sched, pcb);
+	mm_free_context(pcb->mm_context);
+	pcb->flags &= ~PS_PROC_A;
+
+	pcb->thread_set.clear([](decltype(pcb->thread_set)::node_t *node) noexcept {
+		kn_destroy_thread(static_cast<ps_tcb_t*>(node));
+	});
+
+	kfxx::destroy_and_release<ps_pcb_t>(kfxx::kernel_allocator(), pcb);
 }
 
 void ps_create_proc(
@@ -56,23 +58,26 @@ void ps_create_proc(
 	if (ps_global_proc_set.find(pcb->rb_value))
 		km_panic("Trying to create a new process with PCB with PID that is already used by a process");
 
-	ps_global_proc_set.insert(pcb);
+	if(!ps_global_proc_set.insert(pcb))
+		km_panic("Error inserting new PCB to global process set");
 }
 
 ps_pcb_t *ps_alloc_pcb() {
-	ps_pcb_t *proc = (ps_pcb_t *)mm_kmalloc(sizeof(ps_pcb_t), alignof(ps_pcb_t));
+	ps_pcb_t *proc = (ps_pcb_t *)kfxx::alloc_and_construct<ps_pcb_t>(kfxx::kernel_allocator());
 
 	if (!proc)
 		return NULL;
 
-	kfxx::construct_at<ps_pcb_t>(proc);
+	kfxx::scope_guard release_proc_guard([proc]() noexcept {
+
+	});
 
 	if (!(proc->mm_context = (mm_context_t *)mm_kmalloc(sizeof(mm_context_t), alignof(mm_context_t)))) {
 		mm_kfree(proc);
 		return NULL;
 	}
 
-	if (KM_FAILED(kn_mm_init_context(proc->mm_context))) {
+	if (KM_FAILED(kn_mm_alloc_context(mm_get_cur_context(), &proc->mm_context))) {
 		mm_kfree(proc->mm_context);
 		mm_kfree(proc);
 		return NULL;
@@ -84,17 +89,10 @@ ps_pcb_t *ps_alloc_pcb() {
 		return NULL;
 	}
 
-	om_init_object(proc, ps_proc_class, 0);
-
-	kf_rbtree_init(
-		&(proc->parp_list),
-		_parp_nodecmp,
-		_parp_nodefree);
-
 	proc->last_thread_id = 0;
 	proc->last_fd = 0;
 
-	proc->flags = PROC_P;
+	proc->flags = PS_PROC_P;
 
 	return proc;
 }
@@ -103,24 +101,12 @@ ps_pcb_t *ps_getpcb(proc_id_t pid) {
 	return static_cast<ps_pcb_t *>(ps_global_proc_set.find(pid));
 }
 
-void hn_proc_cleanup(ps_pcb_t *proc) {
-	ps_cur_sched->drop_proc(ps_cur_sched, proc);
-	mm_free_context(proc->mm_context);
-	mm_kfree(proc->mm_context);
-	proc->flags &= ~PROC_A;
-
-	for (auto it = proc->thread_set.begin(); it != proc->thread_set.end(); ++it) {
-		om_decref(static_cast<ps_tcb_t *>(it.node));
-	}
-
-	kf_rbtree_free(&(proc->parp_list));
-}
-
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
 	io::irq_disable_lock irq_disable_lock;
 	// stub: do some checks with the new thread id, such as checking if a thread with the id exists.
 	thread->rb_value = ++proc->last_thread_id;
-	proc->thread_set.insert(thread);
+	if(!proc->thread_set.insert(thread))
+		km_panic("Error adding new TCB to process #%u", proc->rb_value);
 }
 
 void kn_switch_to_user_process(ps_pcb_t *pcb) {
@@ -141,16 +127,6 @@ ps_euid_t ps_get_cur_euid() {
 
 void kn_set_cur_euid(ps_euid_t euid) {
 	arch_loadfs(euid);
-}
-
-static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {
-	const hn_parp_t *_x = (const hn_parp_t *)x, *_y = (const hn_parp_t *)y;
-
-	return _x->addr < _y->addr;
-}
-
-static void _parp_nodefree(kf_rbtree_node_t *p) {
-	mm_kfree(p);
 }
 
 PBOS_EXTERN_C_END
