@@ -63,16 +63,10 @@ PBOS_EXTERN_C_BEGIN
 #define ARCH_LAPIC_LVT_TIMER_REG_ONESHOT (0b00 << 17)
 #define ARCH_LAPIC_LVT_TIMER_REG_PERIODIC (0b01 << 17)
 #define ARCH_LAPIC_LVT_TIMER_REG_TSC_DEADLINE (0b10 << 17)
-/*
-PBOS_FORCEINLINE static bool arch_has_apic() {
-	uint32_t a, b, c, d;
-	arch_cpuid(1, &a, &b, &c, &d);
-	return d & ARCH_CPUID_FEATURE_EDX_APIC;
-}
 
 PBOS_FORCEINLINE void arch_set_apic_base(void *base, uint32_t flags) {
 	uint32_t edx = 0;
-	uint32_t eax = ((((uintptr_t)base) & 0xfffff000) | flags);
+	uint32_t eax = ((((uintptr_t)base) & 0xfffffffffffff000) | flags);
 
 	arch_wrmsr(ARCH_MSR_APIC_BASE, eax, edx);
 }
@@ -118,7 +112,7 @@ PBOS_FORCEINLINE void arch_set_lapic_timer_mode(void *base, uint8_t vec, uint8_t
 	uint32_t volatile *lapic = (uint32_t volatile *)base;
 
 	*(lapic + ARCH_LAPIC_REG_LVT_TIMER) = vec | (mode << 17);
-}*/
+}
 
 PBOS_EXTERN_C_END
 

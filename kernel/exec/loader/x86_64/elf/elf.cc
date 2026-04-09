@@ -1,5 +1,5 @@
-#include <arch/i386/mlayout.h>
-#include <arch/i386/paging.h>
+#include <arch/x86_64/mlayout.h>
+#include <arch/x86_64/paging.h>
 #include <pbos/fs/file.h>
 #include <pbos/km/exec.h>
 #include <pbos/km/logger.h>

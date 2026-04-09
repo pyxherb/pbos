@@ -18,16 +18,11 @@ km_result_t kn_rootfs_close(fs_fcb_t *fcb);
 km_result_t kn_rootfs_read(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
 km_result_t kn_rootfs_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out);
 km_result_t kn_rootfs_size(fs_fcb_t *fcb, size_t *size_out);
-km_result_t kn_rootfs_mount(fs_fnode_t *parent, fs_fnode_t *file);
 km_result_t kn_rootfs_premount(fs_fnode_t *parent, fs_fnode_t *file);
-km_result_t kn_rootfs_postmount(fs_fnode_t *parent, fs_fnode_t *file);
 void kn_rootfs_mountfail(fs_fnode_t *parent, fs_fnode_t *file);
+km_result_t kn_rootfs_unmount_cleanup(fs_fnode_t *file);
 
 km_result_t kn_rootfs_destructor();
-
-size_t kn_fs_rootfs_file_hasher(size_t bucket_num, const void *target, bool is_target_key);
-void kn_fs_rootfs_file_nodefree(kf_hashmap_node_t *node);
-bool kn_fs_rootfs_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs);
 
 PBOS_EXTERN_C_END
 

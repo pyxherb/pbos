@@ -26,7 +26,7 @@ add_custom_target(
     DEPENDS pbkim
 )
 
-# add_subdirectory("exec")
+add_subdirectory("exec")
 add_subdirectory("io")
 add_subdirectory("kf")
 add_subdirectory("kfxx")
@@ -34,4 +34,4 @@ add_subdirectory("kfxx")
 add_subdirectory("mm")
 add_subdirectory("fs")
 add_subdirectory("ps")
-# add_subdirectory("syscall")
+add_subdirectory("syscall")

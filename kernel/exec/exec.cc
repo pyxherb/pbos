@@ -1,8 +1,8 @@
-#include <string.h>
-#include <hal/i386/proc.hh>
+#include <hal/x86_64/proc.hh>
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/kn/km/exec.hh>
+#include <pbos/kfxx/uuid.hh>
 
 PBOS_EXTERN_C_BEGIN
 

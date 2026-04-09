@@ -34,19 +34,19 @@ PBOS_NORETURN void isr_securityerr();	// 0x1e Security Exception
 
 PBOS_NORETURN void isr_timer();	 // IRQ0
 PBOS_NORETURN void isr_timer_impl(
-	const uint32_t eax,
-	const uint32_t ebx,
-	const uint32_t ecx,
-	const uint32_t edx,
-	const uint32_t esi,
-	const uint32_t edi,
-	const uint32_t ebp,
-	const uint32_t gs,
-	const uint32_t fs,
-	const uint32_t es,
-	const uint32_t ds,
+	const uint64_t gs,
+	const uint64_t fs,
+	const uint64_t es,
+	const uint64_t ds,
+	const uint64_t rax,
+	const uint64_t rbx,
+	const uint64_t rcx,
+	const uint64_t rdx,
+	const uint64_t rsi,
+	const uint64_t rdi,
+	const uint64_t rbp,
 
-	const uint32_t *const esp_top);
+	const uint64_t *const rsp_top);
 
 PBOS_NORETURN void isr_syscall();
 

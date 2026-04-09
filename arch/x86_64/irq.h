@@ -1,7 +1,7 @@
 #ifndef _ARCH_X86_64_IRQ_H_
 #define _ARCH_X86_64_IRQ_H_
 
-#include "gate.h"
+#include "seg.h"
 #include "io.h"
 
 PBOS_EXTERN_C_BEGIN

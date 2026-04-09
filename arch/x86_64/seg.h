@@ -35,9 +35,6 @@ typedef uint64_t arch_gdt_desc_t;
 					   (((uint64_t)(flags)) << 52) |                   \
 					   (((uint64_t)(base) & 0xff000000ULL) >> 24 << 56)))
 
-#define TSSDESC_LOW(base, limit, access_byte, flags) GDTDESC(base, limit, access_byte, flags)
-#define TSSDESC_HIGH(base) ((uintptr_t)base) >> 32
-
 #define GDT_SYSTYPE_TSS16 0x1
 #define GDT_SYSTYPE_LDT 0x2
 #define GDT_SYSTYPE_TSS16BUSY 0x3
@@ -82,6 +79,24 @@ PBOS_FORCEINLINE static void arch_lgdt(void *gdt, uint16_t desc_num) {
 	reg.base = gdt;
 	__asm__ __volatile__("lgdt %0" ::"m"(reg));
 }
+
+#define TSSDESC_LOW(base, limit, access_byte, flags) GDTDESC(base, limit, access_byte, flags)
+#define TSSDESC_HIGH(base) ((uintptr_t)base) >> 32
+
+typedef uint64_t arch_gate_t;
+
+#define GATEDESC_LOW(base, limit, access_byte) GDTDESC(base, limit, access_byte, 0)
+#define GATEDESC_HIGH(base) (((uintptr_t)base) >> 32)
+
+#define GATEDESC(base, selector, access_byte) (((uint64_t)GATEDESC_LOW(base, selector, access_byte)) | (((uint64_t)GATEDESC_HIGH(base)) << 32))
+
+#define GATEDESC_ATTRIBS(p, dpl, s, type) ((type) | ((s) << 4) | ((dpl) << 5) | ((p) << 7))
+
+#define GATE_TASK386 0x5
+#define GATE_INT286 0x3
+#define GATE_TRAP286 0x7
+#define GATE_INT386 0xe
+#define GATE_TRAP386 0xf
 
 /// @brief Load the selector to CS register.
 ///

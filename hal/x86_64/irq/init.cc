@@ -9,7 +9,7 @@ PBOS_EXTERN_C_BEGIN
 void *hn_lapic_pbase;
 uint32_t *hn_lapic_vbase;
 
-static void hn_remap_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
+/*static void hn_remap_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
 	uint8_t pic1_mask = arch_in8(ARCH_PIC1_IO_DATA), pic2_mask = arch_in8(ARCH_PIC2_IO_DATA);
 
 	// Initialize both PICs.
@@ -41,7 +41,7 @@ static void hn_remap_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
 	// Restore saved masks.
 	arch_out8(ARCH_PIC1_IO_DATA, pic1_mask);
 	arch_out8(ARCH_PIC2_IO_DATA, pic2_mask);
-}
+}*/
 
 void hal_irq_init() {
 	/*hn_setisr(isr_diverr, 0x00, 0, GATE_TRAP386);
@@ -74,12 +74,12 @@ void hal_irq_init() {
 	for (int i = 0; i < 16; ++i)
 		arch_mask_irq(i);
 
-	hn_remap_pic(0x20, 0x28);
-	arch_disable_pic();
+	// hn_remap_pic(0x20, 0x28);
+	// arch_disable_pic();
 
 	// Check if the CPU has APIC.
-	if (!arch_has_apic())
-		km_panic("The kernel requires APIC support");
+	// if (!arch_has_apic())
+		// km_panic("The kernel requires APIC support");
 
 	// Relocate and remap APIC.
 	if (!(hn_lapic_pbase = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE)))

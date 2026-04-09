@@ -2,6 +2,7 @@
 #include <hal/x86_64/syscall.h>
 #include <pbos/km/logger.h>
 #include <hal/x86_64/proc.hh>
+#include <arch/x86_64/apic.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -25,51 +26,51 @@ void hn_set_sched_timer() {
 }
 
 PBOS_NORETURN void isr_timer_impl(
-	const uint32_t eax,
-	const uint32_t ebx,
-	const uint32_t ecx,
-	const uint32_t edx,
-	const uint32_t esi,
-	const uint32_t edi,
-	const uint32_t ebp,
-	const uint32_t gs,
-	const uint32_t fs,
-	const uint32_t es,
-	const uint32_t ds,
+	const uint64_t rax,
+	const uint64_t rbx,
+	const uint64_t rcx,
+	const uint64_t rdx,
+	const uint64_t rsi,
+	const uint64_t rdi,
+	const uint64_t rbp,
+	const uint64_t gs,
+	const uint64_t fs,
+	const uint64_t es,
+	const uint64_t ds,
 
-	const uint32_t *const esp_top) {
+	const uint64_t *const rsp_top) {
 	bool is_user = false;
 	ps_euid_t cur_euid = ps_get_cur_euid();
 	ps_pcb_t *cur_proc = ps_get_cur_proc();
 	ps_tcb_t *cur_thread = ps_get_cur_thread();
 	ps_tcb_t *next_thread = ps_cur_sched->next_thread(ps_cur_sched, cur_euid, cur_proc, cur_thread);
 
-	uint32_t eip = esp_top[0];
-	uint32_t cs = esp_top[1];
-	uint32_t eflags = esp_top[2];
+	uint64_t rip = rsp_top[0];
+	uint64_t cs = rsp_top[1];
+	uint64_t rflags = rsp_top[2];
 
 	if (cur_thread) {
-		cur_thread->context->eax = eax;
-		cur_thread->context->ebx = ebx;
-		cur_thread->context->ecx = ecx;
-		cur_thread->context->edx = edx;
-		cur_thread->context->esi = esi;
-		cur_thread->context->edi = edi;
-		cur_thread->context->ebp = ebp;
-		cur_thread->context->eip = (void *)eip;
-		cur_thread->context->eflags = eflags;
-		if (((uintptr_t)eip) < KERNEL_VBASE) {
+		cur_thread->context->rax = rax;
+		cur_thread->context->rbx = rbx;
+		cur_thread->context->rcx = rcx;
+		cur_thread->context->rdx = rdx;
+		cur_thread->context->rsi = rsi;
+		cur_thread->context->rdi = rdi;
+		cur_thread->context->rbp = rbp;
+		cur_thread->context->rip = (void *)rip;
+		cur_thread->context->rflags = rflags;
+		if (((uintptr_t)rip) < KERNEL_VBASE) {
 			// SS (32-bits?)->ESP->EFLAGS->CS (32-bits)->EIP
-			cur_thread->context->esp = esp_top[3];
+			cur_thread->context->rsp = rsp_top[3];
 			// kd_assert(cur_thread->context->esp0 == (uint32_t)((char*)cur_thread->kernel_stack + cur_thread->kernel_stack_size));
 			// kd_printf("U!\n");
 
 			cur_thread->context->ds = ds;
-			cur_thread->context->ss = esp_top[4];
+			cur_thread->context->ss = rsp_top[4];
 		} else {
 			// EFLAGS->CS (32-bits)->EIP
-			cur_thread->context->esp = (uint32_t)(&esp_top[3]);
-			cur_thread->context->esp0 = cur_thread->context->esp;
+			cur_thread->context->rsp = (uint64_t)(rsp_top[3]);
+			cur_thread->context->rsp0 = cur_thread->context->rsp;
 			// kd_printf("K!\n");
 
 			cur_thread->context->ds = ds;
@@ -83,7 +84,7 @@ PBOS_NORETURN void isr_timer_impl(
 
 	kd_assert(next_thread);
 
-	hn_tss_storage_ptr[cur_euid].esp0 = next_thread->context->esp0;
+	hn_tss_storage_ptr[cur_euid].esp0 = next_thread->context->rsp0;
 
 	if (next_thread->parent != cur_proc) {
 		kn_switch_to_user_process(next_thread->parent);
@@ -98,7 +99,7 @@ PBOS_NORETURN void isr_timer_impl(
 
 	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
-	if (((uintptr_t)next_thread->context->eip) < KERNEL_VBASE) {
+	if (((uintptr_t)next_thread->context->rip) < KERNEL_VBASE) {
 		/*kd_printf(
 			"PID=%d, EIP=%.8x, ESP=%.8x, ESP0=%.8x U\n",
 			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);*/

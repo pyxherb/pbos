@@ -5,23 +5,26 @@
 // e[a-d]x: Arguments
 //
 isr_syscall:
-	pushl %ebx
-	pushl %ecx
-	pushl %esi
-	pushl %edi
+	pushq %rbx
+	pushq %rcx
+	pushq %rsi
+	pushq %rdi
 
-	pushl %ds
+	movq %ds, %rax
+	pushq %rax
 
-	pushl %es
+	movq %es, %rax
+	pushq %rax
 
-	pushl %gs
+	movq %gs, %rax
+	pushq %rax
 
-	pushl %edi
-	pushl %esi
-	pushl %edx
-	pushl %ecx
-	pushl %ebx
-	pushl %eax
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
+	pushq %rbx
+	pushq %rax
 
 	movw %ss, %ax
 	movw %ax, %ds
@@ -36,23 +39,23 @@ isr_syscall:
 
 	cli
 
-	addl $24, %esp
+	addq $24, %rsp
 
-	movl %eax, %edx
+	movq %rax, %rdx
 
-	popl %eax
+	popq %rax
 	movw %ax, %gs
 
-	popl %eax
+	popq %rax
 	movw %ax, %es
 
-	popl %eax
+	popq %rax
 	movw %ax, %ds
 
-	movl %edx, %eax
+	movq %rdx, %rax
 
-	popl %edi
-	popl %esi
-	popl %ecx
-	popl %ebx
-	iretl
+	popq %rdi
+	popq %rsi
+	popq %rcx
+	popq %rbx
+	iretq

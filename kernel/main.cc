@@ -15,12 +15,6 @@ PBOS_EXTERN_C int atexit(void (*func)(void)) {
 	return 0;
 }
 
-// Test variables and functions, should be removed later.
-uint32_t ps_eu_num;
-ps_euid_t ps_get_cur_euid() {
-	return 0;
-}
-
 PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 	km_result_t result;
 

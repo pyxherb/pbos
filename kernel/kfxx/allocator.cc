@@ -45,10 +45,10 @@ PBOS_API void kernel_allocator_t::release(void *ptr, size_t size, size_t alignme
 	mm_kfree(ptr);
 }
 
-int kn_fs_fcb_allocator_identity;
+int _kn_kernel_allocator_identity;
 
 PBOS_API void *kernel_allocator_t::type_identity() const noexcept {
-	return &kn_fs_fcb_allocator_identity;
+	return &_kn_kernel_allocator_identity;
 }
 
-extern kernel_allocator_t kfxx::g_kernel_allocator;
+kernel_allocator_t kfxx::g_kernel_allocator;

@@ -5,20 +5,27 @@ isr_timer:
 	// User mode: SS -> ESP -> EFLAGS -> CS -> EIP
 	// xchg %bx, %bx
 
-	pushl %esp
+	pushq %rsp
 
-	pushl %ds
-	pushl %es
-	pushl %fs
-	pushl %gs
+	pushq %rbp
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
+	pushq %rbx
+	pushq %rax
 
-	pushl %ebp
-	pushl %edi
-	pushl %esi
-	pushl %edx
-	pushl %ecx
-	pushl %ebx
-	pushl %eax
+	movq %ds, %rax
+	pushq %rax
+
+	movq %es, %rax
+	pushq %rax
+
+	movq %fs, %rax
+	pushq %rax
+
+	movq %gs, %rax
+	pushq %rax
 
 	// xchg %bx, %bx
 

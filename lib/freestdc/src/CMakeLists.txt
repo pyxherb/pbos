@@ -13,7 +13,7 @@ else()
     message(CHECK_FAIL "not found")
 endif()
 
-file(GLOB SRC *.c *.h *.asm *.s *.S)
+file(GLOB SRC *.c *.cc *.h *.asm *.s *.S)
 target_sources(freestdc PRIVATE ${SRC})
 
 add_subdirectory("common")

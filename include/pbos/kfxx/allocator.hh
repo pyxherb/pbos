@@ -69,7 +69,7 @@ namespace kfxx {
 
 	template <typename T>
 	PBOS_FORCEINLINE void destroy_and_release(allocator_t *alloc, T *const ptr) {
-		std::destroy_at<T>(ptr);
+		kfxx::destroy_at<T>(ptr);
 		alloc->release(ptr, sizeof(T), alignof(T));
 	}
 }
