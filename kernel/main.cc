@@ -24,6 +24,8 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 	fs_init();
 	ps_init();
 
+	asm volatile("hlt");
+
 	/*smp_init();
 
 	initcar_init();

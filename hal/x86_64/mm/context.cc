@@ -68,6 +68,7 @@ km_result_t kn_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 	free_pml4t_paddr_guard.release();
 	free_pml4t_vaddr_guard.release();
 
+	memset(pml4t_vaddr, 0, PAGESIZE);
 	context->pml4t = (arch_pml4te_t *)pml4t_vaddr;
 
 	kn_mm_copy_global_mappings(context, mm_get_cur_context());

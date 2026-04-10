@@ -19,19 +19,16 @@ PBOS_API size_t kn_fs_filename_allocator_t::dec_ref() noexcept {
 }
 
 PBOS_API void *kn_fs_filename_allocator_t::alloc(size_t size, size_t alignment) noexcept {
-	kd_assert(alignment >= alignof(max_align_t));
-	return mm_kmalloc(size, alignof(max_align_t));
+	return mm_kmalloc(size, alignment);
 }
 
 PBOS_API void *kn_fs_filename_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
 	// TODO: Implement mm_krealloc and rewrite this with it.
-	kd_assert(alignment >= alignof(max_align_t));
 	return mm_krealloc(ptr, new_size, new_alignment);
 }
 
 PBOS_API void *kn_fs_filename_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
 	// TODO: Implement mm_krealloc and rewrite this with it.
-	kd_assert(alignment >= alignof(max_align_t));
 	// return mm_krealloc(ptr, new_size, new_alignment);
 	return nullptr;
 }
@@ -63,19 +60,16 @@ PBOS_API size_t kn_fs_fnode_allocator_t::dec_ref() noexcept {
 }
 
 PBOS_API void *kn_fs_fnode_allocator_t::alloc(size_t size, size_t alignment) noexcept {
-	kd_assert(alignment >= alignof(max_align_t));
-	return mm_kmalloc(size, alignof(max_align_t));
+	return mm_kmalloc(size, alignment);
 }
 
 PBOS_API void *kn_fs_fnode_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
 	// TODO: Implement mm_krealloc and rewrite this with it.
-	kd_assert(alignment >= alignof(max_align_t));
 	return mm_krealloc(ptr, new_size, new_alignment);
 }
 
 PBOS_API void *kn_fs_fnode_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
 	// TODO: Implement mm_krealloc_in_place and rewrite this with it.
-	kd_assert(alignment >= alignof(max_align_t));
 	// return mm_krealloc(ptr, new_size, new_alignment);
 	return nullptr;
 }
@@ -107,19 +101,16 @@ PBOS_API size_t kn_fs_fcb_allocator_t::dec_ref() noexcept {
 }
 
 PBOS_API void *kn_fs_fcb_allocator_t::alloc(size_t size, size_t alignment) noexcept {
-	kd_assert(alignment >= alignof(max_align_t));
-	return mm_kmalloc(size, alignof(max_align_t));
+	return mm_kmalloc(size, alignment);
 }
 
 PBOS_API void *kn_fs_fcb_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
 	// TODO: Implement mm_krealloc and rewrite this with it.
-	kd_assert(alignment >= alignof(max_align_t));
 	return mm_krealloc(ptr, new_size, new_alignment);
 }
 
 PBOS_API void *kn_fs_fcb_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
 	// TODO: Implement mm_krealloc and rewrite this with it.
-	kd_assert(alignment >= alignof(max_align_t));
 	// return mm_krealloc(ptr, new_size, new_alignment);
 	return nullptr;
 }
