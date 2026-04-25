@@ -8,6 +8,7 @@
 // #include <pbos/kn/km/exec.hh>
 #include <pbos/kn/km/smp.h>
 #include <pbos/kn/km/proc.hh>
+#include <pbos/kh/acpi/misc.hh>
 
 // Because the operating system will never exit normally,
 // we just designed a dummy procedure to register the destructors.
@@ -24,11 +25,20 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 	fs_init();
 	ps_init();
 
+	if(kh_acpi_is_available()) {
+		kh_acpi_init();
+	} else {
+		if(kh_acpi_is_required())
+			km_panic("PbOS requires ACPI to start up.");
+	}
+
 	asm volatile("hlt");
 
-	/*smp_init();
+	smp_init();
 
-	initcar_init();
+	asm volatile("hlt");
+
+	/*initcar_init();
 
 	fs_fcb_t *init_fp;
 	if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pbinit", sizeof("/initcar/pbinit") - 1, &init_fp)))

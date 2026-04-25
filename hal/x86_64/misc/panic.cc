@@ -20,7 +20,7 @@ PBOS_NORETURN void km_panic(const char *str, ...) {
 
 	va_list args;
 	va_start(args, str);
-	klog_printf(">> PANIC <<");
+	klog_printf(">> PANIC <<\n");
 	klog_vprintf(str, args);
 	va_end(args);
 panicked:

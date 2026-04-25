@@ -7,6 +7,8 @@
 
 PBOS_USED PBOS_IN_SECTION(".limine_requests") volatile uint64_t hn_limine_base_revision[] = HN_REQUIRED_LIMINE_REVISION;
 
+PBOS_USED PBOS_IN_SECTION(".limine_requests_start") volatile uint64_t hn_limine_requests_start_marker[] = LIMINE_REQUESTS_START_MARKER;
+
 PBOS_USED PBOS_IN_SECTION(".limine_requests") volatile struct limine_framebuffer_request hn_limine_framebuffer_request = {
 	.id = LIMINE_FRAMEBUFFER_REQUEST_ID,
 	.revision = 0
@@ -27,12 +29,15 @@ PBOS_USED PBOS_IN_SECTION(".limine_requests") volatile struct limine_memmap_requ
 	.revision = 0
 };
 
+PBOS_USED PBOS_IN_SECTION(".limine_requests") volatile struct limine_rsdp_request hn_limine_rsdp_request = {
+	.id = LIMINE_RSDP_REQUEST_ID,
+	.revision = 4
+};
+
 PBOS_USED PBOS_IN_SECTION(".limine_requests") volatile struct limine_module_request hn_limine_module_request = {
 	.id = LIMINE_MODULE_REQUEST_ID,
 	.revision = 0
 };
-
-PBOS_USED PBOS_IN_SECTION(".limine_requests_start") volatile uint64_t hn_limine_requests_start_marker[] = LIMINE_REQUESTS_START_MARKER;
 
 PBOS_USED PBOS_IN_SECTION(".limine_request_end") volatile uint64_t hn_limine_requests_end_marker[] = LIMINE_REQUESTS_END_MARKER;
 

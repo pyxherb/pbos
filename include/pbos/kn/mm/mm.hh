@@ -16,28 +16,6 @@ PBOS_EXTERN_C_BEGIN
 
 #define KM_MM_VPM_ALLOC 0x00000001
 
-typedef uint32_t kn_mm_vpm_flags_t;
-
-struct hn_vpm_t : public kfxx::rbtree_t<void *>::node_t {
-	union {
-		size_t subref_count;
-		void *map_addr;
-	};
-	kn_mm_vpm_flags_t flags;
-};
-
-typedef struct _kn_mm_vpm_poolpg_t kn_mm_vpm_poolpg_t;
-
-typedef struct _hn_vpm_poolpg_header_t {
-	kn_mm_vpm_poolpg_t *prev, *next;
-	size_t used_num;
-} hn_vpm_poolpg_header_t;
-
-typedef struct _kn_mm_vpm_poolpg_t {
-	hn_vpm_poolpg_header_t header;
-	hn_vpm_t descs[(PAGESIZE - sizeof(hn_vpm_poolpg_header_t)) / sizeof(hn_vpm_t)];
-} kn_mm_vpm_poolpg_t;
-
 void kn_mm_init_kima();
 
 void kn_mm_sync_global_mappings(const mm_context_t *src);

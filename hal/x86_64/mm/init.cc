@@ -1,6 +1,7 @@
 #include <hal/x86_64/misc.h>
 #include <pbos/km/logger.h>
 #include <pbos/km/proc.h>
+#include <pbos/kn/acpi/rsdt.hh>
 #include "../mm.hh"
 
 PBOS_EXTERN_C_BEGIN
@@ -86,13 +87,6 @@ void hn_mm_init() {
 	hn_init_tss();
 
 	kd_printf("Initialized memory manager\n");
-
-	void *p = mm_kmalloc(1024, 1);
-	kd_printf("p=%p\n", p);
-	p = mm_krealloc(p, 768, 1);
-	kd_printf("p=%p\n", p);
-	p = mm_kmalloc(256, 1);
-	kd_printf("p=%p\n", p);
 }
 
 static void hn_init_tss() {
@@ -406,7 +400,7 @@ static void hn_mm_init_areas() {
 		 *new_poolpg_ptt_vaddr = nullptr;
 	char *direct_map_base = (char *)DIRECTPHYMEM_VBASE;
 	PMAD_FOREACH(i) {
-		if (direct_map_base >= (char *)DIRECTPHYMEM_VBASE) {
+		if ((i->attribs.type == KN_PMEM_CRITICAL) || (direct_map_base >= (char *)DIRECTPHYMEM_VTOP)) {
 			i->direct_map_base = nullptr;
 			i->direct_map_size = 0;
 			continue;
@@ -590,9 +584,11 @@ static void hn_mm_init_pmadlist() {
 }
 
 ///
-/// @brief Initialize paging.
+/// @brief Initialize paging. This also collects physical address of ACPI RSDP.
 ///
 static void hn_mm_init_paging() {
+	kn_acpi_rsdp_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)hn_limine_rsdp_request.response->address) - hn_limine_hhdm_request.response->offset));
+
 	memset(mm_kernel_initial_ptt, 0, sizeof(mm_kernel_initial_ptt));
 	memset(mm_kernel_initial_pdt, 0, sizeof(mm_kernel_initial_pdt));
 	memset(mm_kernel_initial_pdpt, 0, sizeof(mm_kernel_initial_pdpt));

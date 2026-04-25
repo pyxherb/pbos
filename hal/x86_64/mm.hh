@@ -36,8 +36,6 @@ extern void *mm_kernel_initial_pdt_paddr;
 extern void *mm_kernel_initial_pdpt_paddr;
 extern void *mm_kernel_initial_pml4t_paddr;
 
-extern kn_mm_vpm_poolpg_t *hn_kspace_vpm_poolpg_list;
-
 PBOS_EXTERN_C_END
 
 #endif

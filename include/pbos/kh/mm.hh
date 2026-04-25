@@ -5,6 +5,8 @@
 
 PBOS_EXTERN_C_BEGIN
 
+void *kh_get_direct_mmap(void *paddr);
+
 PBOS_NODISCARD km_result_t kh_mmap(
 	mm_context_t *context,
 	void *vaddr,

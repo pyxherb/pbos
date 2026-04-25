@@ -245,19 +245,19 @@ int do_vprintf(klog_logger_t *logger, const char *s, va_list args) {
 					break;
 				}
 				case FMTCTL_SPECIFIER_PTR: {
-					uint64_t arg = va_arg(args, unsigned int);
+					uint64_t arg = va_arg(args, uint64_t);
 
 					if (info.precision < llxdigcount(arg))
 						info.precision = llxdigcount(arg);
 					// Fill with space if the width has not reached.
-					for (int j = 0; j < info.width - 8 - 2; ++j) {
+					for (int j = 0; j < info.width - 16 - 2; ++j) {
 						logger->putchar(' ');
 						len_printed++;
 					}
 
 					logger->print("0x", 2);
 
-					for (int j = 0; j < 8 - llxdigcount(arg); ++j) {
+					for (int j = 0; j < 16 - llxdigcount(arg); ++j) {
 						logger->putchar('0');
 						len_printed++;
 					}
@@ -273,7 +273,7 @@ int do_vprintf(klog_logger_t *logger, const char *s, va_list args) {
 					break;
 				}
 				case FMTCTL_SPECIFIER_LLUNSIGNED: {
-					uint64_t arg = va_arg(args, unsigned long long);
+					uint64_t arg = va_arg(args, uint64_t);
 
 					if (info.precision < lludigcount(arg))
 						info.precision = lludigcount(arg);
