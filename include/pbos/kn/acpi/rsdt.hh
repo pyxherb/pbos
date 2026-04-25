@@ -8,7 +8,7 @@ PBOS_NODISCARD bool kn_acpi_verify_checksum(const char *data, size_t size);
 PBOS_FORCEINLINE uint32_t kn_acpi_rsdt_length(acpi_sdt_header_t *base) {
 	return (base->length - sizeof(acpi_sdt_header_t)) / sizeof(uint32_t);
 }
-PBOS_FORCEINLINE uint32_t kn_acpi_rsdt_at(acpi_sdt_header_t *base, uint32_t index) {
+PBOS_FORCEINLINE uint32_t kn_acpi_rsdt_paddr_at(acpi_sdt_header_t *base, uint32_t index) {
 	kd_dbgcheck(
 		index < kn_acpi_rsdt_length(base),
 		"ACPI RSDT out of range");
@@ -17,5 +17,6 @@ PBOS_FORCEINLINE uint32_t kn_acpi_rsdt_at(acpi_sdt_header_t *base, uint32_t inde
 
 extern void *kn_acpi_rsdp_paddr;
 extern acpi_rsdp_t *kn_acpi_rsdp_vaddr;
+extern acpi_sdt_header_t *kn_acpi_rsdt_vaddr, **kn_mapped_acpi_rsdt_entries;
 
 #endif
