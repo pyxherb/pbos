@@ -2,16 +2,16 @@
 
 PBOS_EXTERN_C_BEGIN
 
-kfxx::rbtree_t<proc_id_t> ps_global_proc_set;
-uint32_t ps_eu_num;
+kfxx::rbtree_t<ps_proc_id_t> ps_global_proc_set;
+uint32_t ps_cpu_num;
 ps_sched_t *ps_cur_sched = NULL;
 
 ps_pcb_t *ps_get_cur_proc() {
-	return ps_cur_proc_per_eu[ps_get_cur_euid()];
+	return ps_cur_proc_per_cpu[ps_get_cur_cpuid()];
 }
 
 ps_tcb_t *ps_get_cur_thread() {
-	return ps_cur_thread_per_eu[ps_get_cur_euid()];
+	return ps_cur_thread_per_cpu[ps_get_cur_cpuid()];
 }
 
 mm_context_t *ps_mm_context_of(ps_pcb_t *pcb) {

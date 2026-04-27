@@ -27,7 +27,7 @@ km_result_t sysent_exec_child(
 	ps_ufd_t cwd_ufd,
 	const char *args,
 	size_t args_len,
-	proc_id_t *proc_id_out);
+	ps_proc_id_t *proc_id_out);
 km_result_t sysent_fork();
 
 PBOS_EXTERN_C_END

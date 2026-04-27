@@ -21,7 +21,7 @@ void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 }
 
 void kn_mm_sync_global_mappings(const mm_context_t *src) {
-	for (ps_euid_t i = 0; i < ps_eu_num; ++i) {
+	for (ps_cpu_id_t i = 0; i < ps_cpu_num; ++i) {
 		mm_context_t *cur_context = mm_cur_contexts[i];
 
 		if (cur_context == src)
@@ -89,7 +89,7 @@ void mm_switch_context(mm_context_t *context) {
 	io::irq_disable_lock irq_lock;
 
 	mm_context_t *prev_context = mm_get_cur_context();
-	mm_cur_contexts[ps_get_cur_euid()] = context;
+	mm_cur_contexts[ps_get_cur_cpuid()] = context;
 	kn_mm_copy_global_mappings(context, prev_context);
 	// kn_mm_copy_global_mappings(mm_kernel_context, prev_context);
 	// asm volatile("xchg %bx, %bx");

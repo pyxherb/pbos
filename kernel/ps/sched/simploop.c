@@ -23,7 +23,7 @@ void ps_simploop_sched_drop_proc(ps_sched_t *sched, ps_pcb_t *proc) {
 void ps_simploop_sched_drop_thread(ps_sched_t *sched, ps_tcb_t *thread) {
 }
 
-ps_tcb_t *ps_simploop_sched_next_thread(ps_sched_t *sched, ps_euid_t cur_euid, ps_pcb_t *cur_proc, ps_tcb_t *cur_thread) {
+ps_tcb_t *ps_simploop_sched_next_thread(ps_sched_t *sched, ps_cpu_id_t cur_cpuid, ps_pcb_t *cur_proc, ps_tcb_t *cur_thread) {
 	ps_tcb_t *next_thread;
 
 	if (!cur_thread) {

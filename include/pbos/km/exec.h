@@ -22,15 +22,15 @@ typedef struct _km_binseg_t km_binseg_t;
 typedef struct _km_binproto_t km_binproto_t;
 
 km_result_t km_exec(
-	proc_id_t parent,
+	ps_proc_id_t parent,
 	se_uid_t uid,
 	fs_fcb_t *file_fp,
-	proc_id_t *pid_out);
+	ps_proc_id_t *pid_out);
 km_result_t km_exec_init(
-	proc_id_t parent,
+	ps_proc_id_t parent,
 	se_uid_t uid,
 	fs_fcb_t *file_fp,
-	proc_id_t *pid_out);
+	ps_proc_id_t *pid_out);
 km_result_t km_register_binldr(kf_uuid_t *uuid, km_binldr_t *binldr);
 
 km_result_t km_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out);

@@ -73,12 +73,12 @@ void hn_mm_init() {
 
 	kn_mm_init_kima();
 
-	ps_eu_num = 1;
-	if (!(mm_cur_contexts = (mm_context_t **)mm_kmalloc(ps_eu_num * sizeof(mm_context_t *), alignof(mm_context_t *)))) {
+	ps_cpu_num = 1;
+	if (!(mm_cur_contexts = (mm_context_t **)mm_kmalloc(ps_cpu_num * sizeof(mm_context_t *), alignof(mm_context_t *)))) {
 		km_panic("Unable to allocate memory context for all CPUs");
 	}
 
-	for (ps_euid_t i = 0; i < ps_eu_num; ++i) {
+	for (ps_cpu_id_t i = 0; i < ps_cpu_num; ++i) {
 		mm_cur_contexts[i] = mm_kernel_context;
 	}
 
@@ -488,7 +488,7 @@ static void hn_init_gdt() {
 	arch_loadds(SELECTOR_KDATA);
 	arch_loades(SELECTOR_KDATA);
 
-	// stub, the initial CPU always has EUID 0
+	// stub, the initial CPU always has CPUID 0
 	arch_loadfs(0);
 
 	arch_loadgs(SELECTOR_KDATA);

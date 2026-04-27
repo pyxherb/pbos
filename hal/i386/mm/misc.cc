@@ -9,7 +9,7 @@ arch_pte_t *const hn_kernel_pgt = ((arch_pte_t *)KPGT_VBASE);
 arch_pte_t *const hn_bottom_pgt = ((arch_pte_t *)KBOTTOMPGT_VBASE);
 
 mm_context_t *mm_get_cur_context() {
-	return mm_cur_contexts ? mm_cur_contexts[ps_get_cur_euid()] : mm_kernel_context;
+	return mm_cur_contexts ? mm_cur_contexts[ps_get_cur_cpuid()] : mm_kernel_context;
 }
 
 void mm_invlpg(void *ptr) {

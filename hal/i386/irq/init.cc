@@ -91,16 +91,16 @@ void hal_irq_init() {
 	// arch_set_apic_base(hn_lapic_pbase, ARCH_APIC_BASE_MSR_BSP | ARCH_APIC_BASE_MSR_ENABLE);
 
 	if (KM_FAILED(mm_iommap(mm_kernel_context, hn_lapic_vbase, (void*)ARCH_DEFAULT_APIC_PBASE, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_NOCACHE, 0))) {
-		km_panic("Unable to mapping LAPIC page for the main EU");
+		km_panic("Unable to mapping LAPIC page for the main CPU");
 	}
 
 	// Allocate IRQ contexts.
-	if (!(hal_irq_contexts = (hal_irq_context_t **)mm_kmalloc(ps_eu_num * sizeof(hal_irq_context_t *), alignof(hal_irq_context_t *)))) {
+	if (!(hal_irq_contexts = (hal_irq_context_t **)mm_kmalloc(ps_cpu_num * sizeof(hal_irq_context_t *), alignof(hal_irq_context_t *)))) {
 		km_panic("Unable to allocate interrupt context for all CPUs");
 	}
 
-	for (uint32_t i = 0; i < ps_eu_num; ++i) {
-		if (!(hal_irq_contexts[i] = (hal_irq_context_t *)mm_kmalloc(ps_eu_num * sizeof(hal_irq_context_t), alignof(hal_irq_context_t)))) {
+	for (uint32_t i = 0; i < ps_cpu_num; ++i) {
+		if (!(hal_irq_contexts[i] = (hal_irq_context_t *)mm_kmalloc(ps_cpu_num * sizeof(hal_irq_context_t), alignof(hal_irq_context_t)))) {
 			km_panic("Unable to allocate interrupt context for CPU %u", i);
 		}
 	}

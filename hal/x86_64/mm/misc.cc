@@ -5,7 +5,7 @@
 PBOS_EXTERN_C_BEGIN
 
 mm_context_t *mm_get_cur_context() {
-	return mm_cur_contexts ? mm_cur_contexts[ps_get_cur_euid()] : mm_kernel_context;
+	return mm_cur_contexts ? mm_cur_contexts[ps_get_cur_cpuid()] : mm_kernel_context;
 }
 
 void mm_invlpg(void *ptr) {

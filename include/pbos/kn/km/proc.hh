@@ -14,7 +14,7 @@ typedef struct _ps_ufcb_t : public kfxx::rbtree_t<ps_ufd_t>::node_t {
 	~_ps_ufcb_t() = default;
 } ps_ufcb_t;
 
-typedef struct _ps_tcb_t : public kfxx::rbtree_t<thread_id_t>::node_t {
+typedef struct _ps_tcb_t : public kfxx::rbtree_t<ps_thread_id_t>::node_t {
 	ps_pcb_t *parent = nullptr;
 
 	uint8_t priority, flags;
@@ -37,11 +37,11 @@ typedef struct _ps_parp_t : kfxx::rbtree_t<void *>::node_t {
 	~_ps_parp_t() = default;
 } ps_parp_t;
 
-typedef struct _ps_pcb_t : kfxx::rbtree_t<proc_id_t>::node_t {
-	thread_id_t last_thread_id;
+typedef struct _ps_pcb_t : kfxx::rbtree_t<ps_proc_id_t>::node_t {
+	ps_thread_id_t last_thread_id;
 	kfxx::rbtree_t<void*> parp_list;
 	mm_context_t *mm_context;
-	kfxx::rbtree_t<thread_id_t> thread_set;
+	kfxx::rbtree_t<ps_thread_id_t> thread_set;
 	uint8_t priority, flags;
 
 	fs_fnode_t *cur_dir;
@@ -53,18 +53,18 @@ typedef struct _ps_pcb_t : kfxx::rbtree_t<proc_id_t>::node_t {
 	~_ps_pcb_t() = default;
 } ps_pcb_t;
 
-extern kfxx::rbtree_t<proc_id_t> ps_global_proc_set;
+extern kfxx::rbtree_t<ps_proc_id_t> ps_global_proc_set;
 extern ps_sched_t ps_simploop_sched;
 
 void hal_prepare_ps();
 void ps_init();
 
-PBOS_NORETURN void kn_enter_sched(ps_euid_t euid);
+PBOS_NORETURN void kn_enter_sched(ps_cpu_id_t cpuid);
 
 void kn_destroy_proc(ps_pcb_t *pcb);
 void kn_destroy_thread(ps_tcb_t *tcb);
 
-proc_id_t kn_alloc_proc_id();
+ps_proc_id_t kn_alloc_proc_id();
 
 void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr);
 void kn_thread_set_stack(ps_tcb_t *tcb, void *ptr, size_t size);

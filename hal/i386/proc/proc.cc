@@ -6,8 +6,8 @@
 
 PBOS_EXTERN_C_BEGIN
 
-ps_pcb_t **ps_cur_proc_per_eu;
-ps_tcb_t **ps_cur_thread_per_eu;
+ps_pcb_t **ps_cur_proc_per_cpu;
+ps_tcb_t **ps_cur_thread_per_cpu;
 
 static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y);
 static void _parp_nodefree(kf_rbtree_node_t *p);
@@ -51,7 +51,7 @@ void kn_proc_destructor(om_object_t *obj) {
 
 void ps_create_proc(
 	ps_pcb_t *pcb,
-	proc_id_t parent) {
+	ps_proc_id_t parent) {
 	io::irq_disable_lock irq_disable_lock;
 	if (ps_global_proc_set.find(pcb->rb_value))
 		km_panic("Trying to create a new process with PCB with PID that is already used by a process");
@@ -99,7 +99,7 @@ ps_pcb_t *ps_alloc_pcb() {
 	return proc;
 }
 
-ps_pcb_t *ps_getpcb(proc_id_t pid) {
+ps_pcb_t *ps_getpcb(ps_proc_id_t pid) {
 	return static_cast<ps_pcb_t *>(ps_global_proc_set.find(pid));
 }
 
@@ -135,12 +135,12 @@ void kn_switch_to_kernel_thread(ps_tcb_t *tcb) {
 	ps_load_kernel_context(tcb->context);
 }
 
-ps_euid_t ps_get_cur_euid() {
+ps_cpu_id_t ps_get_cur_cpuid() {
 	return arch_storefs();
 }
 
-void kn_set_cur_euid(ps_euid_t euid) {
-	arch_loadfs(euid);
+void kn_set_cur_cpuid(ps_cpu_id_t cpuid) {
+	arch_loadfs(cpuid);
 }
 
 static bool _parp_nodecmp(const kf_rbtree_node_t *x, const kf_rbtree_node_t *y) {

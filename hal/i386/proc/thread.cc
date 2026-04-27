@@ -27,7 +27,7 @@ ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb) {
 	return t;
 }
 
-thread_id_t ps_create_thread(
+ps_thread_id_t ps_create_thread(
 	ps_proc_access_t access,
 	ps_pcb_t *pcb,
 	size_t stack_size) {
@@ -175,8 +175,8 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 
 	// stub
 	if (!ps_global_proc_set.size()) {
-		hn_tss_storage_ptr[ps_get_cur_euid()].esp0 = tcb->context->esp0;
-		hn_tss_storage_ptr[ps_get_cur_euid()].ss0 = SELECTOR_KDATA;
+		hn_tss_storage_ptr[ps_get_cur_cpuid()].esp0 = tcb->context->esp0;
+		hn_tss_storage_ptr[ps_get_cur_cpuid()].ss0 = SELECTOR_KDATA;
 	}
 
 	return KM_RESULT_OK;

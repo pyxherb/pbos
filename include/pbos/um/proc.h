@@ -7,7 +7,7 @@ typedef struct _mod_t mod_t;
 typedef struct _proc_t proc_t;
 typedef struct _thread_t thread_t;
 
-typedef uint16_t proc_id_t;
-typedef uint16_t thread_id_t;
+typedef uint16_t ps_proc_id_t;
+typedef uint16_t ps_thread_id_t;
 
 #endif

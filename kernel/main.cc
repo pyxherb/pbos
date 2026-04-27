@@ -6,7 +6,7 @@
 #include <pbos/kn/fs/fs.hh>
 #include <pbos/kn/fs/initcar.hh>
 // #include <pbos/kn/km/exec.hh>
-#include <pbos/kn/km/smp.h>
+#include <pbos/kn/km/mp.h>
 #include <pbos/kn/km/proc.hh>
 #include <pbos/kh/acpi/misc.hh>
 
@@ -32,9 +32,7 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 			km_panic("PbOS requires ACPI to start up.");
 	}
 
-	asm volatile("hlt");
-
-	smp_init();
+	mp_init();
 
 	asm volatile("hlt");
 
@@ -44,7 +42,7 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 	if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pbinit", sizeof("/initcar/pbinit") - 1, &init_fp)))
 		km_panic("Error opening the init executable");
 
-	proc_id_t pid;
+	ps_proc_id_t pid;
 
 	if (KM_FAILED(result = km_exec(0, 0, init_fp, &pid)))
 		km_panic("Error starting the init process");

@@ -1,5 +1,5 @@
 #include <arch/i386/apic.h>
-#include <pbos/kn/km/smp.h>
+#include <pbos/kn/km/mp.h>
 #include <pbos/km/logger.h>
 #include "../irq.h"
 
@@ -7,8 +7,8 @@ PBOS_EXTERN_C_BEGIN
 
 uint32_t hn_sched_interval;
 
-void smp_init() {
-	smp_main_eu_init();
+void mp_init() {
+	mp_main_cpu_init();
 }
 
 void hn_calibrate_apic() {
@@ -57,7 +57,7 @@ void hn_calibrate_apic() {
 	arch_sti();
 }
 
-void smp_main_eu_init() {
+void mp_main_cpu_init() {
 	arch_cli();
 
 	hal_irq_context_t *ctxt = hal_irq_contexts[0];

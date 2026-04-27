@@ -11,7 +11,7 @@ void sysent_exit(int exitcode) {
 km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint32_t mode, ps_ufd_t *ufd_out) {
 	km_result_t result;
 
-	ps_euid_t euid = ps_get_cur_euid();
+	ps_cpu_id_t cpuid = ps_get_cur_cpuid();
 	ps_pcb_t *pcb = ps_get_cur_proc();
 
 	if (mm_probe_user_space(pcb->mm_context, path, path_len))
@@ -66,14 +66,14 @@ km_result_t sysent_exec_child(
 	ps_ufd_t cwd_ufd,
 	const char *args,
 	size_t args_len,
-	proc_id_t *proc_id_out) {
+	ps_proc_id_t *proc_id_out) {
 	ps_pcb_t *pcb = ps_get_cur_proc();
 	km_result_t result;
 
 	if (mm_probe_user_space(pcb->mm_context, args, args_len))
 		return KM_MAKEERROR(KM_RESULT_ACCESS_VIOLATION);
 
-	if (mm_probe_user_space(pcb->mm_context, proc_id_out, sizeof(proc_id_t)))
+	if (mm_probe_user_space(pcb->mm_context, proc_id_out, sizeof(ps_proc_id_t)))
 		return KM_MAKEERROR(KM_RESULT_ACCESS_VIOLATION);
 
 	ps_ufcb_t *ufcb = ps_lookup_ufcb(pcb, file_ufd);

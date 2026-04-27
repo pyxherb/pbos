@@ -40,10 +40,10 @@ PBOS_NORETURN void isr_timer_impl(
 
 	const uint32_t *const esp_top) {
 	bool is_user = false;
-	ps_euid_t cur_euid = ps_get_cur_euid();
+	ps_cpu_id_t cur_cpuid = ps_get_cur_cpuid();
 	ps_pcb_t *cur_proc = ps_get_cur_proc();
 	ps_tcb_t *cur_thread = ps_get_cur_thread();
-	ps_tcb_t *next_thread = ps_cur_sched->next_thread(ps_cur_sched, cur_euid, cur_proc, cur_thread);
+	ps_tcb_t *next_thread = ps_cur_sched->next_thread(ps_cur_sched, cur_cpuid, cur_proc, cur_thread);
 
 	uint32_t eip = esp_top[0];
 	uint32_t cs = esp_top[1];
@@ -84,14 +84,14 @@ PBOS_NORETURN void isr_timer_impl(
 
 	kd_assert(next_thread);
 
-	hn_tss_storage_ptr[cur_euid].esp0 = next_thread->context->esp0;
+	hn_tss_storage_ptr[cur_cpuid].esp0 = next_thread->context->esp0;
 
 	if (next_thread->parent != cur_proc) {
 		kn_switch_to_user_process(next_thread->parent);
-		ps_cur_proc_per_eu[cur_euid] = next_thread->parent;
+		ps_cur_proc_per_cpu[cur_cpuid] = next_thread->parent;
 	}
 
-	ps_cur_thread_per_eu[cur_euid] = next_thread;
+	ps_cur_thread_per_cpu[cur_cpuid] = next_thread;
 
 	next_thread->flags |= PS_TCB_SCHEDULED;
 

@@ -1192,7 +1192,7 @@ void hn_tmpunmap_early(void *vaddr, size_t size) {
 }
 
 PBOS_NODISCARD void *hn_tmpmap_post(void *paddr, size_t size, uint16_t mask) {
-	hn_tmpmap_info_t *tmpmap_info = &hn_tmpmap_info_storage[ps_get_cur_euid()];
+	hn_tmpmap_info_t *tmpmap_info = &hn_tmpmap_info_storage[ps_get_cur_cpuid()];
 	// kd_dbgcheck(hal_is_irq_disabled(), "hn_tmpmap() requires interrupts disabled");
 	kd_dbgcheck(
 		size <= (KINITTMPMAP_SIZE),
@@ -1253,7 +1253,7 @@ alloc_succeeded:
 }
 
 void hn_tmpunmap_post(void *vaddr, size_t size) {
-	hn_tmpmap_info_t *tmpmap_info = &hn_tmpmap_info_storage[ps_get_cur_euid()];
+	hn_tmpmap_info_t *tmpmap_info = &hn_tmpmap_info_storage[ps_get_cur_cpuid()];
 	// kd_dbgcheck(hal_is_irq_disabled(), "hn_tmpunmap() requires interrupts disabled");
 	kd_dbgcheck(!PGOFF(vaddr), "Address for hn_tmpunmap must be page-aligned");
 

@@ -7,22 +7,13 @@
 
 PBOS_EXTERN_C_BEGIN
 
-#define PROC_ACCESS_EXEC 0x00000001		 // Execute other programs
-#define PROC_ACCESS_PRIORITY 0x00000002	 // Set priority
-#define PROC_ACCESS_LOAD 0x00000004		 // Load modules
-#define PROC_ACCESS_ADVMM 0x00000008	 // Advanced memory management
-#define PROC_ACCESS_POWER 0x00000010	 // Power management
-#define PROC_ACCESS_DBG 0x00000020		 // Debugging
-#define PROC_ACCESS_SESSION 0x00000040	 // Session
-#define PROC_ACCESS_NET 0x00000080		 // Network
-
 #define PS_INVALID_UHANDLE_VALUE UINT32_MAX
 
 typedef uint32_t ps_proc_access_t;
 
-typedef uint32_t proc_id_t;
-typedef uint32_t thread_id_t;
-typedef uint32_t ps_euid_t;
+typedef uint32_t ps_proc_id_t;
+typedef uint32_t ps_thread_id_t;
+typedef uint32_t ps_cpu_id_t;
 
 typedef int ps_ufd_t;
 
@@ -47,25 +38,25 @@ typedef struct _ps_tcb_t ps_tcb_t;
 
 typedef void (*thread_proc_t)(void *args);
 
-extern uint32_t ps_eu_num;
-extern ps_pcb_t **ps_cur_proc_per_eu;
-extern ps_tcb_t **ps_cur_thread_per_eu;
+extern uint32_t ps_cpu_num;
+extern ps_pcb_t **ps_cur_proc_per_cpu;
+extern ps_tcb_t **ps_cur_thread_per_cpu;
 
 #define PS_PROC_P 0x01	// Present
 #define PS_PROC_A 0x02	// Available
 
 void ps_create_proc(
 	ps_pcb_t *pcb,
-	proc_id_t parent);
-thread_id_t ps_create_thread(
+	ps_proc_id_t parent);
+ps_thread_id_t ps_create_thread(
 	ps_proc_access_t access,
 	ps_pcb_t *pcb,
 	size_t stack_size);
 
 uint16_t ps_maxproc();
 
-ps_pcb_t *ps_getpcb(proc_id_t pid);
-proc_id_t *ps_getpid(ps_pcb_t *pcb);
+ps_pcb_t *ps_getpcb(ps_proc_id_t pid);
+ps_proc_id_t *ps_getpid(ps_pcb_t *pcb);
 
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread);
 
@@ -84,8 +75,8 @@ ps_tcb_t *ps_proc_thread_set_next(ps_pcb_t *pcb, ps_tcb_t *cur);
 void ps_user_thread_init(ps_tcb_t *tcb);
 void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr);
 
-ps_euid_t ps_get_cur_euid();
-void kn_set_cur_euid(ps_euid_t euid);
+ps_cpu_id_t ps_get_cur_cpuid();
+void kn_set_cur_cpuid(ps_cpu_id_t cpuid);
 
 ps_pcb_t *ps_get_cur_proc();
 ps_tcb_t *ps_get_cur_thread();
@@ -98,7 +89,7 @@ typedef km_result_t (*ps_sched_prepare_proc_t)(ps_sched_t *sched, ps_pcb_t *proc
 typedef km_result_t (*ps_sched_prepare_thread_t)(ps_sched_t *sched, ps_tcb_t *thread);
 typedef void (*ps_sched_drop_proc_t)(ps_sched_t *sched, ps_pcb_t *proc);
 typedef void (*ps_sched_drop_thread_t)(ps_sched_t *sched, ps_tcb_t *thread);
-typedef ps_tcb_t *(*ps_sched_next_thread_t)(ps_sched_t *sched, ps_euid_t cur_euid, ps_pcb_t *cur_proc, ps_tcb_t *cur_thread);
+typedef ps_tcb_t *(*ps_sched_next_thread_t)(ps_sched_t *sched, ps_cpu_id_t cur_cpuid, ps_pcb_t *cur_proc, ps_tcb_t *cur_thread);
 
 typedef struct _ps_sched_t {
 	ps_sched_init_t init;

@@ -8,6 +8,7 @@
 #include <_type_traits/decay.hh>
 #include "cxx_basedefs.hh"
 #include "_functional/invoke.hh"
+#include <compare>
 #include "memory"
 
 namespace std {

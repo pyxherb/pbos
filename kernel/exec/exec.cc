@@ -9,9 +9,9 @@ PBOS_EXTERN_C_BEGIN
 kfxx::rbtree_t<kf_uuid_t> kn_registered_binldrs;
 kfxx::rbtree_t<fs_fcb_t *> kn_registered_binprotos;
 
-static proc_id_t _last_proc_id = 0;
+static ps_proc_id_t _last_proc_id = 0;
 
-proc_id_t kn_alloc_proc_id() {
+ps_proc_id_t kn_alloc_proc_id() {
 	return _last_proc_id++;
 }
 
@@ -32,13 +32,13 @@ km_result_t km_register_binldr(kf_uuid_t *uuid, km_binldr_t *binldr) {
 }
 
 km_result_t km_exec(
-	proc_id_t parent,
+	ps_proc_id_t parent,
 	se_uid_t uid,
 	fs_fcb_t *file_fp,
-	proc_id_t *pid_out) {
+	ps_proc_id_t *pid_out) {
 	km_result_t result;
 
-	proc_id_t new_proc_id = kn_alloc_proc_id();
+	ps_proc_id_t new_proc_id = kn_alloc_proc_id();
 	if (new_proc_id < 0)
 		return KM_MAKEERROR(KM_RESULT_NO_SLOT);
 

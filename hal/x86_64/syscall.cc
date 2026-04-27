@@ -22,7 +22,7 @@ uint32_t hn_syscall_handler(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t e
 			break;
 		case SYSENT_PBCORE_EXEC_CHILD:
 			klog_printf("Exec child test");
-			return sysent_exec_child((ps_ufd_t)ebx, (ps_ufd_t)ecx, (const char*)edx, (size_t)esi, (proc_id_t *)edi);
+			return sysent_exec_child((ps_ufd_t)ebx, (ps_ufd_t)ecx, (const char*)edx, (size_t)esi, (ps_proc_id_t *)edi);
 		default:
 			klog_printf("Test unpassed, eax = %u", eax);
 	}
