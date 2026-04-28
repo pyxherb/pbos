@@ -38,7 +38,6 @@ typedef struct _ps_tcb_t ps_tcb_t;
 
 typedef void (*thread_proc_t)(void *args);
 
-extern uint32_t ps_cpu_num;
 extern ps_pcb_t **ps_cur_proc_per_cpu;
 extern ps_tcb_t **ps_cur_thread_per_cpu;
 

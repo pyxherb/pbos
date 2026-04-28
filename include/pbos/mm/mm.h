@@ -224,9 +224,6 @@ bool mm_probe_user_space(mm_context_t *mm_context, const void *ptr, size_t size)
 /// @brief The kernel memory context.
 extern mm_context_t *mm_kernel_context;
 
-/// @brief An array that contains current memory contexts of each CPU.
-extern mm_context_t **mm_cur_contexts;
-
 mm_context_t *mm_get_cur_context();
 
 PBOS_EXTERN_C_END

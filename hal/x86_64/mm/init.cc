@@ -73,17 +73,6 @@ void hn_mm_init() {
 
 	kn_mm_init_kima();
 
-	ps_cpu_num = 1;
-	if (!(mm_cur_contexts = (mm_context_t **)mm_kmalloc(ps_cpu_num * sizeof(mm_context_t *), alignof(mm_context_t *)))) {
-		km_panic("Unable to allocate memory context for all CPUs");
-	}
-
-	for (ps_cpu_id_t i = 0; i < ps_cpu_num; ++i) {
-		mm_cur_contexts[i] = mm_kernel_context;
-	}
-
-	hn_mm_init_stage = HN_MM_INIT_STAGE_CUR_CONTEXT_LIST_INITED;
-
 	hn_init_tss();
 
 	kd_printf("Initialized memory manager\n");

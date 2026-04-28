@@ -8,7 +8,7 @@ PBOS_EXTERN_C_BEGIN
 
 typedef struct _hal_irq_context_t hal_irq_context_t;
 
-extern hal_irq_context_t **hal_irq_contexts;
+extern hal_irq_context_t **irq_contexts;
 
 typedef PBOS_NORETURN void (*hal_isr_t)();
 

@@ -6,7 +6,6 @@
 
 PBOS_EXTERN_C_BEGIN
 
-void *hn_lapic_pbase;
 uint32_t *hn_lapic_vbase;
 
 /*static void hn_remap_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
@@ -82,9 +81,6 @@ void hal_irq_init() {
 		// km_panic("The kernel requires APIC support");
 
 	// Relocate and remap APIC.
-	if (!(hn_lapic_pbase = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE)))
-		km_panic("Unable to allocate physical LAPIC page");
-
 	if (!(hn_lapic_vbase = (uint32_t *)mm_kvmalloc(mm_kernel_context, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
 		km_panic("Unable to allocate virtual LAPIC page");
 
@@ -92,17 +88,6 @@ void hal_irq_init() {
 
 	if (KM_FAILED(mm_iommap(mm_kernel_context, hn_lapic_vbase, (void*)ARCH_DEFAULT_APIC_PBASE, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_NOCACHE, 0))) {
 		km_panic("Unable to mapping LAPIC page for the main CPU");
-	}
-
-	// Allocate IRQ contexts.
-	if (!(hal_irq_contexts = (hal_irq_context_t **)mm_kmalloc(ps_cpu_num * sizeof(hal_irq_context_t *), alignof(hal_irq_context_t *)))) {
-		km_panic("Unable to allocate interrupt context for all CPUs");
-	}
-
-	for (uint32_t i = 0; i < ps_cpu_num; ++i) {
-		if (!(hal_irq_contexts[i] = (hal_irq_context_t *)mm_kmalloc(ps_cpu_num * sizeof(hal_irq_context_t), alignof(hal_irq_context_t)))) {
-			km_panic("Unable to allocate interrupt context for CPU %u", i);
-		}
 	}
 
 	kd_printf("Initialized IRQ\n");

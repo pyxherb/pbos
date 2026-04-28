@@ -4,12 +4,12 @@
 #include "../mm.hh"
 #include <pbos/kfxx/allocator.hh>
 #include "../proc.hh"
+#include <pbos/kn/mp/misc.hh>
 
 PBOS_EXTERN_C_BEGIN
 
 mm_context_t hn_kernel_mm_context;
 mm_context_t *mm_kernel_context = &hn_kernel_mm_context;
-mm_context_t **mm_cur_contexts = nullptr;
 
 void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 	if (dest == src)
@@ -21,7 +21,7 @@ void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 }
 
 void kn_mm_sync_global_mappings(const mm_context_t *src) {
-	for (ps_cpu_id_t i = 0; i < ps_cpu_num; ++i) {
+	for (ps_cpu_id_t i = 0; i < mp_num_total_cpu; ++i) {
 		mm_context_t *cur_context = mm_cur_contexts[i];
 
 		if (cur_context == src)

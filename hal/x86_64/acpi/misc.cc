@@ -2,7 +2,7 @@
 #include <pbos/km/logger.h>
 #include <string.h>
 #include <pbos/kh/acpi/misc.hh>
-#include <pbos/kh/mm.hh>
+#include <pbos/kh/mm/misc.hh>
 #include <pbos/kn/acpi/rsdt.hh>
 
 bool kh_acpi_is_available() {

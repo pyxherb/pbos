@@ -1,7 +1,7 @@
 #include <arch/x86_64/apic.h>
 #include <pbos/acpi/madt.h>
 #include <pbos/km/logger.h>
-#include <pbos/kn/km/mp.h>
+#include <pbos/kn/mp/init.hh>
 #include <pbos/kh/acpi/misc.hh>
 #include "../irq.h"
 
@@ -45,7 +45,7 @@ static void hn_mask_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
 	arch_disable_pic();
 }
 
-void mp_init() {
+void kh_mp_init_topology() {
 	if (kh_acpi_is_available()) {
 		uint32_t lapic_num = 0, lx2apic_num = 0;
 		const size_t num_rsd = kn_acpi_rsdt_length();
@@ -63,7 +63,7 @@ void mp_init() {
 					switch (header->entry_type) {
 						case ACPI_MADT_TYPE_LAPIC: {
 							const acpi_madt_entry_lapic_t *hdr = (const acpi_madt_entry_lapic_t *)header;
-							klog_printf("Found CPU #%u in LAPIC entry\n", hdr->processor_id);
+							klog_printf("Found CPU #%u in LAPIC entry\n", (uint32_t)hdr->processor_id);
 							++lapic_num;
 							break;
 						}
@@ -88,15 +88,14 @@ void mp_init() {
 			km_panic("The ACPI root tables does not contain MADT table");
 
 		if (lx2apic_num)
-			ps_cpu_num = lx2apic_num;
+			mp_num_total_cpu = lx2apic_num;
 		else
-			ps_cpu_num = lapic_num;
+			mp_num_total_cpu = lapic_num;
 
-		klog_printf("Found %u CPUs\n", ps_cpu_num);
+		klog_printf("Found %u CPUs\n", mp_num_total_cpu);
 	} else {
 		km_panic("Unable to detect CPU topology");
 	}
-	mp_main_cpu_init();
 }
 
 void hn_calibrate_apic() {
@@ -148,7 +147,7 @@ void hn_calibrate_apic() {
 void mp_main_cpu_init() {
 	arch_cli();
 
-	hal_irq_context_t *ctxt = hal_irq_contexts[0];
+	hal_irq_context_t *ctxt = irq_contexts[0];
 
 	hn_calibrate_apic();
 

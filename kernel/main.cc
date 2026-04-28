@@ -6,7 +6,7 @@
 #include <pbos/kn/fs/fs.hh>
 #include <pbos/kn/fs/initcar.hh>
 // #include <pbos/kn/km/exec.hh>
-#include <pbos/kn/km/mp.h>
+#include <pbos/kh/mp/init.hh>
 #include <pbos/kn/km/proc.hh>
 #include <pbos/kh/acpi/misc.hh>
 
@@ -22,9 +22,6 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 	hal_init();
 	// hal_irq_init();
 
-	fs_init();
-	ps_init();
-
 	if(kh_acpi_is_available()) {
 		kh_acpi_init();
 	} else {
@@ -32,7 +29,16 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 			km_panic("PbOS requires ACPI to start up.");
 	}
 
-	mp_init();
+	kh_mp_init_topology();
+
+	mp_alloc_resources();
+
+	hal_irq_init();
+
+	mp_main_cpu_init();
+
+	fs_init();
+	ps_init();
 
 	asm volatile("hlt");
 

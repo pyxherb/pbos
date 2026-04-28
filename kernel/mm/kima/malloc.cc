@@ -6,7 +6,7 @@
 void *mm_kmalloc(size_t size, size_t alignment) {
 	// io::irq_disable_lock irq_lock;
 
-	kd_assert(size);
+	kd_dbgcheck(size, "The size for mm_kmalloc must not be 0");
 	char *continuous_area_base = nullptr;
 
 	for (auto it = kima_vpgdesc_query_tree.begin(); it != kima_vpgdesc_query_tree.end();) {

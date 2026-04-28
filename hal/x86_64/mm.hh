@@ -3,7 +3,7 @@
 
 #include <arch/x86_64/mlayout.h>
 #include <pbos/kfxx/rbtree.hh>
-#include <pbos/kh/mm.hh>
+#include <pbos/kh/mm/misc.hh>
 #include "mm.h"
 #include "mm/pgalloc/pgalloc.hh"
 

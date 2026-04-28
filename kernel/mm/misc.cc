@@ -1,5 +1,7 @@
-#include <pbos/kh/mm.hh>
+#include <pbos/kh/mm/misc.hh>
 #include <pbos/kn/km/proc.hh>
+
+mm_context_t **mm_cur_contexts = nullptr;
 
 km_result_t mm_mmap(mm_context_t *ctxt,
 	void *vaddr,

@@ -16,6 +16,8 @@ PBOS_EXTERN_C_BEGIN
 
 #define KM_MM_VPM_ALLOC 0x00000001
 
+extern mm_context_t **mm_cur_contexts;
+
 void kn_mm_init_kima();
 
 void kn_mm_sync_global_mappings(const mm_context_t *src);

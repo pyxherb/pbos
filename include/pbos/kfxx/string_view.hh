@@ -4,6 +4,7 @@
 #include <pbos/kf/hash.h>
 #include <pbos/km/assert.h>
 #include <string.h>
+#include <type_traits>
 #include "basedefs.hh"
 #include "hash.hh"
 
@@ -19,7 +20,14 @@ namespace kfxx {
 		PBOS_FORCEINLINE constexpr string_view() noexcept : _ptr(nullptr), _size(0) {
 		}
 
-		PBOS_FORCEINLINE string_view(const char *s) noexcept : _ptr(s), _size(strlen(s)) {
+		PBOS_FORCEINLINE constexpr string_view(const char *s) noexcept : _ptr(s) {
+			if (std::is_constant_evaluated()) {
+				size_t size = 0;
+				for (const char *i = s; *i; ++i, ++size);
+				_size = size;
+			} else {
+				strlen(s);
+			}
 		}
 
 		PBOS_FORCEINLINE constexpr string_view(const char *s, size_t len) noexcept : _ptr(s), _size(len) {
@@ -112,7 +120,7 @@ namespace kfxx {
 	namespace literal_suffixes {
 		constexpr kfxx::string_view operator""_sv(const char *s) {
 			size_t index = 0;
-			while(s[index])
+			while (s[index])
 				++index;
 			return kfxx::string_view(s, index);
 		}

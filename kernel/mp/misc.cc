@@ -1,4 +1,4 @@
-#include <pbos/kn/km/mp.h>
+#include <pbos/kn/mp/misc.hh>
 
 PBOS_EXTERN_C_BEGIN
 

@@ -67,5 +67,6 @@
 #include "_type_traits/remove_reference.hh"
 #include "_type_traits/underlying_type.hh"
 #include "_type_traits/void_t.hh"
+#include "_type_traits/is_constant_evaluated.hh"
 
 #endif

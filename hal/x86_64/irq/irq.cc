@@ -6,7 +6,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-hal_irq_context_t **hal_irq_contexts;
+hal_irq_context_t **irq_contexts;
 
 bool hal_is_irq_disabled() {
 	return !(arch_rflags() & (1 << 9));
