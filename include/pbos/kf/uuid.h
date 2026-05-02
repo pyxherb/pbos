@@ -62,11 +62,11 @@ PBOS_FORCEINLINE int uuid_cmp(const kf_uuid_t *_a, const kf_uuid_t *_b) {
 }
 
 PBOS_FORCEINLINE bool uuid_gt(const kf_uuid_t *_a, const kf_uuid_t *_b) {
-	return uuid_cmp(_a, _b) > 1;
+	return uuid_cmp(_a, _b) > 0;
 }
 
 PBOS_FORCEINLINE bool uuid_lt(const kf_uuid_t *_a, const kf_uuid_t *_b) {
-	return uuid_cmp(_a, _b) < 1;
+	return uuid_cmp(_a, _b) < 0;
 }
 
 #define uuid_gteq(_a, _b) (uuid_eq(_a, _b) || uuid_gt(_a, _b))

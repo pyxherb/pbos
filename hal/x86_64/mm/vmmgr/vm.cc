@@ -247,14 +247,14 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 		if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
 			pdpt = (arch_pdpte_t *)
 				hn_tmpmap_post(
-					UNPGADDR(pml4te->address),
+					pdpt_paddr,
 					sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 					PTE_P | PTE_RW);
 		} else
 			release_tmpmap_pdpt_guard.release();
 
 		if (is_pml4te_allocated)
-			memset(pml4te, 0, PAGESIZE);
+			memset(pdpt, 0, PAGESIZE);
 
 		// Walk each PDPTE.
 		for (uint16_t pdptx = (pml4x == PML4X(vaddr) ? PDPTX(vaddr) : 0);
@@ -278,14 +278,14 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 			}
 
 			arch_pde_t *pdt;
-			void *pdt_paddr = UNPGADDR(pml4te->address);
+			void *pdt_paddr = UNPGADDR(pdpt[pdptx].address);
 			kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
 				hn_tmpunmap_post((void *)pdt, PAGESIZE);
 			});
 			if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
 				pdt = (arch_pde_t *)
 					hn_tmpmap_post(
-						UNPGADDR(pdpt[pdptx].address),
+						pdt_paddr,
 						sizeof(arch_pde_t) * (PTX_MAX + 1),
 						PTE_P | PTE_RW);
 			} else
@@ -320,13 +320,14 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 				}
 
 				arch_pte_t *ptt;
+				void *ptt_paddr = UNPGADDR(pdt[pdx].address);
 				kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
 					hn_tmpunmap_post((void *)ptt, PAGESIZE);
 				});
-				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(pdt_paddr))) {
+				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(ptt_paddr))) {
 					ptt = (arch_pte_t *)
 						hn_tmpmap_post(
-							UNPGADDR(pdt[pdx].address),
+							ptt_paddr,
 							sizeof(arch_pte_t) * (PTX_MAX + 1),
 							PTE_P | PTE_RW);
 				} else
@@ -589,8 +590,10 @@ void *kh_vmalloc(mm_context_t *context,
 
 		// Skip if does not present
 		if (!(pml4te->mask & PML4E_P)) {
-			if (!p_found)
-				p_found = (void *)(addr_prefix | (uintptr_t)UVADDR(pml4x, 0, 0, 0, 0));
+			if (!p_found) {
+				if ((p_found = (void *)(addr_prefix | (uintptr_t)UVADDR(pml4x, 0, 0, 0, 0))) < minaddr)
+					p_found = (void *)minaddr;
+			}
 			sz_found += (size_t)UVADDR(1, 0, 0, 0, 0);
 			continue;
 		}
@@ -604,9 +607,9 @@ void *kh_vmalloc(mm_context_t *context,
 		if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
 			pdpt = (arch_pdpte_t *)
 				hn_tmpmap_post(
-					UNPGADDR(pml4te->address),
+					pdpt_paddr,
 					sizeof(arch_pdpte_t) * (PTX_MAX + 1),
-					PTE_P | PTE_RW);
+					PTE_P);
 		} else
 			release_tmpmap_pdpt_guard.release();
 
@@ -623,23 +626,25 @@ void *kh_vmalloc(mm_context_t *context,
 				break;
 
 			if (!(pdpt[pdptx].mask & PDPTE_P)) {
-				if (!p_found)
-					p_found = pdpt_vaddr;
+				if (!p_found) {
+					if ((p_found = pdpt_vaddr) < minaddr)
+						p_found = (void *)minaddr;
+				}
 				sz_found += (size_t)UVADDR(0, 1, 0, 0, 0);
 				continue;
 			}
 
 			const arch_pde_t *pdt;
-			void *pdt_paddr = UNPGADDR(pml4te->address);
+			void *pdt_paddr = UNPGADDR(pdpt[pdptx].address);
 			kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
 				hn_tmpunmap_post((void *)pdt, PAGESIZE);
 			});
 			if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
 				pdt = (arch_pde_t *)
 					hn_tmpmap_post(
-						UNPGADDR(pdpt[pdptx].address),
+						pdt_paddr,
 						sizeof(arch_pde_t) * (PTX_MAX + 1),
-						PTE_P | PTE_RW);
+						PTE_P);
 			} else
 				release_tmpmap_pdt_guard.release();
 
@@ -660,22 +665,25 @@ void *kh_vmalloc(mm_context_t *context,
 					break;
 
 				if (!(pdt[pdx].mask & PDE_P)) {
-					if (!p_found)
-						p_found = pdt_vaddr;
+					if (!p_found) {
+						if ((p_found = pdt_vaddr) < minaddr)
+							p_found = (void*)minaddr;
+					}
 					sz_found += (size_t)UVADDR(0, 0, 1, 0, 0);
 					continue;
 				}
 
 				const arch_pte_t *ptt;
+				void *ptt_paddr = UNPGADDR(pdt[pdx].address);
 				kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
 					hn_tmpunmap_post((void *)ptt, PAGESIZE);
 				});
-				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(pdt_paddr))) {
+				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(ptt_paddr))) {
 					ptt = (arch_pte_t *)
 						hn_tmpmap_post(
-							UNPGADDR(pdt[pdx].address),
+							ptt_paddr,
 							sizeof(arch_pte_t) * (PTX_MAX + 1),
-							PTE_P | PTE_RW);
+							PTE_P);
 				} else
 					release_tmpmap_ptt_guard.release();
 

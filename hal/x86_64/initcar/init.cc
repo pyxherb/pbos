@@ -85,7 +85,7 @@ void kh_initcar_init() {
 		hn_initcar_paddr,
 		((const char *)hn_initcar_paddr) + hn_initcar_size);
 
-	if ((!(hn_initcar_ptr = kh_get_direct_mmap(hn_initcar_ptr))) || (!kh_get_direct_mmap(((char *)hn_initcar_ptr) + hn_initcar_size))) {
+	if ((!(hn_initcar_ptr = kh_get_direct_mmap(hn_initcar_paddr))) || (!kh_get_direct_mmap(((char *)hn_initcar_paddr) + hn_initcar_size))) {
 		if (!(hn_initcar_ptr = mm_kvmalloc(mm_get_cur_context(), hn_initcar_size, MM_PAGE_READ, 0)))
 			km_panic("Error allocating virtual memory space for INITCAR");
 		if (KM_FAILED(result = mm_mmap(mm_get_cur_context(), hn_initcar_ptr, hn_initcar_paddr, hn_initcar_size, MM_PAGE_READ, 0)))
@@ -115,7 +115,7 @@ void kh_initcar_init() {
 	if (((p_cur - (const char *)hn_initcar_ptr) + size) > kh_initcar_size) \
 		km_panic("Prematured end of file\n");
 
-	if (KM_FAILED(result = fs_alloc_dir_fnode(&kh_initcar_dir)))
+	if (KM_FAILED(result = fs_alloc_dir_fnode(kh_initcar_fs, &kh_initcar_dir)))
 		km_panic("Error creating initcar directory, error code = %.0x", result);
 
 	if (KM_FAILED(result = fs_rename_fnode(kh_initcar_dir, INITCAR_DIR_FILENAME.data(), INITCAR_DIR_FILENAME.size())))
@@ -125,7 +125,7 @@ void kh_initcar_init() {
 		// fs_fnode_t * root_handle;
 		// if (KM_FAILED(fs_open("/", sizeof("/") - 1, &root_handle)))
 		// km_panic("Error opening the root directory, error code = %.0x", result);
-		if (KM_FAILED(result = fs_mount_file(fs_abs_root_dir, kh_initcar_dir)))
+		if (KM_FAILED(result = fs_link_subnode(fs_abs_root_dir, kh_initcar_dir)))
 			km_panic("Error mounting initcar directory, error code = %.0x", result);
 	}
 
@@ -142,7 +142,7 @@ void kh_initcar_init() {
 
 		fs_fnode_t *file;
 		size_t filename_len = strlen(fe->filename);
-		if (KM_FAILED(fs_alloc_file_fnode(&file)))
+		if (KM_FAILED(fs_alloc_file_fnode(kh_initcar_fs, &file)))
 			km_panic("Error creating file object for initcar file: %s\n", fe->filename);
 		if (KM_FAILED(fs_rename_fnode(file, fe->filename, filename_len)))
 			km_panic("Error creating file object for initcar file: %s\n", fe->filename);

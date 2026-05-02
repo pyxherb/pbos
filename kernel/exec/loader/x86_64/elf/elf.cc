@@ -57,7 +57,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 		if (ehdr.e_type != ET_EXEC)
 			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
 
-		if (ehdr.e_ident[EI_CLASS] != ELFCLASS32)
+		if (ehdr.e_ident[EI_CLASS] != ELFCLASS64)
 			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
 	}
 

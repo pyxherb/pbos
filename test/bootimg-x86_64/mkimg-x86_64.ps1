@@ -64,7 +64,7 @@ function UpdateLimineConfig {
 }
 
 function CopySystemFiles {
-	Copy-Item build\pbkim B:\sys\kernel\
+	Copy-Item build\pbkern B:\sys\kernel\
 	Copy-Item build\initcar B:\sys\boot\
 }
 

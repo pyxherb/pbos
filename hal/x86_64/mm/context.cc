@@ -60,7 +60,7 @@ km_result_t kn_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 		mm_vmfree(mm_get_cur_context(), pml4t_vaddr, PAGESIZE);
 	});
 
-	kfxx::construct_at<mm_context_t>(context);
+	kfxx::construct_at<mm_context_t>(new_context);
 	if (KM_FAILED(result = mm_mmap(mm_get_cur_context(), pml4t_vaddr, pml4t_paddr, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0))) {
 		return result;
 	}
@@ -69,9 +69,13 @@ km_result_t kn_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 	free_pml4t_vaddr_guard.release();
 
 	memset(pml4t_vaddr, 0, PAGESIZE);
-	context->pml4t = (arch_pml4te_t *)pml4t_vaddr;
+	new_context->pml4t = (arch_pml4te_t *)pml4t_vaddr;
 
-	kn_mm_copy_global_mappings(context, mm_get_cur_context());
+	kn_mm_copy_global_mappings(new_context, mm_get_cur_context());
+
+	*new_context_out = new_context;
+
+	free_new_context_guard.release();
 
 	// kn_mm_copy_global_mappings(context, mm_kernel_context);
 	return KM_RESULT_OK;

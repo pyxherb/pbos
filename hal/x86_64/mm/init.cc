@@ -60,6 +60,7 @@ void hn_mm_init() {
 		km_panic("Invalid module count, the module count passing to the kernel should be 1 (the initcar only)");
 	limine_file *initcar_file = hn_limine_module_request.response->modules[0];
 	hn_initcar_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)initcar_file->address) - hn_limine_hhdm_request.response->offset));
+	hn_initcar_size = initcar_file->size;
 
 	// Collect ACPI RSDP's physical address.
 	kn_acpi_rsdp_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)hn_limine_rsdp_request.response->address) - hn_limine_hhdm_request.response->offset));

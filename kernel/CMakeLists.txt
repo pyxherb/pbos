@@ -23,7 +23,7 @@ add_custom_target(
     initcar
     COMMAND ${CARGEN_EXECUTABLE} -c ${PBOS_BINARY_DIR}/initcar _ $<TARGET_FILE:pbinit>
     BYPRODUCTS ${PBOS_BINARY_DIR}/initcar
-    DEPENDS pbkim
+    DEPENDS pbkern pbinit
 )
 
 add_subdirectory("exec")

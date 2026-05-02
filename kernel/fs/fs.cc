@@ -3,6 +3,7 @@
 #include <pbos/kn/fs/file.hh>
 #include <pbos/kn/fs/fs.hh>
 #include <pbos/kn/fs/rootfs.hh>
+#include <pbos/kfxx/uuid.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -35,6 +36,7 @@ fs_filesys_t *fs_register_filesys(
 		return nullptr;
 	fs->name_len = name_len;
 	memcpy(&fs->ops, ops, sizeof(fs_fsops_t));
+	memcpy(&fs->rb_value, uuid, sizeof(kf_uuid_t));
 
 	if (!kn_registered_fs.insert(fs))
 		return nullptr;
@@ -55,7 +57,7 @@ void fs_init() {
 
 	kd_printf("Registered root file system\n");
 
-	if (KM_FAILED(result = fs_alloc_dir_fnode(&fs_abs_root_dir)))
+	if (KM_FAILED(result = fs_alloc_dir_fnode(fs_rootfs, &fs_abs_root_dir)))
 		km_panic("Error creating the root directory, error code = %.0x", result);
 
 	kd_printf("Created the root directory\n");

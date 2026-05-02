@@ -26,7 +26,7 @@ namespace kfxx {
 				for (const char *i = s; *i; ++i, ++size);
 				_size = size;
 			} else {
-				strlen(s);
+				_size = strlen(s);
 			}
 		}
 

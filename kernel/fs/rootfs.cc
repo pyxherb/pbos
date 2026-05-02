@@ -19,8 +19,7 @@ fs_fsops_t kn_rootfs_ops = {
 };
 
 km_result_t kn_rootfs_subnode(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
-	KM_RETURN_IF_FAILED(fs_child_of(parent, name, name_len, file_out));
-	return KM_RESULT_OK;
+	return KM_RESULT_NOT_FOUND;
 }
 
 void kn_rootfs_offload(fs_fnode_t *file) {

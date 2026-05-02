@@ -149,11 +149,13 @@ _fs_file_t::_fs_file_t() : _fs_fnode_t(FS_FILETYPE_FILE) {}
 
 _fs_dir_t::_fs_dir_t(kfxx::allocator_t *allocator) : _fs_fnode_t(FS_FILETYPE_DIR), subnodes(allocator) {}
 
-PBOS_NODISCARD km_result_t fs_alloc_file_fnode(fs_fnode_t **file_out) {
+PBOS_NODISCARD km_result_t fs_alloc_file_fnode(fs_filesys_t *filesys, fs_fnode_t **file_out) {
 	fs_file_t *ptr = kfxx::alloc_and_construct<fs_file_t>(&kn_fs_filename_allocator);
 
 	if (!ptr)
 		return KM_RESULT_NO_MEM;
+
+	ptr->fs = filesys;
 
 	fs_inc_fnode_ref(ptr);
 
@@ -162,11 +164,13 @@ PBOS_NODISCARD km_result_t fs_alloc_file_fnode(fs_fnode_t **file_out) {
 	return KM_RESULT_OK;
 }
 
-PBOS_NODISCARD km_result_t fs_alloc_dir_fnode(fs_fnode_t **file_out) {
+PBOS_NODISCARD km_result_t fs_alloc_dir_fnode(fs_filesys_t *filesys, fs_fnode_t **file_out) {
 	fs_dir_t *ptr = kfxx::alloc_and_construct<fs_dir_t>(&kn_fs_filename_allocator, &kn_fs_filename_allocator);
 
 	if (!ptr)
 		return KM_RESULT_NO_MEM;
+
+	ptr->fs = filesys;
 
 	fs_inc_fnode_ref(ptr);
 
@@ -223,10 +227,11 @@ km_result_t kn_do_rename_fnode(fs_fnode_t *file, const char *name, size_t name_l
 			name_len, alignof(char));
 	else
 		new_name = (char *)kn_fs_filename_allocator.alloc(
-			file->filename_len,
+			name_len,
 			alignof(char));
 	if (!new_name)
 		return KM_RESULT_NO_MEM;
+	memcpy(new_name, name, name_len);
 	file->filename = new_name;
 	file->filename_len = name_len;
 	return KM_RESULT_OK;

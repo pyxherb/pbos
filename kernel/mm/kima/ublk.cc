@@ -37,6 +37,7 @@ kima_ublk_t *kima_alloc_ublk(void *ptr, size_t size) {
 	if (!pg)
 		return NULL;
 
+	pg->header.prev = nullptr;
 	pg->header.next = kima_ublk_poolpg_list;
 	if (kima_ublk_poolpg_list) {
 		kima_ublk_poolpg_list->header.prev = pg;
