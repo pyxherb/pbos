@@ -55,7 +55,7 @@ void fs_init() {
 
 	kd_printf("Registered root file system\n");
 
-	if (KM_FAILED(result = kn_alloc_dir_fnode(&fs_abs_root_dir)))
+	if (KM_FAILED(result = fs_alloc_dir_fnode(&fs_abs_root_dir)))
 		km_panic("Error creating the root directory, error code = %.0x", result);
 
 	kd_printf("Created the root directory\n");

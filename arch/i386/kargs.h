@@ -56,7 +56,7 @@ typedef struct PBOS_PACKED _arch_kargs_ptr_t {
 	arch_apm_entry_t apm_entry;
 
 	void *initcar_ptr;
-	uint32_t initcar_size;
+	uint32_t kh_initcar_size;
 } arch_kargs_ptr_t;
 
 /// @brief Pointer to kernel arguments

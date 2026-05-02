@@ -1,6 +1,7 @@
 #ifndef _PBOS_FS_FILE_H_
 #define _PBOS_FS_FILE_H_
 
+#include <pbos/kf/basedefs.h>
 #include <pbos/kf/hashmap.h>
 #include <stdint.h>
 
@@ -51,35 +52,45 @@ typedef struct _fs_fcb_t fs_fcb_t;
 
 typedef struct _fs_finddata_t fs_finddata_t;
 
-PBOS_NODISCARD km_result_t fs_create_file(
+PBOS_NODISCARD PBOS_API km_result_t fs_create_file(
 	fs_fnode_t *parent,
 	const char *filename,
 	size_t filename_len,
 	fs_fnode_t **file_out);
-PBOS_NODISCARD km_result_t fs_create_dir(
+PBOS_NODISCARD PBOS_API km_result_t fs_create_dir(
 	fs_fnode_t *parent,
 	const char *filename,
 	size_t filename_len,
 	fs_fnode_t **file_out);
-PBOS_NODISCARD km_result_t fs_create_fcb(
+PBOS_NODISCARD PBOS_API km_result_t fs_create_fcb(
 	fs_fnode_t *file,
 	fs_fcb_t **fcb_out);
+
+PBOS_NODISCARD km_result_t fs_alloc_file_fnode(fs_fnode_t **file_out);
+PBOS_NODISCARD km_result_t fs_alloc_dir_fnode(fs_fnode_t **file_out);
+PBOS_NODISCARD const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out);
+PBOS_NODISCARD void fs_unname_fnode(fs_fnode_t *file);
+PBOS_NODISCARD km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len);
+
+PBOS_API fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb);
 
 /// @brief Mount a file onto a directory.
 /// @param parent Parent directory to mount, the directory must be empty.
 /// @param file Handle of file to be mounted.
 /// @return Execution result of the operation.
-PBOS_NODISCARD km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file);
-PBOS_NODISCARD km_result_t fs_unmount_file(fs_fnode_t *file);
+PBOS_NODISCARD PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file);
+PBOS_NODISCARD PBOS_API km_result_t fs_unmount_file(fs_fnode_t *file);
+
+PBOS_NODISCARD PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file);
 
 void fs_close(fs_fcb_t *fcb);
 
-PBOS_NODISCARD km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out);
-PBOS_NODISCARD km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out);
-PBOS_NODISCARD km_result_t fs_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out);
-PBOS_NODISCARD km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out);
+PBOS_NODISCARD PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out);
+PBOS_NODISCARD PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out);
+PBOS_NODISCARD PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out);
+PBOS_NODISCARD PBOS_API km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out);
 
-PBOS_NODISCARD km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_len, fs_fnode_t **file_out);
+PBOS_NODISCARD PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_len, fs_fnode_t **file_out);
 
 ///
 /// @brief Resolve a path to a file.
@@ -90,13 +101,13 @@ PBOS_NODISCARD km_result_t fs_child_of(fs_fnode_t *file, const char *filename, s
 /// @param file_out Where the file object is received, note that the file will be reference counted.
 /// @return Result of the resolution.
 ///
-PBOS_NODISCARD km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out);
+PBOS_NODISCARD PBOS_API km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out);
 
-void fs_inc_fnode_ref(fs_fnode_t *fnode);
-void fs_dec_fnode_ref(fs_fnode_t *fnode);
+PBOS_API void fs_inc_fnode_ref(fs_fnode_t *fnode);
+PBOS_API void fs_dec_fnode_ref(fs_fnode_t *fnode);
 
-void fs_inc_fcb_ref(fs_fcb_t *fcb);
-void fs_dec_fcb_ref(fs_fcb_t *fcb);
+PBOS_API void fs_inc_fcb_ref(fs_fcb_t *fcb);
+PBOS_API void fs_dec_fcb_ref(fs_fcb_t *fcb);
 
 PBOS_EXTERN_C_END
 

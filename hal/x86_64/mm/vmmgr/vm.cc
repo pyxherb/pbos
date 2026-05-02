@@ -233,7 +233,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 				km_panic("Missing PML4 table entry with MMAP_NO_PGTAB_ALLOC, please report this bug.");
 			// Allocate page table.
 			if (!(pml4te->address = PGROUNDDOWN(mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE)))) {
-				return KM_RESULT_FAILED;
+				return KM_RESULT_NO_MEM;
 			}
 			pml4te->mask = PML4E_P | PML4E_RW | PML4E_U;
 			is_pml4te_allocated = true;
@@ -271,7 +271,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 					km_panic("Missing PDP table entry with MMAP_NO_PGTAB_ALLOC, please report this bug.");
 				// Allocate page table.
 				if (!(pdpt[pdptx].address = PGROUNDDOWN(mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE)))) {
-					return KM_RESULT_FAILED;
+					return KM_RESULT_NO_MEM;
 				}
 				pdpt[pdptx].mask = PDPTE_P | PDPTE_RW | PDPTE_U;
 				is_pdpte_allocated = true;
@@ -313,7 +313,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 						km_panic("Missing page directory table entry with MMAP_NO_PGTAB_ALLOC, please report this bug.");
 					// Allocate page table.
 					if (!(pdt[pdx].address = PGROUNDDOWN(mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE)))) {
-						return KM_RESULT_FAILED;
+						return KM_RESULT_NO_MEM;
 					}
 					pdt[pdx].mask = PDE_P | PDE_RW | PDE_U;
 					is_pde_allocated = true;

@@ -40,9 +40,7 @@ km_result_t kn_rootfs_open(fs_fnode_t *file, fs_fcb_t **fcb_out) {
 	return KM_RESULT_OK;
 }
 
-km_result_t kn_rootfs_close(fs_fcb_t *fcb) {
-	fs_dec_fcb_ref(fcb);
-	return KM_RESULT_OK;
+void kn_rootfs_close(fs_fcb_t *fcb) {
 }
 
 km_result_t kn_rootfs_read(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out) {

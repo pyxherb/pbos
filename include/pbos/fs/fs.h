@@ -23,7 +23,7 @@ typedef struct _fs_fsops_t {
 	/// @brief Open a file.
 	km_result_t (*open)(fs_fnode_t *file, fs_fcb_t **fcb_out);
 	/// @brief Close a FCB.
-	km_result_t (*close)(fs_fcb_t *fcb);
+	void (*close)(fs_fcb_t *fcb);
 	/// @brief Read data from a file.
 	km_result_t (*read)(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
 	/// @brief Write data into a file.

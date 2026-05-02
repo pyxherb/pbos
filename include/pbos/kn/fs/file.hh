@@ -94,9 +94,7 @@ typedef struct _fs_dir_t : public fs_fnode_t {
 	_fs_dir_t(kfxx::allocator_t *allocator);
 } fs_dir_t;
 
-PBOS_NODISCARD km_result_t kn_alloc_file_fnode(fs_fnode_t **file_out);
-PBOS_NODISCARD km_result_t kn_alloc_dir_fnode(fs_fnode_t **file_out);
-PBOS_NODISCARD km_result_t kn_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t *fcb_out);
+PBOS_NODISCARD km_result_t kn_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t **fcb_out);
 
 void kn_destroy_fnode(fs_fnode_t *fnode);
 void kn_destroy_fcb(fs_fcb_t *fcb);

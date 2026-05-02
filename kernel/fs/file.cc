@@ -4,6 +4,10 @@
 #include <pbos/kn/fs/file.hh>
 #include <pbos/kn/fs/fs.hh>
 
+fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb) {
+	return fcb->fnode.get();
+}
+
 PBOS_API kn_fs_filename_allocator_t::kn_fs_filename_allocator_t() {
 }
 
@@ -145,7 +149,7 @@ _fs_file_t::_fs_file_t() : _fs_fnode_t(FS_FILETYPE_FILE) {}
 
 _fs_dir_t::_fs_dir_t(kfxx::allocator_t *allocator) : _fs_fnode_t(FS_FILETYPE_DIR), subnodes(allocator) {}
 
-PBOS_NODISCARD km_result_t kn_alloc_file_fnode(fs_fnode_t **file_out) {
+PBOS_NODISCARD km_result_t fs_alloc_file_fnode(fs_fnode_t **file_out) {
 	fs_file_t *ptr = kfxx::alloc_and_construct<fs_file_t>(&kn_fs_filename_allocator);
 
 	if (!ptr)
@@ -158,7 +162,7 @@ PBOS_NODISCARD km_result_t kn_alloc_file_fnode(fs_fnode_t **file_out) {
 	return KM_RESULT_OK;
 }
 
-PBOS_NODISCARD km_result_t kn_alloc_dir_fnode(fs_fnode_t **file_out) {
+PBOS_NODISCARD km_result_t fs_alloc_dir_fnode(fs_fnode_t **file_out) {
 	fs_dir_t *ptr = kfxx::alloc_and_construct<fs_dir_t>(&kn_fs_filename_allocator, &kn_fs_filename_allocator);
 
 	if (!ptr)
@@ -171,13 +175,32 @@ PBOS_NODISCARD km_result_t kn_alloc_dir_fnode(fs_fnode_t **file_out) {
 	return KM_RESULT_OK;
 }
 
-PBOS_NODISCARD km_result_t kn_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t *fcb_out) {
+PBOS_NODISCARD const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out) {
+	*len_out = file->filename_len;
+	return file->filename;
+}
+
+PBOS_NODISCARD void fs_unname_fnode(fs_fnode_t *file) {
+	kn_do_unname_fnode(file);
+}
+
+PBOS_NODISCARD km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len) {
+	if(file->parent)
+		km_panic("Only detached file node can be renamed");
+
+	return kn_do_rename_fnode(file, name, name_len);
+}
+
+PBOS_NODISCARD km_result_t kn_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t **fcb_out) {
 	fs_fcb_t *ptr = kfxx::alloc_and_construct<fs_fcb_t>(&kn_fs_filename_allocator, file_in);
 
 	if (!ptr)
 		return KM_RESULT_NO_MEM;
 
 	ptr->fnode = file_in;
+
+	fs_inc_fcb_ref(ptr);
+	*fcb_out = ptr;
 
 	return KM_RESULT_OK;
 }
@@ -214,10 +237,6 @@ km_result_t fs_create_file(
 	const char *filename,
 	size_t filename_len,
 	fs_fnode_t **file_out) {
-	fs::fnode_ptr_t ptr;
-
-	KM_RETURN_IF_FAILED(kn_alloc_file_fnode(ptr.get_addr()));
-
 	return parent->fs->ops.create_file(parent, filename, filename_len, file_out);
 }
 
@@ -273,6 +292,20 @@ km_result_t fs_unmount_file(fs_fnode_t *file) {
 	fs_dir_t *parent = static_cast<fs_dir_t *>(file->parent);
 
 	parent->subnodes.remove(kfxx::string_view(file->filename, file->filename_len));
+
+	return KM_RESULT_OK;
+}
+
+PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
+	if(parent->file_type != FS_FILETYPE_DIR)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
+	fs_dir_t *p = (fs_dir_t*)parent;
+
+	if(p->subnodes.contains(kfxx::string_view(file->filename, file->filename_len)))
+		return KM_RESULT_EXISTED;
+
+	if(!p->subnodes.insert(kfxx::string_view(file->filename, file->filename_len), +file))
+		return KM_RESULT_NO_MEM;
 
 	return KM_RESULT_OK;
 }
@@ -402,5 +435,6 @@ void kn_destroy_fnode(fs_fnode_t *fnode) {
 }
 
 void kn_destroy_fcb(fs_fcb_t *fcb) {
+	fcb->fnode->fs->ops.close(fcb);
 	kfxx::destroy_and_release<fs_fcb_t>(&kn_fs_fcb_allocator, fcb);
 }

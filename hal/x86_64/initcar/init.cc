@@ -1,34 +1,40 @@
-#include <hal/x86_64/initcar.hh>
 #include <pbos/km/logger.h>
+#include <hal/x86_64/initcar.hh>
+#include <pbos/kh/mm/misc.hh>
 #include <pbos/kn/fs/file.hh>
 #include <pbos/kn/fs/fs.hh>
 
 PBOS_EXTERN_C_BEGIN
 
-void *initcar_ptr = NULL;
+constexpr kfxx::string_view INITCAR_DIR_FILENAME = kfxx::string_view("initcar");
 
-fs_filesys_t *initcar_fs = NULL;
-fs_fnode_t *initcar_dir;
+kfxx::rbtree_t<fs_fnode_t *> hn_initcar_file_set;
 
-fs_fsops_t initcar_ops = {
-	.subnode = initcar_subnode,
-	.offload = initcar_offload,
-	.create_file = initcar_create_file,
-	.create_dir = initcar_create_dir,
-	.open = initcar_open,
-	.close = initcar_close,
-	.read = initcar_read,
-	.write = initcar_write,
-	.size = initcar_size,
-	.mount = initcar_mount,
-	.premount = initcar_premount,
-	.postmount = initcar_postmount,
-	.mountfail = initcar_mountfail,
-	.unmount = initcar_unmount,
-	.destructor = initcar_destructor
+void *hn_initcar_ptr = NULL;
+void *hn_initcar_paddr = NULL;
+size_t hn_initcar_size = 0;
+bool hn_is_initcar_direct_mapped = true;
+
+fs_filesys_t *kh_initcar_fs = NULL;
+fs_fnode_t *kh_initcar_dir;
+
+fs_fsops_t kh_initcar_ops = {
+	.subnode = kh_initcar_subnode,
+	.offload = kh_initcar_offload,
+	.create_file = kh_initcar_create_file,
+	.create_dir = kh_initcar_create_dir,
+	.open = kh_initcar_open,
+	.close = kh_initcar_close,
+	.read = kh_initcar_read,
+	.write = kh_initcar_write,
+	.size = kh_initcar_size,
+	.premount = kh_initcar_premount,
+	.mount_fail = kh_initcar_mount_fail,
+	.unmount_cleanup = kh_initcar_unmount_cleanup,
+	.destructor = kh_initcar_destructor
 };
 
-km_result_t initcar_destructor() {
+km_result_t kh_initcar_destructor() {
 	/*
 	// Unmount all files.
 	{
@@ -44,71 +50,51 @@ km_result_t initcar_destructor() {
 
 	// Because the root directory has taken the ownership,
 	// we just need to unmount the directory and then it will be released automatically.
-	if (KM_FAILED(fs_unmount_file(initcar_dir)))
+	if (KM_FAILED(fs_unmount_file(kh_initcar_dir)))
 		km_panic("Error unounting the initcar directory");
 
-	mm_vmfree(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_size);
+	mm_vmfree(mm_get_cur_context(), hn_initcar_ptr, hn_initcar_size);
 
 	return KM_RESULT_OK;
 }
 
-km_result_t initcar_mount(fs_fnode_t *parent, fs_fnode_t *file) {
-	if (parent == initcar_dir) {
-		initcar_dir_entry_t *dir_entry = (initcar_dir_entry_t*)mm_kmalloc(sizeof(initcar_dir_entry_t), alignof(initcar_dir_entry_t));
-		if (!dir_entry)
-			return KM_MAKEERROR(KM_RESULT_NO_MEM);
-		memset(dir_entry, 0, sizeof(*dir_entry));
-		dir_entry->name = file->filename;
-		dir_entry->name_len = file->filename_len;
-		dir_entry->file = file;
-		km_result_t result = kf_hashmap_insert(&((initcar_dir_file_t *)parent)->children, &dir_entry->node_header);
-		kd_assert(KM_SUCCEEDED(result));
-		return KM_RESULT_OK;
-	}
-	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_OPERATION);
-}
-
-km_result_t initcar_premount(fs_fnode_t *parent, fs_fnode_t *file) {
+km_result_t kh_initcar_premount(fs_fnode_t *parent, fs_fnode_t *file) {
 	return KM_RESULT_OK;
 }
 
-km_result_t initcar_postmount(fs_fnode_t *parent, fs_fnode_t *file) {
+km_result_t kh_initcar_postmount(fs_fnode_t *parent, fs_fnode_t *file) {
 	return KM_RESULT_OK;
 }
 
-void initcar_mountfail(fs_fnode_t *parent, fs_fnode_t *file) {
+void kh_initcar_mount_fail(fs_fnode_t *parent, fs_fnode_t *file) {
 }
 
-km_result_t initcar_unmount(fs_fnode_t *file) {
+km_result_t kh_initcar_unmount_cleanup(fs_fnode_t *file) {
 	// TODO: Implement it.
 	return KM_RESULT_OK;
 }
 
-void initcar_init() {
+void kh_initcar_init() {
 	km_result_t result;
 
 	kf_uuid_t uuid = INITCAR_UUID;
-	if (!(initcar_fs = fs_register_filesys("initcar", strlen("initcar"), &uuid, &initcar_ops)))
+	if (!(kh_initcar_fs = fs_register_filesys("initcar", strlen("initcar"), &uuid, &kh_initcar_ops)))
 		km_panic("Error registering initcar file system");
 
 	kd_printf("INITCAR range: %p-%p\n",
-		ARCH_KARGS_PTR->initcar_ptr,
-		((const char *)ARCH_KARGS_PTR->initcar_ptr) + ARCH_KARGS_PTR->initcar_size);
+		hn_initcar_paddr,
+		((const char *)hn_initcar_paddr) + hn_initcar_size);
 
-	size_t sz_left = ARCH_KARGS_PTR->initcar_size;
+	if ((!(hn_initcar_ptr = kh_get_direct_mmap(hn_initcar_ptr))) || (!kh_get_direct_mmap(((char *)hn_initcar_ptr) + hn_initcar_size))) {
+		if (!(hn_initcar_ptr = mm_kvmalloc(mm_get_cur_context(), hn_initcar_size, MM_PAGE_READ, 0)))
+			km_panic("Error allocating virtual memory space for INITCAR");
+		if (KM_FAILED(result = mm_mmap(mm_get_cur_context(), hn_initcar_ptr, hn_initcar_paddr, hn_initcar_size, MM_PAGE_READ, 0)))
+			km_panic("Error mapping INITCAR area");
+	}
 
-	if (!(initcar_ptr = mm_vmalloc(
-			  mm_kernel_context,
-			  (const char *)CRITICAL_VTOP + 1,
-			  (const void *)UINTPTR_MAX,
-			  ARCH_KARGS_PTR->initcar_size,
-			  MM_PAGE_MAPPED | MM_PAGE_READ,
-			  0)))
-		km_panic("Error allocating virtual memory space for INITCAR");
+	size_t sz_left = hn_initcar_size;
 
-	mm_mmap(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_ptr, ARCH_KARGS_PTR->initcar_size, MM_PAGE_MAPPED | MM_PAGE_READ, 0);
-
-	pbcar_metadata_t *md = (pbcar_metadata_t*)initcar_ptr;
+	pbcar_metadata_t *md = (pbcar_metadata_t *)hn_initcar_ptr;
 	if (md->magic[0] != PBCAR_MAGIC_0 ||
 		md->magic[1] != PBCAR_MAGIC_1 ||
 		md->magic[2] != PBCAR_MAGIC_2 ||
@@ -122,27 +108,24 @@ void initcar_init() {
 		km_panic("Incompatible INITCAR byte-order");
 
 	// Create file objects.
-	const char *p_cur = ((const char *)initcar_ptr) + sizeof(pbcar_metadata_t);
-	const uint32_t initcar_size = ARCH_KARGS_PTR->initcar_size;
+	const char *p_cur = ((const char *)hn_initcar_ptr) + sizeof(pbcar_metadata_t);
+	const uint32_t kh_initcar_size = hn_initcar_size;
 
-#define initcar_checksize(size)                                      \
-	if (((p_cur - (const char *)initcar_ptr) + size) > initcar_size) \
+#define initcar_checksize(size)                                            \
+	if (((p_cur - (const char *)hn_initcar_ptr) + size) > kh_initcar_size) \
 		km_panic("Prematured end of file\n");
 
-	if (KM_FAILED(result = kn_alloc_fnode(initcar_fs, "initcar", sizeof("initcar") - 1, FS_FILETYPE_DIR, sizeof(initcar_dir_file_t) - sizeof(fs_fnode_t), &initcar_dir)))
+	if (KM_FAILED(result = fs_alloc_dir_fnode(&kh_initcar_dir)))
 		km_panic("Error creating initcar directory, error code = %.0x", result);
-	kf_hashmap_init(
-		&((initcar_dir_file_t *)initcar_dir)->children,
-		kn_initcar_file_hasher,
-		kn_initcar_file_nodefree,
-		kn_initcar_file_nodecmp,
-		NULL);
+
+	if (KM_FAILED(result = fs_rename_fnode(kh_initcar_dir, INITCAR_DIR_FILENAME.data(), INITCAR_DIR_FILENAME.size())))
+		km_panic("Error creating initcar directory, error code = %.0x", result);
 
 	{
 		// fs_fnode_t * root_handle;
 		// if (KM_FAILED(fs_open("/", sizeof("/") - 1, &root_handle)))
 		// km_panic("Error opening the root directory, error code = %.0x", result);
-		if (KM_FAILED(result = fs_mount_file(fs_abs_root_dir, initcar_dir)))
+		if (KM_FAILED(result = fs_mount_file(fs_abs_root_dir, kh_initcar_dir)))
 			km_panic("Error mounting initcar directory, error code = %.0x", result);
 	}
 
@@ -159,29 +142,28 @@ void initcar_init() {
 
 		fs_fnode_t *file;
 		size_t filename_len = strlen(fe->filename);
-		if (KM_FAILED(kn_alloc_fnode(
-				initcar_fs,
-				fe->filename, filename_len,
-				FS_FILETYPE_FILE,
-				sizeof(initcar_file_t) - sizeof(fs_fnode_t),
-				&file)))
+		if (KM_FAILED(fs_alloc_file_fnode(&file)))
+			km_panic("Error creating file object for initcar file: %s\n", fe->filename);
+		if (KM_FAILED(fs_rename_fnode(file, fe->filename, filename_len)))
 			km_panic("Error creating file object for initcar file: %s\n", fe->filename);
 
-		initcar_file_t *exdata = (initcar_file_t *)file;
-
-		exdata->ptr = p_cur;
-		exdata->sz_total = fe->size;
+		hn_initcar_file_keeper_t *keeper = kfxx::alloc_and_construct<hn_initcar_file_keeper_t>(kfxx::kernel_allocator(), file);
+		if(!keeper)
+			km_panic("Error allocating memory for INITCAR file: %s", fe->filename);
+		keeper->ptr = p_cur;
+		keeper->sz_total = fe->size;
+		hn_initcar_file_set.insert(keeper);
 
 		kd_printf("initcar: Mounting file: %s\n", fe->filename);
-		if (KM_FAILED(result = fs_mount_file(initcar_dir, file)))
+		if (KM_FAILED(result = fs_link_subnode(kh_initcar_dir, file)))
 			km_panic("Error mounting initcar file `%s', error code = %x\n", fe->filename, result);
 
 		p_cur += fe->size;
 	}
 }
 
-void initcar_deinit() {
-	mm_unmmap(mm_kernel_context, initcar_ptr, ARCH_KARGS_PTR->initcar_size, 0);
+void kh_initcar_deinit() {
+	// stub
 }
 
 PBOS_EXTERN_C_END

@@ -4,8 +4,8 @@
 #include <pbos/mm/mm.h>
 #include <pbos/km/panic.h>
 #include <pbos/kn/fs/fs.hh>
-#include <pbos/kn/fs/initcar.hh>
-// #include <pbos/kn/km/exec.hh>
+#include <pbos/kh/initcar.hh>
+#include <pbos/kn/km/exec.hh>
 #include <pbos/kh/mp/init.hh>
 #include <pbos/kn/km/proc.hh>
 #include <pbos/kh/acpi/misc.hh>
@@ -40,9 +40,7 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 	fs_init();
 	ps_init();
 
-	asm volatile("hlt");
-
-	/*initcar_init();
+	kh_initcar_init();
 
 	fs_fcb_t *init_fp;
 	if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pbinit", sizeof("/initcar/pbinit") - 1, &init_fp)))
@@ -53,5 +51,7 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 	if (KM_FAILED(result = km_exec(0, 0, init_fp, &pid)))
 		km_panic("Error starting the init process");
 
-	kn_enter_sched(0);*/
+	asm volatile("hlt");
+
+	//kn_enter_sched(0);
 }
