@@ -53,7 +53,7 @@ void hal_init() {
 
 	hn_mm_init();
 
-	// hal_irq_init();
+	// kh_irq_init();
 
 	kd_printf("Initialized HAL\n");
 }

@@ -9,6 +9,12 @@ PBOS_EXTERN_C_BEGIN
 
 uint32_t hn_sched_interval;
 
+arch_tss_t *hn_tss_storage_ptr;
+
+hn_tmpmap_info_t *hn_tmpmap_info_storage;
+
+hn_kgdt_t *hn_gdt_storage_ptr;
+
 static void hn_mask_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
 	uint8_t pic1_mask = arch_in8(ARCH_PIC1_IO_DATA), pic2_mask = arch_in8(ARCH_PIC2_IO_DATA);
 
@@ -98,6 +104,25 @@ void kh_mp_init_topology() {
 	}
 }
 
+void kh_mp_alloc_platform_resources() {
+	hn_tss_storage_ptr = (arch_tss_t *)mm_kmalloc(mp_num_total_cpu * sizeof(arch_tss_t), alignof(std::max_align_t));
+	if (!hn_tss_storage_ptr) {
+		km_panic("Unable to allocate memory for TSS storage for processors");
+	}
+	memset(hn_tss_storage_ptr, 0, mp_num_total_cpu * sizeof(arch_tss_t));
+
+	hn_gdt_storage_ptr = (hn_kgdt_t *)mm_kmalloc(mp_num_total_cpu * sizeof(hn_kgdt_t), alignof(std::max_align_t));
+	if (!hn_gdt_storage_ptr) {
+		km_panic("Unable to allocate memory for TSS storage for processors");
+	}
+	for (size_t i = 0; i < mp_num_total_cpu; ++i) {
+		memcpy(&hn_gdt_storage_ptr[i], &hn_init_kgdt, sizeof(hn_kgdt_t));
+		hn_gdt_storage_ptr[i].tss_desc1 =
+			TSSDESC_LOW(((uint32_t)(uintptr_t)(hn_tss_storage_ptr + i)), sizeof(arch_tss_t), GDT_AB_P | GDT_AB_DPL(0) | GDT_SYSTYPE_TSS32, 0);
+		hn_gdt_storage_ptr[i].tss_desc2 = TSSDESC_HIGH(((uintptr_t)(hn_tss_storage_ptr + i)));
+	}
+}
+
 void hn_calibrate_apic() {
 	uint8_t lapic_intvec = arch_read_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_SPURIOUS_INT_VEC) & 0xff;
 
@@ -145,7 +170,10 @@ void hn_calibrate_apic() {
 }
 
 void mp_main_cpu_init() {
-	arch_cli();
+	arch_lgdt(&hn_gdt_storage_ptr[0], sizeof(hn_kgdt_t) / sizeof(arch_gdt_desc_t));
+	arch_ltr(SELECTOR_TSS);
+
+	arch_loades(SELECTOR_KDATA);
 
 	hal_irq_context_t *ctxt = irq_contexts[0];
 

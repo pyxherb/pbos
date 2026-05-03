@@ -6,6 +6,7 @@
 PBOS_EXTERN_C_BEGIN
 
 void kh_mp_init_topology();
+void kh_mp_alloc_platform_resources();
 
 PBOS_EXTERN_C_END
 

@@ -20,9 +20,9 @@ void hal_prepare_ps() {
 	memset(ps_cur_thread_per_cpu, 0, ps_cpu_num * sizeof(ps_tcb_t *));
 }
 
-PBOS_NORETURN void kn_enter_sched_halt();
+PBOS_NORETURN void kh_enter_sched_halt();
 
-PBOS_NORETURN void kn_enter_sched(ps_cpu_id_t cpuid) {
+PBOS_NORETURN void kh_enter_sched(ps_cpu_id_t cpuid) {
 	arch_loadfs(cpuid);
 
 	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_DIVIDE_CONFIG, ARCH_LAPIC_DIVIDE_CONFIG_16);
@@ -32,7 +32,7 @@ PBOS_NORETURN void kn_enter_sched(ps_cpu_id_t cpuid) {
 
 	arch_sti();
 
-	kn_enter_sched_halt();
+	kh_enter_sched_halt();
 }
 
 PBOS_EXTERN_C_END

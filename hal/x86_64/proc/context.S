@@ -1,21 +1,37 @@
 .global hn_load_user_context
 
 hn_load_user_context:
-	popq %rax // Eliminate extraneous previous RIP
+	pushq %rdx
+	pushq %rcx
 
-	popq %rdi
-	popq %rsi
+	xorq %rdx, %rdx
+
+	// Write FS.
+	popq %rax
+	xorq $0x000000000000ffff, %rax
+	movl $0xc0000100, %ecx
+	wrmsr
+
+	// Write GS.
+	popq %rax
+	xorq $0x000000000000ffff, %rax
+	movl $0xc0000101, %ecx
+	wrmsr
+
+	popq %rcx
+	popq %rdx
+
+	popq %r15
+	popq %r14
+	popq %r13
+	popq %r12
+	popq %r11
+	popq %r10
 	popq %rbp
 	popq %rbx
-	popq %rdx
-	popq %rcx
 
 	popq %rax
-	movw %ax, %fs
-	popq %rax
 	movw %ax, %es
-	popq %rax
-	movw %ax, %gs
 	popq %rax
 	movw %ax, %ds
 
@@ -26,21 +42,34 @@ hn_load_user_context:
 .global hn_load_kernel_context
 
 hn_load_kernel_context:
-	popq %rax // Eliminate extraneous previous EIP
+	pushq %rdx
+	pushq %rcx
 
-	popq %rdi
-	popq %rsi
+	xorq %rdx, %rdx
+
+	// Write FS.
+	popq %rax
+	xorq $0x000000000000ffff, %rax
+	movl $0xc0000100, %ecx
+	wrmsr
+
+	// Write GS.
+	popq %rax
+	xorq $0x000000000000ffff, %rax
+	movl $0xc0000101, %ecx
+	wrmsr
+
+	popq %r15
+	popq %r14
+	popq %r13
+	popq %r12
+	popq %r11
+	popq %r10
 	popq %rbp
 	popq %rbx
-	popq %rdx
-	popq %rcx
 
 	popq %rax
-	movw %ax, %fs
-	popq %rax
 	movw %ax, %es
-	popq %rax
-	movw %ax, %gs
 	popq %rax
 	movw %ax, %ds
 

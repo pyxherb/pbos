@@ -59,7 +59,7 @@ extern ps_sched_t ps_simploop_sched;
 void hal_prepare_ps();
 void ps_init();
 
-PBOS_NORETURN void kn_enter_sched(ps_cpu_id_t cpuid);
+PBOS_NORETURN void kh_enter_sched(ps_cpu_id_t cpuid);
 
 void kn_destroy_proc(ps_pcb_t *pcb);
 void kn_destroy_thread(ps_tcb_t *tcb);

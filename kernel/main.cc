@@ -20,7 +20,7 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 	km_result_t result;
 
 	hal_init();
-	// hal_irq_init();
+	// kh_irq_init();
 
 	if(kh_acpi_is_available()) {
 		kh_acpi_init();
@@ -31,9 +31,11 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 
 	kh_mp_init_topology();
 
+	kh_mp_alloc_platform_resources();
+
 	mp_alloc_resources();
 
-	hal_irq_init();
+	kh_irq_init();
 
 	mp_main_cpu_init();
 
@@ -51,7 +53,5 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 	if (KM_FAILED(result = km_exec(0, 0, init_fp, &pid)))
 		km_panic("Error starting the init process");
 
-	asm volatile("hlt");
-
-	//kn_enter_sched(0);
+	kh_enter_sched(0);
 }

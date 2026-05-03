@@ -3,24 +3,23 @@
 
 PBOS_EXTERN_C_BEGIN
 
-alignas(16) arch_gate_t hn_kidt[256] = { 0 };
+alignas(16) arch_gate_t hn_kidt[512] = {};
 
-size_t hal_irq_getmax()
-{
-	return PBOS_ARRAYSIZE(hn_kidt);
+size_t hal_irq_getmax() {
+	return PBOS_ARRAYSIZE(hn_kidt) / 2;
 }
 
-void hn_setisr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type) {
-	kd_assert(irq <= PBOS_ARRAYSIZE(hn_kidt));
+void hn_set_isr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type) {
+	kd_assert(irq <= PBOS_ARRAYSIZE(hn_kidt) / 2);
 	kd_assert(dpl <= 3);
-	hn_kidt[irq] = GATEDESC(isr, SELECTOR_KCODE, GATEDESC_ATTRIBS(1, dpl, 0, gate_type));
+	hn_kidt[(irq * 2)] = GATEDESC_LOW(isr, SELECTOR_KCODE, GATEDESC_ATTRIBS(1, dpl, 0, gate_type));
+	hn_kidt[(irq * 2) + 1] = GATEDESC_HIGH(isr);
 }
 
-void hal_irq_setisr(hal_isr_t isr, size_t irq)
-{
+void kh_set_isr(hal_isr_t isr, size_t irq) {
 	if (irq > hal_irq_getmax())
 		return;
-	hn_kidt[irq] = GATEDESC(isr, SELECTOR_KCODE, GATEDESC_ATTRIBS(1, 0x00, 0, GATE_INT386));
+	hn_set_isr(isr, irq, 0, GATE_INT386);
 }
 
 PBOS_EXTERN_C_END

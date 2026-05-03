@@ -25,7 +25,6 @@ typedef struct PBOS_PACKED _hn_kgdt_t {
 
 extern hn_kgdt_t hn_init_kgdt;
 
-extern size_t hn_tss_storage_num;
 extern arch_tss_t *hn_tss_storage_ptr;
 extern hn_kgdt_t *hn_gdt_storage_ptr;
 

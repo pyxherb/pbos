@@ -32,18 +32,27 @@ PBOS_NORETURN void isr_hverr();			// 0x1c Hypervisor Injection Exception
 PBOS_NORETURN void isr_vmmerr();		// 0x1d VMM Communication Exception
 PBOS_NORETURN void isr_securityerr();	// 0x1e Security Exception
 
-PBOS_NORETURN void isr_timer();	 // IRQ0
-PBOS_NORETURN void isr_timer_impl(
+PBOS_NORETURN void hn_isr_timer();	 // IRQ0
+PBOS_NORETURN void hn_isr_timer_impl(
+	const uint64_t rdi,
+	const uint64_t rsi,
+	const uint64_t rdx,
+	const uint64_t rcx,
+	const uint64_t r8,
+	const uint64_t r9,
+
 	const uint64_t gs,
 	const uint64_t fs,
 	const uint64_t es,
 	const uint64_t ds,
+	const uint64_t r10,
+	const uint64_t r11,
+	const uint64_t r12,
+	const uint64_t r13,
+	const uint64_t r14,
+	const uint64_t r15,
 	const uint64_t rax,
 	const uint64_t rbx,
-	const uint64_t rcx,
-	const uint64_t rdx,
-	const uint64_t rsi,
-	const uint64_t rdi,
 	const uint64_t rbp,
 
 	const uint64_t *const rsp_top);
@@ -54,7 +63,7 @@ PBOS_NORETURN void isr_stub();
 
 void hn_set_sched_timer();
 
-extern arch_gate_t hn_kidt[256];
+extern arch_gate_t hn_kidt[512];
 
 extern void *hn_lapic_pbase;
 extern uint32_t *hn_lapic_vbase;
@@ -62,7 +71,7 @@ extern uint32_t hn_sched_interval;
 
 void hn_calibrate_apic();
 
-void hn_setisr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
+void hn_set_isr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
 
 PBOS_EXTERN_C_END
 

@@ -13,13 +13,6 @@ hn_kgdt_t hn_init_kgdt;
 hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1];
 size_t hn_pmad_number = 0;
 
-size_t hn_tss_storage_num;
-arch_tss_t *hn_tss_storage_ptr;
-
-hn_tmpmap_info_t *hn_tmpmap_info_storage;
-
-hn_kgdt_t *hn_gdt_storage_ptr;
-
 const kn_paging_config_t *kn_cur_paging_config;
 
 void *mm_kernel_bottom_mapping_base_vaddr = nullptr;
@@ -44,7 +37,6 @@ static void hn_init_gdt();
 static void hn_mm_init_paging();
 static void hn_mm_init_pmadlist();
 static void hn_mm_init_areas();
-static void hn_init_tss();
 
 static hn_tmpmap_info_t hn_kernel_early_tmpmap_info;
 
@@ -85,34 +77,7 @@ void hn_mm_init() {
 
 	kn_mm_init_kima();
 
-	hn_init_tss();
-
 	kd_printf("Initialized memory manager\n");
-}
-
-static void hn_init_tss() {
-	hn_tss_storage_num = 1;
-	hn_tss_storage_ptr = (arch_tss_t *)mm_kmalloc(hn_tss_storage_num * sizeof(arch_tss_t), alignof(arch_tss_t));
-	if (!hn_tss_storage_ptr) {
-		km_panic("Unable to allocate memory for TSS storage for processors");
-	}
-	memset(hn_tss_storage_ptr, 0, hn_tss_storage_num * sizeof(arch_tss_t));
-
-	hn_gdt_storage_ptr = (hn_kgdt_t *)mm_kmalloc(hn_tss_storage_num * sizeof(hn_kgdt_t), alignof(hn_kgdt_t));
-	if (!hn_gdt_storage_ptr) {
-		km_panic("Unable to allocate memory for TSS storage for processors");
-	}
-	for (size_t i = 0; i < hn_tss_storage_num; ++i) {
-		memcpy(&hn_gdt_storage_ptr[i], &hn_init_kgdt, sizeof(hn_kgdt_t));
-		hn_gdt_storage_ptr[i].tss_desc1 =
-			TSSDESC_LOW(((uint32_t)(uintptr_t)(hn_tss_storage_ptr + i)), sizeof(arch_tss_t), GDT_AB_P | GDT_AB_DPL(0) | GDT_SYSTYPE_TSS32, 0);
-		hn_gdt_storage_ptr[i].tss_desc2 = TSSDESC_HIGH(((uintptr_t)(hn_tss_storage_ptr + i)));
-	}
-
-	arch_lgdt(&hn_gdt_storage_ptr[0], sizeof(hn_kgdt_t) / sizeof(arch_gdt_desc_t));
-	arch_ltr(SELECTOR_TSS);
-
-	kd_printf("Initialized TSS\n");
 }
 
 static void hn_mm_init_areas() {
@@ -468,7 +433,7 @@ static void hn_init_gdt() {
 
 	// User mode descriptors.
 	hn_init_kgdt.ucode_desc =
-		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(3) | GDT_AB_S | GDT_AB_DC | GDT_AB_EX, GDT_FL_L | GDT_FL_GR);
+		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(3) | GDT_AB_S | GDT_AB_EX | GDT_AB_RW, GDT_FL_L | GDT_FL_GR);
 	hn_init_kgdt.udata_desc =
 		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(3) | GDT_AB_S | GDT_AB_RW, GDT_FL_DB | GDT_FL_GR);
 

@@ -99,7 +99,7 @@ PBOS_FORCEINLINE void arch_invlpg(void *addr) {
 		: "memory");
 }
 #define arch_lpgtab(paddr) \
-	arch_wcr3((arch_rcr3() & ~0xfffffffffffff000LL) | (((uint32_t)(paddr)) << 12))
-#define arch_spgtab() (arch_rcr3() & 0xfffffffffffff000)
+	arch_wcr3((arch_rcr3() & ~0xfffffffffffff000ULL) | (((uint64_t)(paddr)) << 12))
+#define arch_spgtab() (arch_rcr3() & 0xfffffffffffff000ULL)
 
 #endif

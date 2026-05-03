@@ -6,6 +6,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
+void *hn_lapic_pbase;
 uint32_t *hn_lapic_vbase;
 
 /*static void hn_remap_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
@@ -42,33 +43,33 @@ uint32_t *hn_lapic_vbase;
 	arch_out8(ARCH_PIC2_IO_DATA, pic2_mask);
 }*/
 
-void hal_irq_init() {
-	/*hn_setisr(isr_diverr, 0x00, 0, GATE_TRAP386);
-	hn_setisr(isr_overflow, 0x04, 0, GATE_TRAP386);
-	hn_setisr(isr_boundrange, 0x05, 0, GATE_TRAP386);
-	hn_setisr(isr_invl_opcode, 0x06, 0, GATE_INT386);
-	hn_setisr(isr_nofpu, 0x07, 0, GATE_TRAP386);
-	// hn_setisr(isr_double_fault, 0x08, 0, GATE_INT386);
-	hn_setisr(isr_dev_invltss, 0x0a, 0, GATE_INT386);
-	hn_setisr(isr_noseg, 0x0b, 0, GATE_INT386);
-	hn_setisr(isr_stackerr, 0x0c, 0, GATE_INT386);
-	// hn_setisr(isr_prot, 0x0d, 0, GATE_INT386);
-	// hn_setisr(isr_pgfault, 0x0e, 0, GATE_INT386);
-	hn_setisr(isr_fpuerr, 0x10, 0, GATE_INT386);
-	hn_setisr(isr_alignchk, 0x11, 0, GATE_INT386);
-	hn_setisr(isr_machchk, 0x12, 0, GATE_INT386);
-	hn_setisr(isr_simderr, 0x13, 0, GATE_INT386);
-	hn_setisr(isr_virterr, 0x14, 0, GATE_INT386);
-	hn_setisr(isr_ctrlprot, 0x15, 0, GATE_INT386);
-	hn_setisr(isr_hverr, 0x1c, 0, GATE_INT386);
-	hn_setisr(isr_vmmerr, 0x1d, 0, GATE_INT386);
-	hn_setisr(isr_securityerr, 0x1e, 0, GATE_INT386);*/
+void kh_irq_init() {
+	/*hn_set_isr(isr_diverr, 0x00, 0, GATE_TRAP386);
+	hn_set_isr(isr_overflow, 0x04, 0, GATE_TRAP386);
+	hn_set_isr(isr_boundrange, 0x05, 0, GATE_TRAP386);
+	hn_set_isr(isr_invl_opcode, 0x06, 0, GATE_INT386);
+	hn_set_isr(isr_nofpu, 0x07, 0, GATE_TRAP386);
+	// hn_set_isr(isr_double_fault, 0x08, 0, GATE_INT386);
+	hn_set_isr(isr_dev_invltss, 0x0a, 0, GATE_INT386);
+	hn_set_isr(isr_noseg, 0x0b, 0, GATE_INT386);
+	hn_set_isr(isr_stackerr, 0x0c, 0, GATE_INT386);
+	// hn_set_isr(isr_prot, 0x0d, 0, GATE_INT386);
+	// hn_set_isr(isr_pgfault, 0x0e, 0, GATE_INT386);
+	hn_set_isr(isr_fpuerr, 0x10, 0, GATE_INT386);
+	hn_set_isr(isr_alignchk, 0x11, 0, GATE_INT386);
+	hn_set_isr(isr_machchk, 0x12, 0, GATE_INT386);
+	hn_set_isr(isr_simderr, 0x13, 0, GATE_INT386);
+	hn_set_isr(isr_virterr, 0x14, 0, GATE_INT386);
+	hn_set_isr(isr_ctrlprot, 0x15, 0, GATE_INT386);
+	hn_set_isr(isr_hverr, 0x1c, 0, GATE_INT386);
+	hn_set_isr(isr_vmmerr, 0x1d, 0, GATE_INT386);
+	hn_set_isr(isr_securityerr, 0x1e, 0, GATE_INT386);*/
 
-	hn_setisr(isr_timer, 0x30, 0, GATE_INT386);
+	hn_set_isr(hn_isr_timer, 0x30, 0, GATE_INT386);
 
-	hn_setisr(isr_syscall, 0xc0, 3, GATE_INT386);
+	hn_set_isr(isr_syscall, 0xc0, 3, GATE_INT386);
 
-	arch_lidt(hn_kidt, 256);
+	arch_lidt(hn_kidt, 512);
 
 	for (int i = 0; i < 16; ++i)
 		arch_mask_irq(i);
@@ -84,7 +85,7 @@ void hal_irq_init() {
 	if (!(hn_lapic_vbase = (uint32_t *)mm_kvmalloc(mm_kernel_context, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
 		km_panic("Unable to allocate virtual LAPIC page");
 
-	// arch_set_apic_base(hn_lapic_pbase, ARCH_APIC_BASE_MSR_BSP | ARCH_APIC_BASE_MSR_ENABLE);
+	arch_set_apic_base(hn_lapic_pbase, ARCH_APIC_BASE_MSR_BSP | ARCH_APIC_BASE_MSR_ENABLE);
 
 	if (KM_FAILED(mm_iommap(mm_kernel_context, hn_lapic_vbase, (void*)ARCH_DEFAULT_APIC_PBASE, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_NOCACHE, 0))) {
 		km_panic("Unable to mapping LAPIC page for the main CPU");

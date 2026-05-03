@@ -1,3 +1,3 @@
-.global kn_enter_sched_halt
-kn_enter_sched_halt:
+.global kh_enter_sched_halt
+kh_enter_sched_halt:
 	hlt

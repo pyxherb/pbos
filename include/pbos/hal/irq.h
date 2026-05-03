@@ -17,10 +17,10 @@ void hal_disable_irq();
 void hal_enable_irq();
 
 size_t hal_irq_getmax();
-void hal_irq_setisr(hal_isr_t isr, size_t irq);
+void kh_set_isr(hal_isr_t isr, size_t irq);
 hal_isr_t hal_irq_getisr();
 
-void hal_irq_init();
+void kh_irq_init();
 
 PBOS_EXTERN_C_END
 

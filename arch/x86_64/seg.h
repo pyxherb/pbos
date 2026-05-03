@@ -27,12 +27,12 @@ typedef uint64_t arch_gdt_desc_t;
 ///
 /// @brief Initialize a GDT descriptor.
 ///
-#define GDTDESC(base, limit, access_byte, flags)                       \
+#define GDTDESC(base, limit, access_byte, flags)                          \
 	((arch_gdt_desc_t)((((uint64_t)(limit)) & 0x0ffffULL) |               \
 					   ((((uint64_t)(base)) & 0x00ffffffULL) << 16) |     \
-					   (((uint64_t)(access_byte)) << 40) |             \
+					   (((uint64_t)(access_byte)) << 40) |                \
 					   ((((uint64_t)(limit)) & 0xf0000ULL) >> 16 << 48) | \
-					   (((uint64_t)(flags)) << 52) |                   \
+					   (((uint64_t)(flags)) << 52) |                      \
 					   (((uint64_t)(base) & 0xff000000ULL) >> 24 << 56)))
 
 #define GDT_SYSTYPE_TSS16 0x1
@@ -85,10 +85,12 @@ PBOS_FORCEINLINE static void arch_lgdt(void *gdt, uint16_t desc_num) {
 
 typedef uint64_t arch_gate_t;
 
-#define GATEDESC_LOW(base, limit, access_byte) GDTDESC(base, limit, access_byte, 0)
-#define GATEDESC_HIGH(base) (((uintptr_t)base) >> 32)
-
-#define GATEDESC(base, selector, access_byte) (((uint64_t)GATEDESC_LOW(base, selector, access_byte)) | (((uint64_t)GATEDESC_HIGH(base)) << 32))
+#define GATEDESC_LOW(base, selector, attribs)                         \
+	((arch_gdt_desc_t)((((uint64_t)(base)) & 0x0ffffULL) |\
+						((((uint64_t)(selector)) << 16)|\
+						(((uint64_t)(attribs)) << 40)|\
+						((((uint64_t)(base)) & 0xffff0000) >> 16 << 48))))
+#define GATEDESC_HIGH(base) ((uintptr_t)base) >> 32
 
 #define GATEDESC_ATTRIBS(p, dpl, s, type) ((type) | ((s) << 4) | ((dpl) << 5) | ((p) << 7))
 

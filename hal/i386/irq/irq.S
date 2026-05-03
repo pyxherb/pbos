@@ -1,6 +1,6 @@
-.global isr_timer
+.global hn_isr_timer
 .align 4
-isr_timer:
+hn_isr_timer:
 	// Kernel mode: EFLAGS -> CS -> EIP
 	// User mode: SS -> ESP -> EFLAGS -> CS -> EIP
 	// xchg %bx, %bx

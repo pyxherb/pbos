@@ -10,13 +10,13 @@ size_t hal_irq_getmax()
 	return PBOS_ARRAYSIZE(hn_kidt);
 }
 
-void hn_setisr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type) {
+void hn_set_isr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type) {
 	kd_assert(irq <= PBOS_ARRAYSIZE(hn_kidt));
 	kd_assert(dpl <= 3);
 	hn_kidt[irq] = GATEDESC(isr, SELECTOR_KCODE, GATEDESC_ATTRIBS(1, dpl, 0, gate_type));
 }
 
-void hal_irq_setisr(hal_isr_t isr, size_t irq)
+void kh_set_isr(hal_isr_t isr, size_t irq)
 {
 	if (irq > hal_irq_getmax())
 		return;

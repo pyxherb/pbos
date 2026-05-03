@@ -32,7 +32,7 @@ PBOS_NORETURN void isr_hverr();			// 0x1c Hypervisor Injection Exception
 PBOS_NORETURN void isr_vmmerr();		// 0x1d VMM Communication Exception
 PBOS_NORETURN void isr_securityerr();	// 0x1e Security Exception
 
-PBOS_NORETURN void isr_timer();	 // IRQ0
+PBOS_NORETURN void hn_isr_timer();	 // IRQ0
 PBOS_NORETURN void isr_timer_impl(
 	const uint32_t eax,
 	const uint32_t ebx,
@@ -62,7 +62,7 @@ extern uint32_t hn_sched_interval;
 
 void hn_calibrate_apic();
 
-void hn_setisr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
+void hn_set_isr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
 
 PBOS_EXTERN_C_END
 

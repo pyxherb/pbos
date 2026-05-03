@@ -15,9 +15,9 @@ void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 	if (dest == src)
 		return;
 	memcpy(
-		dest->pml4t + PDX(KERNEL_VBASE),
-		src->pml4t + PDX(KERNEL_VBASE),
-		sizeof(arch_pde_t) * (PDX(KERNEL_VTOP - KERNEL_VBASE + 1)));
+		dest->pml4t + PML4X(KSPACE_VBASE),
+		src->pml4t + PML4X(KSPACE_VBASE),
+		sizeof(arch_pml4te_t) * (PML4X(UINTPTR_MAX - KSPACE_VBASE + 1)));
 }
 
 void kn_mm_sync_global_mappings(const mm_context_t *src) {

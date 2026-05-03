@@ -65,8 +65,8 @@ PBOS_EXTERN_C_BEGIN
 #define ARCH_LAPIC_LVT_TIMER_REG_TSC_DEADLINE (0b10 << 17)
 
 PBOS_FORCEINLINE void arch_set_apic_base(void *base, uint32_t flags) {
-	uint32_t edx = 0;
-	uint32_t eax = ((((uintptr_t)base) & 0xfffffffffffff000) | flags);
+	uint32_t edx = ((uintptr_t)base) >> 32;
+	uint32_t eax = ((((uintptr_t)base) & 0xfffff000) | flags);
 
 	arch_wrmsr(ARCH_MSR_APIC_BASE, eax, edx);
 }
@@ -75,7 +75,7 @@ PBOS_FORCEINLINE void *arch_get_lapic_base() {
 	uint32_t eax, edx;
 	arch_rdmsr(ARCH_MSR_APIC_BASE, &eax, &edx);
 
-	return (void *)(eax & 0xfffffffffffff000);
+	return (void *)((((uint64_t)edx) << 32) | (((uint64_t)eax) & 0xfffff000));
 }
 
 PBOS_FORCEINLINE uint32_t arch_read_io_apic(void *io_apic_addr, uint32_t reg) {
