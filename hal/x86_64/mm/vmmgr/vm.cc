@@ -902,7 +902,7 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 	if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
 		pdpt = (arch_pdpte_t *)
 			hn_tmpmap_post(
-				UNPGADDR(pml4te->address),
+				pdpt_paddr,
 				sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 				PTE_P | PTE_RW);
 	} else
@@ -917,7 +917,7 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 		return nullptr;
 
 	const arch_pde_t *pdt;
-	void *pdt_paddr = UNPGADDR(pml4te->address);
+	void *pdt_paddr = UNPGADDR(pdpt[pdptx].address);
 	kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
 		hn_tmpunmap_post((void *)pdt, PAGESIZE);
 	});
@@ -942,7 +942,7 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 	kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
 		hn_tmpunmap_post((void *)ptt, PAGESIZE);
 	});
-	if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(pdt_paddr))) {
+	if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(UNPGADDR(pdt[pdx].address)))) {
 		ptt = (arch_pte_t *)
 			hn_tmpmap_post(
 				UNPGADDR(pdt[pdx].address),
