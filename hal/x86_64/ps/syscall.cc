@@ -1,9 +1,9 @@
-#include "syscall.h"
+#include "syscall.hh"
 #include <pbos/km/logger.h>
 
 PBOS_EXTERN_C_BEGIN
 
-uint32_t hn_syscall_handler(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx, uint32_t esi, uint32_t edi) {
+uint64_t hn_syscall_handler(uint64_t eax, uint64_t ebx, uint64_t ecx, uint64_t edx, uint64_t esi, uint64_t edi) {
 	switch (eax) {
 		case SYSENT_PBCORE_EXIT:
 			klog_printf("exit test\n");
@@ -24,7 +24,7 @@ uint32_t hn_syscall_handler(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t e
 			klog_printf("Exec child test");
 			return sysent_exec_child((ps_ufd_t)ebx, (ps_ufd_t)ecx, (const char*)edx, (size_t)esi, (ps_proc_id_t *)edi);
 		default:
-			klog_printf("Test unpassed, eax = %u", eax);
+			klog_printf("Test unpassed");
 	}
 
 	return 0;

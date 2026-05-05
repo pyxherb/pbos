@@ -48,8 +48,8 @@ typedef struct _hn_mad_t : public kfxx::rbtree_t<pgaddr_t>::node_t {
 
 	uint32_t ref_count;
 
-	uint8_t flags : 8;
-	uint8_t type : 8;
+	uint8_t flags;
+	uint8_t type;
 } hn_mad_t;
 
 #define ISINRANGE(min, size, n) ((((n) >= (min))) && (n < ((min) + (size))))
@@ -71,7 +71,7 @@ static_assert(sizeof(hn_madpool_t) <= PAGESIZE);
 ///
 /// @brief Physical Memory Region Descriptor
 ///
-typedef struct _hn_pmad_t {
+struct hn_pmad_t {
 	struct {
 		pgaddr_t base;	// Paged base address
 		pgsize_t len;	// Length in pages
@@ -80,9 +80,9 @@ typedef struct _hn_pmad_t {
 	void *direct_map_base;
 	size_t direct_map_size;
 	// MAD pages were all preallocated at initializing stage.
-	hn_mad_t *free_list;
+	hn_mad_t *free_list = nullptr;
 	kfxx::rbtree_t<pgaddr_t> query_tree;
-} hn_pmad_t;
+};
 
 extern hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1];
 extern size_t hn_pmad_number;

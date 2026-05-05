@@ -24,7 +24,7 @@ PBOS_API size_t kernel_allocator_t::dec_ref() noexcept {
 }
 
 PBOS_API void *kernel_allocator_t::alloc(size_t size, size_t alignment) noexcept {
-	return mm_kmalloc(size, alignment);
+	return mm_kalloc(size, alignment);
 }
 
 PBOS_API void *kernel_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {

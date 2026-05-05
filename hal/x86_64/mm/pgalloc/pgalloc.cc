@@ -1,6 +1,6 @@
 #include "pgalloc.hh"
-#include <hal/x86_64/mm.h>
 #include <pbos/km/logger.h>
+#include <hal/x86_64/mm.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -70,12 +70,12 @@ void hn_set_pgblk_free(pgaddr_t addr) {
 	hn_pmad_t *area = hn_pmad_get(addr);
 	hn_mad_t *mad = hn_get_mad(addr);
 
-	if(!mad->ref_count)
+	if (!mad->ref_count)
 		return;
 	if (!(--mad->ref_count)) {
 		mad->flags = MAD_P;
 		mad->type = MAD_ALLOC_FREE;
-		if(area->free_list)
+		if (area->free_list)
 			area->free_list->prev_free = mad;
 		mad->next_free = area->free_list;
 		kd_assert(!mad->prev_free);

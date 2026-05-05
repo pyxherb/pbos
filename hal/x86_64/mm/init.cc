@@ -48,7 +48,7 @@ void hn_mm_init() {
 	hn_mm_init_pmadlist();
 
 	// Collect INITCAR's physical address.
-	if((!hn_limine_module_request.response) || (hn_limine_module_request.response->module_count != 1))
+	if ((!hn_limine_module_request.response) || (hn_limine_module_request.response->module_count != 1))
 		km_panic("Invalid module count, the module count passing to the kernel should be 1 (the initcar only)");
 	limine_file *initcar_file = hn_limine_module_request.response->modules[0];
 	hn_initcar_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)initcar_file->address) - hn_limine_hhdm_request.response->offset));
@@ -71,7 +71,7 @@ void hn_mm_init() {
 			(PDX(KINITTMPMAP_VBASE) - PDX(KBOTTOM_VBASE)) * 512 +
 			PTX(KINITTMPMAP_VBASE));
 
-	hn_tmpmap_info_storage = &hn_kernel_early_tmpmap_info;
+	hn_tmpmap_storage_ptr = &hn_kernel_early_tmpmap_info;
 
 	hn_mm_init_stage = HN_MM_INIT_STAGE_AREAS_INITED;
 
@@ -142,6 +142,7 @@ static void hn_mm_init_areas() {
 			memset(hn_global_mad_pool_list, 0, PAGESIZE);
 
 			// Mark the initial pages as allocated.
+			kfxx::construct_at<hn_mad_t>(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
@@ -153,6 +154,7 @@ static void hn_mm_init_areas() {
 			++cur_madpool_slot_index;
 
 			if (initial_map_result & 0b100) {
+				kfxx::construct_at<hn_mad_t>(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
@@ -165,6 +167,7 @@ static void hn_mm_init_areas() {
 			}
 
 			if (initial_map_result & 0b010) {
+				kfxx::construct_at<hn_mad_t>(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
@@ -177,6 +180,7 @@ static void hn_mm_init_areas() {
 			}
 
 			if (initial_map_result & 0b001) {
+				kfxx::construct_at<hn_mad_t>(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
@@ -255,6 +259,7 @@ static void hn_mm_init_areas() {
 					hn_global_mad_pool_list = (hn_madpool_t *)new_poolpg_vaddr;
 				}
 
+				kfxx::construct_at<hn_mad_t>(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				if (prev_free_mad) {
 					hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = prev_free_mad;
 					prev_free_mad->next_free = &hn_global_mad_pool_list->descs[cur_madpool_slot_index];
@@ -276,6 +281,8 @@ static void hn_mm_init_areas() {
 				++cur_madpool_slot_index;
 			}
 		}
+
+		kd_printf("Test\n");
 
 		PMAD_FOREACH(i) {
 			if ((i->attribs.type == KN_PMEM_AVAILABLE) ||
@@ -325,6 +332,7 @@ static void hn_mm_init_areas() {
 					hn_global_mad_pool_list = (hn_madpool_t *)new_poolpg_vaddr;
 				}
 
+				kfxx::construct_at<hn_mad_t>(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				if (j != i->attribs.base) {
 					hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = &hn_global_mad_pool_list->descs[cur_madpool_slot_index - 1];
 					hn_global_mad_pool_list->descs[cur_madpool_slot_index - 1].next_free = &hn_global_mad_pool_list->descs[cur_madpool_slot_index];
@@ -476,32 +484,23 @@ static void hn_mm_init_pmadlist() {
 	for (uint16_t i = 0; i < hn_limine_memmap_request.response->entry_count; ++i) {
 		limine_memmap_entry *entry = hn_limine_memmap_request.response->entries[i];
 
-		hn_pmad_t pmad = { 0 };
+		hn_pmad_t pmad = {};
 
 		const uintptr_t entry_max = entry->base + (entry->length - 1);
 
 		switch (entry->type) {
 			case LIMINE_MEMMAP_USABLE:
 			case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE:
-				if (entry->base < KBOTTOM_PTOP) {
-					if (entry_max >= KBOTTOM_PTOP) {
-						pmad.attribs.base = PGROUNDDOWN(entry->base);
-						pmad.attribs.len = PGROUNDUP((KBOTTOM_PTOP + 1) - entry->base);
-						pmad.attribs.type = KN_PMEM_HARDWARE;
-						hn_push_pmad(std::move(pmad));
-
-						if (entry_max != KBOTTOM_PTOP) {
-							pmad.attribs.base = PGROUNDDOWN(KBOTTOM_PTOP + 1);
-							pmad.attribs.len = PGROUNDUP(entry_max + 1 - KBOTTOM_PTOP);
-							pmad.attribs.type = KN_PMEM_AVAILABLE;
-							hn_push_pmad(std::move(pmad));
-						}
-					} else {
-						pmad.attribs.base = PGROUNDDOWN(entry->base);
-						pmad.attribs.len = PGROUNDUP(entry->length);
-						pmad.attribs.type = KN_PMEM_HARDWARE;
-						hn_push_pmad(std::move(pmad));
-					}
+				if (!entry->base) {
+					pmad.attribs.base = 0;
+					pmad.attribs.len = 1;
+					pmad.attribs.type = KN_PMEM_HARDWARE;
+					hn_push_pmad(std::move(pmad));
+					pmad = {};
+					pmad.attribs.base = 1;
+					pmad.attribs.len = PGROUNDUP(entry->length) - 1;
+					pmad.attribs.type = KN_PMEM_AVAILABLE;
+					hn_push_pmad(std::move(pmad));
 				} else {
 					pmad.attribs.base = PGROUNDDOWN(entry->base);
 					pmad.attribs.len = PGROUNDUP(entry->length);
@@ -666,7 +665,8 @@ fill_end:
 static void hn_push_pmad(hn_pmad_t &&pmad) {
 	if (hn_pmad_number + 1 >= PBOS_ARRAYSIZE(hn_pmad_list))
 		km_panic("Too many memory map entries");
-	hn_pmad_list[hn_pmad_number++] = std::move(pmad);
+	hn_pmad_list[hn_pmad_number] = std::move(pmad);
+	++hn_pmad_number;
 	hn_pmad_list[hn_pmad_number].attribs.type = KN_PMEM_END;
 }
 

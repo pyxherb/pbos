@@ -5,8 +5,8 @@
 #include <pbos/km/panic.h>
 #include <pbos/kn/km/proc.hh>
 #include "initcar.hh"
-#include "irq.h"
-#include "logger.h"
+#include "irq.hh"
+#include "logger.hh"
 #include "misc.h"
 #include "mm.hh"
 
@@ -40,12 +40,6 @@ void hal_init() {
 	mm_kernel_bottom_mapping_base_vaddr = (void *)hn_limine_hhdm_request.response->offset;
 
 	hn_klog_init();
-
-	/*if (ARCH_KARGS_PTR->magic[0] != KARG_MAGIC0 ||
-		ARCH_KARGS_PTR->magic[1] != KARG_MAGIC1 ||
-		ARCH_KARGS_PTR->magic[2] != KARG_MAGIC2 ||
-		ARCH_KARGS_PTR->magic[3] != KARG_MAGIC3)
-		km_panic("Kernel arguments damaged");*/
 
 	hal_call_ctors();
 

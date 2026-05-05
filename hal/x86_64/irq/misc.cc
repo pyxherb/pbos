@@ -1,4 +1,4 @@
-#include <hal/x86_64/irq.h>
+#include <hal/x86_64/irq.hh>
 #include <stdalign.h>
 
 PBOS_EXTERN_C_BEGIN

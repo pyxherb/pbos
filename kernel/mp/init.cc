@@ -4,7 +4,7 @@
 #include <string.h>
 
 void mp_alloc_resources() {
-	if (!(mm_cur_contexts = (mm_context_t **)mm_kmalloc(mp_num_total_cpu * sizeof(mm_context_t *), alignof(mm_context_t *)))) {
+	if (!(mm_cur_contexts = (mm_context_t **)mm_kalloc(mp_num_total_cpu * sizeof(mm_context_t *), alignof(mm_context_t *)))) {
 		km_panic("Unable to allocate memory context for all CPUs");
 	}
 
@@ -13,7 +13,7 @@ void mp_alloc_resources() {
 	}
 
 	// Allocate IRQ contexts.
-	if (!(irq_contexts = (hal_irq_context_t **)mm_kmalloc(mp_num_total_cpu * sizeof(hal_irq_context_t *), alignof(hal_irq_context_t *)))) {
+	if (!(irq_contexts = (hal_irq_context_t **)mm_kalloc(mp_num_total_cpu * sizeof(hal_irq_context_t *), alignof(hal_irq_context_t *)))) {
 		km_panic("Unable to allocate interrupt context for all CPUs");
 	}
 

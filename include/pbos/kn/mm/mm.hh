@@ -20,8 +20,8 @@ extern mm_context_t **mm_cur_contexts;
 
 void kn_mm_init_kima();
 
-void kn_mm_sync_global_mappings(const mm_context_t *src);
-void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src);
+void kh_mm_sync_global_mappings(const mm_context_t *src);
+void kh_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src);
 
 void *kn_rounddown_to_page_leveled_addr(const void *const addr, int level);
 

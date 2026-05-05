@@ -84,7 +84,7 @@ void kh_acpi_init() {
 	const size_t rsdt_len = kn_acpi_rsdt_length();
 
 	if (rsdt_len) {
-		if (!(kn_mapped_acpi_rsdt_entries = (acpi_sdt_header_t **)mm_kmalloc(rsdt_len * sizeof(void *), alignof(void *))))
+		if (!(kn_mapped_acpi_rsdt_entries = (acpi_sdt_header_t **)mm_kalloc(rsdt_len * sizeof(void *), alignof(void *))))
 			km_panic("Error mapping ACPI root tables");
 
 		for (size_t i = 0; i < rsdt_len; ++i) {

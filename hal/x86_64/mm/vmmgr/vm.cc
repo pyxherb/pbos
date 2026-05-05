@@ -1,6 +1,7 @@
-#include "vm.h"
-#include <hal/x86_64/logger.h>
+#include "vm.hh"
+#include <pbos/km/logger.h>
 #include <pbos/km/proc.h>
+#include <string.h>
 #include <hal/x86_64/mm.hh>
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
@@ -236,6 +237,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 				return KM_RESULT_NO_MEM;
 			}
 			pml4te->mask = PML4E_P | PML4E_RW | PML4E_U;
+			pml4te->xd = false;
 			is_pml4te_allocated = true;
 		}
 
@@ -274,6 +276,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 					return KM_RESULT_NO_MEM;
 				}
 				pdpt[pdptx].mask = PDPTE_P | PDPTE_RW | PDPTE_U;
+				pdpt[pdptx].xd = false;
 				is_pdpte_allocated = true;
 			}
 
@@ -316,6 +319,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 						return KM_RESULT_NO_MEM;
 					}
 					pdt[pdx].mask = PDE_P | PDE_RW | PDE_U;
+					pdt[pdx].xd = false;
 					is_pde_allocated = true;
 				}
 
@@ -363,7 +367,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 
 					pte->address = PGROUNDDOWN(pi);
 					pte->mask = mask;
-					pte->xd = !(mask & MM_PAGE_EXEC);
+					pte->xd = !(access & MM_PAGE_EXEC);
 
 					pi += pi_diff;
 				}
@@ -667,7 +671,7 @@ void *kh_vmalloc(mm_context_t *context,
 				if (!(pdt[pdx].mask & PDE_P)) {
 					if (!p_found) {
 						if ((p_found = pdt_vaddr) < minaddr)
-							p_found = (void*)minaddr;
+							p_found = (void *)minaddr;
 					}
 					sz_found += (size_t)UVADDR(0, 0, 1, 0, 0);
 					continue;
@@ -1200,7 +1204,7 @@ void hn_tmpunmap_early(void *vaddr, size_t size) {
 }
 
 PBOS_NODISCARD void *hn_tmpmap_post(void *paddr, size_t size, uint16_t mask) {
-	hn_tmpmap_info_t *tmpmap_info = &hn_tmpmap_info_storage[ps_get_cur_cpuid()];
+	hn_tmpmap_info_t *tmpmap_info = &hn_tmpmap_storage_ptr[ps_get_cur_cpuid()];
 	// kd_dbgcheck(hal_is_irq_disabled(), "hn_tmpmap() requires interrupts disabled");
 	kd_dbgcheck(
 		size <= (KINITTMPMAP_SIZE),
@@ -1224,7 +1228,7 @@ PBOS_NODISCARD void *hn_tmpmap_post(void *paddr, size_t size, uint16_t mask) {
 
 		arch_pte_t *pte = &tmpmap_info->tmpmap_pgtab_base[i / PAGESIZE];
 
-		if (pte->mask & PTE_P) {
+		if ((pte->mask & ~PTE_P)) {
 			sz_found = 0;
 			vaddr = nullptr;
 		} else {
@@ -1261,7 +1265,7 @@ alloc_succeeded:
 }
 
 void hn_tmpunmap_post(void *vaddr, size_t size) {
-	hn_tmpmap_info_t *tmpmap_info = &hn_tmpmap_info_storage[ps_get_cur_cpuid()];
+	hn_tmpmap_info_t *tmpmap_info = &hn_tmpmap_storage_ptr[ps_get_cur_cpuid()];
 	// kd_dbgcheck(hal_is_irq_disabled(), "hn_tmpunmap() requires interrupts disabled");
 	kd_dbgcheck(!PGOFF(vaddr), "Address for hn_tmpunmap must be page-aligned");
 
@@ -1277,10 +1281,76 @@ void hn_tmpunmap_post(void *vaddr, size_t size) {
 
 		kd_assert(pte->mask & PTE_P);
 
-		pte->mask = 0;
+		pte->mask = PTE_P;
 
 		arch_invlpg(ptt_vaddr);
 	}
+}
+
+void *hn_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
+	// io::irq_disable_lock irq_lock;
+
+	kd_assert(ctxt);
+
+	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
+	arch_pml4te_t *pml4t = ctxt->pml4t;
+
+	void *p_found = NULL;  // Pointer to the free area.
+	size_t sz_found = 0;   // Size of free area found.
+
+	// Walk PML4E.
+	uint16_t pml4x = PML4X(vaddr);
+
+	arch_pml4te_t *pml4te = &pml4t[pml4x];
+
+	if (!(pml4te->mask & PML4E_P))
+		return nullptr;
+
+	arch_pdpte_t *pdpt;
+	void *pdpt_paddr = UNPGADDR(pml4te->address);
+	kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
+		hn_tmpunmap_post((void *)pdpt, PAGESIZE);
+	});
+	if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
+		pdpt = (arch_pdpte_t *)
+			hn_tmpmap_post(
+				pdpt_paddr,
+				sizeof(arch_pdpte_t) * (PTX_MAX + 1),
+				PTE_P | PTE_RW);
+	} else
+		release_tmpmap_pdpt_guard.release();
+
+	// Walk PDPTE.
+	uint16_t pdptx = PDPTX(vaddr);
+
+	char *const pdpt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, 0, 0, 0));
+
+	if (!(pdpt[pdptx].mask & PDPTE_P))
+		return nullptr;
+
+	const arch_pde_t *pdt;
+	void *pdt_paddr = UNPGADDR(pdpt[pdptx].address);
+	kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
+		hn_tmpunmap_post((void *)pdt, PAGESIZE);
+	});
+	if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
+		pdt = (arch_pde_t *)
+			hn_tmpmap_post(
+				UNPGADDR(pdpt[pdptx].address),
+				sizeof(arch_pde_t) * (PTX_MAX + 1),
+				PTE_P | PTE_RW);
+	} else
+		release_tmpmap_pdt_guard.release();
+
+	// Walk PDE.
+	uint16_t pdx = PDX(vaddr);
+
+	char *const pdt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, 0, 0));
+
+	if (!(pdt[pdx].mask & PDE_P))
+		return nullptr;
+
+	return UNPGADDR(pdt[pdx].address);
 }
 
 PBOS_EXTERN_C_END

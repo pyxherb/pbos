@@ -132,7 +132,7 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE node_base **_get_slot(const T &key, node_base *&parent_out) {
-			node_base **i = (node_base **)&_root;
+			node_base **i = &_root;
 			parent_out = nullptr;
 
 			if constexpr (Fallible) {
@@ -143,9 +143,9 @@ namespace kfxx {
 						auto &&result = _comparator(static_cast<node_t *>(*i)->rb_value, key);
 
 						if (result.value() > 0)
-							i = (node_base **)&(*i)->r;
+							i = &(*i)->r;
 						else if (result.value() < 0)
-							i = (node_base **)&(*i)->l;
+							i = &(*i)->l;
 						else
 							return i;
 					} else {
@@ -156,7 +156,7 @@ namespace kfxx {
 	#ifndef NDEBUG
 								if ((result = _comparator(key, static_cast<node_t *>(*i)->rb_value)).has_value()) {
 									kd_assert(!result.value());
-									i = (node_base **)&(*i)->r;
+									i = &(*i)->r;
 								} else {
 									return nullptr;
 								}
@@ -165,7 +165,7 @@ namespace kfxx {
 	#endif
 							} else if ((result = _comparator(key, static_cast<node_t *>(*i)->rb_value)).has_value()) {
 								if (result.value()) {
-									i = (node_base **)&(*i)->l;
+									i = &(*i)->l;
 								} else
 									return i;
 							} else {
@@ -184,9 +184,9 @@ namespace kfxx {
 						auto &&result = _comparator(static_cast<node_t *>(*i)->rb_value, key);
 
 						if (result > 0) {
-							i = (node_base **)&((*i)->r);
+							i = &((*i)->r);
 						} else if (result < 0) {
-							i = (node_base **)&((*i)->l);
+							i = &((*i)->l);
 						} else
 							return nullptr;
 					}
@@ -196,9 +196,9 @@ namespace kfxx {
 
 						if (_comparator(static_cast<node_t *>(*i)->rb_value, key)) {
 							kd_assert(!_comparator(key, static_cast<node_t *>(*i)->rb_value));
-							i = (node_base **)&((*i)->r);
+							i = &((*i)->r);
 						} else if (_comparator(key, static_cast<node_t *>(*i)->rb_value)) {
-							i = (node_base **)&((*i)->l);
+							i = &((*i)->l);
 						} else
 							return nullptr;
 					}

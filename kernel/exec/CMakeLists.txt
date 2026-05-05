@@ -16,4 +16,4 @@ foreach(i ${PBOS_BINLDRS})
 endforeach()
 
 file(GLOB SRC *.h *.hh *.c *.cc *.S)
-target_sources(pbkern PRIVATE ${SRC})
+target_sources(pbkrnl PRIVATE ${SRC})

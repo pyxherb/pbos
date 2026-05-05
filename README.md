@@ -18,7 +18,7 @@ Then, run Windows Powershell with Administrator Privileges and run ./configure t
 The typical command to build the project after the project is configured:
 
 ```powershell
-cmake --build build --config Debug --target pbkern
+cmake --build build --config Debug --target pbkrnl
 ```
 
 ## License

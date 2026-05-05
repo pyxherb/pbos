@@ -9,7 +9,7 @@ mm_context_t hn_kernel_mm_context;
 mm_context_t *mm_kernel_context = &hn_kernel_mm_context;
 mm_context_t **mm_cur_contexts = nullptr;
 
-void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
+void kh_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 	if (dest == src)
 		return;
 	memcpy(
@@ -22,14 +22,14 @@ void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 		sizeof(arch_pde_t) * (PDX(KALLPGTAB_VBASE) - PDX(KERNEL_VBASE)));
 }
 
-void kn_mm_sync_global_mappings(const mm_context_t *src) {
+void kh_mm_sync_global_mappings(const mm_context_t *src) {
 	for (ps_cpu_id_t i = 0; i < ps_cpu_num; ++i) {
 		mm_context_t *cur_context = mm_cur_contexts[i];
 
 		if (cur_context == src)
 			continue;
 
-		kn_mm_copy_global_mappings(cur_context, src);
+		kh_mm_copy_global_mappings(cur_context, src);
 	}
 }
 
@@ -85,7 +85,7 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 	memset(pdt_vaddr, 0, PAGESIZE);
 	context->pdt = (arch_pde_t *)pdt_vaddr;
 
-	kn_mm_copy_global_mappings(context, mm_get_cur_context());
+	kh_mm_copy_global_mappings(context, mm_get_cur_context());
 
 	// Map all valid page tables.
 	// See init.cc for initial mapping code.
@@ -147,7 +147,7 @@ void mm_switch_context(mm_context_t *context) {
 
 	mm_context_t *prev_context = mm_get_cur_context();
 	mm_cur_contexts[ps_get_cur_cpuid()] = context;
-	kn_mm_copy_global_mappings(context, prev_context);
+	kh_mm_copy_global_mappings(context, prev_context);
 	// kn_mm_copy_global_mappings(mm_kernel_context, prev_context);
 	// asm volatile("xchg %bx, %bx");
 	arch_lpdt(PGROUNDDOWN(mm_getmap(prev_context, context->pdt, NULL)));

@@ -1,4 +1,4 @@
-#include <hal/x86_64/mm.h>
+#include <hal/x86_64/mm.hh>
 #include "pgalloc.hh"
 
 PBOS_EXTERN_C_BEGIN

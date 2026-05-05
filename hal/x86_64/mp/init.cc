@@ -1,9 +1,12 @@
 #include <arch/x86_64/apic.h>
 #include <pbos/acpi/madt.h>
 #include <pbos/km/logger.h>
-#include <pbos/kn/mp/init.hh>
+#include <string.h>
+#include <hal/x86_64/irq.hh>
+#include <hal/x86_64/mm.hh>
 #include <pbos/kh/acpi/misc.hh>
-#include "../irq.h"
+#include <pbos/kn/mp/init.hh>
+#include <hal/x86_64/mm/vmmgr/vm.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -11,7 +14,7 @@ uint32_t hn_sched_interval;
 
 arch_tss_t *hn_tss_storage_ptr;
 
-hn_tmpmap_info_t *hn_tmpmap_info_storage;
+hn_tmpmap_info_t *hn_tmpmap_storage_ptr;
 
 hn_kgdt_t *hn_gdt_storage_ptr;
 
@@ -105,13 +108,13 @@ void kh_mp_init_topology() {
 }
 
 void kh_mp_alloc_platform_resources() {
-	hn_tss_storage_ptr = (arch_tss_t *)mm_kmalloc(mp_num_total_cpu * sizeof(arch_tss_t), alignof(std::max_align_t));
+	hn_tss_storage_ptr = (arch_tss_t *)mm_kalloc(mp_num_total_cpu * sizeof(arch_tss_t), alignof(std::max_align_t));
 	if (!hn_tss_storage_ptr) {
 		km_panic("Unable to allocate memory for TSS storage for processors");
 	}
 	memset(hn_tss_storage_ptr, 0, mp_num_total_cpu * sizeof(arch_tss_t));
 
-	hn_gdt_storage_ptr = (hn_kgdt_t *)mm_kmalloc(mp_num_total_cpu * sizeof(hn_kgdt_t), alignof(std::max_align_t));
+	hn_gdt_storage_ptr = (hn_kgdt_t *)mm_kalloc(mp_num_total_cpu * sizeof(hn_kgdt_t), alignof(std::max_align_t));
 	if (!hn_gdt_storage_ptr) {
 		km_panic("Unable to allocate memory for TSS storage for processors");
 	}
@@ -121,6 +124,25 @@ void kh_mp_alloc_platform_resources() {
 			TSSDESC_LOW(((uint32_t)(uintptr_t)(hn_tss_storage_ptr + i)), sizeof(arch_tss_t), GDT_AB_P | GDT_AB_DPL(0) | GDT_SYSTYPE_TSS32, 0);
 		hn_gdt_storage_ptr[i].tss_desc2 = TSSDESC_HIGH(((uintptr_t)(hn_tss_storage_ptr + i)));
 	}
+
+	hn_tmpmap_info_t *tmp_hn_tmpmap_storage_ptr = (hn_tmpmap_info_t *)mm_kalloc(mp_num_total_cpu * sizeof(hn_tmpmap_info_t), alignof(std::max_align_t));
+	if (!tmp_hn_tmpmap_storage_ptr) {
+		km_panic("Unable to allocate memory for TMPMAP information storage for processors");
+	}
+
+	for (size_t i = 0; i < mp_num_total_cpu; ++i) {
+		void *vaddr = mm_kvmalloc(mm_get_cur_context(), KINITTMPMAP_SIZE, MM_PAGE_MAPPED, 0);
+
+		if (!vaddr)
+			km_panic("Unable to allocate TMPMAP space for TMPMAP information storage for processors");
+
+		tmp_hn_tmpmap_storage_ptr[i].tmpmap_base = vaddr;
+		kd_dbgcheck(
+			(tmp_hn_tmpmap_storage_ptr[i].tmpmap_pgtab_base = (arch_pte_t*)hn_get_pgtab_paddr(mm_get_cur_context(), vaddr, nullptr)),
+			"The TMPMAP page table address should not be invalid after mapped");
+	}
+
+	hn_tmpmap_storage_ptr = tmp_hn_tmpmap_storage_ptr;
 }
 
 void hn_calibrate_apic() {

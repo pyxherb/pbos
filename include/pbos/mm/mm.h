@@ -69,7 +69,7 @@ void mm_refpg(void *ptr);
 /// @param size Size of the memory bloc to be allocated.
 /// @return Virtual address to the memory block, NULL if failed.
 ///
-PBOS_NODISCARD void *mm_kmalloc(size_t size, size_t alignment);
+PBOS_NODISCARD void *mm_kalloc(size_t size, size_t alignment);
 
 PBOS_NODISCARD void *mm_krealloc(void *old_ptr, size_t size, size_t alignment);
 
@@ -187,7 +187,7 @@ void *mm_getmap(mm_context_t *context, const void *vaddr, mm_pgaccess_t *pgacces
 /// @param context Pointer to the memory context buffer.
 /// @return The result code for the initialization operation.
 ///
-PBOS_NODISCARD km_result_t kn_mm_alloc_context(mm_context_t *cur_context, mm_context_t **new_context_out);
+PBOS_NODISCARD km_result_t kh_mm_alloc_context(mm_context_t *cur_context, mm_context_t **new_context_out);
 ///
 /// @brief Free a memory context and its associated resource.
 ///
@@ -208,7 +208,7 @@ void mm_switch_context(mm_context_t *context);
 ///
 void mm_invlpg(void *ptr);
 
-bool mm_is_user_space(const void *ptr);
+PBOS_PURE bool mm_is_user_space(const void *ptr);
 
 ///
 /// @brief Check if accessing a space of memory in user mode violates the memory protection.
@@ -219,12 +219,12 @@ bool mm_is_user_space(const void *ptr);
 /// @return true The accessing violates the memory protection.
 /// @return false The accessing does not violate the memory protection.
 ///
-bool mm_probe_user_space(mm_context_t *mm_context, const void *ptr, size_t size);
+PBOS_PURE bool mm_probe_user_space(mm_context_t *mm_context, const void *ptr, size_t size);
 
 /// @brief The kernel memory context.
 extern mm_context_t *mm_kernel_context;
 
-mm_context_t *mm_get_cur_context();
+PBOS_PURE mm_context_t *mm_get_cur_context();
 
 PBOS_EXTERN_C_END
 

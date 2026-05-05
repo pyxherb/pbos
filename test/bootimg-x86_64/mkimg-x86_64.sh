@@ -65,7 +65,7 @@ mkdir /media/sys
 # mkdir /media/sys/kernel
 
 # cp ./build/initcar /media/sys/boot
-cp ./build/kernel/pbkern /media/sys/pbkern
+cp ./build/kernel/pbkrnl /media/sys/pbkrnl
 cp ./build/initcar /media/sys/initcar
 
 # Unmount the partition.

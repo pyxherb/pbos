@@ -69,7 +69,7 @@ PBOS_NODISCARD PBOS_API km_result_t fs_create_fcb(
 PBOS_NODISCARD km_result_t fs_alloc_file_fnode(fs_filesys_t *filesys, fs_fnode_t **file_out);
 PBOS_NODISCARD km_result_t fs_alloc_dir_fnode(fs_filesys_t *filesys, fs_fnode_t **file_out);
 PBOS_NODISCARD const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out);
-PBOS_NODISCARD void fs_unname_fnode(fs_fnode_t *file);
+void fs_unname_fnode(fs_fnode_t *file);
 PBOS_NODISCARD km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len);
 
 PBOS_API fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb);

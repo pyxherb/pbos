@@ -76,14 +76,14 @@ bool klog_is_capable(uint16_t cap);
 #define KLOG_EXCALL_PRIVATE_MIN 0xc0000000
 #define KLOG_EXCALL_PRIVATE_MAX 0xffffffff
 
-PBOS_PACKED_BEGIN
+#include <pbos/packed.h>
 
 typedef struct PBOS_PACKED _klog_color_exarg_t {
 	uint8_t fg;
 	uint8_t bg;
 } klog_color_exarg_t;
 
-PBOS_PACKED_END
+#include <pbos/packed_end.h>
 
 void klog_vprintf(const char *str, va_list args) PBOS_FMTARG(printf, 1, 0);
 void klog_printf(const char *str, ...) PBOS_FMTARG(printf, 1, 2);

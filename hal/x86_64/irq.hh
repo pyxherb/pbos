@@ -1,9 +1,9 @@
-#ifndef _HAL_X86_64_IRQ_H_
-#define _HAL_X86_64_IRQ_H_
+#ifndef _HAL_X86_64_IRQ_HH_
+#define _HAL_X86_64_IRQ_HH_
 
 #include <arch/x86_64/irq.h>
 #include <pbos/hal/irq.h>
-#include "mm.h"
+#include "mm.hh"
 
 PBOS_EXTERN_C_BEGIN
 

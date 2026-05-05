@@ -3,7 +3,7 @@
 #include <pbos/kfxx/scope_guard.hh>
 #include "../mm.hh"
 #include <pbos/kfxx/allocator.hh>
-#include "../proc.hh"
+#include <string.h>
 #include <pbos/kn/mp/misc.hh>
 
 PBOS_EXTERN_C_BEGIN
@@ -11,7 +11,7 @@ PBOS_EXTERN_C_BEGIN
 mm_context_t hn_kernel_mm_context;
 mm_context_t *mm_kernel_context = &hn_kernel_mm_context;
 
-void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
+void kh_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 	if (dest == src)
 		return;
 	memcpy(
@@ -20,23 +20,23 @@ void kn_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 		sizeof(arch_pml4te_t) * (PML4X(UINTPTR_MAX - KSPACE_VBASE + 1)));
 }
 
-void kn_mm_sync_global_mappings(const mm_context_t *src) {
+void kh_mm_sync_global_mappings(const mm_context_t *src) {
 	for (ps_cpu_id_t i = 0; i < mp_num_total_cpu; ++i) {
 		mm_context_t *cur_context = mm_cur_contexts[i];
 
 		if (cur_context == src)
 			continue;
 
-		kn_mm_copy_global_mappings(cur_context, src);
+		kh_mm_copy_global_mappings(cur_context, src);
 	}
 }
 
-km_result_t kn_mm_alloc_context(mm_context_t *context, mm_context_t **new_context_out) {
+km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_context_out) {
 	km_result_t result;
 
 	mm_context_t *new_context;
 
-	if(!(new_context = (mm_context_t*)mm_kmalloc(sizeof(mm_context_t), alignof(mm_context_t))))
+	if(!(new_context = (mm_context_t*)mm_kalloc(sizeof(mm_context_t), alignof(mm_context_t))))
 		return KM_RESULT_NO_MEM;
 
 	kfxx::scope_guard free_new_context_guard([new_context]() noexcept {
@@ -71,7 +71,7 @@ km_result_t kn_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 	memset(pml4t_vaddr, 0, PAGESIZE);
 	new_context->pml4t = (arch_pml4te_t *)pml4t_vaddr;
 
-	kn_mm_copy_global_mappings(new_context, mm_get_cur_context());
+	kh_mm_copy_global_mappings(new_context, mm_get_cur_context());
 
 	*new_context_out = new_context;
 
@@ -94,7 +94,7 @@ void mm_switch_context(mm_context_t *context) {
 
 	mm_context_t *prev_context = mm_get_cur_context();
 	mm_cur_contexts[ps_get_cur_cpuid()] = context;
-	kn_mm_copy_global_mappings(context, prev_context);
+	kh_mm_copy_global_mappings(context, prev_context);
 	// kn_mm_copy_global_mappings(mm_kernel_context, prev_context);
 	// asm volatile("xchg %bx, %bx");
 	arch_lpgtab(PGROUNDDOWN(mm_getmap(prev_context, context->pml4t, NULL)));

@@ -1,7 +1,7 @@
 #include <arch/x86_64/io.h>
 #include <common/format.h>
 #include <common/mathex.h>
-#include <hal/x86_64/logger.h>
+#include <hal/x86_64/logger.hh>
 #include <pbos/hal/spinlock.h>
 #include <string.h>
 // #include <pbos/hal/irq.hh>

@@ -1,7 +1,10 @@
 #ifndef _PBOS_HAL_X86_64_MISC_H_
 #define _PBOS_HAL_X86_64_MISC_H_
 
+#include <pbos/common.h>
 #include <limine.h>
+
+PBOS_EXTERN_C_BEGIN
 
 #define HN_REQUIRED_LIMINE_REVISION LIMINE_BASE_REVISION(4)
 
@@ -20,5 +23,7 @@ typedef void (*hn_dtor_t)();
 
 // extern hn_ctor_t *KN_CTORS_BEGIN, *KN_CTORS_END;
 // extern hn_dtor_t *KN_DTORS_BEGIN, *KN_DTORS_END;
+
+PBOS_EXTERN_C_END
 
 #endif

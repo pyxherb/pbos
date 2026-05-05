@@ -43,22 +43,22 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	{
 		if (ehdr.e_ident[EI_MAG0] != ELFMAG0 || ehdr.e_ident[EI_MAG1] != ELFMAG1 || ehdr.e_ident[EI_MAG2] != ELFMAG2 ||
 			ehdr.e_ident[EI_MAG3] != ELFMAG3)
-			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
+			return KM_MAKEERROR(KM_RESULT_MALFORMED);
 
 		if (ehdr.e_ident[EI_VERSION] != EV_CURRENT)
-			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
+			return KM_MAKEERROR(KM_RESULT_MALFORMED);
 
 		if (ehdr.e_ident[EI_DATA] != ELFDATA2LSB)
-			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
+			return KM_MAKEERROR(KM_RESULT_MALFORMED);
 
 		if (ehdr.e_ident[EI_OSABI] != ELFOSABI_NONE)
-			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
+			return KM_MAKEERROR(KM_RESULT_MALFORMED);
 
 		if (ehdr.e_type != ET_EXEC)
-			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
+			return KM_MAKEERROR(KM_RESULT_MALFORMED);
 
 		if (ehdr.e_ident[EI_CLASS] != ELFCLASS64)
-			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
+			return KM_MAKEERROR(KM_RESULT_MALFORMED);
 	}
 
 	Elf64_Half phdr_num = ehdr.e_phnum;
@@ -80,12 +80,12 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 		}
 
 		if (ph.p_filesz > ph.p_memsz)
-			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
+			return KM_MAKEERROR(KM_RESULT_MALFORMED);
 
 		char *vaddr = (char *)ph.p_vaddr;
 
 		if (((uintptr_t)vaddr) % PAGESIZE)
-			return KM_MAKEERROR(KM_RESULT_INVALID_FMT);
+			return KM_MAKEERROR(KM_RESULT_MALFORMED);
 
 		off = ph.p_offset;
 
@@ -98,7 +98,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
 			{
-				kfxx::scope_guard restore_context_guard([prev_context, tmp_pgvaddr]() noexcept {
+				kfxx::scope_guard unmap_tmp_pgvaddr_guard([prev_context, tmp_pgvaddr]() noexcept {
 					mm_vmfree(prev_context, tmp_pgvaddr, PAGESIZE);
 				});
 
@@ -107,21 +107,22 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 					void *paddr;
 					if (!(paddr = mm_getmap(ps_mm_context_of(proc), vaddr + j, NULL))) {
 						paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
-						klog_printf("paddr: %p\n", paddr);
+						klog_printf("vaddr: %p, paddr: %p\n", vaddr + j, paddr);
 						if (!paddr)
 							return KM_MAKEERROR(KM_RESULT_NO_MEM);
-						if(paddr == (void*)0x05025000) {
-							asm volatile("xchg %bx, %bx");
-							klog_puts("");
-						}
 					}
 
-					if (KM_FAILED(result = mm_mmap(ps_mm_context_of(proc), vaddr + j, paddr, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_EXEC | MM_PAGE_USER, 0)))
+					mm_pgaccess_t pgaccess = MM_PAGE_MAPPED | MM_PAGE_USER;
+
+					if(ph.p_flags & PF_R)
+						pgaccess |= MM_PAGE_READ;
+					if(ph.p_flags & PF_W)
+						pgaccess |= MM_PAGE_WRITE;
+					if(ph.p_flags & PF_X)
+						pgaccess |= MM_PAGE_EXEC;
+
+					if (KM_FAILED(result = mm_mmap(ps_mm_context_of(proc), vaddr + j, paddr, PAGESIZE, pgaccess, 0)))
 						return result;
-					if(mm_getmap(ps_mm_context_of(proc), vaddr + j, NULL) != paddr) {
-						mm_getmap(ps_mm_context_of(proc), vaddr + j, NULL);
-						km_panic("Assertion failed!");
-					}
 					if (KM_FAILED(
 							result = mm_mmap(
 								prev_context,

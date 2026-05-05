@@ -3,6 +3,7 @@
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/kn/km/exec.hh>
 #include <pbos/kfxx/uuid.hh>
+#include <string.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -16,7 +17,7 @@ ps_proc_id_t kn_alloc_proc_id() {
 }
 
 km_result_t km_register_binldr(kf_uuid_t *uuid, km_binldr_t *binldr) {
-	kn_binldr_registry_t *reg = (kn_binldr_registry_t *)mm_kmalloc(sizeof(kn_binldr_registry_t), alignof(kn_binldr_registry_t));
+	kn_binldr_registry_t *reg = (kn_binldr_registry_t *)mm_kalloc(sizeof(kn_binldr_registry_t), alignof(kn_binldr_registry_t));
 	if (!reg)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
@@ -76,7 +77,7 @@ km_result_t km_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
 	if (kn_registered_binprotos.find(fcb))
 		return KM_MAKEERROR(KM_RESULT_EXISTED);
 
-	km_binproto_t *proto = (km_binproto_t *)mm_kmalloc(sizeof(km_binproto_t), alignof(km_binproto_t));
+	km_binproto_t *proto = (km_binproto_t *)mm_kalloc(sizeof(km_binproto_t), alignof(km_binproto_t));
 
 	kfxx::construct_at<km_binproto_t>(proto);
 
@@ -106,7 +107,7 @@ km_result_t km_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, s
 	if (vaddr_base != (void *)PGFLOOR(vaddr_base))
 		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
 
-	km_binseg_t *seg = (km_binseg_t *)mm_kmalloc(sizeof(km_binseg_t), alignof(km_binseg_t));
+	km_binseg_t *seg = (km_binseg_t *)mm_kalloc(sizeof(km_binseg_t), alignof(km_binseg_t));
 	kfxx::scope_guard seg_release_guard([seg]() noexcept {
 		mm_kfree(seg);
 	});
@@ -129,7 +130,7 @@ km_result_t km_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, s
 		}
 	});
 	while (seg->cur_offset < size) {
-		km_binseg_page_pool_t *page_pool = (km_binseg_page_pool_t *)mm_kmalloc(sizeof(km_binseg_page_pool_t), PAGESIZE);
+		km_binseg_page_pool_t *page_pool = (km_binseg_page_pool_t *)mm_kalloc(sizeof(km_binseg_page_pool_t), PAGESIZE);
 		kfxx::scope_guard release_cur_page_pool_guard([seg, page_pool]() noexcept {
 			for (size_t i = 0; i < page_pool->used_num; ++i) {
 				mm_pgfree(page_pool->descs[i].rb_value);

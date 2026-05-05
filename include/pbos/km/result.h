@@ -15,7 +15,7 @@ typedef enum _km_results {
 	KM_RESULT_NOT_FOUND,			  // Not found
 	KM_RESULT_UNAVAILABLE,			  // Unavailable
 	KM_RESULT_EOF,					  // End of file
-	KM_RESULT_INVALID_FMT,			  // Invalid format
+	KM_RESULT_MALFORMED,			  // Input is malformed
 	KM_RESULT_INVALID_ADDR,			  // Invalid address
 	KM_RESULT_EXISTED,				  // Existed
 	KM_RESULT_DEPRECATED,			  // Deprecated
@@ -39,7 +39,7 @@ PBOS_FORCEINLINE void km_unwrap_result(km_result_t result) {
 		km_panic("Unwrap failed!");
 }
 
-#define KM_RETURN_IF_FAILED(expr)       \
+#define KM_RETURN_IF_FAILED(expr)      \
 	{                                  \
 		km_result_t _ = (expr);        \
 		if (KM_FAILED(expr)) return _; \

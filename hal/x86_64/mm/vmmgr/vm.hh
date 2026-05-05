@@ -1,6 +1,7 @@
-#ifndef _HAL_X86_64_MM_VM_H_
-#define _HAL_X86_64_MM_VM_H_
+#ifndef _HAL_X86_64_MM_VM_HH_
+#define _HAL_X86_64_MM_VM_HH_
 
+#include <hal/x86_64/mm.hh>
 #include <arch/x86_64/paging.h>
 #include <pbos/km/result.h>
 
@@ -36,6 +37,8 @@ void hn_tmpunmap_early(void *vaddr, size_t size);
 PBOS_NODISCARD void *hn_tmpmap_post(void *paddr, size_t size, uint16_t mask);
 
 void hn_tmpunmap_post(void *vaddr, size_t size);
+
+void *hn_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out);
 
 PBOS_EXTERN_C_END
 

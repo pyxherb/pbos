@@ -1,6 +1,6 @@
 #include <arch/x86_64/apic.h>
-#include <hal/x86_64/irq.h>
-#include <hal/x86_64/syscall.h>
+#include <hal/x86_64/irq.hh>
+#include <hal/x86_64/ps/syscall.hh>
 #include <pbos/km/logger.h>
 #include <pbos/km/proc.h>
 

@@ -23,7 +23,7 @@ PBOS_API size_t kn_fs_filename_allocator_t::dec_ref() noexcept {
 }
 
 PBOS_API void *kn_fs_filename_allocator_t::alloc(size_t size, size_t alignment) noexcept {
-	return mm_kmalloc(size, alignment);
+	return mm_kalloc(size, alignment);
 }
 
 PBOS_API void *kn_fs_filename_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
@@ -64,7 +64,7 @@ PBOS_API size_t kn_fs_fnode_allocator_t::dec_ref() noexcept {
 }
 
 PBOS_API void *kn_fs_fnode_allocator_t::alloc(size_t size, size_t alignment) noexcept {
-	return mm_kmalloc(size, alignment);
+	return mm_kalloc(size, alignment);
 }
 
 PBOS_API void *kn_fs_fnode_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
@@ -105,7 +105,7 @@ PBOS_API size_t kn_fs_fcb_allocator_t::dec_ref() noexcept {
 }
 
 PBOS_API void *kn_fs_fcb_allocator_t::alloc(size_t size, size_t alignment) noexcept {
-	return mm_kmalloc(size, alignment);
+	return mm_kalloc(size, alignment);
 }
 
 PBOS_API void *kn_fs_fcb_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
@@ -184,7 +184,7 @@ PBOS_NODISCARD const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out) {
 	return file->filename;
 }
 
-PBOS_NODISCARD void fs_unname_fnode(fs_fnode_t *file) {
+void fs_unname_fnode(fs_fnode_t *file) {
 	kn_do_unname_fnode(file);
 }
 

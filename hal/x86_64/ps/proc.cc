@@ -16,7 +16,7 @@ ps_ufd_t ps_alloc_fd(ps_pcb_t *pcb) {
 }
 
 ps_ufcb_t *ps_alloc_ufcb(ps_pcb_t *pcb, fs_fcb_t *kernel_fcb, ps_ufd_t fd) {
-	ps_ufcb_t *p = (ps_ufcb_t *)mm_kmalloc(sizeof(ps_ufcb_t), alignof(ps_ufcb_t));
+	ps_ufcb_t *p = (ps_ufcb_t *)mm_kalloc(sizeof(ps_ufcb_t), alignof(ps_ufcb_t));
 	kfxx::construct_at<ps_ufcb_t>(p);
 	if (!p)
 		return NULL;
@@ -73,12 +73,12 @@ ps_pcb_t *ps_alloc_pcb() {
 
 	});
 
-	if (!(proc->mm_context = (mm_context_t *)mm_kmalloc(sizeof(mm_context_t), alignof(mm_context_t)))) {
+	if (!(proc->mm_context = (mm_context_t *)mm_kalloc(sizeof(mm_context_t), alignof(mm_context_t)))) {
 		mm_kfree(proc);
 		return NULL;
 	}
 
-	if (KM_FAILED(kn_mm_alloc_context(mm_get_cur_context(), &proc->mm_context))) {
+	if (KM_FAILED(kh_mm_alloc_context(mm_get_cur_context(), &proc->mm_context))) {
 		mm_kfree(proc->mm_context);
 		mm_kfree(proc);
 		return NULL;

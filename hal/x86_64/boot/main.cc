@@ -3,7 +3,9 @@
 #include <arch/x86_64/mlayout.h>
 #include <arch/x86_64/paging.h>
 #include <hal/x86_64/misc.h>
-#include <hal/x86_64/mm.h>
+#include <hal/x86_64/mm.hh>
+
+PBOS_EXTERN_C_BEGIN
 
 PBOS_USED PBOS_IN_SECTION(".limine_requests") volatile uint64_t hn_limine_base_revision[] = HN_REQUIRED_LIMINE_REVISION;
 
@@ -41,10 +43,12 @@ PBOS_USED PBOS_IN_SECTION(".limine_requests") volatile struct limine_module_requ
 
 PBOS_USED PBOS_IN_SECTION(".limine_request_end") volatile uint64_t hn_limine_requests_end_marker[] = LIMINE_REQUESTS_END_MARKER;
 
-PBOS_EXTERN_C PBOS_NORETURN void kernel_main();
+PBOS_NORETURN void kernel_main();
 
 void kmain() {
 	asm volatile("xorq %rbp,%rbp");
 	asm volatile("movabsq %0, %%rsp" ::"i"(mm_kernel_initial_stack + PBOS_ARRAYSIZE(mm_kernel_initial_stack)) : "memory");
 	kernel_main();
 }
+
+PBOS_EXTERN_C_END
