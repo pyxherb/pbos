@@ -8,6 +8,8 @@
 
 PBOS_EXTERN_C_BEGIN
 
+PBOS_NORETURN void isr_syscall();
+
 uint32_t hn_syscall_handler(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx, uint32_t esi, uint32_t edi);
 
 PBOS_EXTERN_C_END

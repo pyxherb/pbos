@@ -1,31 +1,39 @@
 {
 	"arch_name": "x86_64",
-	"addr_width": 32,
-	"size_width": 32,
+	"addr_type": "u64",
+	"size_type": "u64",
 	"syscall_params": [
 		{
-			"reg_name": "eax",
-			"type": "uint32"
+			"reg_name": "rdi",
+			"type": "u64"
 		},
 		{
-			"reg_name": "ebx",
-			"type": "uint32"
+			"reg_name": "rsi",
+			"type": "u64"
 		},
 		{
-			"reg_name": "ecx",
-			"type": "uint32"
+			"reg_name": "rdx",
+			"type": "u64"
 		},
 		{
-			"reg_name": "edx",
-			"type": "uint32"
+			"reg_name": "rcx",
+			"type": "u64"
 		},
 		{
-			"reg_name": "esi",
-			"type": "uint32"
+			"reg_name": "r8",
+			"type": "u64"
 		},
 		{
-			"reg_name": "edi",
-			"type": "uint32"
+			"reg_name": "r9",
+			"type": "u64"
+		},
+		{
+			"reg_name": "rax",
+			"type": "u64"
+		},
+		{
+			"reg_name": "rbx",
+			"type": "u64"
 		}
 	]
 }

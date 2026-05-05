@@ -57,8 +57,6 @@ PBOS_NORETURN void hn_isr_timer_impl(
 
 	const uint64_t *const rsp_top);
 
-PBOS_NORETURN void isr_syscall();
-
 PBOS_NORETURN void isr_stub();
 
 void hn_set_sched_timer();
