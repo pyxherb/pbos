@@ -24,6 +24,7 @@
 #include "_type_traits/is_class.hh"
 #include "_type_traits/is_compound.hh"
 #include "_type_traits/is_const.hh"
+#include "_type_traits/is_constant_evaluated.hh"
 #include "_type_traits/is_constructible.hh"
 #include "_type_traits/is_convertible.hh"
 #include "_type_traits/is_destructible.hh"
@@ -67,6 +68,8 @@
 #include "_type_traits/remove_reference.hh"
 #include "_type_traits/underlying_type.hh"
 #include "_type_traits/void_t.hh"
-#include "_type_traits/is_constant_evaluated.hh"
+#if __cplusplus >= 202002L
+	#include "_type_traits/common_reference.hh"
+#endif
 
 #endif

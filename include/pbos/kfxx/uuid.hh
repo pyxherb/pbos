@@ -2,7 +2,10 @@
 #define _PBOS_KFXX_UUID_HH_
 
 #include <pbos/kf/uuid.h>
+
+#if __cplusplus >= 202002L
 #include <compare>
+#endif
 
 PBOS_FORCEINLINE bool operator==(const kf_uuid_t &lhs, const kf_uuid_t &rhs) noexcept {
 	return uuid_eq(&lhs, &rhs);
@@ -16,6 +19,7 @@ PBOS_FORCEINLINE bool operator>(const kf_uuid_t &lhs, const kf_uuid_t &rhs) noex
 	return uuid_gt(&lhs, &rhs);
 }
 
+#if __cplusplus >= 202002L
 PBOS_FORCEINLINE std::strong_ordering operator<=>(const kf_uuid_t &lhs, const kf_uuid_t &rhs) noexcept {
 	if (lhs < rhs)
 		return std::strong_ordering::less;
@@ -23,5 +27,6 @@ PBOS_FORCEINLINE std::strong_ordering operator<=>(const kf_uuid_t &lhs, const kf
 		return std::strong_ordering::greater;
 	return std::strong_ordering::equivalent;
 }
+#endif
 
 #endif

@@ -12,9 +12,9 @@ extern hal_irq_context_t **irq_contexts;
 
 typedef PBOS_NORETURN void (*hal_isr_t)();
 
-bool hal_is_irq_disabled();
-void hal_disable_irq();
-void hal_enable_irq();
+bool irq_is_disabled();
+void irq_disable();
+void irq_enable();
 
 size_t hal_irq_getmax();
 void kh_set_isr(hal_isr_t isr, size_t irq);

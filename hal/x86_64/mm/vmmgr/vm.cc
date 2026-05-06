@@ -27,13 +27,17 @@ static uint16_t hn_pgaccess_to_pgmask(mm_pgaccess_t access) {
 }
 
 void *kh_get_direct_mmap(void *paddr) {
-	hn_pmad_t *pmad = hn_pmad_get(PGROUNDDOWN(paddr));
+	hn_pmad_t *pmad = hn_pmad_get(paddr);
 
-	if (!pmad)
+	if ((!pmad) || (!pmad->direct_map_base))
 		return nullptr;
 
-	ptrdiff_t off = (((char *)paddr) - (char *)UNPGADDR(pmad->attribs.base));
-	return (char *)pmad->direct_map_base + off;
+	ptrdiff_t off = (((char *)paddr) - (char *)pmad->base);
+	char *p = (char *)pmad->direct_map_base + off;
+
+	if (p > (char *)DIRECTPHYMEM_VTOP)
+		return nullptr;
+	return p;
 }
 
 void *kh_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags) {
@@ -767,13 +771,6 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 			sz_found += (size_t)UVADDR(1, 0, 0, 0, 0);
 			continue;
 		}
-
-		/*hn_vpm_t *vpm = ki_mm_lookup_vpm(ctxt, VADDR(i, 0, 0), PAGING_LEVEL_PGDIR);
-
-		if (vpm) {
-			if (vpm->subref_count >= (PTX_MAX + 1))
-				continue;
-		}*/
 
 		// io::irq_disable_lock irq_lock;
 		const arch_pdpte_t *pdpt = (arch_pdpte_t *)

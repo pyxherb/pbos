@@ -82,9 +82,10 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 }
 
 void mm_free_context(mm_context_t *context) {
-	mm_unmmap(context, (void*)0, SIZE_MAX, 0);
-
-	mm_pgfree(context->pml4t);
+	// TODO: Free associated pages.
+	auto pml4t = mm_getmap(mm_get_cur_context(), context->pml4t, nullptr);
+	kd_assert(pml4t);
+	mm_pgfree(pml4t);
 	kfxx::destroy_and_release<mm_context_t>(kfxx::kernel_allocator(), context);
 }
 

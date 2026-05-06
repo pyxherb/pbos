@@ -97,18 +97,18 @@ static void hn_mm_init_areas() {
 
 			// Find proper initial pages for further initialization.
 			PMAD_FOREACH(i) {
-				if (i->attribs.type != KN_PMEM_AVAILABLE)
+				if (i->type != MM_PHYSICAL_MEMORY_TYPE_AVAILABLE)
 					continue;
 
 				pgsize_t pages_used = 0;
 
-				if (PGROUNDDOWN(i->attribs.len) > 3) {
+				if (PGROUNDDOWN(i->len) > 3) {
 					// Enough to contain initial page table (PDPTE, PDE, PTE).
 					init_pgtab_pmad = i;
 					pages_used += 3;
 				}
 
-				if (PGROUNDDOWN(i->attribs.len) > (i->attribs.len / PAGESIZE) / PBOS_ARRAYSIZE(hn_madpool_t::descs) + pages_used) {
+				if (PGROUNDDOWN(i->len) > (i->len / PAGESIZE) / PBOS_ARRAYSIZE(hn_madpool_t::descs) + pages_used) {
 					// It's enough to contain the whole initial area.
 					init_madpool_pmad = i;
 				}
@@ -125,17 +125,17 @@ static void hn_mm_init_areas() {
 
 			init_madpool_paddr =
 				init_madpool_pmad == init_pgtab_pmad
-					? (char *)UNPGADDR(init_pgtab_pmad->attribs.base) + 3 * PAGESIZE
-					: UNPGADDR(init_madpool_pmad->attribs.base);
+					? (char *)init_pgtab_pmad->base + 3 * PAGESIZE
+					: init_madpool_pmad->base;
 
 			initial_map_result = hn_mm_mmap_early(
 				mm_kernel_context,
 				init_madpool_vaddr,
 				init_madpool_paddr,
 				MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE,
-				UNPGADDR(init_pgtab_pmad->attribs.base),
-				(char *)UNPGADDR(init_pgtab_pmad->attribs.base) + 1 * PAGESIZE,
-				(char *)UNPGADDR(init_pgtab_pmad->attribs.base) + 2 * PAGESIZE);
+				init_pgtab_pmad->base,
+				(char *)init_pgtab_pmad->base + 1 * PAGESIZE,
+				(char *)init_pgtab_pmad->base + 2 * PAGESIZE);
 
 			hn_global_mad_pool_list = (hn_madpool_t *)init_madpool_vaddr;
 
@@ -145,9 +145,7 @@ static void hn_mm_init_areas() {
 			kfxx::construct_at<hn_mad_t>(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
-			hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
-			hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = PGROUNDDOWN(init_madpool_paddr);
-			hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
+			hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = init_madpool_paddr;
 			++hn_global_mad_pool_list->header.used_num;
 			insert_result = init_madpool_pmad->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 			kd_dbgcheck(insert_result, "Error inserting initial PMAD, please report this bug");
@@ -157,9 +155,7 @@ static void hn_mm_init_areas() {
 				kfxx::construct_at<hn_mad_t>(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = init_pgtab_pmad->attribs.base;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = init_pgtab_pmad->base;
 				++hn_global_mad_pool_list->header.used_num;
 				insert_result = init_pgtab_pmad->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				kd_dbgcheck(insert_result, "Error inserting PDPTE PMAD, please report this bug");
@@ -170,9 +166,7 @@ static void hn_mm_init_areas() {
 				kfxx::construct_at<hn_mad_t>(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = init_pgtab_pmad->attribs.base + 1;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = (char *)init_pgtab_pmad->base + PAGESIZE * 1;
 				++hn_global_mad_pool_list->header.used_num;
 				insert_result = init_pgtab_pmad->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				kd_dbgcheck(insert_result, "Error inserting PDE PMAD, please report this bug");
@@ -183,9 +177,7 @@ static void hn_mm_init_areas() {
 				kfxx::construct_at<hn_mad_t>(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = init_pgtab_pmad->attribs.base + 2;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_KERNEL;
+				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = (char *)init_pgtab_pmad->base + PAGESIZE * 2;
 				++hn_global_mad_pool_list->header.used_num;
 				insert_result = init_pgtab_pmad->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				kd_dbgcheck(insert_result, "Error inserting PDE PMAD, please report this bug");
@@ -200,23 +192,23 @@ static void hn_mm_init_areas() {
 			 *new_poolpg_ptt_vaddr = nullptr;
 
 		PMAD_FOREACH(i) {
-			if (i->attribs.type != KN_PMEM_AVAILABLE)
+			if (i->type != MM_PHYSICAL_MEMORY_TYPE_AVAILABLE)
 				continue;
 
 			hn_mad_t *prev_free_mad = nullptr;
-			for (pgaddr_t j = i->attribs.base; j < i->attribs.base + i->attribs.len; ++j) {
-				if (j == PGROUNDDOWN(init_madpool_paddr))
+			for (char *j = (char *)i->base; j < (char *)i->base + i->len; j += PAGESIZE) {
+				if (j == init_madpool_paddr)
 					continue;
 				if (initial_map_result & 0b100) {
-					if (j == init_pgtab_pmad->attribs.base)
+					if (j == init_pgtab_pmad->base)
 						continue;
 				}
 				if (initial_map_result & 0b010) {
-					if (j == init_pgtab_pmad->attribs.base + 1)
+					if (j == (char *)init_pgtab_pmad->base + 1 * PAGESIZE)
 						continue;
 				}
 				if (initial_map_result & 0b001) {
-					if (j == init_pgtab_pmad->attribs.base + 2)
+					if (j == (char *)init_pgtab_pmad->base + 2 * PAGESIZE)
 						continue;
 				}
 
@@ -271,9 +263,7 @@ static void hn_mm_init_areas() {
 				}
 				prev_free_mad = &hn_global_mad_pool_list->descs[cur_madpool_slot_index];
 
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = j;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_FREE;
 				++hn_global_mad_pool_list->header.used_num;
 				insert_result = i->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				kd_dbgcheck(insert_result, "Error inserting PMAD, please report this bug");
@@ -282,17 +272,15 @@ static void hn_mm_init_areas() {
 			}
 		}
 
-		kd_printf("Test\n");
-
 		PMAD_FOREACH(i) {
-			if ((i->attribs.type == KN_PMEM_AVAILABLE) ||
-				(i->attribs.type == KN_PMEM_CRITICAL))
+			if ((i->type == MM_PHYSICAL_MEMORY_TYPE_AVAILABLE) ||
+				(i->type == MM_PHYSICAL_MEMORY_TYPE_CRITICAL))
 				continue;
 
 			// Limine occasionally creates a long reserved region,
 			// so we chose to skip reserved areas.
 
-			for (pgaddr_t j = i->attribs.base; j < i->attribs.base + i->attribs.len; ++j) {
+			for (char *j = (char *)i->base; j < (char *)i->base + i->len; j += PAGESIZE) {
 				if (cur_madpool_slot_index >= PBOS_ARRAYSIZE(hn_global_mad_pool_list->descs)) {
 					void *new_poolpg_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 					if (!new_poolpg_paddr)
@@ -333,7 +321,7 @@ static void hn_mm_init_areas() {
 				}
 
 				kfxx::construct_at<hn_mad_t>(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
-				if (j != i->attribs.base) {
+				if (j != i->base) {
 					hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = &hn_global_mad_pool_list->descs[cur_madpool_slot_index - 1];
 					hn_global_mad_pool_list->descs[cur_madpool_slot_index - 1].next_free = &hn_global_mad_pool_list->descs[cur_madpool_slot_index];
 					hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
@@ -342,9 +330,7 @@ static void hn_mm_init_areas() {
 					hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
 					hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;
 				}
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].flags = MAD_P;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = j;
-				hn_global_mad_pool_list->descs[cur_madpool_slot_index].type = MAD_ALLOC_FREE;
 				++hn_global_mad_pool_list->header.used_num;
 				insert_result = i->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				kd_dbgcheck(insert_result, "Error inserting PMAD, please report this bug");
@@ -369,46 +355,46 @@ static void hn_mm_init_areas() {
 		mm_refpg((void *)i);
 	}*/
 
-	void *new_poolpg_pdpt_vaddr = nullptr,
-		 *new_poolpg_pdt_vaddr = nullptr,
-		 *new_poolpg_ptt_vaddr = nullptr;
+	void *new_poolpg_pdpt_page = nullptr,
+		 *new_poolpg_pdt_page = nullptr,
+		 *new_poolpg_ptt_page = nullptr;
 	char *direct_map_base = (char *)DIRECTPHYMEM_VBASE;
 	PMAD_FOREACH(i) {
-		if ((i->attribs.type == KN_PMEM_CRITICAL) || (direct_map_base >= (char *)DIRECTPHYMEM_VTOP)) {
+		if ((i->type == MM_PHYSICAL_MEMORY_TYPE_CRITICAL) || (direct_map_base >= (char *)DIRECTPHYMEM_VTOP)) {
 			i->direct_map_base = nullptr;
 			i->direct_map_size = 0;
 			continue;
 		}
 		uint8_t mmap_result;
 		size_t size;
-		if ((char *)DIRECTPHYMEM_VTOP - UNPGSIZE(i->attribs.len) < direct_map_base) {
+		if ((char *)DIRECTPHYMEM_VTOP - i->len < direct_map_base) {
 			size = (char *)DIRECTPHYMEM_VTOP - direct_map_base;
 		} else {
-			size = UNPGSIZE(i->attribs.len);
+			size = i->len;
 		}
 
-		char *base = (char *)UNPGADDR(i->attribs.base);
+		char *base = (char *)i->base;
 
 		for (size_t j = 0; j < size; j += PAGESIZE) {
-			if ((!new_poolpg_pdpt_vaddr) && (!(new_poolpg_pdpt_vaddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
+			if ((!new_poolpg_pdpt_page) && (!(new_poolpg_pdpt_page = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 				km_panic("Error allocating PDPT for direct physical memory mapping");
-			if ((!new_poolpg_pdt_vaddr) && (!(new_poolpg_pdt_vaddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
+			if ((!new_poolpg_pdt_page) && (!(new_poolpg_pdt_page = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 				km_panic("Error allocating PDT for direct physical memory mapping");
-			if ((!new_poolpg_ptt_vaddr) && (!(new_poolpg_ptt_vaddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
+			if ((!new_poolpg_ptt_page) && (!(new_poolpg_ptt_page = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 				km_panic("Error allocating PTT for direct physical memory mapping");
 
 			mmap_result = hn_mm_mmap_early(
 				mm_kernel_context,
 				direct_map_base + j, base + j,
 				MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE,
-				new_poolpg_pdpt_vaddr, new_poolpg_pdt_vaddr, new_poolpg_ptt_vaddr);
+				new_poolpg_pdpt_page, new_poolpg_pdt_page, new_poolpg_ptt_page);
 
 			if (mmap_result & 0b100)
-				new_poolpg_pdpt_vaddr = nullptr;
+				new_poolpg_pdpt_page = nullptr;
 			if (mmap_result & 0b010)
-				new_poolpg_pdt_vaddr = nullptr;
+				new_poolpg_pdt_page = nullptr;
 			if (mmap_result & 0b001)
-				new_poolpg_ptt_vaddr = nullptr;
+				new_poolpg_ptt_page = nullptr;
 		}
 		i->direct_map_base = direct_map_base;
 		i->direct_map_size = size;
@@ -416,12 +402,12 @@ static void hn_mm_init_areas() {
 		direct_map_base += size;
 	}
 
-	if (new_poolpg_pdpt_vaddr)
-		mm_pgfree(new_poolpg_pdpt_vaddr);
-	if (new_poolpg_pdt_vaddr)
-		mm_pgfree(new_poolpg_pdt_vaddr);
-	if (new_poolpg_ptt_vaddr)
-		mm_pgfree(new_poolpg_ptt_vaddr);
+	if (new_poolpg_pdpt_page)
+		mm_pgfree(new_poolpg_pdpt_page);
+	if (new_poolpg_pdt_page)
+		mm_pgfree(new_poolpg_pdt_page);
+	if (new_poolpg_ptt_page)
+		mm_pgfree(new_poolpg_ptt_page);
 
 	kd_printf("Initialized memory areas\n");
 }
@@ -476,8 +462,6 @@ static void hn_init_gdt() {
 /// @brief Scan and push PMADs.
 ///
 static void hn_mm_init_pmadlist() {
-	hn_pmad_list[0].attribs.type = KN_PMEM_END;
-
 	if (hn_limine_memmap_request.response->entry_count > ARCH_MMAP_MAX)
 		km_panic("Too many memory maps");
 
@@ -492,52 +476,52 @@ static void hn_mm_init_pmadlist() {
 			case LIMINE_MEMMAP_USABLE:
 			case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE:
 				if (!entry->base) {
-					pmad.attribs.base = 0;
-					pmad.attribs.len = 1;
-					pmad.attribs.type = KN_PMEM_HARDWARE;
+					pmad.base = (void *)0;
+					pmad.len = PAGESIZE;
+					pmad.type = MM_PHYSICAL_MEMORY_TYPE_HARDWARE;
 					hn_push_pmad(std::move(pmad));
 					pmad = {};
-					pmad.attribs.base = 1;
-					pmad.attribs.len = PGROUNDUP(entry->length) - 1;
-					pmad.attribs.type = KN_PMEM_AVAILABLE;
+					pmad.base = (void *)PAGESIZE;
+					pmad.len = entry->length - PAGESIZE;
+					pmad.type = MM_PHYSICAL_MEMORY_TYPE_AVAILABLE;
 					hn_push_pmad(std::move(pmad));
 				} else {
-					pmad.attribs.base = PGROUNDDOWN(entry->base);
-					pmad.attribs.len = PGROUNDUP(entry->length);
-					pmad.attribs.type = KN_PMEM_AVAILABLE;
+					pmad.base = (void *)entry->base;
+					pmad.len = entry->length;
+					pmad.type = MM_PHYSICAL_MEMORY_TYPE_AVAILABLE;
 					hn_push_pmad(std::move(pmad));
 				}
 				break;
 			case LIMINE_MEMMAP_ACPI_RECLAIMABLE:
 			case LIMINE_MEMMAP_ACPI_NVS:
-				pmad.attribs.base = PGROUNDDOWN(entry->base);
-				pmad.attribs.len = PGROUNDUP(entry->length);
-				pmad.attribs.type = KN_PMEM_ACPI;
+				pmad.base = (void *)entry->base;
+				pmad.len = entry->length;
+				pmad.type = MM_PHYSICAL_MEMORY_TYPE_ACPI;
 
 				hn_push_pmad(std::move(pmad));
 				break;
 			case LIMINE_MEMMAP_FRAMEBUFFER:
-				pmad.attribs.base = PGROUNDDOWN(entry->base);
-				pmad.attribs.len = PGROUNDUP(entry->length);
-				pmad.attribs.type = KN_PMEM_HARDWARE;
+				pmad.base = (void *)entry->base;
+				pmad.len = entry->length;
+				pmad.type = MM_PHYSICAL_MEMORY_TYPE_HARDWARE;
 				hn_push_pmad(std::move(pmad));
 				break;
 			case LIMINE_MEMMAP_EXECUTABLE_AND_MODULES:
-				pmad.attribs.base = PGROUNDDOWN(entry->base);
-				pmad.attribs.len = PGROUNDUP(entry->length);
-				pmad.attribs.type = KN_PMEM_BOOTDATA;
+				pmad.base = (void *)entry->base;
+				pmad.len = entry->length;
+				pmad.type = MM_PHYSICAL_MEMORY_TYPE_BOOTDATA;
 				hn_push_pmad(std::move(pmad));
 				break;
 			case LIMINE_MEMMAP_RESERVED:
-				pmad.attribs.base = PGROUNDDOWN(entry->base);
-				pmad.attribs.len = PGROUNDUP(entry->length);
-				pmad.attribs.type = KN_PMEM_CRITICAL;
+				pmad.base = (void *)entry->base;
+				pmad.len = entry->length;
+				pmad.type = MM_PHYSICAL_MEMORY_TYPE_CRITICAL;
 				hn_push_pmad(std::move(pmad));
 				break;
 			case LIMINE_MEMMAP_BAD_MEMORY:
-				pmad.attribs.base = PGROUNDDOWN(entry->base);
-				pmad.attribs.len = PGROUNDUP(entry->length);
-				pmad.attribs.type = KN_PMEM_BAD;
+				pmad.base = (void *)entry->base;
+				pmad.len = entry->length;
+				pmad.type = MM_PHYSICAL_MEMORY_TYPE_BAD;
 				hn_push_pmad(std::move(pmad));
 				break;
 			default:
@@ -667,7 +651,6 @@ static void hn_push_pmad(hn_pmad_t &&pmad) {
 		km_panic("Too many memory map entries");
 	hn_pmad_list[hn_pmad_number] = std::move(pmad);
 	++hn_pmad_number;
-	hn_pmad_list[hn_pmad_number].attribs.type = KN_PMEM_END;
 }
 
 PBOS_EXTERN_C_END

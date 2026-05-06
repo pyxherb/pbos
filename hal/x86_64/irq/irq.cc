@@ -8,15 +8,15 @@ PBOS_EXTERN_C_BEGIN
 
 hal_irq_context_t **irq_contexts;
 
-bool hal_is_irq_disabled() {
+bool irq_is_disabled() {
 	return !(arch_rflags() & (1 << 9));
 }
 
-void hal_disable_irq() {
+void irq_disable() {
 	arch_cli();
 }
 
-void hal_enable_irq() {
+void irq_enable() {
 	arch_sti();
 }
 

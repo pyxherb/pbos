@@ -70,7 +70,7 @@ ps_pcb_t *ps_alloc_pcb() {
 		return NULL;
 
 	kfxx::scope_guard release_proc_guard([proc]() noexcept {
-
+		ki_destroy_proc(proc);
 	});
 
 	if (!(proc->mm_context = (mm_context_t *)mm_kalloc(sizeof(mm_context_t), alignof(mm_context_t)))) {
@@ -94,6 +94,8 @@ ps_pcb_t *ps_alloc_pcb() {
 	proc->last_fd = 0;
 
 	proc->flags = PS_PROC_P;
+
+	release_proc_guard.release();
 
 	return proc;
 }

@@ -1,9 +1,9 @@
+#include <string.h>
 #include <hal/x86_64/proc.hh>
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
-#include <pbos/kn/km/exec.hh>
 #include <pbos/kfxx/uuid.hh>
-#include <string.h>
+#include <pbos/kn/km/exec.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -45,30 +45,27 @@ km_result_t km_exec(
 
 	ps_pcb_t *pcb = ps_alloc_pcb();
 	if (!pcb) {
-		result = KM_MAKEERROR(KM_RESULT_NO_MEM);
-		goto failed;
+		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	}
+
+	kfxx::scope_guard destroy_pcb_guard([pcb]() noexcept {
+		ki_destroy_proc(pcb);
+	});
 
 	for (auto it = ki_registered_binldrs.begin(); it != ki_registered_binldrs.end(); ++it) {
 		if (KM_SUCCEEDED(result = static_cast<ki_binldr_registry_t *>(it.node)->binldr.load_exec(pcb, file_fp))) {
 			io::irq_disable_lock irq_disable_lock;
 			pcb->rb_value = ki_alloc_proc_id();
 			ps_create_proc(pcb, parent);
+			destroy_pcb_guard.release();
 			return KM_RESULT_OK;
 		}
 
-		if (result != KM_RESULT_UNSUPPORTED_EXECFMT) {
-			goto failed;
-		}
+		if (result != KM_RESULT_UNSUPPORTED_EXECFMT)
+			return result;
 	}
 
 	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_EXECFMT);
-failed:
-	if (pcb) {
-		// TODO: Release PCB.
-	}
-
-	return result;
 }
 
 km_result_t km_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {

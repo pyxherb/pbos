@@ -138,20 +138,20 @@ static void hn_mm_init_areas() {
 
 			// Find proper initial pages for further initialization.
 			PMAD_FOREACH(i) {
-				if (i->attribs.type != KN_PMEM_AVAILABLE)
+				if (i->type != KN_PMEM_AVAILABLE)
 					continue;
 
-				pgaddr_t addr_cur = i->attribs.base;
+				pgaddr_t addr_cur = i->base;
 
 				if (init_madpool_paddr == NULLPG) {
-					if (addr_cur < i->attribs.base + i->attribs.len) {
+					if (addr_cur < i->base + i->len) {
 						init_madpool_paddr = addr_cur++;
 						init_madpool_pmad = i;
 					}
 				}
 
 				if (need_pgtab && (init_pgtab_paddr == NULLPG)) {
-					if (addr_cur < i->attribs.base + i->attribs.len) {
+					if (addr_cur < i->base + i->len) {
 						init_pgtab_paddr = addr_cur++;
 						init_pgtab_pmad = i;
 					}
@@ -217,11 +217,11 @@ static void hn_mm_init_areas() {
 		hn_mm_init_stage = HN_MM_INIT_STAGE_INITIAL_AREAS_INITED;
 
 		PMAD_FOREACH(i) {
-			if (i->attribs.type != KN_PMEM_AVAILABLE)
+			if (i->type != KN_PMEM_AVAILABLE)
 				continue;
 
 			hn_mad_t *prev_free_mad = nullptr;
-			for (pgaddr_t j = i->attribs.base; j < i->attribs.base + i->attribs.len; ++j) {
+			for (pgaddr_t j = i->base; j < i->base + i->len; ++j) {
 				if (j == init_madpool_paddr)
 					continue;
 				if (j == init_pgtab_paddr)
@@ -282,10 +282,10 @@ static void hn_mm_init_areas() {
 		}
 
 		PMAD_FOREACH(i) {
-			if (i->attribs.type == KN_PMEM_AVAILABLE)
+			if (i->type == KN_PMEM_AVAILABLE)
 				continue;
 
-			for (pgaddr_t j = i->attribs.base; j < i->attribs.base + i->attribs.len; ++j) {
+			for (pgaddr_t j = i->base; j < i->base + i->len; ++j) {
 				if (j == init_madpool_paddr)
 					continue;
 				if (j == init_pgtab_paddr)
@@ -317,7 +317,7 @@ static void hn_mm_init_areas() {
 					hn_global_mad_pool_list->header.prev = last_madpool;
 				}
 
-				if (j != i->attribs.base) {
+				if (j != i->base) {
 					hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = &hn_global_mad_pool_list->descs[cur_madpool_slot_index - 1];
 					hn_global_mad_pool_list->descs[cur_madpool_slot_index - 1].next_free = &hn_global_mad_pool_list->descs[cur_madpool_slot_index];
 					hn_global_mad_pool_list->descs[cur_madpool_slot_index].next_free = nullptr;

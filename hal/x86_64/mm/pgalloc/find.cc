@@ -9,36 +9,33 @@ PBOS_EXTERN_C_BEGIN
 /// @param addr Physical address to find.
 /// @return Corresponding PMAD. NULL if not found.
 ///
-hn_pmad_t *hn_pmad_get(pgaddr_t addr) {
-	for (uint8_t i = 0; i < PBOS_ARRAYSIZE(hn_pmad_list); ++i) {
-		if (hn_pmad_list[i].attribs.type == KN_PMEM_END)
-			break;
-
-		if ((addr >= hn_pmad_list[i].attribs.base) &&
-			(addr <= (hn_pmad_list[i].attribs.base + (hn_pmad_list[i].attribs.len - 1))))
-			return &(hn_pmad_list[i]);
+hn_pmad_t *hn_pmad_get(void *addr) {
+	PMAD_FOREACH(i) {
+		if ((addr >= i->base) &&
+			(addr <= ((char*)i->base + (i->len - 1))))
+			return i;
 	}
 
 	return NULL;
 }
 
-pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area) {
+void *hn_alloc_freeblk_in_area(hn_pmad_t *area) {
 	if (area->free_list)
 		return area->free_list->rb_value;
 
-	return NULLPG;
+	return nullptr;
 }
 
-pgaddr_t hn_alloc_freeblk(uint8_t type) {
+void *hn_alloc_freeblk(uint8_t type) {
 	PMAD_FOREACH(i) {
-		if (i->attribs.type != type)
+		if (i->type != type)
 			continue;
-		pgaddr_t addr = hn_alloc_freeblk_in_area(i);
-		if (ISVALIDPG(addr))
+		void *addr = hn_alloc_freeblk_in_area(i);
+		if (addr)
 			return addr;
 	}
 
-	return NULLPG;
+	return nullptr;
 }
 
 PBOS_EXTERN_C_END

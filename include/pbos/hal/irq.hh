@@ -12,8 +12,8 @@ namespace io {
 
 	public:
 		PBOS_FORCEINLINE irq_disable_lock() noexcept {
-			if (!(hal_is_irq_disabled())) {
-				hal_disable_irq();
+			if (!(irq_is_disabled())) {
+				irq_disable();
 				_int_disabled = true;
 			} else
 				_int_disabled = false;
@@ -21,7 +21,7 @@ namespace io {
 
 		PBOS_FORCEINLINE ~irq_disable_lock() {
 			if (_int_disabled)
-				hal_enable_irq();
+				irq_enable();
 		}
 	};
 }

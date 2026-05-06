@@ -1,14 +1,16 @@
 #ifndef _FREESTDC_CXX_FUNCTIONAL_
 #define _FREESTDC_CXX_FUNCTIONAL_
 
+#include <_type_traits/decay.hh>
 #include <_type_traits/enable_if.hh>
+#include <_type_traits/is_invocable.hh>
 #include <_type_traits/is_same.hh>
 #include <_type_traits/remove_cvref.hh>
-#include <_type_traits/is_invocable.hh>
-#include <_type_traits/decay.hh>
-#include "cxx_basedefs.hh"
 #include "_functional/invoke.hh"
-#include <compare>
+#include "cxx_basedefs.hh"
+#if __cplusplus >= 202002L
+	#include <compare>
+#endif
 #include "memory"
 
 namespace std {

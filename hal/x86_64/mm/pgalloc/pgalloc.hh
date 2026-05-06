@@ -20,18 +20,6 @@ PBOS_EXTERN_C_BEGIN
 #define MAD_ALLOC_USER 0x02		 // Used by users
 #define MAD_ALLOC_HARDWARE 0x03	 // Used by hardwares
 
-enum {
-	KN_PMEM_END = 0x00,	  // End of the descriptor list.
-	KN_PMEM_AVAILABLE,	  // Available for use
-	KN_PMEM_BOOTDATA,	  // Boot data
-	KN_PMEM_CRITICAL,	  // Critical area, reserved
-	KN_PMEM_HARDWARE,	  // Reserved for hardwares
-	KN_PMEM_ACPI,		  // Reserved for ACPI
-	KN_PMEM_HIBERNATION,  // Reserved for hiberination
-	KN_PMEM_PGTAB,		  // Page table
-	KN_PMEM_BAD,		  // Unavailable
-};
-
 #define MAD_P 0x01	// Present
 #define MAD_S 0x02	// Shared
 #define MAD_C 0x04	// Cached
@@ -43,13 +31,10 @@ enum {
 ///
 /// @brief Memory Allocation Descriptor (MAD), manages a single page.
 ///
-typedef struct _hn_mad_t : public kfxx::rbtree_t<pgaddr_t>::node_t {
+typedef struct _hn_mad_t : public kfxx::rbtree_t<void *>::node_t {
 	struct _hn_mad_t *next_free, *prev_free;
 
-	uint32_t ref_count;
-
-	uint8_t flags;
-	uint8_t type;
+	size_t ref_count;
 } hn_mad_t;
 
 #define ISINRANGE(min, size, n) ((((n) >= (min))) && (n < ((min) + (size))))
@@ -72,16 +57,14 @@ static_assert(sizeof(hn_madpool_t) <= PAGESIZE);
 /// @brief Physical Memory Region Descriptor
 ///
 struct hn_pmad_t {
-	struct {
-		pgaddr_t base;	// Paged base address
-		pgsize_t len;	// Length in pages
-		uint8_t type;	// Type
-	} attribs;
+	void *base;
+	size_t len;
+	uint8_t type;
 	void *direct_map_base;
 	size_t direct_map_size;
 	// MAD pages were all preallocated at initializing stage.
 	hn_mad_t *free_list = nullptr;
-	kfxx::rbtree_t<pgaddr_t> query_tree;
+	kfxx::rbtree_t<void *> query_tree;
 };
 
 extern hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1];
@@ -90,17 +73,17 @@ extern size_t hn_pmad_number;
 extern hn_madpool_t *hn_global_mad_pool_list;
 
 #define PMAD_FOREACH(i) \
-	for (hn_pmad_t *i = hn_pmad_list; i->attribs.type != KN_PMEM_END; ++i)
+	for (hn_pmad_t *i = hn_pmad_list; i - hn_pmad_list < hn_pmad_number; ++i)
 
-hn_mad_t *hn_get_mad(pgaddr_t pgaddr);
+hn_mad_t *hn_get_mad(void *pgaddr);
 
-hn_pmad_t *hn_pmad_get(pgaddr_t addr);
+hn_pmad_t *hn_pmad_get(void *addr);
 
-pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area);
-pgaddr_t hn_alloc_freeblk(uint8_t type);
+void *hn_alloc_freeblk_in_area(hn_pmad_t *area);
+void *hn_alloc_freeblk(uint8_t type);
 
-void hn_set_pgblk_used(pgaddr_t pgaddr, uint8_t type);
-void hn_set_pgblk_free(pgaddr_t addr);
+void hn_set_pgblk_used(void *addr);
+void hn_set_pgblk_free(void *addr);
 
 PBOS_EXTERN_C_END
 

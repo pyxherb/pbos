@@ -2,11 +2,10 @@
 
 FreeSTDC provides a minimal version of C++ standard library for freestanding environments.
 
-Note that container libraries are not provided.
+Note that container and atomic operation libraries are not provided.
 
 ## Special Thanks
 
-Thanks to [cppreference.com](https://cppreference.com), it provided a lot of 
-example implementations of the standard library.
+Thanks to [cppreference.com](https://cppreference.com), it provided a lot of  example implementations of the standard library.
 
-The C++ standard library part of FreeSTDC is licensed under GNU LGPL v3.0 with linking exceptions.
+The C++ standard library part of FreeSTDC is licensed under CC-BY-SA 3.0 unported (we previously put LGPL v3.0 wrongly, now we fixed it).

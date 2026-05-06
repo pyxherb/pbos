@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <cxx_basedefs.hh>
+#include "_type_traits/is_same.hh"
 
 namespace std {
 	class partial_ordering;
@@ -306,6 +307,43 @@ namespace std {
 			return strong_ordering::less;
 		return v;
 	}
+
+
+	template <unsigned int>
+	struct _common_cmpcat_base {
+		using type = void;
+	};
+	template <>
+	struct _common_cmpcat_base<0u> {
+		using type = std::strong_ordering;
+	};
+	template <>
+	struct _common_cmpcat_base<2u> {
+		using type = std::partial_ordering;
+	};
+	template <>
+	struct _common_cmpcat_base<4u> {
+		using type = std::weak_ordering;
+	};
+	template <>
+	struct _common_cmpcat_base<6u> {
+		using type = std::partial_ordering;
+	};
+
+	template <class... Ts>
+	struct common_comparison_category
+		: _common_cmpcat_base<
+			  (0u | ... |
+				  (std::is_same_v<Ts, std::strong_ordering>
+						  ? 0u
+					  : std::is_same_v<Ts, std::weak_ordering>
+						  ? 4u
+					  : std::is_same_v<Ts, std::partial_ordering>
+						  ? 2u
+						  : 1u))> {};
+
+	template<class... Ts>
+	using common_comparison_category_t = common_comparison_category<Ts...>::type;
 }
 
 #endif

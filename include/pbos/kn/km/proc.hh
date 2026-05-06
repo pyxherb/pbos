@@ -32,15 +32,14 @@ typedef struct _ps_tcb_t : public kfxx::rbtree_t<ps_thread_id_t>::node_t {
 	~_ps_tcb_t() = default;
 } ps_tcb_t;
 
-typedef struct _ps_parp_t : kfxx::rbtree_t<void *>::node_t {
-	_ps_parp_t() = default;
-	~_ps_parp_t() = default;
-} ps_parp_t;
+typedef struct _ps_par_t : kfxx::rbtree_t<void *>::node_t {
+} ps_par_t;
 
 typedef struct _ps_pcb_t : kfxx::rbtree_t<ps_proc_id_t>::node_t {
 	ps_thread_id_t last_thread_id;
 	kfxx::rbtree_t<void*> parp_list;
 	mm_context_t *mm_context;
+	kfxx::rbtree_t<void *> page_association_records;
 	kfxx::rbtree_t<ps_thread_id_t> thread_set;
 	uint8_t priority, flags;
 
@@ -70,8 +69,8 @@ void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr);
 void ki_thread_set_stack(ps_tcb_t *tcb, void *ptr, size_t size);
 void ki_thread_set_kernel_stack(ps_tcb_t *tcb, void *ptr, size_t size);
 
-void ki_proc_addparp(ps_pcb_t *pcb, void *paddr, uint8_t order);
-void ki_proc_delparp(ps_pcb_t *pcb, void *paddr, uint8_t order);
+void ki_ps_assoc_page(ps_pcb_t *pcb, void *paddr);
+void ki_ps_deassoc_page(ps_pcb_t *pcb, void *paddr);
 
 void ki_switch_to_user_process(ps_pcb_t *pcb);
 PBOS_NORETURN void ki_switch_to_user_thread(ps_tcb_t *tcb);

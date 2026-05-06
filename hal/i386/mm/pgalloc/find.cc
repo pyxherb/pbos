@@ -30,7 +30,7 @@ pgaddr_t hn_alloc_freeblk_in_area(hn_pmad_t *area) {
 
 pgaddr_t hn_alloc_freeblk(uint8_t type) {
 	PMAD_FOREACH(i) {
-		if (i->attribs.type != type)
+		if (i->type != type)
 			continue;
 		pgaddr_t addr = hn_alloc_freeblk_in_area(i);
 		if (ISVALIDPG(addr))
