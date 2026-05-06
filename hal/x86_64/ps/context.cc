@@ -72,8 +72,13 @@ PBOS_NORETURN void hn_load_kernel_context(
 	uint64_t rbx,
 	uint64_t es,
 	uint64_t ds,
+	uint64_t rax,
 
-	ki_ctxtsw_tmp_t *ctxtsw_tmp);
+	void *rip,
+	uint64_t cs,
+	uint64_t rflags,
+	uint64_t rsp,
+	uint64_t ss);
 
 kh_user_context_t *ps_alloc_context() {
 	return kfxx::alloc_and_construct<kh_user_context_t>(kfxx::kernel_allocator());
@@ -146,8 +151,12 @@ PBOS_NORETURN void ps_load_kernel_context(const kh_user_context_t *ctxt) {
 		ctxt->rbx,
 		ctxt->es,
 		ctxt->ds,
-
-		&tmp);
+		ctxt->rax,
+		ctxt->rip,
+		ctxt->cs,
+		ctxt->rflags,
+		ctxt->rsp,
+		ctxt->ss);
 }
 
 void ps_save_context(kh_user_context_t *ctxt) {

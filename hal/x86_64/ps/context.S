@@ -78,11 +78,4 @@ hn_load_kernel_context:
 
 	popq %rax
 
-	pushq 8(%rax) // RIP
-	pushq 16(%rax) // CS
-	pushq 24(%rax) // RFLAGS
-	pushq 32(%rax) // RSP
-	pushq 40(%rax) // SS
-	movq 0(%rax), %rax
-
 	iretq

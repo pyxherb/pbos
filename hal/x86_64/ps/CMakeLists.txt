@@ -1,2 +1,2 @@
-file(GLOB SRC *.h *.hh *.c *.cc *.S)
+file(GLOB SRC *.h *.hh *.c *.cc *.asm *.S)
 target_sources(pbhal PRIVATE ${SRC})

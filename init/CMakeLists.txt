@@ -1,4 +1,4 @@
-file(GLOB_RECURSE SRC *.cc *.h *.asm)
+file(GLOB_RECURSE SRC *.cc *.h *.S)
 add_executable(pbinit ${SRC})
 target_link_options(pbinit PRIVATE "-T${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/init.lds")
 

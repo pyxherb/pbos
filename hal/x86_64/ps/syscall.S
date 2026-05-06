@@ -1,35 +1,22 @@
 .global isr_syscall
 .align 4
 
-//
-// e[a-d]x: Arguments
-//
 isr_syscall:
 	pushq %rbx
-	pushq %rcx
-	pushq %rsi
-	pushq %rdi
 
-	movq %ds, %rax
-	pushq %rax
-
-	movq %es, %rax
-	pushq %rax
-
-	movq %gs, %rax
-	pushq %rax
-
-	pushq %rdi
-	pushq %rsi
-	pushq %rdx
-	pushq %rcx
+	movq %ds, %rbx
 	pushq %rbx
-	pushq %rax
 
-	movw %ss, %ax
-	movw %ax, %ds
-	movw %ax, %es
-	movw %ax, %gs
+	movq %es, %rbx
+	pushq %rbx
+
+	movq %gs, %rbx
+	pushq %rbx
+
+	movw %ss, %bx
+	movw %bx, %ds
+	movw %bx, %es
+	movw %bx, %gs
 
 	cld
 
@@ -39,23 +26,18 @@ isr_syscall:
 
 	cli
 
-	addq $24, %rsp
-
 	movq %rax, %rdx
 
-	popq %rax
-	movw %ax, %gs
+	popq %rbx
+	movw %bx, %gs
 
-	popq %rax
-	movw %ax, %es
+	popq %rbx
+	movw %bx, %es
 
-	popq %rax
-	movw %ax, %ds
+	popq %rbx
+	movw %bx, %ds
 
 	movq %rdx, %rax
 
-	popq %rdi
-	popq %rsi
-	popq %rcx
 	popq %rbx
 	iretq
