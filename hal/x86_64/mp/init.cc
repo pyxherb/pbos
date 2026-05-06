@@ -146,6 +146,16 @@ void kh_mp_alloc_platform_resources() {
 }
 
 void hn_calibrate_apic() {
+	// Relocate and remap APIC.
+	if (!(hn_lapic_vbase = (uint32_t *)mm_kvmalloc(mm_kernel_context, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
+		km_panic("Unable to allocate virtual LAPIC page");
+
+	arch_set_apic_base((void*)ARCH_DEFAULT_APIC_PBASE, ARCH_APIC_BASE_MSR_BSP | ARCH_APIC_BASE_MSR_ENABLE);
+
+	if (KM_FAILED(mm_iommap(mm_kernel_context, hn_lapic_vbase, (void*)ARCH_DEFAULT_APIC_PBASE, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_NOCACHE, 0))) {
+		km_panic("Unable to mapping LAPIC page for the main CPU");
+	}
+
 	uint8_t lapic_intvec = arch_read_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_SPURIOUS_INT_VEC) & 0xff;
 
 	arch_cli();

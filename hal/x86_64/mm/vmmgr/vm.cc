@@ -101,7 +101,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 			char *const pdpt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, 0, 0, 0));
 			bool init_pdt = false;
 
-			if (pdpt_vaddr > (void *)addr_limit)
+			if (pdpt_vaddr >= (void *)addr_limit)
 				break;
 
 			if (!(pdpt->mask & PDPTE_P)) {
@@ -137,7 +137,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 				char *const pdt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, 0, 0));
 				bool init_ptt = false;
 
-				if (pdt_vaddr > (void *)addr_limit)
+				if (pdt_vaddr >= (void *)addr_limit)
 					break;
 
 				if (!(pdt[pdx].mask & PDE_P)) {
@@ -173,7 +173,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 
 					char *const ptt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, ptx, 0));
 
-					if (ptt_vaddr > (void *)addr_limit)
+					if (ptt_vaddr >= (void *)addr_limit)
 						break;
 
 					ptt[ptx].address = PGROUNDDOWN((char *)paddr + sz_mapped);
@@ -264,7 +264,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 			++pdptx) {
 			char *const pdpt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, 0, 0, 0));
 
-			if (pdpt_vaddr > (void *)addr_limit)
+			if (pdpt_vaddr >= (void *)addr_limit)
 				break;
 
 			bool is_pdpte_allocated = false;
@@ -307,7 +307,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 				++pdx) {
 				char *const pdt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, 0, 0));
 
-				if (pdt_vaddr > (void *)addr_limit)
+				if (pdt_vaddr >= (void *)addr_limit)
 					break;
 
 				bool is_pde_allocated = false;
@@ -351,7 +351,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 					++ptx) {
 					char *const ptt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, ptx, 0));
 
-					if (ptt_vaddr > (void *)addr_limit)
+					if (ptt_vaddr >= (void *)addr_limit)
 						break;
 
 					arch_pte_t *pte = &ptt[ptx];
@@ -370,6 +370,9 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 					pte->xd = !(access & MM_PAGE_EXEC);
 
 					pi += pi_diff;
+
+					if (is_cur_pgtab)
+						arch_invlpg(ptt_vaddr);
 				}
 			}
 		}
@@ -419,7 +422,7 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 			++pdptx) {
 			char *const pdpt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, 0, 0, 0));
 
-			if (pdpt_vaddr > (void *)addr_limit)
+			if (pdpt_vaddr >= (void *)addr_limit)
 				break;
 
 			if (!(pdpt[pdptx].mask & PDPTE_P))
@@ -451,7 +454,7 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 				++pdx) {
 				char *const pdt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, 0, 0));
 
-				if (pdt_vaddr > (void *)addr_limit)
+				if (pdt_vaddr >= (void *)addr_limit)
 					break;
 
 				if (!(pdt[pdx].mask & PDE_P))
@@ -484,7 +487,7 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 					++ptx) {
 					char *const ptt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, ptx, 0));
 
-					if (ptt_vaddr > (void *)addr_limit)
+					if (ptt_vaddr >= (void *)addr_limit)
 						break;
 
 					arch_pte_t *pte = &ptt[ptx];
@@ -626,7 +629,7 @@ void *kh_vmalloc(mm_context_t *context,
 
 			char *const pdpt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, 0, 0, 0));
 
-			if (pdpt_vaddr > (void *)addr_limit)
+			if (pdpt_vaddr >= (void *)addr_limit)
 				break;
 
 			if (!(pdpt[pdptx].mask & PDPTE_P)) {
@@ -665,7 +668,7 @@ void *kh_vmalloc(mm_context_t *context,
 
 				char *const pdt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, 0, 0));
 
-				if (pdt_vaddr > (void *)addr_limit)
+				if (pdt_vaddr >= (void *)addr_limit)
 					break;
 
 				if (!(pdt[pdx].mask & PDE_P)) {
@@ -705,7 +708,7 @@ void *kh_vmalloc(mm_context_t *context,
 
 					char *const ptt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, ptx, 0));
 
-					if (ptt_vaddr > (void *)addr_limit)
+					if (ptt_vaddr >= (void *)addr_limit)
 						break;
 
 					if (!(ptt[ptx].mask & PTE_P)) {
@@ -792,7 +795,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 
 			char *const pdpt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, 0, 0, 0));
 
-			if (pdpt_vaddr > (void *)addr_limit)
+			if (pdpt_vaddr >= (void *)addr_limit)
 				break;
 
 			if (!(pdpt[pdptx].mask & PDPTE_P)) {
@@ -825,7 +828,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 
 				char *const pdt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, 0, 0));
 
-				if (pdt_vaddr > (void *)addr_limit)
+				if (pdt_vaddr >= (void *)addr_limit)
 					break;
 
 				if (!(pdt[pdx].mask & PDE_P)) {
@@ -859,7 +862,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 
 					char *const ptt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, ptx, 0));
 
-					if (ptt_vaddr > (void *)addr_limit)
+					if (ptt_vaddr >= (void *)addr_limit)
 						break;
 
 					if (!(ptt[ptx].mask & PTE_P)) {
@@ -1078,7 +1081,7 @@ alloc_succeeded:
 			++pdptx) {
 			char *const pdpt_vaddr = (char *)KVADDR(pml4x, pdptx, 0, 0, 0);
 
-			if (pdpt_vaddr > (void *)addr_limit)
+			if (pdpt_vaddr >= (void *)addr_limit)
 				break;
 
 			arch_pdpte_t *pdpte = &mm_kernel_initial_pdpt[(PML4X(pdpt_vaddr) - PML4X(KBOTTOM_VBASE)) * 512 + pdptx];
@@ -1093,7 +1096,7 @@ alloc_succeeded:
 				++pdx) {
 				char *const pdt_vaddr = (char *)KVADDR(pml4x, pdptx, pdx, 0, 0);
 
-				if (pdt_vaddr > (void *)addr_limit)
+				if (pdt_vaddr >= (void *)addr_limit)
 					break;
 
 				arch_pde_t *pde =
@@ -1112,7 +1115,7 @@ alloc_succeeded:
 					++ptx) {
 					char *const ptt_vaddr = (char *)KVADDR(pml4x, pdptx, pdx, ptx, 0);
 
-					if (ptt_vaddr > (void *)addr_limit)
+					if (ptt_vaddr >= (void *)addr_limit)
 						break;
 
 					arch_pte_t *pte =
@@ -1151,7 +1154,7 @@ void hn_tmpunmap_early(void *vaddr, size_t size) {
 			++pdptx) {
 			char *const pdpt_vaddr = (char *)KVADDR(pml4x, pdptx, 0, 0, 0);
 
-			if (pdpt_vaddr > (void *)addr_limit)
+			if (pdpt_vaddr >= (void *)addr_limit)
 				break;
 
 			arch_pdpte_t *pdpte = &mm_kernel_initial_pdpt[(PML4X(pdpt_vaddr) - PML4X(KBOTTOM_VBASE)) * 512 + pdptx];
@@ -1165,7 +1168,7 @@ void hn_tmpunmap_early(void *vaddr, size_t size) {
 				++pdx) {
 				char *const pdt_vaddr = (char *)KVADDR(pml4x, pdptx, pdx, 0, 0);
 
-				if (pdt_vaddr > (void *)addr_limit)
+				if (pdt_vaddr >= (void *)addr_limit)
 					break;
 
 				arch_pde_t *pde =
@@ -1183,7 +1186,7 @@ void hn_tmpunmap_early(void *vaddr, size_t size) {
 					++ptx) {
 					char *const ptt_vaddr = (char *)KVADDR(pml4x, pdptx, pdx, ptx, 0);
 
-					if (ptt_vaddr > (void *)addr_limit)
+					if (ptt_vaddr >= (void *)addr_limit)
 						break;
 
 					arch_pte_t *pte =

@@ -21,7 +21,7 @@ void mm_set_page_access(
 	const void *vaddr,
 	size_t size,
 	mm_pgaccess_t access) {
-	mm_set_page_access(context, vaddr, size, access);
+	kh_set_page_access(context, vaddr, size, access);
 }
 
 void *mm_vmalloc(mm_context_t *context,

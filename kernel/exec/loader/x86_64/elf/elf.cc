@@ -89,23 +89,24 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 
 		off = ph.p_offset;
 
-		mm_context_t *prev_context = mm_get_cur_context();
+		mm_context_t *cur_context = mm_get_cur_context(),
+					*target_context = ps_mm_context_of(proc);
 		{
 			void *tmp_pgvaddr;
 
-			tmp_pgvaddr = mm_kvmalloc(prev_context, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_WRITE, 0);
+			tmp_pgvaddr = mm_kvmalloc(cur_context, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_WRITE, 0);
 			if (!tmp_pgvaddr)
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
 			{
-				kfxx::scope_guard unmap_tmp_pgvaddr_guard([prev_context, tmp_pgvaddr]() noexcept {
-					mm_vmfree(prev_context, tmp_pgvaddr, PAGESIZE);
+				kfxx::scope_guard unmap_tmp_pgvaddr_guard([cur_context, tmp_pgvaddr]() noexcept {
+					mm_vmfree(cur_context, tmp_pgvaddr, PAGESIZE);
 				});
 
 				// Allocate pages for current segment.
 				for (size_t j = 0; j < ph.p_memsz; j += PAGESIZE) {
 					void *paddr;
-					if (!(paddr = mm_getmap(ps_mm_context_of(proc), vaddr + j, NULL))) {
+					if (!(paddr = mm_getmap(target_context, vaddr + j, NULL))) {
 						paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 						klog_printf("vaddr: %p, paddr: %p\n", vaddr + j, paddr);
 						if (!paddr)
@@ -121,11 +122,11 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 					if(ph.p_flags & PF_X)
 						pgaccess |= MM_PAGE_EXEC;
 
-					if (KM_FAILED(result = mm_mmap(ps_mm_context_of(proc), vaddr + j, paddr, PAGESIZE, pgaccess, 0)))
+					if (KM_FAILED(result = mm_mmap(target_context, vaddr + j, paddr, PAGESIZE, pgaccess, 0)))
 						return result;
 					if (KM_FAILED(
 							result = mm_mmap(
-								prev_context,
+								cur_context,
 								tmp_pgvaddr,
 								paddr,
 								PAGESIZE,
@@ -149,7 +150,7 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 			}
 
 			// Mark the pages as executable.
-			// mm_set_page_access(ps_mm_context_of(proc), vaddr, ph.p_memsz, MM_PAGE_MAPPED | MM_PAGE_EXEC);
+			// mm_set_page_access(target_context, vaddr, ph.p_memsz, MM_PAGE_MAPPED | MM_PAGE_EXEC);
 		}
 	}
 

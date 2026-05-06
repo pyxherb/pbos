@@ -73,9 +73,9 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 
 	kh_mm_copy_global_mappings(new_context, mm_get_cur_context());
 
-	*new_context_out = new_context;
-
 	free_new_context_guard.release();
+
+	*new_context_out = new_context;
 
 	// kn_mm_copy_global_mappings(context, mm_kernel_context);
 	return KM_RESULT_OK;

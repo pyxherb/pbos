@@ -67,7 +67,7 @@ void kh_irq_init() {
 
 	hn_set_isr(hn_isr_timer, 0x30, 0, GATE_INT386);
 
-	hn_set_isr(isr_syscall, 0xc0, 3, GATE_INT386);
+	hn_set_isr(isr_syscall, 0xc0, 3, GATE_TRAP386);
 
 	arch_lidt(hn_kidt, 512);
 
@@ -80,16 +80,6 @@ void kh_irq_init() {
 	// Check if the CPU has APIC.
 	// if (!arch_has_apic())
 		// km_panic("The kernel requires APIC support");
-
-	// Relocate and remap APIC.
-	if (!(hn_lapic_vbase = (uint32_t *)mm_kvmalloc(mm_kernel_context, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
-		km_panic("Unable to allocate virtual LAPIC page");
-
-	arch_set_apic_base(hn_lapic_pbase, ARCH_APIC_BASE_MSR_BSP | ARCH_APIC_BASE_MSR_ENABLE);
-
-	if (KM_FAILED(mm_iommap(mm_kernel_context, hn_lapic_vbase, (void*)ARCH_DEFAULT_APIC_PBASE, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_NOCACHE, 0))) {
-		km_panic("Unable to mapping LAPIC page for the main CPU");
-	}
 
 	kd_printf("Initialized IRQ\n");
 }
