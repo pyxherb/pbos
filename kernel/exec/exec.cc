@@ -7,27 +7,27 @@
 
 PBOS_EXTERN_C_BEGIN
 
-kfxx::rbtree_t<kf_uuid_t> kn_registered_binldrs;
-kfxx::rbtree_t<fs_fcb_t *> kn_registered_binprotos;
+kfxx::rbtree_t<kf_uuid_t> ki_registered_binldrs;
+kfxx::rbtree_t<fs_fcb_t *> ki_registered_binprotos;
 
 static ps_proc_id_t _last_proc_id = 0;
 
-ps_proc_id_t kn_alloc_proc_id() {
+ps_proc_id_t ki_alloc_proc_id() {
 	return _last_proc_id++;
 }
 
 km_result_t km_register_binldr(kf_uuid_t *uuid, km_binldr_t *binldr) {
-	kn_binldr_registry_t *reg = (kn_binldr_registry_t *)mm_kalloc(sizeof(kn_binldr_registry_t), alignof(kn_binldr_registry_t));
+	ki_binldr_registry_t *reg = (ki_binldr_registry_t *)mm_kalloc(sizeof(ki_binldr_registry_t), alignof(ki_binldr_registry_t));
 	if (!reg)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 
 	// Initialize the registry
-	kfxx::construct_at<kn_binldr_registry_t>(reg);
+	kfxx::construct_at<ki_binldr_registry_t>(reg);
 
 	memcpy(&reg->rb_value, &uuid, sizeof(*uuid));
 	memcpy(&reg->binldr, binldr, sizeof(km_binldr_t));
 
-	kn_registered_binldrs.insert(reg);
+	ki_registered_binldrs.insert(reg);
 
 	return KM_RESULT_OK;
 }
@@ -39,7 +39,7 @@ km_result_t km_exec(
 	ps_proc_id_t *pid_out) {
 	km_result_t result;
 
-	ps_proc_id_t new_proc_id = kn_alloc_proc_id();
+	ps_proc_id_t new_proc_id = ki_alloc_proc_id();
 	if (new_proc_id < 0)
 		return KM_MAKEERROR(KM_RESULT_NO_SLOT);
 
@@ -49,10 +49,10 @@ km_result_t km_exec(
 		goto failed;
 	}
 
-	for (auto it = kn_registered_binldrs.begin(); it != kn_registered_binldrs.end(); ++it) {
-		if (KM_SUCCEEDED(result = static_cast<kn_binldr_registry_t *>(it.node)->binldr.load_exec(pcb, file_fp))) {
+	for (auto it = ki_registered_binldrs.begin(); it != ki_registered_binldrs.end(); ++it) {
+		if (KM_SUCCEEDED(result = static_cast<ki_binldr_registry_t *>(it.node)->binldr.load_exec(pcb, file_fp))) {
 			io::irq_disable_lock irq_disable_lock;
-			pcb->rb_value = kn_alloc_proc_id();
+			pcb->rb_value = ki_alloc_proc_id();
 			ps_create_proc(pcb, parent);
 			return KM_RESULT_OK;
 		}
@@ -74,7 +74,7 @@ failed:
 km_result_t km_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
 	io::irq_disable_lock irq_disable_lock;
 
-	if (kn_registered_binprotos.find(fcb))
+	if (ki_registered_binprotos.find(fcb))
 		return KM_MAKEERROR(KM_RESULT_EXISTED);
 
 	km_binproto_t *proto = (km_binproto_t *)mm_kalloc(sizeof(km_binproto_t), alignof(km_binproto_t));
@@ -83,7 +83,7 @@ km_result_t km_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
 
 	proto->rb_value = fcb;
 
-	kn_registered_binprotos.insert(proto);
+	ki_registered_binprotos.insert(proto);
 
 	*proto_out = proto;
 
@@ -93,14 +93,14 @@ km_result_t km_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
 km_binproto_t *km_find_binproto(fs_fcb_t *fcb) {
 	io::irq_disable_lock irq_disable_lock;
 
-	return static_cast<km_binproto_t *>(kn_registered_binprotos.find(fcb));
+	return static_cast<km_binproto_t *>(ki_registered_binprotos.find(fcb));
 }
 
 void km_unregister_binproto(km_binproto_t *proto) {
 	io::irq_disable_lock irq_disable_lock;
 
 	// TODO: Check if the prototype is registered.
-	kn_registered_binprotos.remove(proto);
+	ki_registered_binprotos.remove(proto);
 }
 
 km_result_t km_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, size_t size, mm_pgaccess_t pgaccess, km_binseg_t **seg_out) {

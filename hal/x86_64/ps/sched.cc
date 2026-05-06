@@ -1,12 +1,12 @@
-#include <hal/x86_64/irq.hh>
-#include <hal/x86_64/ps/syscall.hh>
-#include <pbos/km/logger.h>
-#include <hal/x86_64/proc.hh>
 #include <arch/x86_64/apic.h>
+#include <pbos/km/logger.h>
+#include <hal/x86_64/irq.hh>
+#include <hal/x86_64/proc.hh>
+#include <hal/x86_64/ps/syscall.hh>
 
 PBOS_EXTERN_C_BEGIN
 
-PBOS_NORETURN void hn_isr_timer_impl(
+void hn_isr_timer_impl(
 	const uint64_t rdi,
 	const uint64_t rsi,
 	const uint64_t rdx,
@@ -29,7 +29,6 @@ PBOS_NORETURN void hn_isr_timer_impl(
 	const uint64_t rbp,
 
 	const uint64_t *const rsp_top) {
-	bool is_user = false;
 	ps_cpu_id_t cur_cpuid = ps_get_cur_cpuid();
 	ps_pcb_t *cur_proc = ps_get_cur_proc();
 	ps_tcb_t *cur_thread = ps_get_cur_thread();
@@ -49,7 +48,7 @@ PBOS_NORETURN void hn_isr_timer_impl(
 		cur_thread->context->rbp = rbp;
 		cur_thread->context->rip = (void *)rip;
 		cur_thread->context->rflags = rflags;
-		if (((uintptr_t)rip) < KERNEL_VBASE) {
+		if (((uintptr_t)rip) < KSPACE_VBASE) {
 			// SS (32-bits?)->ESP->EFLAGS->CS (32-bits)->EIP
 			cur_thread->context->rsp = rsp_top[3];
 			// kd_assert(cur_thread->context->esp0 == (uint32_t)((char*)cur_thread->kernel_stack + cur_thread->kernel_stack_size));
@@ -74,10 +73,10 @@ PBOS_NORETURN void hn_isr_timer_impl(
 
 	kd_assert(next_thread);
 
-	hn_tss_storage_ptr[cur_cpuid].esp0 = next_thread->context->rsp0;
+	hn_tss_storage_ptr[cur_cpuid].rsp0 = next_thread->context->rsp0;
 
 	if (next_thread->parent != cur_proc) {
-		kn_switch_to_user_process(next_thread->parent);
+		ki_switch_to_user_process(next_thread->parent);
 		ps_cur_proc_per_cpu[cur_cpuid] = next_thread->parent;
 	}
 
@@ -89,12 +88,12 @@ PBOS_NORETURN void hn_isr_timer_impl(
 
 	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
-	if (((uintptr_t)next_thread->context->rip) < KERNEL_VBASE) {
+	if (((uintptr_t)next_thread->context->rip) < KSPACE_VBASE) {
 		/*kd_printf(
 			"PID=%d, EIP=%.8x, ESP=%.8x, ESP0=%.8x U\n",
 			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);*/
 
-		kn_switch_to_user_thread(next_thread);
+		ki_switch_to_user_thread(next_thread);
 	} else {
 		// We are already in ring 0.
 		/*kd_printf(
@@ -102,7 +101,7 @@ PBOS_NORETURN void hn_isr_timer_impl(
 			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);*/
 		// asm volatile("xchg %bx, %bx");
 		// asm volatile("xchg %bx, %bx");
-		kn_switch_to_kernel_thread(next_thread);
+		ki_switch_to_kernel_thread(next_thread);
 	}
 }
 

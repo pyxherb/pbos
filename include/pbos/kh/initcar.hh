@@ -43,9 +43,9 @@ km_result_t kh_initcar_destructor();
 void kh_initcar_init();
 void kh_initcar_deinit();
 
-size_t kn_initcar_file_hasher(size_t bucket_num, const void *target, bool is_target_key);
-void kn_initcar_file_nodefree(kf_hashmap_node_t *node);
-bool kn_initcar_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs);
+size_t ki_initcar_file_hasher(size_t bucket_num, const void *target, bool is_target_key);
+void ki_initcar_file_nodefree(kf_hashmap_node_t *node);
+bool ki_initcar_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs);
 
 extern fs_filesys_t *kh_initcar_fs;
 extern fs_fnode_t *kh_initcar_dir;

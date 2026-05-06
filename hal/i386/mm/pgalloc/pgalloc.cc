@@ -8,7 +8,7 @@ hn_madpool_t *hn_global_mad_pool_list = NULL;
 
 void *mm_pgalloc(uint8_t memtype) {
 	uint8_t pmemtype;
-	if ((pmemtype = hn_to_kn_pmem_type(memtype)) == KN_PMEM_END)
+	if ((pmemtype = hn_to_ki_pmem_type(memtype)) == KN_PMEM_END)
 		return NULL;
 
 	pgaddr_t addr = hn_alloc_freeblk(pmemtype);

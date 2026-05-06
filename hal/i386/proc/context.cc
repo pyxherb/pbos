@@ -6,13 +6,13 @@
 
 PBOS_EXTERN_C_BEGIN
 
-typedef struct _kn_ctxtsw_tmp_t {
+typedef struct _ki_ctxtsw_tmp_t {
 	uint32_t eax;
 	uint32_t esp;
 	uint32_t eflags;
 	uint32_t eip;
 	uint32_t cs;
-} kn_ctxtsw_tmp_t;
+} ki_ctxtsw_tmp_t;
 
 PBOS_NORETURN void hn_load_user_context(
 	uint32_t edi,
@@ -45,7 +45,7 @@ PBOS_NORETURN void hn_load_kernel_context(
 	uint32_t gs,
 	uint32_t ds,
 
-	kn_ctxtsw_tmp_t *ctxtsw_tmp);
+	ki_ctxtsw_tmp_t *ctxtsw_tmp);
 
 PBOS_NORETURN void ps_load_user_context(const kh_user_context_t *ctxt) {
 	hn_load_user_context(
@@ -68,7 +68,7 @@ PBOS_NORETURN void ps_load_user_context(const kh_user_context_t *ctxt) {
 }
 
 PBOS_NORETURN void ps_load_kernel_context(const kh_user_context_t *ctxt) {
-	kn_ctxtsw_tmp_t tmp = {
+	ki_ctxtsw_tmp_t tmp = {
 		.eax = ctxt->eax,
 		.esp = ctxt->esp,
 		.eflags = ctxt->eflags,

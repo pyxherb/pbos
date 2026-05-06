@@ -7,7 +7,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-kfxx::rbtree_t<kf_uuid_t> kn_registered_fs;
+kfxx::rbtree_t<kf_uuid_t> ki_registered_fs;
 fs_fnode_t *fs_abs_root_dir;
 fs_filesys_t *fs_rootfs;
 
@@ -38,7 +38,7 @@ fs_filesys_t *fs_register_filesys(
 	memcpy(&fs->ops, ops, sizeof(fs_fsops_t));
 	memcpy(&fs->rb_value, uuid, sizeof(kf_uuid_t));
 
-	if (!kn_registered_fs.insert(fs))
+	if (!ki_registered_fs.insert(fs))
 		return nullptr;
 
 	release_fs_guard.release();
@@ -52,7 +52,7 @@ void fs_init() {
 	kf_uuid_t uuid;
 
 	uuid = ROOTFS_UUID;
-	if (!(fs_rootfs = fs_register_filesys("rootfs", strlen("rootfs"), &uuid, &kn_rootfs_ops)))
+	if (!(fs_rootfs = fs_register_filesys("rootfs", strlen("rootfs"), &uuid, &ki_rootfs_ops)))
 		km_panic("Error registering root file system");
 
 	kd_printf("Registered root file system\n");

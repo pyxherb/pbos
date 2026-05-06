@@ -13,7 +13,7 @@ hn_kgdt_t hn_init_kgdt;
 hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1];
 size_t hn_pmad_number = 0;
 
-const kn_paging_config_t *kn_cur_paging_config;
+const ki_paging_config_t *ki_cur_paging_config;
 
 void *mm_kernel_bottom_mapping_base_vaddr = nullptr;
 
@@ -55,7 +55,7 @@ void hn_mm_init() {
 	hn_initcar_size = initcar_file->size;
 
 	// Collect ACPI RSDP's physical address.
-	kn_acpi_rsdp_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)hn_limine_rsdp_request.response->address) - hn_limine_hhdm_request.response->offset));
+	ki_acpi_rsdp_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)hn_limine_rsdp_request.response->address) - hn_limine_hhdm_request.response->offset));
 
 	hn_mm_init_paging();
 
@@ -75,7 +75,7 @@ void hn_mm_init() {
 
 	hn_mm_init_stage = HN_MM_INIT_STAGE_AREAS_INITED;
 
-	kn_mm_init_kima();
+	ki_mm_init_kima();
 
 	kd_printf("Initialized memory manager\n");
 }
@@ -361,7 +361,7 @@ static void hn_mm_init_areas() {
 			mm_pgfree(new_poolpg_ptt_vaddr);
 
 		/*for (hn_madpool_t *j = hn_global_mad_pool_list; j; j = j->header.next) {
-			km_unwrap_result(kn_mm_insert_vpm(mm_kernel_context, j));
+			km_unwrap_result(ki_mm_insert_vpm(mm_kernel_context, j));
 		}*/
 	}
 
@@ -652,7 +652,7 @@ fill_end:
 	// Load PDT.
 	arch_lpgtab(PGROUNDDOWN(mm_kernel_initial_pml4t_paddr));
 
-	kn_cur_paging_config = &KN_PAGING_CONFIG_48BIT;
+	ki_cur_paging_config = &KN_PAGING_CONFIG_48BIT;
 
 	kd_printf("Initialized paging\n");
 }

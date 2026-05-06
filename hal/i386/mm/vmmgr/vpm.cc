@@ -13,7 +13,7 @@ static uintptr_t hn_pt_rounddowner(uintptr_t addr) {
 
 static kfxx::rbtree_t<void *> hn_kspace_vpm_query_tree[HN_VPM_LEVEL_MAX + 1];
 
-const kn_paging_config_t KN_PAGING_CONFIG_32BIT = {
+const ki_paging_config_t KN_PAGING_CONFIG_32BIT = {
 	.pgtab_level = HN_VPM_LEVEL_MAX + 1,
 
 	.addr_rounddowners = (hn_pglevel_addr_rounddowner_t[]){
@@ -23,16 +23,16 @@ const kn_paging_config_t KN_PAGING_CONFIG_32BIT = {
 	.kspace_vpm_query_tree = hn_kspace_vpm_query_tree
 };
 
-kfxx::rbtree_t<void *> *kn_mm_get_vpm_lookup_tree(mm_context_t *context, const void *addr, int level) {
+kfxx::rbtree_t<void *> *ki_mm_get_vpm_lookup_tree(mm_context_t *context, const void *addr, int level) {
 	if (!mm_probe_user_space(context, addr, 0))
 		return &context->uspace_vpm_query_tree[level];
 	if ((addr >= (void *)KALLPGTAB_VBASE) &&
 		(addr <= (void *)KALLPGTAB_VTOP))
 		return &context->uspace_vpm_query_tree[level];
-	return &kn_cur_paging_config->kspace_vpm_query_tree[level];
+	return &ki_cur_paging_config->kspace_vpm_query_tree[level];
 }
 
-kn_mm_vpm_poolpg_t **kn_mm_get_vpm_pool_list(mm_context_t *context, const void *addr, int level) {
+ki_mm_vpm_poolpg_t **ki_mm_get_vpm_pool_list(mm_context_t *context, const void *addr, int level) {
 	if (!mm_probe_user_space(context, addr, 0))
 		return &context->uspace_vpm_poolpg_list;
 	if ((addr >= (void *)KALLPGTAB_VBASE) &&

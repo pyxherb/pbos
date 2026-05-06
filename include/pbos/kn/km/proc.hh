@@ -61,21 +61,21 @@ void ps_init();
 
 PBOS_NORETURN void kh_enter_sched(ps_cpu_id_t cpuid);
 
-void kn_destroy_proc(ps_pcb_t *pcb);
-void kn_destroy_thread(ps_tcb_t *tcb);
+void ki_destroy_proc(ps_pcb_t *pcb);
+void ki_destroy_thread(ps_tcb_t *tcb);
 
-ps_proc_id_t kn_alloc_proc_id();
+ps_proc_id_t ki_alloc_proc_id();
 
 void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr);
-void kn_thread_set_stack(ps_tcb_t *tcb, void *ptr, size_t size);
-void kn_thread_set_kernel_stack(ps_tcb_t *tcb, void *ptr, size_t size);
+void ki_thread_set_stack(ps_tcb_t *tcb, void *ptr, size_t size);
+void ki_thread_set_kernel_stack(ps_tcb_t *tcb, void *ptr, size_t size);
 
-void kn_proc_addparp(ps_pcb_t *pcb, void *paddr, uint8_t order);
-void kn_proc_delparp(ps_pcb_t *pcb, void *paddr, uint8_t order);
+void ki_proc_addparp(ps_pcb_t *pcb, void *paddr, uint8_t order);
+void ki_proc_delparp(ps_pcb_t *pcb, void *paddr, uint8_t order);
 
-void kn_switch_to_user_process(ps_pcb_t *pcb);
-PBOS_NORETURN void kn_switch_to_user_thread(ps_tcb_t *tcb);
-PBOS_NORETURN void kn_switch_to_kernel_thread(ps_tcb_t *tcb);
+void ki_switch_to_user_process(ps_pcb_t *pcb);
+PBOS_NORETURN void ki_switch_to_user_thread(ps_tcb_t *tcb);
+PBOS_NORETURN void ki_switch_to_kernel_thread(ps_tcb_t *tcb);
 
 PBOS_EXTERN_C_END
 

@@ -85,7 +85,7 @@ void hn_mm_init() {
 
 	hn_mm_init_stage = HN_MM_INIT_STAGE_AREAS_INITED;
 
-	kn_mm_init_kima();
+	ki_mm_init_kima();
 
 	ps_cpu_num = 1;
 	if (!(mm_cur_contexts = (mm_context_t **)mm_kmalloc(ps_cpu_num * sizeof(mm_context_t *), alignof(mm_context_t *)))) {
@@ -238,7 +238,7 @@ static void hn_mm_init_areas() {
 						VMALLOC_NORESERVE);
 					bool new_poolpg_need_pgtab = false;
 
-					if (!kn_lookup_pgdir(mm_kernel_context, new_poolpg_vaddr, 0)) {
+					if (!ki_lookup_pgdir(mm_kernel_context, new_poolpg_vaddr, 0)) {
 						new_poolpg_need_pgtab = true;
 					}
 
@@ -278,7 +278,7 @@ static void hn_mm_init_areas() {
 		hn_map_ptt();
 
 		for (hn_madpool_t *j = hn_global_mad_pool_list; j; j = j->header.next) {
-			km_unwrap_result(kn_mm_insert_vpm(mm_kernel_context, j));
+			km_unwrap_result(ki_mm_insert_vpm(mm_kernel_context, j));
 		}
 
 		PMAD_FOREACH(i) {
@@ -303,7 +303,7 @@ static void hn_mm_init_areas() {
 					}
 
 					km_unwrap_result(hn_mm_mmap_early(mm_kernel_context, new_poolpg_vaddr, new_poolpg_paddr, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE));
-					km_unwrap_result(kn_mm_insert_vpm(mm_kernel_context, new_poolpg_vaddr));
+					km_unwrap_result(ki_mm_insert_vpm(mm_kernel_context, new_poolpg_vaddr));
 
 					memset((hn_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
 
@@ -532,7 +532,7 @@ static void hn_mm_init_paging() {
 	// Load PDT.
 	arch_lpdt(PGROUNDDOWN(KPDT_PBASE));
 
-	kn_cur_paging_config = &KN_PAGING_CONFIG_32BIT;
+	ki_cur_paging_config = &KN_PAGING_CONFIG_32BIT;
 
 	kd_printf("Initialized paging\n");
 }

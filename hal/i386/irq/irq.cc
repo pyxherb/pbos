@@ -87,7 +87,7 @@ PBOS_NORETURN void isr_timer_impl(
 	hn_tss_storage_ptr[cur_cpuid].esp0 = next_thread->context->esp0;
 
 	if (next_thread->parent != cur_proc) {
-		kn_switch_to_user_process(next_thread->parent);
+		ki_switch_to_user_process(next_thread->parent);
 		ps_cur_proc_per_cpu[cur_cpuid] = next_thread->parent;
 	}
 
@@ -104,7 +104,7 @@ PBOS_NORETURN void isr_timer_impl(
 			"PID=%d, EIP=%.8x, ESP=%.8x, ESP0=%.8x U\n",
 			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);*/
 
-		kn_switch_to_user_thread(next_thread);
+		ki_switch_to_user_thread(next_thread);
 	} else {
 		// We are already in ring 0.
 		/*kd_printf(
@@ -112,7 +112,7 @@ PBOS_NORETURN void isr_timer_impl(
 			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);*/
 		// asm volatile("xchg %bx, %bx");
 		// asm volatile("xchg %bx, %bx");
-		kn_switch_to_kernel_thread(next_thread);
+		ki_switch_to_kernel_thread(next_thread);
 	}
 }
 

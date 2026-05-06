@@ -78,7 +78,7 @@ typedef uint64_t pgsize_t;
 //
 // Paging configurations.
 //
-extern const kn_paging_config_t KN_PAGING_CONFIG_48BIT;
+extern const ki_paging_config_t KN_PAGING_CONFIG_48BIT;
 
 PBOS_EXTERN_C_END
 

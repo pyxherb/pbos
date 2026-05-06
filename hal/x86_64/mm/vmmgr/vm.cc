@@ -768,7 +768,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 			continue;
 		}
 
-		/*hn_vpm_t *vpm = kn_mm_lookup_vpm(ctxt, VADDR(i, 0, 0), PAGING_LEVEL_PGDIR);
+		/*hn_vpm_t *vpm = ki_mm_lookup_vpm(ctxt, VADDR(i, 0, 0), PAGING_LEVEL_PGDIR);
 
 		if (vpm) {
 			if (vpm->subref_count >= (PTX_MAX + 1))

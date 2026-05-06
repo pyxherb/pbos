@@ -33,7 +33,7 @@ PBOS_NORETURN void isr_vmmerr();		// 0x1d VMM Communication Exception
 PBOS_NORETURN void isr_securityerr();	// 0x1e Security Exception
 
 PBOS_NORETURN void hn_isr_timer();	 // IRQ0
-PBOS_NORETURN void hn_isr_timer_impl(
+void hn_isr_timer_impl(
 	const uint64_t rdi,
 	const uint64_t rsi,
 	const uint64_t rdx,

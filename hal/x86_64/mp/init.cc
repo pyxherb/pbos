@@ -57,9 +57,9 @@ static void hn_mask_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
 void kh_mp_init_topology() {
 	if (kh_acpi_is_available()) {
 		uint32_t lapic_num = 0, lx2apic_num = 0;
-		const size_t num_rsd = kn_acpi_rsdt_length();
+		const size_t num_rsd = ki_acpi_rsdt_length();
 		for (size_t i = 0; i < num_rsd; ++i) {
-			acpi_sdt_header_t *sdt = kn_acpi_rsdt_vaddr_at(i);
+			acpi_sdt_header_t *sdt = ki_acpi_rsdt_vaddr_at(i);
 
 			if (!memcmp(sdt->signature, "APIC", sizeof(sdt->signature))) {
 				acpi_madt_exdata_t *exdata = (acpi_madt_exdata_t *)&sdt[1];

@@ -33,7 +33,7 @@ void kh_mm_sync_global_mappings(const mm_context_t *src) {
 	}
 }
 
-km_result_t kn_mm_init_context(mm_context_t *context) {
+km_result_t ki_mm_init_context(mm_context_t *context) {
 	km_result_t result;
 
 	void *pdt_paddr = NULL,
@@ -56,17 +56,17 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 	kfxx::rbtree_t<void *> *vpm_query_tree;
 
 	if (!(vpm_query_tree = (kfxx::rbtree_t<void *> *)mm_kmalloc(
-			  sizeof(kfxx::rbtree_t<void *>) * kn_cur_paging_config->pgtab_level,
+			  sizeof(kfxx::rbtree_t<void *>) * ki_cur_paging_config->pgtab_level,
 			  alignof(kfxx::rbtree_t<void *>)))) {
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	}
 
-	for (size_t i = 0; i < kn_cur_paging_config->pgtab_level; ++i) {
+	for (size_t i = 0; i < ki_cur_paging_config->pgtab_level; ++i) {
 		kfxx::construct_at<kfxx::rbtree_t<void *>>(vpm_query_tree + i);
 	}
 
 	kfxx::scope_guard free_vpm_query_tree_guard([vpm_query_tree]() noexcept {
-		for (size_t i = 0; i < kn_cur_paging_config->pgtab_level; ++i) {
+		for (size_t i = 0; i < ki_cur_paging_config->pgtab_level; ++i) {
 			kfxx::destroy_at<kfxx::rbtree_t<void *>>(vpm_query_tree + i);
 		}
 		mm_kfree(vpm_query_tree);
@@ -115,7 +115,7 @@ km_result_t kn_mm_init_context(mm_context_t *context) {
 		}
 	}
 
-	// kn_mm_copy_global_mappings(context, mm_kernel_context);
+	// ki_mm_copy_global_mappings(context, mm_kernel_context);
 	return KM_RESULT_OK;
 }
 
@@ -127,12 +127,12 @@ void mm_free_context(mm_context_t *context) {
 	}
 
 	// Free VPD query tree and pools.
-	for (size_t i = 0; i < kn_cur_paging_config->pgtab_level; ++i) {
+	for (size_t i = 0; i < ki_cur_paging_config->pgtab_level; ++i) {
 		context->uspace_vpm_query_tree[i].clear([](kfxx::rbtree_t<void *>::node_t *node) noexcept {
-			kn_vpm_nodefree(static_cast<hn_vpm_t *>(node));
+			ki_vpm_nodefree(static_cast<hn_vpm_t *>(node));
 		});
 	}
-	for (kn_mm_vpm_poolpg_t *i = context->uspace_vpm_poolpg_list; i; i = i->header.next) {
+	for (ki_mm_vpm_poolpg_t *i = context->uspace_vpm_poolpg_list; i; i = i->header.next) {
 		void *paddr = mm_getmap(mm_kernel_context, i, NULL);
 		mm_unmmap(mm_kernel_context, i, PAGESIZE, 0);
 		mm_pgfree(paddr);
@@ -148,7 +148,7 @@ void mm_switch_context(mm_context_t *context) {
 	mm_context_t *prev_context = mm_get_cur_context();
 	mm_cur_contexts[ps_get_cur_cpuid()] = context;
 	kh_mm_copy_global_mappings(context, prev_context);
-	// kn_mm_copy_global_mappings(mm_kernel_context, prev_context);
+	// ki_mm_copy_global_mappings(mm_kernel_context, prev_context);
 	// asm volatile("xchg %bx, %bx");
 	arch_lpdt(PGROUNDDOWN(mm_getmap(prev_context, context->pdt, NULL)));
 }

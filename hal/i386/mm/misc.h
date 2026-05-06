@@ -32,7 +32,7 @@ extern hn_kgdt_t hn_kgdt;
 extern size_t hn_tss_storage_num;
 extern arch_tss_t *hn_tss_storage_ptr;
 
-uint8_t hn_to_kn_pmem_type(uint8_t memtype);
+uint8_t hn_to_ki_pmem_type(uint8_t memtype);
 
 PBOS_EXTERN_C_END
 

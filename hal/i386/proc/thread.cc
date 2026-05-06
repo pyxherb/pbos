@@ -3,7 +3,7 @@
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 
-void kn_thread_destructor(om_object_t *obj) {
+void ki_thread_destructor(om_object_t *obj) {
 	ps_tcb_t *tcb = static_cast<ps_tcb_t *>(obj);
 	hn_thread_cleanup(tcb);
 	kfxx::destroy_at<ps_tcb_t>(tcb);
@@ -71,7 +71,7 @@ void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr) {
 	tcb->context->eip = ptr;
 }
 
-void kn_thread_set_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
+void ki_thread_set_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
 	kd_assert(tcb->context);
 	const void *sp = ((char *)ptr) + size;
 	tcb->stack = ptr;
@@ -80,7 +80,7 @@ void kn_thread_set_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
 	tcb->context->ebp = (uint32_t)sp;
 }
 
-void kn_thread_set_kernel_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
+void ki_thread_set_kernel_stack(ps_tcb_t *tcb, void *ptr, size_t size) {
 	kd_assert(tcb->context);
 	const void *sp = ((char *)ptr) + size;
 	tcb->kernel_stack = ptr;
@@ -128,7 +128,7 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 		release_pages_guard.release();
 	}
 
-	kn_thread_set_stack(tcb, ptr, size);
+	ki_thread_set_stack(tcb, ptr, size);
 
 	return KM_RESULT_OK;
 }
@@ -171,7 +171,7 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 		release_pages_guard.release();
 	}
 
-	kn_thread_set_kernel_stack(tcb, ptr, size);
+	ki_thread_set_kernel_stack(tcb, ptr, size);
 
 	// stub
 	if (!ps_global_proc_set.size()) {

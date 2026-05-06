@@ -75,7 +75,7 @@ void ps_user_thread_init(ps_tcb_t *tcb);
 void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr);
 
 ps_cpu_id_t ps_get_cur_cpuid();
-void kn_set_cur_cpuid(ps_cpu_id_t cpuid);
+void ki_set_cur_cpuid(ps_cpu_id_t cpuid);
 
 ps_pcb_t *ps_get_cur_proc();
 ps_tcb_t *ps_get_cur_thread();

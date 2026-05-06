@@ -32,7 +32,7 @@ km_result_t kh_initcar_open(fs_fnode_t *file, fs_fcb_t **fcb_out) {
 	km_result_t result;
 
 	fs::fcb_ptr_t fcb;
-	KM_RETURN_IF_FAILED(kn_alloc_fcb(file, fcb.get_addr()));
+	KM_RETURN_IF_FAILED(ki_alloc_fcb(file, fcb.get_addr()));
 
 	*fcb_out = fcb.release();
 

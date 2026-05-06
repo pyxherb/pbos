@@ -13,13 +13,13 @@ PBOS_EXTERN_C_BEGIN
 
 typedef uintptr_t (*hn_pglevel_addr_rounddowner_t)(uintptr_t addr);
 
-typedef struct _kn_paging_config_t {
+typedef struct _ki_paging_config_t {
 	size_t pgtab_level;
 	hn_pglevel_addr_rounddowner_t *addr_rounddowners;
 	size_t *page_level_size;
-} kn_paging_config_t;
+} ki_paging_config_t;
 
-extern const kn_paging_config_t *kn_cur_paging_config;
+extern const ki_paging_config_t *ki_cur_paging_config;
 
 PBOS_EXTERN_C_END
 

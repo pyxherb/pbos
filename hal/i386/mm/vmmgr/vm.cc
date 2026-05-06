@@ -69,7 +69,7 @@ PBOS_NODISCARD km_result_t hn_mm_mmap_early(
 			kd_assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
 			void *target_ptr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * i;
 			// This manages 4MB size of memory.
-			void *pgdir = kn_mm_alloc_pgdir_page(context, VADDR(i, 0, 0), PAGING_LEVEL_PGDIR);
+			void *pgdir = ki_mm_alloc_pgdir_page(context, VADDR(i, 0, 0), PAGING_LEVEL_PGDIR);
 
 			if (!pgdir)
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
@@ -170,7 +170,7 @@ PBOS_NODISCARD km_result_t hn_mm_mmap_early(
 		} else {
 			if (pi) {
 				if (!(flags & MMAP_NOSETVPM)) {
-					km_result_t result = kn_mm_insert_vpm(ctxt, UNPGADDR(i));
+					km_result_t result = ki_mm_insert_vpm(ctxt, UNPGADDR(i));
 					kd_assert(KM_SUCCEEDED(result));
 				}
 			}
@@ -249,7 +249,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 		if (iteration_times) {
 			target_ptr = ((char *)KALLPGTAB_VBASE) + PAGESIZE * PDX(prev_pgtab_vaddr);
 			// This manages 4MB size of memory.
-			void *pgdir = kn_mm_alloc_pgdir_page(ctxt, (void *)prev_pgtab_vaddr, PAGING_LEVEL_PGDIR);
+			void *pgdir = ki_mm_alloc_pgdir_page(ctxt, (void *)prev_pgtab_vaddr, PAGING_LEVEL_PGDIR);
 
 			if (!pgdir)
 				return KM_MAKEERROR(KM_RESULT_NO_MEM);
@@ -324,13 +324,13 @@ void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 						}
 					}
 
-					if (kn_mm_free_vpm_unchecked(ctxt, pgtab_vaddr, PAGING_LEVEL_PGTAB)) {
+					if (ki_mm_free_vpm_unchecked(ctxt, pgtab_vaddr, PAGING_LEVEL_PGTAB)) {
 						void *pgdir_vaddr = VADDR(PDX(pgtab_vaddr), 0, 0);
 
-						if (!kn_mm_free_vpm_unchecked(ctxt, pgdir_vaddr, PAGING_LEVEL_PGDIR))
+						if (!ki_mm_free_vpm_unchecked(ctxt, pgdir_vaddr, PAGING_LEVEL_PGDIR))
 							break;
 
-						kn_mm_free_pgdir(ctxt, (void *)pgdir_vaddr, PAGING_LEVEL_PGDIR);
+						ki_mm_free_pgdir(ctxt, (void *)pgdir_vaddr, PAGING_LEVEL_PGDIR);
 
 						mm_pgfree(UNPGADDR(ctxt->pdt[PDX(pgdir_vaddr)].address));
 						ctxt->pdt[PDX(pgdir_vaddr)].mask &= ~PDE_P;
@@ -421,7 +421,7 @@ void *mm_vmalloc(mm_context_t *ctxt,
 			continue;
 		}
 
-		hn_vpm_t *vpm = kn_mm_lookup_vpm(ctxt, VADDR(i, 0, 0), PAGING_LEVEL_PGDIR);
+		hn_vpm_t *vpm = ki_mm_lookup_vpm(ctxt, VADDR(i, 0, 0), PAGING_LEVEL_PGDIR);
 
 		if (vpm) {
 			if (vpm->subref_count >= (PTX_MAX + 1))
@@ -610,7 +610,7 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 
 		{
 			hn_vpm_t *vpm;
-			if ((vpm = kn_mm_lookup_vpm(mm_get_cur_context(), UNPGADDR(pgdir[i].address), HN_VPM_LEVEL_MAX))) {
+			if ((vpm = ki_mm_lookup_vpm(mm_get_cur_context(), UNPGADDR(pgdir[i].address), HN_VPM_LEVEL_MAX))) {
 				if (vpm->map_addr) {
 					pgtab = (arch_pte_t *)vpm->map_addr;
 					goto already_mapped;
@@ -648,7 +648,7 @@ pgaddr_t hn_vpgalloc(const arch_pde_t *pgdir, pgaddr_t minaddr, pgaddr_t maxaddr
 	return NULLPG;
 }
 
-void *kn_lookup_pgdir(mm_context_t *ctxt, void *addr, int level) {
+void *ki_lookup_pgdir(mm_context_t *ctxt, void *addr, int level) {
 	switch (level) {
 		case 0: {
 			kd_assert(ctxt);
@@ -665,7 +665,7 @@ void *kn_lookup_pgdir(mm_context_t *ctxt, void *addr, int level) {
 	}
 }
 
-void *kn_mm_alloc_pgdir_page(mm_context_t *ctxt, void *ptr, int level) {
+void *ki_mm_alloc_pgdir_page(mm_context_t *ctxt, void *ptr, int level) {
 	switch (level) {
 		case PAGING_LEVEL_PGDIR: {
 			kd_assert(ctxt);
@@ -685,7 +685,7 @@ void *kn_mm_alloc_pgdir_page(mm_context_t *ctxt, void *ptr, int level) {
 	}
 }
 
-void kn_mm_free_pgdir(mm_context_t *ctxt, void *ptr, int level) {
+void ki_mm_free_pgdir(mm_context_t *ctxt, void *ptr, int level) {
 	switch (level) {
 		case PAGING_LEVEL_PGDIR: {
 			kd_assert(ctxt);

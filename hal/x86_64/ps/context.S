@@ -1,25 +1,25 @@
 .global hn_load_user_context
 
 hn_load_user_context:
-	pushq %rdx
-	pushq %rcx
+	// Eliminate extraneous return address
+	popq %rax
 
 	xorq %rdx, %rdx
 
 	// Write FS.
 	popq %rax
-	xorq $0x000000000000ffff, %rax
-	movl $0xc0000100, %ecx
+	andq $0x000000000000ffff, %rax
+	movq $0x00000000c0000100, %rcx
 	wrmsr
 
 	// Write GS.
 	popq %rax
-	xorq $0x000000000000ffff, %rax
-	movl $0xc0000101, %ecx
+	andq $0x000000000000ffff, %rax
+	movq $0x00000000c0000101, %rcx
 	wrmsr
 
-	popq %rcx
 	popq %rdx
+	popq %rcx
 
 	popq %r15
 	popq %r14
@@ -42,22 +42,25 @@ hn_load_user_context:
 .global hn_load_kernel_context
 
 hn_load_kernel_context:
-	pushq %rdx
-	pushq %rcx
+	// Eliminate extraneous return address
+	popq %rax
 
 	xorq %rdx, %rdx
 
 	// Write FS.
 	popq %rax
-	xorq $0x000000000000ffff, %rax
-	movl $0xc0000100, %ecx
+	andq $0x000000000000ffff, %rax
+	movq $0x00000000c0000100, %rcx
 	wrmsr
 
 	// Write GS.
 	popq %rax
-	xorq $0x000000000000ffff, %rax
-	movl $0xc0000101, %ecx
+	andq $0x000000000000ffff, %rax
+	movq $0x00000000c0000101, %rcx
 	wrmsr
+
+	popq %rdx
+	popq %rcx
 
 	popq %r15
 	popq %r14
@@ -75,10 +78,11 @@ hn_load_kernel_context:
 
 	popq %rax
 
-	movl 8(%rax), %esp
-	pushq 16(%rax) // EFLAGS
-	pushq 24(%rax) // CS
-	pushq 32(%rax) // EIP
-	movl 0(%rax), %eax
+	pushq 8(%rax) // RIP
+	pushq 16(%rax) // CS
+	pushq 24(%rax) // RFLAGS
+	pushq 32(%rax) // RSP
+	pushq 40(%rax) // SS
+	movq 0(%rax), %rax
 
 	iretq

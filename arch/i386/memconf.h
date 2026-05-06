@@ -18,7 +18,7 @@ PBOS_EXTERN_C_BEGIN
 #define PAGING_LEVEL_PGDIR 0
 #define PAGING_LEVEL_PGTAB 1
 
-extern const kn_paging_config_t KN_PAGING_CONFIG_32BIT;
+extern const ki_paging_config_t KN_PAGING_CONFIG_32BIT;
 
 PBOS_EXTERN_C_END
 

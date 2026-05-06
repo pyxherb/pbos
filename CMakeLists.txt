@@ -16,6 +16,10 @@ set(PBOS_ARCH "x86_64" CACHE STRING "Identifier of target architecture")
 # Setup build environments
 enable_language(ASM)
 
+if((PBOS_ARCH STREQUAL "i386") OR (PBOS_ARCH STREQUAL "x86_64"))
+    enable_language(ASM_NASM)
+endif()
+
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(CMAKE_FIND_ROOT_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(CMAKE_INCLUDE_PATH "${PROJECT_SOURCE_DIR}/cmake")

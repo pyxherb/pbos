@@ -42,7 +42,7 @@ ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd) {
 	return static_cast<ps_ufcb_t *>(pcb->ufcb_set.find(fd));
 }
 
-void kn_proc_destructor(om_object_t *obj) {
+void ki_proc_destructor(om_object_t *obj) {
 	ps_pcb_t *pcb = static_cast<ps_pcb_t *>(obj);
 	hn_proc_cleanup(pcb);
 	kfxx::destroy_at<ps_pcb_t>(pcb);
@@ -72,7 +72,7 @@ ps_pcb_t *ps_alloc_pcb() {
 		return NULL;
 	}
 
-	if (KM_FAILED(kn_mm_init_context(proc->mm_context))) {
+	if (KM_FAILED(ki_mm_init_context(proc->mm_context))) {
 		mm_kfree(proc->mm_context);
 		mm_kfree(proc);
 		return NULL;
@@ -123,15 +123,15 @@ void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
 	proc->thread_set.insert(thread);
 }
 
-void kn_switch_to_user_process(ps_pcb_t *pcb) {
+void ki_switch_to_user_process(ps_pcb_t *pcb) {
 	mm_switch_context(pcb->mm_context);
 }
 
-void kn_switch_to_user_thread(ps_tcb_t *tcb) {
+void ki_switch_to_user_thread(ps_tcb_t *tcb) {
 	ps_load_user_context(tcb->context);
 }
 
-void kn_switch_to_kernel_thread(ps_tcb_t *tcb) {
+void ki_switch_to_kernel_thread(ps_tcb_t *tcb) {
 	ps_load_kernel_context(tcb->context);
 }
 
@@ -139,7 +139,7 @@ ps_cpu_id_t ps_get_cur_cpuid() {
 	return arch_storefs();
 }
 
-void kn_set_cur_cpuid(ps_cpu_id_t cpuid) {
+void ki_set_cur_cpuid(ps_cpu_id_t cpuid) {
 	arch_loadfs(cpuid);
 }
 

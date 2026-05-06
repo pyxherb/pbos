@@ -6,18 +6,18 @@
 
 PBOS_EXTERN_C_BEGIN
 
-size_t kn_initcar_file_hasher(size_t bucket_num, const void *target, bool is_target_key) {
+size_t ki_initcar_file_hasher(size_t bucket_num, const void *target, bool is_target_key) {
 	initcar_dir_entry_t *entry = PBOS_CONTAINER_OF(initcar_dir_entry_t, node_header, target);
 	fs_fnode_t *file = entry->file;
 	return kf_hash_djb(entry->name, entry->name_len) % bucket_num;
 }
 
-void kn_initcar_file_nodefree(kf_hashmap_node_t *node) {
+void ki_initcar_file_nodefree(kf_hashmap_node_t *node) {
 	initcar_dir_entry_t *entry = PBOS_CONTAINER_OF(initcar_dir_entry_t, node_header, node);
 	om_decref(entry->file);
 }
 
-bool kn_initcar_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs) {
+bool ki_initcar_file_nodecmp(const kf_hashmap_node_t *lhs, const kf_hashmap_node_t *rhs) {
 	initcar_dir_entry_t *_lhs = PBOS_CONTAINER_OF(initcar_dir_entry_t, node_header, lhs),
 						*_rhs = PBOS_CONTAINER_OF(initcar_dir_entry_t, node_header, rhs);
 

@@ -46,7 +46,7 @@ bool mm_probe_user_space(mm_context_t *mm_context, const void *ptr, size_t size)
 	return false;
 }
 
-uint8_t hn_to_kn_pmem_type(uint8_t memtype) {
+uint8_t hn_to_ki_pmem_type(uint8_t memtype) {
 	switch (memtype) {
 		case MM_PHYSICAL_MEMORY_TYPE_AVAILABLE:
 			return KN_PMEM_AVAILABLE;

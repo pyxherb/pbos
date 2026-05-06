@@ -8,15 +8,15 @@
 #include <pbos/kfxx/scope_guard.hh>
 #include <elf.h>
 
-km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp);
-km_result_t kn_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp);
+km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp);
+km_result_t ki_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp);
 
-km_binldr_t kn_binldr_elf = {
-	.load_exec = kn_elf_load_exec,
-	.load_mod = kn_elf_load_mod
+km_binldr_t ki_binldr_elf = {
+	.load_exec = ki_elf_load_exec,
+	.load_mod = ki_elf_load_mod
 };
 
-km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
+km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	km_result_t result;
 	size_t off = 0, bytes_read;
 
@@ -163,4 +163,4 @@ km_result_t kn_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	return KM_RESULT_OK;
 }
 
-km_result_t kn_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp) {}
+km_result_t ki_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp) {}

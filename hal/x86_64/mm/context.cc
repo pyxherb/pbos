@@ -77,7 +77,7 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 
 	*new_context_out = new_context;
 
-	// kn_mm_copy_global_mappings(context, mm_kernel_context);
+	// ki_mm_copy_global_mappings(context, mm_kernel_context);
 	return KM_RESULT_OK;
 }
 
@@ -95,7 +95,7 @@ void mm_switch_context(mm_context_t *context) {
 	mm_context_t *prev_context = mm_get_cur_context();
 	mm_cur_contexts[ps_get_cur_cpuid()] = context;
 	kh_mm_copy_global_mappings(context, prev_context);
-	// kn_mm_copy_global_mappings(mm_kernel_context, prev_context);
+	// ki_mm_copy_global_mappings(mm_kernel_context, prev_context);
 	// asm volatile("xchg %bx, %bx");
 	arch_lpgtab(PGROUNDDOWN(mm_getmap(prev_context, context->pml4t, NULL)));
 }

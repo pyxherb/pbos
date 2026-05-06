@@ -128,13 +128,13 @@ void initcar_init() {
 	if (((p_cur - (const char *)initcar_ptr) + size) > initcar_size) \
 		km_panic("Prematured end of file\n");
 
-	if (KM_FAILED(result = kn_alloc_fnode(initcar_fs, "initcar", sizeof("initcar") - 1, FS_FILETYPE_DIR, sizeof(initcar_dir_file_t) - sizeof(fs_fnode_t), &initcar_dir)))
+	if (KM_FAILED(result = ki_alloc_fnode(initcar_fs, "initcar", sizeof("initcar") - 1, FS_FILETYPE_DIR, sizeof(initcar_dir_file_t) - sizeof(fs_fnode_t), &initcar_dir)))
 		km_panic("Error creating initcar directory, error code = %.0x", result);
 	kf_hashmap_init(
 		&((initcar_dir_file_t *)initcar_dir)->children,
-		kn_initcar_file_hasher,
-		kn_initcar_file_nodefree,
-		kn_initcar_file_nodecmp,
+		ki_initcar_file_hasher,
+		ki_initcar_file_nodefree,
+		ki_initcar_file_nodecmp,
 		NULL);
 
 	{
@@ -158,7 +158,7 @@ void initcar_init() {
 
 		fs_fnode_t *file;
 		size_t filename_len = strlen(fe->filename);
-		if (KM_FAILED(kn_alloc_fnode(
+		if (KM_FAILED(ki_alloc_fnode(
 				initcar_fs,
 				fe->filename, filename_len,
 				FS_FILETYPE_FILE,

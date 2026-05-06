@@ -9,10 +9,10 @@
 
 PBOS_EXTERN_C_BEGIN
 
-class kn_fs_filename_allocator_t : public kfxx::allocator_t {
+class ki_fs_filename_allocator_t : public kfxx::allocator_t {
 public:
-	PBOS_API kn_fs_filename_allocator_t();
-	PBOS_API virtual ~kn_fs_filename_allocator_t();
+	PBOS_API ki_fs_filename_allocator_t();
+	PBOS_API virtual ~ki_fs_filename_allocator_t();
 
 	PBOS_API virtual size_t inc_ref() noexcept override;
 	PBOS_API virtual size_t dec_ref() noexcept override;
@@ -25,10 +25,10 @@ public:
 	PBOS_API virtual void *type_identity() const noexcept override;
 };
 
-class kn_fs_fnode_allocator_t : public kfxx::allocator_t {
+class ki_fs_fnode_allocator_t : public kfxx::allocator_t {
 public:
-	PBOS_API kn_fs_fnode_allocator_t();
-	PBOS_API virtual ~kn_fs_fnode_allocator_t();
+	PBOS_API ki_fs_fnode_allocator_t();
+	PBOS_API virtual ~ki_fs_fnode_allocator_t();
 
 	PBOS_API virtual size_t inc_ref() noexcept override;
 	PBOS_API virtual size_t dec_ref() noexcept override;
@@ -41,10 +41,10 @@ public:
 	PBOS_API virtual void *type_identity() const noexcept override;
 };
 
-class kn_fs_fcb_allocator_t : public kfxx::allocator_t {
+class ki_fs_fcb_allocator_t : public kfxx::allocator_t {
 public:
-	PBOS_API kn_fs_fcb_allocator_t();
-	PBOS_API virtual ~kn_fs_fcb_allocator_t();
+	PBOS_API ki_fs_fcb_allocator_t();
+	PBOS_API virtual ~ki_fs_fcb_allocator_t();
 
 	PBOS_API virtual size_t inc_ref() noexcept override;
 	PBOS_API virtual size_t dec_ref() noexcept override;
@@ -57,8 +57,8 @@ public:
 	PBOS_API virtual void *type_identity() const noexcept override;
 };
 
-extern kn_fs_filename_allocator_t kn_fs_filename_allocator;
-extern kn_fs_fnode_allocator_t kn_fs_fnode_allocator;
+extern ki_fs_filename_allocator_t ki_fs_filename_allocator;
+extern ki_fs_fnode_allocator_t ki_fs_fnode_allocator;
 
 typedef struct _fs_fcb_t : public kfxx::rbtree_t<fs_fhandle_t>::node_t {
 	size_t ref_num = 0;
@@ -94,13 +94,13 @@ typedef struct _fs_dir_t : public fs_fnode_t {
 	_fs_dir_t(kfxx::allocator_t *allocator);
 } fs_dir_t;
 
-PBOS_NODISCARD km_result_t kn_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t **fcb_out);
+PBOS_NODISCARD km_result_t ki_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t **fcb_out);
 
-void kn_destroy_fnode(fs_fnode_t *fnode);
-void kn_destroy_fcb(fs_fcb_t *fcb);
+void ki_destroy_fnode(fs_fnode_t *fnode);
+void ki_destroy_fcb(fs_fcb_t *fcb);
 
-void kn_do_unname_fnode(fs_fnode_t *file);
-PBOS_NODISCARD km_result_t kn_do_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len);
+void ki_do_unname_fnode(fs_fnode_t *file);
+PBOS_NODISCARD km_result_t ki_do_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len);
 
 PBOS_EXTERN_C_END
 
