@@ -83,6 +83,7 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 
 void mm_free_context(mm_context_t *context) {
 	// TODO: Free associated pages.
+	mm_unmmap(context, 0, KSPACE_VBASE, 0);
 	auto pml4t = mm_getmap(mm_get_cur_context(), context->pml4t, nullptr);
 	kd_assert(pml4t);
 	mm_pgfree(pml4t);
