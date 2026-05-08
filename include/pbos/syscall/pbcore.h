@@ -1,23 +1,13 @@
-#ifndef _PBOS_PBCORE_SYSCALL_H_
-#define _PBOS_PBCORE_SYSCALL_H_
+#ifndef _PBOS_PBCORE_SYSCALL_PBCORE_H_
+#define _PBOS_PBCORE_SYSCALL_PBCORE_H_
 
 #include <pbos/km/result.h>
 #include <pbos/km/proc.h>
+#include <pbos/generated/syscall/pbcore.h>
 
 PBOS_EXTERN_C_BEGIN
 
-typedef enum _pbcore_sysent_id {
-	SYSENT_PBCORE_EXIT = 0,
-	SYSENT_PBCORE_OPEN,
-	SYSENT_PBCORE_CLOSE,
-	SYSENT_PBCORE_READ,
-	SYSENT_PBCORE_WRITE,
-	SYSENT_PBCORE_EXEC_CHILD,
-	SYSENT_PBCORE_IOCTL,
-	SYSENT_PBCORE_FORK,
-} pbcore_sysent_id;
-
-void sysent_exit(int exitcode);
+km_result_t sysent_exit(int exitcode);
 km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint32_t mode, ps_ufd_t *ufd_out);
 km_result_t sysent_close(ps_ufd_t ufd, uint32_t flags);
 km_result_t sysent_read(ps_ufd_t ufd, void *buf, uint32_t size);

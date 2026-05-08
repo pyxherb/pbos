@@ -1,6 +1,10 @@
 {
 	"api_set_name": "pbcore",
 	"impl_prefix": "sysent",
+	"type_aliases": {
+		"ps_ufd_t": "i32",
+		"ps_proc_id_t": "u32"
+	},
 	"entries": {
 		"0": {
 			"name": "exit",
@@ -12,18 +16,18 @@
 		"1": {
 			"name": "open",
 			"params": [
-				"ptr",
+				"*char",
 				"usize",
 				"u32",
 				"u32",
-				"ptr"
+				"*ps_ufd_t"
 			],
 			"return": "result"
 		},
 		"2": {
 			"name": "close",
 			"params": [
-				"i32",
+				"ps_ufd_t",
 				"u32"
 			],
 			"return": "result"
@@ -31,8 +35,8 @@
 		"3": {
 			"name": "read",
 			"params": [
-				"i32",
-				"ptr",
+				"ps_ufd_t",
+				"*void",
 				"u32"
 			],
 			"return": "result"
@@ -40,8 +44,8 @@
 		"4": {
 			"name": "write",
 			"params": [
-				"i32",
-				"const_ptr",
+				"ps_ufd_t",
+				"*void",
 				"u32"
 			],
 			"return": "result"
@@ -49,11 +53,11 @@
 		"5": {
 			"name": "exec_child",
 			"params": [
-				"i32",
-				"i32",
-				"const_ptr",
+				"ps_ufd_t",
+				"ps_ufd_t",
+				"&char",
 				"usize",
-				"ptr"
+				"*ps_proc_id_t"
 			],
 			"return": "result"
 		},

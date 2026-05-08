@@ -11,7 +11,9 @@ add_custom_command(
         ${SCTGEN_EXECUTABLE}
         -o "${PROJECT_SOURCE_DIR}/hal/${PBOS_ARCH}/generated/"
         -h "${PROJECT_SOURCE_DIR}/include/pbos/generated/syscall/"
-        -I "pbos/generated/syscall/"
+        -i "pbos/syscall/"
+        -I "pbos/syscall/_pbcore_pre.h"
+        --name hn_pbcore_dispatcher
         -a "${PROJECT_SOURCE_DIR}/hal/${PBOS_ARCH}/arch.json"
         -t "${CMAKE_CURRENT_SOURCE_DIR}/pbcore.json"
     VERBATIM

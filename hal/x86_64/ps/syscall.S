@@ -22,7 +22,7 @@ isr_syscall:
 
 	sti
 
-	call hn_syscall_handler
+	call hn_pbcore_dispatcher
 
 	cli
 
