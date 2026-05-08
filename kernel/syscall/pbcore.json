@@ -4,62 +4,62 @@
 	"entries": {
 		"0": {
 			"name": "exit",
-			"args": [
-				"int32"
+			"params": [
+				"i32"
 			],
 			"return": "void"
 		},
 		"1": {
 			"name": "open",
-			"args": [
+			"params": [
 				"ptr",
-				"size",
-				"uint32",
-				"uint32",
+				"usize",
+				"u32",
+				"u32",
 				"ptr"
 			],
 			"return": "result"
 		},
 		"2": {
 			"name": "close",
-			"args": [
-				"int",
-				"uint32"
+			"params": [
+				"i32",
+				"u32"
 			],
 			"return": "result"
 		},
 		"3": {
 			"name": "read",
-			"args": [
-				"int",
+			"params": [
+				"i32",
 				"ptr",
-				"uint32"
+				"u32"
 			],
 			"return": "result"
 		},
 		"4": {
 			"name": "write",
-			"args": [
-				"int",
+			"params": [
+				"i32",
 				"const_ptr",
-				"uint32"
+				"u32"
 			],
 			"return": "result"
 		},
 		"5": {
 			"name": "exec_child",
-			"args": [
-				"int",
-				"int",
+			"params": [
+				"i32",
+				"i32",
 				"const_ptr",
-				"size",
+				"usize",
 				"ptr"
 			],
 			"return": "result"
 		},
 		"6": {
 			"name": "fork",
-			"args": [],
+			"params": [],
 			"return": "result"
 		}
 	}

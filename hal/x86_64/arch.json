@@ -29,7 +29,8 @@
 		},
 		{
 			"reg_name": "rax",
-			"type": "u64"
+			"type": "u64",
+			"entry_id": true
 		},
 		{
 			"reg_name": "rbx",
