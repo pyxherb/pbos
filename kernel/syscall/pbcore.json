@@ -1,5 +1,5 @@
 {
-	"apiset_name": "pbcore",
+	"api_set_name": "pbcore",
 	"impl_prefix": "sysent",
 	"entries": {
 		"0": {
