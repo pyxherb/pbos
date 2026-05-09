@@ -1,6 +1,6 @@
 #include <pbos/hal/irq.hh>
 #include "../mm.hh"
-#include <pbos/km/proc.h>
+#include <pbos/ps/proc.h>
 
 PBOS_EXTERN_C_BEGIN
 

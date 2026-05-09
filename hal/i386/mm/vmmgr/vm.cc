@@ -1,6 +1,6 @@
 #include "vm.h"
 #include <hal/i386/logger.h>
-#include <pbos/km/proc.h>
+#include <pbos/ps/proc.h>
 #include <hal/i386/mm.hh>
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>

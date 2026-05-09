@@ -1,6 +1,6 @@
 #include "vm.hh"
 #include <pbos/km/logger.h>
-#include <pbos/km/proc.h>
+#include <pbos/ps/proc.h>
 #include <string.h>
 #include <hal/x86_64/mm.hh>
 #include <pbos/hal/irq.hh>

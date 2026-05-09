@@ -152,7 +152,7 @@ void kh_initcar_init() {
 			km_panic("Error allocating memory for INITCAR file: %s", fe->filename);
 		keeper->ptr = p_cur;
 		keeper->sz_total = fe->size;
-		hn_initcar_file_set.insert(keeper);
+		hn_initcar_file_set.insert_unwrap(keeper);
 
 		kd_printf("initcar: Mounting file: %s\n", fe->filename);
 		if (KM_FAILED(result = fs_link_subnode(kh_initcar_dir, file)))

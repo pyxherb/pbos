@@ -27,7 +27,7 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(void *ptr) {
 		desc->rb_value = ptr;
 		desc->ref_count = 0;
 
-		kima_vpgdesc_query_tree.insert(desc);
+		kima_vpgdesc_query_tree.insert_unwrap(desc);
 
 		return desc;
 	}
@@ -50,17 +50,14 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(void *ptr) {
 	pg->slots[0].rb_value = ptr;
 	pg->slots[0].ref_count = 0;
 
-	bool result;
-	result = kima_vpgdesc_query_tree.insert(&pg->slots[0]);
-	kd_assert(result);
+	kima_vpgdesc_query_tree.insert_unwrap(&pg->slots[0]);
 
 	for (size_t i = 1; i < PBOS_ARRAYSIZE(pg->slots); ++i) {
 		kfxx::construct_at<kima_vpgdesc_t>(&pg->slots[i]);
 
 		pg->slots[i].rb_value = &pg->slots[i];
 
-		result = kima_vpgdesc_free_tree.insert(&pg->slots[i]);
-		kd_assert(result);
+		kima_vpgdesc_free_tree.insert_unwrap(&pg->slots[i]);
 	}
 	return &pg->slots[0];
 }

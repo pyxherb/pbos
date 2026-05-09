@@ -1,11 +1,13 @@
-#include <pbos/syscall/pbcore.h>
+#include <pbos/exec/exec.h>
 #include <pbos/fs/file.h>
-#include <pbos/km/exec.h>
+#include <pbos/ps/proc.h>
+#include <pbos/syscall/pbcore.h>
 #include "pbos/hal/irq.hh"
 
 PBOS_EXTERN_C_BEGIN
 
 km_result_t sysent_exit(int exitcode) {
+	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
 km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint32_t mode, ps_ufd_t *ufd_out) {
@@ -26,7 +28,8 @@ km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint3
 
 	fs_fcb_t *fcb;
 	{
-		if (KM_FAILED(result = fs_open(pcb->cur_dir, path, path_len, &fcb))) {
+		size_t len_cwd;
+		if (KM_FAILED(result = fs_open(ps_get_cwd(pcb), path, path_len, &fcb))) {
 			return result;
 		};
 	}
@@ -83,7 +86,11 @@ km_result_t sysent_exec_child(
 	if (!ufcb)
 		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
 
-	return km_exec(pcb->rb_value, 0, ufcb->kernel_fcb, proc_id_out);
+	return km_exec(ps_pid_of(pcb), 0, ps_kfcb_of_ufcb(ufcb), proc_id_out);
+}
+
+km_result_t sysent_fork() {
+	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
 PBOS_EXTERN_C_END

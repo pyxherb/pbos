@@ -19,10 +19,6 @@ typedef struct _fs_filesys_t : public kfxx::rbtree_t<kf_uuid_t>::node_t {
 	~_fs_filesys_t();
 } fs_filesys_t;
 
-typedef struct _fs_context_t {
-	fs_fnode_t *root_dir, *cur_dir;
-} fs_context_t;
-
 extern fs_fnode_t *fs_abs_root_dir;
 
 /// @brief Initialize the file system facilities.

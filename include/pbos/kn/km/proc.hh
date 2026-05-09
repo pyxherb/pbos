@@ -1,9 +1,12 @@
 #ifndef _PBOS_KN_KM_PROC_HH_
 #define _PBOS_KN_KM_PROC_HH_
 
-#include <pbos/km/proc.h>
-#include <pbos/kfxx/rbtree.hh>
+#include <pbos/ps/proc.h>
+#include <pbos/ps/sched.h>
 #include <pbos/se/user.h>
+#include <pbos/kfxx/rbtree.hh>
+#include <pbos/kfxx/allocator.hh>
+#include <pbos/fs/file.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -37,13 +40,13 @@ typedef struct _ps_par_t : kfxx::rbtree_t<void *>::node_t {
 
 typedef struct _ps_pcb_t : kfxx::rbtree_t<ps_proc_id_t>::node_t {
 	ps_thread_id_t last_thread_id;
-	kfxx::rbtree_t<void*> parp_list;
+	kfxx::rbtree_t<void *> parp_list;
 	mm_context_t *mm_context;
 	kfxx::rbtree_t<void *> page_association_records;
 	kfxx::rbtree_t<ps_thread_id_t> thread_set;
 	uint8_t priority, flags;
 
-	fs_fnode_t *cur_dir;
+	fs::fnode_ptr_t cur_dir;
 
 	kfxx::rbtree_t<ps_ufd_t> ufcb_set;
 	ps_ufd_t last_fd;

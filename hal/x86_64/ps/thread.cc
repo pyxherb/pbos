@@ -60,7 +60,7 @@ ps_thread_id_t ps_create_thread(
 		return -1;
 	}
 
-	pcb->thread_set.insert(t);
+	pcb->thread_set.insert_unwrap(t);
 }
 
 void ps_user_thread_init(ps_tcb_t *tcb) {

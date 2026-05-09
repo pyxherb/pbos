@@ -3,7 +3,7 @@
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/kfxx/uuid.hh>
-#include <pbos/kn/km/exec.hh>
+#include <pbos/kn/exec/exec.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -80,7 +80,7 @@ km_result_t km_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
 
 	proto->rb_value = fcb;
 
-	ki_registered_binprotos.insert(proto);
+	ki_registered_binprotos.insert_unwrap(proto);
 
 	*proto_out = proto;
 

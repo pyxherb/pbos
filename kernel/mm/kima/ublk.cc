@@ -27,7 +27,7 @@ kima_ublk_t *kima_alloc_ublk(void *ptr, size_t size) {
 		desc->rb_value = ptr;
 		desc->size = size;
 
-		kima_ublk_query_tree.insert(desc);
+		kima_ublk_query_tree.insert_unwrap(desc);
 
 		return desc;
 	}
@@ -51,17 +51,14 @@ kima_ublk_t *kima_alloc_ublk(void *ptr, size_t size) {
 	pg->slots[0].rb_value = ptr;
 	pg->slots[0].size = size;
 
-	bool result;
-	result = kima_ublk_query_tree.insert(&pg->slots[0]);
-	kd_assert(result);
+	kima_ublk_query_tree.insert_unwrap(&pg->slots[0]);
 
 	for (size_t i = 1; i < PBOS_ARRAYSIZE(pg->slots); ++i) {
 		kfxx::construct_at<kima_ublk_t>(&pg->slots[i]);
 
 		pg->slots[i].rb_value = &pg->slots[i];
 
-		result = kima_ublk_free_tree.insert(&pg->slots[i]);
-		kd_assert(result);
+		kima_ublk_free_tree.insert_unwrap(&pg->slots[i]);
 	}
 	return &pg->slots[0];
 }

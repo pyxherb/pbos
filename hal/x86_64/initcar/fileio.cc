@@ -72,7 +72,7 @@ km_result_t kh_initcar_size(fs_fcb_t *fcb, size_t *size_out) {
 
 	if (auto node = hn_initcar_file_set.find(file.get()); node) {
 		hn_initcar_file_keeper_t *exdata = static_cast<hn_initcar_file_keeper_t *>(node);
-		*size_out - exdata->sz_total;
+		*size_out = exdata->sz_total;
 	} else
 		km_panic("Invalid INITCAR FCB");
 

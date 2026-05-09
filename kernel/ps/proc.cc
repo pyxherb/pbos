@@ -1,3 +1,4 @@
+#include <string.h>
 #include <pbos/kn/km/proc.hh>
 
 PBOS_EXTERN_C_BEGIN
@@ -48,6 +49,18 @@ ps_tcb_t *ps_proc_thread_set_begin(ps_pcb_t *pcb) {
 
 ps_tcb_t *ps_proc_thread_set_next(ps_pcb_t *pcb, ps_tcb_t *cur) {
 	return static_cast<ps_tcb_t *>(pcb->thread_set.get_next(cur, nullptr));
+}
+
+fs_fnode_t *ps_get_cwd(ps_pcb_t *pcb) {
+	return pcb->cur_dir.get();
+}
+
+void ps_set_cwd(ps_pcb_t *pcb, fs_fnode_t *cwd_node) {
+	pcb->cur_dir = cwd_node;
+}
+
+void ps_unset_cwd(ps_pcb_t *pcb) {
+	pcb->cur_dir.reset();
 }
 
 PBOS_EXTERN_C_END

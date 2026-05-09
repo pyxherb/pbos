@@ -189,7 +189,7 @@ void fs_unname_fnode(fs_fnode_t *file) {
 }
 
 PBOS_NODISCARD km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len) {
-	if(file->parent)
+	if (file->parent)
 		km_panic("Only detached file node can be renamed");
 
 	return ki_do_rename_fnode(file, name, name_len);
@@ -302,20 +302,22 @@ km_result_t fs_unmount_file(fs_fnode_t *file) {
 }
 
 PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
-	if(parent->file_type != FS_FILETYPE_DIR)
+	if (parent->file_type != FS_FILETYPE_DIR)
 		return KM_RESULT_UNSUPPORTED_OPERATION;
-	fs_dir_t *p = (fs_dir_t*)parent;
+	fs_dir_t *p = (fs_dir_t *)parent;
 
-	if(p->subnodes.contains(kfxx::string_view(file->filename, file->filename_len)))
+	if (p->subnodes.contains(kfxx::string_view(file->filename, file->filename_len)))
 		return KM_RESULT_EXISTED;
 
-	if(!p->subnodes.insert(kfxx::string_view(file->filename, file->filename_len), +file))
+	if (!p->subnodes.insert(kfxx::string_view(file->filename, file->filename_len), +file))
 		return KM_RESULT_NO_MEM;
 
 	return KM_RESULT_OK;
 }
 
 km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_len, fs_fnode_t **file_out) {
+	if (!file)
+		return KM_RESULT_NOT_FOUND;
 	switch (file->file_type) {
 		case FS_FILETYPE_DIR: {
 			fs_dir_t *f = static_cast<fs_dir_t *>(file);
@@ -338,7 +340,7 @@ km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_
 }
 
 km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out) {
-	fs::fnode_ptr_t file = cur_dir ? fs_abs_root_dir : cur_dir;
+	fs::fnode_ptr_t file = cur_dir;
 	km_result_t result;
 
 	const char *i = path, *last_divider = path;
@@ -353,8 +355,12 @@ km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_l
 					if (last_divider == path) {
 						new_file = fs_abs_root_dir;
 					}
-				} else if (KM_FAILED(result = fs_child_of(file.get(), last_divider, filename_len, new_file.get_addr())))
-					return result;
+				} else {
+					if (!file)
+						return KM_RESULT_NOT_FOUND;
+					if (KM_FAILED(result = fs_child_of(file.get(), last_divider, filename_len, new_file.get_addr())))
+						return result;
+				}
 
 				last_divider = i + 1;
 				file = new_file;
@@ -370,6 +376,8 @@ km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_l
 end:;
 	size_t filename_len = i - last_divider;
 	if (filename_len) {
+		if (!file)
+			return KM_RESULT_NOT_FOUND;
 		if (KM_FAILED(result = fs_child_of(file.get(), last_divider, filename_len, new_file.get_addr())))
 			return result;
 	}

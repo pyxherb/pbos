@@ -1,7 +1,7 @@
 #include <arch/i386/io.h>
 #include <hal/i386/irq.h>
 #include <hal/i386/proc.hh>
-#include <pbos/kn/km/exec.hh>
+#include <pbos/kn/exec/exec.hh>
 #include <arch/i386/apic.h>
 
 PBOS_EXTERN_C_BEGIN

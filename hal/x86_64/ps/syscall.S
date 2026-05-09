@@ -2,16 +2,16 @@
 .align 4
 
 isr_syscall:
-	pushq %rbx
+	pushq %rcx
 
 	movq %ds, %rbx
-	pushq %rbx
+	pushq %rcx
 
 	movq %es, %rbx
-	pushq %rbx
+	pushq %rcx
 
 	movq %gs, %rbx
-	pushq %rbx
+	pushq %rcx
 
 	movw %ss, %bx
 	movw %bx, %ds
@@ -28,16 +28,16 @@ isr_syscall:
 
 	movq %rax, %rdx
 
-	popq %rbx
+	popq %rcx
 	movw %bx, %gs
 
-	popq %rbx
+	popq %rcx
 	movw %bx, %es
 
-	popq %rbx
+	popq %rcx
 	movw %bx, %ds
 
 	movq %rdx, %rax
 
-	popq %rbx
+	popq %rcx
 	iretq

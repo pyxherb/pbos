@@ -1,5 +1,5 @@
 #include <pbos/km/logger.h>
-#include <pbos/km/proc.h>
+#include <pbos/ps/proc.h>
 #include "../mm.hh"
 
 PBOS_EXTERN_C_BEGIN

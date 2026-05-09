@@ -1,4 +1,4 @@
-#include <pbos/km/proc.h>
+#include <pbos/ps/sched.h>
 
 PBOS_EXTERN_C_BEGIN
 

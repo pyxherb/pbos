@@ -27,8 +27,7 @@ ps_ufcb_t *ps_alloc_ufcb(ps_pcb_t *pcb, fs_fcb_t *kernel_fcb, ps_ufd_t fd) {
 }
 
 void ps_add_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
-	if (!pcb->ufcb_set.insert(ufcb))
-		km_panic("Error inserting new UFCB");
+	kd_dbgcheck(pcb->ufcb_set.insert(ufcb), "Error inserting new UFCB with ID=%d", ufcb->rb_value);
 }
 
 void ps_remove_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
@@ -37,6 +36,10 @@ void ps_remove_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
 
 ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd) {
 	return static_cast<ps_ufcb_t *>(pcb->ufcb_set.find(fd));
+}
+
+fs_fcb_t *ps_kfcb_of_ufcb(ps_ufcb_t *ufcb) {
+	return ufcb->kernel_fcb;
 }
 
 void ki_destroy_proc(ps_pcb_t *pcb) {
@@ -59,8 +62,7 @@ void ps_create_proc(
 	if (ps_global_proc_set.find(pcb->rb_value))
 		km_panic("Trying to create a new process with PCB with PID that is already used by a process");
 
-	if (!ps_global_proc_set.insert(pcb))
-		km_panic("Error inserting new PCB to global process set");
+	kd_dbgcheck(ps_global_proc_set.insert(pcb), "Error adding new PCB with PID=%u", pcb->rb_value);
 }
 
 ps_pcb_t *ps_alloc_pcb() {
@@ -100,16 +102,19 @@ ps_pcb_t *ps_alloc_pcb() {
 	return proc;
 }
 
-ps_pcb_t *ps_getpcb(ps_proc_id_t pid) {
+ps_pcb_t *ps_lookup_pcb(ps_proc_id_t pid) {
 	return static_cast<ps_pcb_t *>(ps_global_proc_set.find(pid));
+}
+
+ps_proc_id_t ps_pid_of(ps_pcb_t *pcb) {
+	return pcb->rb_value;
 }
 
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
 	io::irq_disable_lock irq_disable_lock;
 	// stub: do some checks with the new thread id, such as checking if a thread with the id exists.
 	thread->rb_value = ++proc->last_thread_id;
-	if (!proc->thread_set.insert(thread))
-		km_panic("Error adding new TCB to process #%u", proc->rb_value);
+	kd_dbgcheck(proc->thread_set.insert(thread), "Error adding thread with PID=%u, TID=%u", proc->rb_value, thread->rb_value);
 }
 
 void ki_switch_to_user_process(ps_pcb_t *pcb) {

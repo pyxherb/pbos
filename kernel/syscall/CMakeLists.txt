@@ -16,6 +16,9 @@ add_custom_command(
         --name hn_pbcore_dispatcher
         -a "${PROJECT_SOURCE_DIR}/hal/${PBOS_ARCH}/arch.json"
         -t "${CMAKE_CURRENT_SOURCE_DIR}/pbcore.json"
+    DEPENDS
+        ${PROJECT_SOURCE_DIR}/hal/${PBOS_ARCH}/arch.json
+        ${CMAKE_CURRENT_SOURCE_DIR}/pbcore.json
     VERBATIM
 )
 add_library(pbscintf INTERFACE "${PROJECT_SOURCE_DIR}/hal/${PBOS_ARCH}/generated/pbcore.cc")

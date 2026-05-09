@@ -1,5 +1,5 @@
-#ifndef _PBOS_KM_PROC_H_
-#define _PBOS_KM_PROC_H_
+#ifndef _PBOS_PS_PROC_H_
+#define _PBOS_PS_PROC_H_
 
 #include <pbos/fs/fs.h>
 #include <pbos/generated/km.h>
@@ -28,6 +28,8 @@ void ps_add_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb);
 void ps_remove_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb);
 ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd);
 
+fs_fcb_t *ps_kfcb_of_ufcb(ps_ufcb_t *ufcb);
+
 typedef struct _kh_user_context_t kh_user_context_t;
 
 // Thread Control Block (TCB)
@@ -52,10 +54,10 @@ ps_thread_id_t ps_create_thread(
 	ps_pcb_t *pcb,
 	size_t stack_size);
 
-uint16_t ps_maxproc();
+uint16_t ps_max_proc();
 
-ps_pcb_t *ps_getpcb(ps_proc_id_t pid);
-ps_proc_id_t *ps_getpid(ps_pcb_t *pcb);
+ps_pcb_t *ps_lookup_pcb(ps_proc_id_t pid);
+ps_proc_id_t ps_pid_of(ps_pcb_t *pcb);
 
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread);
 
@@ -64,12 +66,6 @@ ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb);
 km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size);
 km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size);
 mm_context_t *ps_mm_context_of(ps_pcb_t *pcb);
-
-ps_pcb_t *ps_global_proc_set_begin();
-ps_pcb_t *ps_global_proc_set_next(ps_pcb_t *cur);
-
-ps_tcb_t *ps_proc_thread_set_begin(ps_pcb_t *pcb);
-ps_tcb_t *ps_proc_thread_set_next(ps_pcb_t *pcb, ps_tcb_t *cur);
 
 void ps_user_thread_init(ps_tcb_t *tcb);
 void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr);
@@ -80,32 +76,9 @@ void ki_set_cur_cpuid(ps_cpu_id_t cpuid);
 ps_pcb_t *ps_get_cur_proc();
 ps_tcb_t *ps_get_cur_thread();
 
-typedef struct _ps_sched_t ps_sched_t;
-
-typedef km_result_t (*ps_sched_init_t)(ps_sched_t *sched);
-typedef void (*ps_sched_deinit_t)(ps_sched_t *sched);
-typedef km_result_t (*ps_sched_prepare_proc_t)(ps_sched_t *sched, ps_pcb_t *proc);
-typedef km_result_t (*ps_sched_prepare_thread_t)(ps_sched_t *sched, ps_tcb_t *thread);
-typedef void (*ps_sched_drop_proc_t)(ps_sched_t *sched, ps_pcb_t *proc);
-typedef void (*ps_sched_drop_thread_t)(ps_sched_t *sched, ps_tcb_t *thread);
-typedef ps_tcb_t *(*ps_sched_next_thread_t)(ps_sched_t *sched, ps_cpu_id_t cur_cpuid, ps_pcb_t *cur_proc, ps_tcb_t *cur_thread);
-
-typedef struct _ps_sched_t {
-	ps_sched_init_t init;
-	ps_sched_deinit_t deinit;
-	ps_sched_prepare_proc_t prepare_proc;
-	ps_sched_prepare_thread_t prepare_thread;
-	ps_sched_drop_proc_t drop_proc;
-	ps_sched_drop_thread_t drop_thread;
-	ps_sched_next_thread_t next_thread;
-} ps_sched_t;
-
-extern ps_sched_t *ps_cur_sched;
-
-PBOS_FORCEINLINE ps_sched_t *ps_get_sched() {
-	return ps_cur_sched;
-};
-km_result_t ps_set_sched(ps_sched_t *sched);
+fs_fnode_t *ps_get_cwd(ps_pcb_t *pcb);
+void ps_set_cwd(ps_pcb_t *pcb, fs_fnode_t *cwd_node);
+void ps_unset_cwd(ps_pcb_t *pcb);
 
 PBOS_EXTERN_C_END
 

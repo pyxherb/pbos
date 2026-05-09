@@ -2,7 +2,7 @@
 #include <arch/i386/misc.h>
 #include <arch/i386/msr.h>
 #include <pbos/hal/init.h>
-#include <pbos/km/exec.h>
+#include <pbos/exec/exec.h>
 #include <pbos/mm/mm.h>
 #include <pbos/km/panic.h>
 #include <pbos/kn/km/proc.hh>

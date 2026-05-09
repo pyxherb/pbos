@@ -2,7 +2,7 @@
 #include <hal/x86_64/irq.hh>
 #include <hal/x86_64/ps/syscall.hh>
 #include <pbos/km/logger.h>
-#include <pbos/km/proc.h>
+#include <pbos/ps/proc.h>
 
 PBOS_EXTERN_C_BEGIN
 

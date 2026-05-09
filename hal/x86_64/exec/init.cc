@@ -1,7 +1,7 @@
 #include <arch/x86_64/kargs.h>
 #include <pbos/km/panic.h>
 #include <string.h>
-#include <pbos/kn/km/exec.hh>
+#include <pbos/kn/exec/exec.hh>
 
 PBOS_EXTERN_C_BEGIN
 

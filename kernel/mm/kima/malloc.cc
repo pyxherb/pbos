@@ -192,8 +192,7 @@ PBOS_NODISCARD void *mm_krealloc(void *old_ptr, size_t size, size_t alignment) {
 				old_ublk->rb_value = cur_base;	// rb_value is the base block address.
 				old_ublk->size = size;
 
-				if (!kima_ublk_query_tree.insert(old_ublk))
-					km_panic("Error inserting old ublk in mm_krealloc, please report this bug");
+				kima_ublk_query_tree.insert_unwrap(old_ublk);
 
 				return cur_base;
 			}
@@ -296,8 +295,7 @@ PBOS_NODISCARD void *mm_krealloc_in_place(void *old_ptr, size_t size, size_t ali
 
 		old_ublk->size = size;
 
-		if (!kima_ublk_query_tree.insert(old_ublk))
-			km_panic("Error inserting old ublk in mm_krealloc, please report this bug");
+		kima_ublk_query_tree.insert_unwrap(old_ublk);
 
 		return old_ptr;
 	}

@@ -10,8 +10,6 @@ PBOS_EXTERN_C_BEGIN
 
 PBOS_NORETURN void isr_syscall();
 
-uint64_t hn_syscall_handler(uint64_t eax, uint64_t ebx, uint64_t ecx, uint64_t edx, uint64_t esi, uint64_t edi);
-
 PBOS_EXTERN_C_END
 
 #endif

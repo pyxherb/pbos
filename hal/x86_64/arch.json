@@ -5,7 +5,8 @@
 	"syscall_params": [
 		{
 			"reg_name": "rdi",
-			"type": "u64"
+			"type": "u64",
+			"entry_id": true
 		},
 		{
 			"reg_name": "rsi",
@@ -25,15 +26,6 @@
 		},
 		{
 			"reg_name": "r9",
-			"type": "u64"
-		},
-		{
-			"reg_name": "rax",
-			"type": "u64",
-			"entry_id": true
-		},
-		{
-			"reg_name": "rbx",
 			"type": "u64"
 		}
 	]

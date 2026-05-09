@@ -2,7 +2,7 @@
 #include <arch/i386/paging.h>
 #include <pbos/fmt/elf.h>
 #include <pbos/fs/file.h>
-#include <pbos/km/exec.h>
+#include <pbos/exec/exec.h>
 #include <pbos/km/logger.h>
 #include <string.h>
 #include <pbos/hal/irq.hh>

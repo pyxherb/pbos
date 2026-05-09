@@ -408,6 +408,11 @@ namespace kfxx {
 			return _insert(static_cast<node_t *>(parent), node);
 		}
 
+		PBOS_FORCEINLINE void insert_unwrap(node_t *node) {
+			if(!insert(node))
+				km_panic("Calling insert_unwrap with insertion failed");
+		}
+
 		PBOS_FORCEINLINE void remove(node_t *node) {
 			node_t *y = _remove(node);
 			y->l = nullptr;

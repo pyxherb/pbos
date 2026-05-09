@@ -3,7 +3,7 @@
 
 #include <pbos/fs/file.h>
 #include <pbos/se/user.h>
-#include "proc.h"
+#include <pbos/ps/proc.h>
 
 PBOS_EXTERN_C_BEGIN
 

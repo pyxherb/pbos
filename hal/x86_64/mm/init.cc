@@ -1,6 +1,6 @@
 #include <hal/x86_64/misc.h>
 #include <pbos/km/logger.h>
-#include <pbos/km/proc.h>
+#include <pbos/ps/proc.h>
 #include <pbos/kn/acpi/rsdt.hh>
 #include "../mm.hh"
 #include "hal/x86_64/initcar.hh"
@@ -147,8 +147,7 @@ static void hn_mm_init_areas() {
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
 			hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = init_madpool_paddr;
 			++hn_global_mad_pool_list->header.used_num;
-			insert_result = init_madpool_pmad->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
-			kd_dbgcheck(insert_result, "Error inserting initial PMAD, please report this bug");
+			init_madpool_pmad->query_tree.insert_unwrap(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 			++cur_madpool_slot_index;
 
 			if (initial_map_result & 0b100) {
@@ -157,8 +156,7 @@ static void hn_mm_init_areas() {
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = init_pgtab_pmad->base;
 				++hn_global_mad_pool_list->header.used_num;
-				insert_result = init_pgtab_pmad->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
-				kd_dbgcheck(insert_result, "Error inserting PDPTE PMAD, please report this bug");
+				init_pgtab_pmad->query_tree.insert_unwrap(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				++cur_madpool_slot_index;
 			}
 
@@ -168,8 +166,7 @@ static void hn_mm_init_areas() {
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = (char *)init_pgtab_pmad->base + PAGESIZE * 1;
 				++hn_global_mad_pool_list->header.used_num;
-				insert_result = init_pgtab_pmad->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
-				kd_dbgcheck(insert_result, "Error inserting PDE PMAD, please report this bug");
+				init_pgtab_pmad->query_tree.insert_unwrap(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				++cur_madpool_slot_index;
 			}
 
@@ -179,8 +176,7 @@ static void hn_mm_init_areas() {
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].prev_free = nullptr;
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = (char *)init_pgtab_pmad->base + PAGESIZE * 2;
 				++hn_global_mad_pool_list->header.used_num;
-				insert_result = init_pgtab_pmad->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
-				kd_dbgcheck(insert_result, "Error inserting PDE PMAD, please report this bug");
+				init_pgtab_pmad->query_tree.insert_unwrap(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 				++cur_madpool_slot_index;
 			}
 		}
@@ -265,8 +261,7 @@ static void hn_mm_init_areas() {
 
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = j;
 				++hn_global_mad_pool_list->header.used_num;
-				insert_result = i->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
-				kd_dbgcheck(insert_result, "Error inserting PMAD, please report this bug");
+				i->query_tree.insert_unwrap(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 
 				++cur_madpool_slot_index;
 			}
@@ -332,8 +327,7 @@ static void hn_mm_init_areas() {
 				}
 				hn_global_mad_pool_list->descs[cur_madpool_slot_index].rb_value = j;
 				++hn_global_mad_pool_list->header.used_num;
-				insert_result = i->query_tree.insert(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
-				kd_dbgcheck(insert_result, "Error inserting PMAD, please report this bug");
+				i->query_tree.insert_unwrap(&hn_global_mad_pool_list->descs[cur_madpool_slot_index]);
 
 				++cur_madpool_slot_index;
 			}

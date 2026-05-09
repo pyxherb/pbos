@@ -5,7 +5,7 @@
 #include <pbos/km/panic.h>
 #include <pbos/kn/fs/fs.hh>
 #include <pbos/kh/initcar.hh>
-#include <pbos/kn/km/exec.hh>
+#include <pbos/kn/exec/exec.hh>
 #include <pbos/kh/mp/init.hh>
 #include <pbos/kn/km/proc.hh>
 #include <pbos/kh/acpi/misc.hh>

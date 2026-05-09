@@ -1,5 +1,5 @@
 #include <pbos/kn/km/proc.hh>
-#include <pbos/kn/km/exec.hh>
+#include <pbos/kn/exec/exec.hh>
 
 PBOS_EXTERN_C_BEGIN
 

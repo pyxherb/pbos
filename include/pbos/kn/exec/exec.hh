@@ -1,10 +1,10 @@
-#ifndef _PBOS_KM_EXEC_HH_
-#define _PBOS_KM_EXEC_HH_
+#ifndef _PBOS_KN_EXEC_HH_
+#define _PBOS_KN_EXEC_HH_
 
 #include <pbos/generated/km.h>
 #include <pbos/kfxx/rbtree.hh>
 #include <pbos/kfxx/uuid.hh>
-#include "exec.h"
+#include <pbos/exec/exec.h>
 #include KN_ARCH_MEMCONF_HEADER_PATH
 
 PBOS_EXTERN_C_BEGIN
@@ -39,6 +39,13 @@ typedef struct _km_binproto_t : public kfxx::rbtree_t<fs_fcb_t *>::node_t {
 } km_binproto_t;
 
 extern kfxx::rbtree_t<kf_uuid_t> ki_registered_binldrs;
+
+extern km_init_binldr_registry_t ki_builtin_binldrs[];
+
+extern kfxx::rbtree_t<fs_fcb_t *> ki_registered_binprotos;
+
+void ki_load_init();
+void ki_init_binldrs();
 
 PBOS_EXTERN_C_END
 
