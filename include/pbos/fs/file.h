@@ -68,6 +68,10 @@ PBOS_NODISCARD PBOS_API km_result_t fs_create_fcb(
 
 PBOS_NODISCARD km_result_t fs_alloc_file_fnode(fs_filesys_t *filesys, fs_fnode_t **file_out);
 PBOS_NODISCARD km_result_t fs_alloc_dir_fnode(fs_filesys_t *filesys, fs_fnode_t **file_out);
+
+PBOS_NODISCARD void *fs_get_fnode_exdata(fs_fnode_t *file);
+PBOS_NODISCARD void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata);
+
 PBOS_NODISCARD const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out);
 void fs_unname_fnode(fs_fnode_t *file);
 PBOS_NODISCARD km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len);
@@ -83,7 +87,7 @@ PBOS_NODISCARD PBOS_API km_result_t fs_unmount_file(fs_fnode_t *file);
 
 PBOS_NODISCARD PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file);
 
-void fs_close(fs_fcb_t *fcb);
+km_result_t fs_close(fs_fcb_t *fcb);
 
 PBOS_NODISCARD PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out);
 PBOS_NODISCARD PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out);
@@ -105,9 +109,6 @@ PBOS_NODISCARD PBOS_API km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const c
 
 PBOS_API void fs_inc_fnode_ref(fs_fnode_t *fnode);
 PBOS_API void fs_dec_fnode_ref(fs_fnode_t *fnode);
-
-PBOS_API void fs_inc_fcb_ref(fs_fcb_t *fcb);
-PBOS_API void fs_dec_fcb_ref(fs_fcb_t *fcb);
 
 PBOS_EXTERN_C_END
 

@@ -128,7 +128,7 @@ namespace kfxx {
 		}
 	};
 
-	template<typename T, typename IncRef, typename DecRef>
+	template <typename T, typename IncRef, typename DecRef>
 	class custom_rc_ptr_t {
 	private:
 		using this_t = custom_rc_ptr_t<T, IncRef, DecRef>;
@@ -214,6 +214,10 @@ namespace kfxx {
 		PBOS_FORCEINLINE T *const *get_addr_without_release() const noexcept {
 			return &_ptr;
 		}
+		PBOS_FORCEINLINE T **operator&() noexcept {
+			reset();
+			return &_ptr;
+		}
 		PBOS_FORCEINLINE T *release() noexcept {
 			T *ptr = _ptr;
 			_ptr = nullptr;
@@ -225,6 +229,26 @@ namespace kfxx {
 
 		PBOS_FORCEINLINE bool operator<(const this_t &rhs) const noexcept {
 			return _ptr < rhs._ptr;
+		}
+
+		PBOS_FORCEINLINE bool operator>(const this_t &rhs) const noexcept {
+			return _ptr > rhs._ptr;
+		}
+
+		PBOS_FORCEINLINE bool operator<(const T *rhs) const noexcept {
+			return _ptr < rhs;
+		}
+
+		PBOS_FORCEINLINE bool operator>(const T *rhs) const noexcept {
+			return _ptr < rhs;
+		}
+
+		PBOS_FORCEINLINE bool operator==(const T *rhs) const noexcept {
+			return _ptr == rhs;
+		}
+
+		PBOS_FORCEINLINE bool operator!=(const T *rhs) const noexcept {
+			return _ptr != rhs;
 		}
 
 		PBOS_FORCEINLINE operator bool() const noexcept {

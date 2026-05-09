@@ -7,5 +7,4 @@ qemu-system-x86_64 \
 -drive file=./build/boot.raw,format=raw \
 -drive if=pflash,format=raw,file="/usr/share/qemu/OVMF.fd",readonly=on \
 -monitor stdio \
--d int \
 -debugcon vc:640x480

@@ -17,17 +17,16 @@ ps_proc_id_t ki_alloc_proc_id() {
 }
 
 km_result_t km_register_binldr(kf_uuid_t *uuid, km_binldr_t *binldr) {
-	ki_binldr_registry_t *reg = (ki_binldr_registry_t *)mm_kalloc(sizeof(ki_binldr_registry_t), alignof(ki_binldr_registry_t));
+	if(ki_registered_binldrs.find(*uuid))
+		return KM_RESULT_EXISTED;
+	ki_binldr_registry_t *reg = kfxx::alloc_and_construct<ki_binldr_registry_t>(kfxx::kernel_allocator());
 	if (!reg)
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
-
-	// Initialize the registry
-	kfxx::construct_at<ki_binldr_registry_t>(reg);
 
 	memcpy(&reg->rb_value, &uuid, sizeof(*uuid));
 	memcpy(&reg->binldr, binldr, sizeof(km_binldr_t));
 
-	ki_registered_binldrs.insert(reg);
+	ki_registered_binldrs.insert_unwrap(reg);
 
 	return KM_RESULT_OK;
 }

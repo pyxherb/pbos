@@ -6,15 +6,10 @@
 
 PBOS_EXTERN_C_BEGIN
 
-struct hn_initcar_file_keeper_t : public kfxx::rbtree_t<fs_fnode_t *>::node_t {
+struct hn_initcar_file_exdata {
 	const char *ptr;
 	size_t sz_total;
-
-	hn_initcar_file_keeper_t(fs_fnode_t *file);
-	~hn_initcar_file_keeper_t();
 };
-
-extern kfxx::rbtree_t<fs_fnode_t *> hn_initcar_file_set;
 
 extern void *hn_initcar_ptr;
 extern void *hn_initcar_paddr;

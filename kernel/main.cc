@@ -1,14 +1,14 @@
 #include <pbos/hal/init.h>
 #include <pbos/hal/irq.h>
 #include <pbos/km/logger.h>
-#include <pbos/mm/mm.h>
 #include <pbos/km/panic.h>
-#include <pbos/kn/fs/fs.hh>
-#include <pbos/kh/initcar.hh>
-#include <pbos/kn/exec/exec.hh>
-#include <pbos/kh/mp/init.hh>
-#include <pbos/kn/km/proc.hh>
+#include <pbos/mm/mm.h>
 #include <pbos/kh/acpi/misc.hh>
+#include <pbos/kh/initcar.hh>
+#include <pbos/kh/mp/init.hh>
+#include <pbos/kn/exec/exec.hh>
+#include <pbos/kn/fs/fs.hh>
+#include <pbos/kn/km/proc.hh>
 
 // Because the operating system will never exit normally,
 // we just designed a dummy procedure to register the destructors.
@@ -22,10 +22,10 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 	hal_init();
 	// kh_irq_init();
 
-	if(kh_acpi_is_available()) {
+	if (kh_acpi_is_available()) {
 		kh_acpi_init();
 	} else {
-		if(kh_acpi_is_required())
+		if (kh_acpi_is_required())
 			km_panic("PbOS requires ACPI to start up.");
 	}
 
@@ -44,14 +44,21 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 
 	kh_initcar_init();
 
-	fs_fcb_t *init_fp;
-	if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pbinit", sizeof("/initcar/pbinit") - 1, &init_fp)))
-		km_panic("Error opening the init executable");
+	auto init_close_fail_hook([&result](fs_fcb_t *fcb, km_result_t result_in) noexcept {
+		result = result_in;
+	});
+	{
+		fs::fcb_ptr_t init_fp(nullptr, std::move(init_close_fail_hook));
+		if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pbinit", sizeof("/initcar/pbinit") - 1, &init_fp)))
+			km_panic("Error opening the init executable");
 
-	ps_proc_id_t pid;
+		ps_proc_id_t pid;
 
-	if (KM_FAILED(result = km_exec(0, 0, init_fp, &pid)))
-		km_panic("Error starting the init process");
+		if (KM_FAILED(result = km_exec(0, 0, init_fp.get(), &pid)))
+			km_panic("Error starting the init process");
+	}
+	if (KM_FAILED(result))
+		km_panic("Error closing the init FCB");
 
 	kh_enter_sched(0);
 }

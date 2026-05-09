@@ -8,8 +8,6 @@ PBOS_EXTERN_C_BEGIN
 
 constexpr kfxx::string_view INITCAR_DIR_FILENAME = kfxx::string_view("initcar");
 
-kfxx::rbtree_t<fs_fnode_t *> hn_initcar_file_set;
-
 void *hn_initcar_ptr = NULL;
 void *hn_initcar_paddr = NULL;
 size_t hn_initcar_size = 0;
@@ -28,11 +26,18 @@ fs_fsops_t kh_initcar_ops = {
 	.read = kh_initcar_read,
 	.write = kh_initcar_write,
 	.size = kh_initcar_size,
+	.destroy = kh_initcar_destroy,
 	.premount = kh_initcar_premount,
 	.mount_fail = kh_initcar_mount_fail,
 	.unmount_cleanup = kh_initcar_unmount_cleanup,
 	.destructor = kh_initcar_destructor
 };
+
+void kh_initcar_destroy(fs_fnode_t *file) {
+	auto exdata = (hn_initcar_file_exdata *)fs_get_fnode_exdata(file);
+	if (exdata)
+		kfxx::destroy_and_release<hn_initcar_file_exdata>(kfxx::kernel_allocator(), exdata);
+}
 
 km_result_t kh_initcar_destructor() {
 	/*
@@ -140,22 +145,23 @@ void kh_initcar_init() {
 		kd_printf("File: %s\n", fe->filename);
 		kd_printf("Size: %d\n", (int)fe->size);
 
-		fs_fnode_t *file;
+		fs::fnode_ptr_t file;
 		size_t filename_len = strlen(fe->filename);
 		if (KM_FAILED(fs_alloc_file_fnode(kh_initcar_fs, &file)))
 			km_panic("Error creating file object for initcar file: %s\n", fe->filename);
-		if (KM_FAILED(fs_rename_fnode(file, fe->filename, filename_len)))
+		if (KM_FAILED(fs_rename_fnode(file.get(), fe->filename, filename_len)))
 			km_panic("Error creating file object for initcar file: %s\n", fe->filename);
 
-		hn_initcar_file_keeper_t *keeper = kfxx::alloc_and_construct<hn_initcar_file_keeper_t>(kfxx::kernel_allocator(), file);
-		if(!keeper)
-			km_panic("Error allocating memory for INITCAR file: %s", fe->filename);
-		keeper->ptr = p_cur;
-		keeper->sz_total = fe->size;
-		hn_initcar_file_set.insert_unwrap(keeper);
+		hn_initcar_file_exdata *exdata = kfxx::alloc_and_construct<hn_initcar_file_exdata>(kfxx::kernel_allocator());
+		if (!exdata)
+			km_panic("Error allocating extension data for INITCAR file: %s", fe->filename);
+		exdata->ptr = p_cur;
+		exdata->sz_total = fe->size;
+
+		fs_set_fnode_exdata(file.get(), exdata);
 
 		kd_printf("initcar: Mounting file: %s\n", fe->filename);
-		if (KM_FAILED(result = fs_link_subnode(kh_initcar_dir, file)))
+		if (KM_FAILED(result = fs_link_subnode(kh_initcar_dir, file.get())))
 			km_panic("Error mounting initcar file `%s', error code = %x\n", fe->filename, result);
 
 		p_cur += fe->size;

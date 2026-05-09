@@ -179,6 +179,14 @@ PBOS_NODISCARD km_result_t fs_alloc_dir_fnode(fs_filesys_t *filesys, fs_fnode_t 
 	return KM_RESULT_OK;
 }
 
+void *fs_get_fnode_exdata(fs_fnode_t *file) {
+	return file->exdata;
+}
+
+PBOS_NODISCARD void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata) {
+	file->exdata = exdata;
+}
+
 PBOS_NODISCARD const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out) {
 	*len_out = file->filename_len;
 	return file->filename;
@@ -203,7 +211,6 @@ PBOS_NODISCARD km_result_t ki_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t **fcb_out)
 
 	ptr->fnode = file_in;
 
-	fs_inc_fcb_ref(ptr);
 	*fcb_out = ptr;
 
 	return KM_RESULT_OK;
@@ -400,8 +407,10 @@ km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_
 	return KM_RESULT_OK;
 }
 
-void fs_close(fs_fcb_t *fcb) {
-	fs_dec_fcb_ref(fcb);
+km_result_t fs_close(fs_fcb_t *fcb) {
+	fcb->fnode.reset();
+	ki_destroy_fcb(fcb);
+	return KM_RESULT_OK;
 }
 
 km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
@@ -426,21 +435,13 @@ void fs_dec_fnode_ref(fs_fnode_t *fnode) {
 		ki_destroy_fnode(fnode);
 }
 
-void fs_inc_fcb_ref(fs_fcb_t *fcb) {
-	++fcb->ref_num;
-}
-
-void fs_dec_fcb_ref(fs_fcb_t *fcb) {
-	if (!--fcb->ref_num)
-		ki_destroy_fcb(fcb);
-}
-
 void ki_destroy_fnode(fs_fnode_t *fnode) {
-	// TODO: Implement this.
 	switch (fnode->file_type) {
 		case FS_FILETYPE_FILE:
+			fnode->fs->ops.destroy(fnode);
 			kfxx::destroy_and_release<fs_file_t>(&ki_fs_fnode_allocator, static_cast<fs_file_t *>(fnode));
 		case FS_FILETYPE_DIR:
+			fnode->fs->ops.destroy(fnode);
 			kfxx::destroy_and_release<fs_dir_t>(&ki_fs_fnode_allocator, static_cast<fs_dir_t *>(fnode));
 		default:
 			km_panic("Unknown file node type, panicking");
@@ -448,6 +449,7 @@ void ki_destroy_fnode(fs_fnode_t *fnode) {
 }
 
 void ki_destroy_fcb(fs_fcb_t *fcb) {
-	fcb->fnode->fs->ops.close(fcb);
+	if (fcb->fnode)
+		km_panic("FCB is not closed before destroying");
 	kfxx::destroy_and_release<fs_fcb_t>(&ki_fs_fcb_allocator, fcb);
 }
