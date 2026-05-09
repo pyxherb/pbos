@@ -9,55 +9,112 @@
 		"0": {
 			"name": "exit",
 			"params": [
-				"i32"
+				[
+					"exit_code",
+					"i32"
+				]
 			],
 			"return": "void"
 		},
 		"1": {
 			"name": "open",
 			"params": [
-				"*char",
-				"usize",
-				"u32",
-				"u32",
-				"*ps_ufd_t"
+				[
+					"path",
+					"-*char"
+				],
+				[
+					"path_len",
+					"usize"
+				],
+				[
+					"flags",
+					"u32"
+				],
+				[
+					"mode",
+					"u32"
+				],
+				[
+					"ufd_out",
+					"*ps_ufd_t"
+				]
 			],
 			"return": "result"
 		},
 		"2": {
 			"name": "close",
 			"params": [
-				"ps_ufd_t",
-				"u32"
+				[
+					"ufd",
+					"ps_ufd_t"
+				],
+				[
+					"flags",
+					"u32"
+				]
 			],
 			"return": "result"
 		},
 		"3": {
 			"name": "read",
 			"params": [
-				"ps_ufd_t",
-				"*void",
-				"u32"
+				[
+					"ufd",
+					"ps_ufd_t"
+				],
+				[
+					"buf",
+					"*void"
+				],
+				[
+					"size",
+					"u32"
+				]
 			],
 			"return": "result"
 		},
 		"4": {
 			"name": "write",
 			"params": [
-				"ps_ufd_t",
-				"*void",
-				"u32"
+				[
+					"ufd",
+					"ps_ufd_t"
+				],
+				[
+					"buf",
+					"-*void"
+				],
+				[
+					"size",
+					"u32"
+				]
 			],
 			"return": "result"
 		},
 		"5": {
 			"name": "exec_child",
 			"params": [
-				"ps_ufd_t",
-				"ps_ufd_t",
-				"&char",
-				"usize",
-				"*ps_proc_id_t"
+				[
+					"file_ufd",
+					"ps_ufd_t"
+				],
+				[
+					"cwd_ufd",
+					"ps_ufd_t"
+				],
+				[
+					"args",
+					"-*char"
+				],
+				[
+					"args_len",
+					"usize"
+				],
+				[
+					"proc_id_out",
+					"*ps_proc_id_t"
+				]
 			],
 			"return": "result"
 		},
