@@ -1,4 +1,5 @@
 #include <pbos/kf/hash.h>
+#include <pbos/ki/km/symbol.hh>
 
 uint32_t kf_djb_hash32(const char *src, size_t size) {
 	uint32_t hash = 5381;
@@ -7,6 +8,7 @@ uint32_t kf_djb_hash32(const char *src, size_t size) {
 	}
 	return hash;
 }
+KI_EXPORT_IMAGE_SYMBOL(kf_djb_hash32);
 
 uint64_t kf_djb_hash64(const char *src, size_t size) {
 	uint64_t hash = 5381;
@@ -15,3 +17,4 @@ uint64_t kf_djb_hash64(const char *src, size_t size) {
 	}
 	return hash;
 }
+KI_EXPORT_IMAGE_SYMBOL(kf_djb_hash64);

@@ -30,7 +30,7 @@ typedef uint8_t fs_filetype_t;
 #define FS_ACCESS_WRITE_XA 0x0200  // Write extra attributes (XA)
 typedef uint16_t fs_faccess_t;
 
-typedef struct _fs_filesys_t fs_filesys_t;
+typedef struct _fs_file_system_t fs_file_system_t;
 
 ///
 /// @brief The file node structure.
@@ -64,17 +64,20 @@ PBOS_NODISCARD PBOS_API km_result_t fs_create_fcb(
 	fs_fnode_t *file,
 	fs_fcb_t **fcb_out);
 
-PBOS_NODISCARD km_result_t fs_alloc_file_fnode(fs_filesys_t *filesys, fs_fnode_t **file_out);
-PBOS_NODISCARD km_result_t fs_alloc_dir_fnode(fs_filesys_t *filesys, fs_fnode_t **file_out);
+void PBOS_API ki_set_fcb_exdata(fs_fcb_t *fcb, void *exdata);
+PBOS_NODISCARD PBOS_API void *ki_get_fcb_exdata(fs_fcb_t *fcb);
 
-PBOS_NODISCARD void *fs_get_fnode_exdata(fs_fnode_t *file);
-void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata);
+PBOS_NODISCARD PBOS_API km_result_t fs_alloc_file_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out);
+PBOS_NODISCARD PBOS_API km_result_t fs_alloc_dir_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out);
 
-PBOS_NODISCARD const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out);
-void fs_unname_fnode(fs_fnode_t *file);
-PBOS_NODISCARD km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len);
+PBOS_NODISCARD PBOS_API void *fs_get_fnode_exdata(fs_fnode_t *file);
+PBOS_API void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata);
 
-PBOS_API fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb);
+PBOS_NODISCARD PBOS_API const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out);
+PBOS_API void fs_unname_fnode(fs_fnode_t *file);
+PBOS_NODISCARD PBOS_API km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len);
+
+PBOS_API PBOS_API fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb);
 
 /// @brief Mount a file onto a directory.
 /// @param parent Parent directory to mount, the directory must be empty.
@@ -105,8 +108,8 @@ PBOS_NODISCARD PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *fi
 ///
 PBOS_NODISCARD PBOS_API km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out);
 
-PBOS_API void fs_inc_fnode_ref(fs_fnode_t *fnode);
-PBOS_API void fs_dec_fnode_ref(fs_fnode_t *fnode);
+PBOS_API PBOS_API void fs_inc_fnode_ref(fs_fnode_t *fnode);
+PBOS_API PBOS_API void fs_dec_fnode_ref(fs_fnode_t *fnode);
 
 PBOS_EXTERN_C_END
 

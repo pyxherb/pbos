@@ -3,129 +3,130 @@
 #include <pbos/mm/mm.h>
 #include <pbos/ki/fs/file.hh>
 #include <pbos/ki/fs/fs.hh>
+#include <pbos/ki/km/symbol.hh>
 
 fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb) {
 	return fcb->fnode.get();
 }
 
-PBOS_API ki_fs_filename_allocator_t::ki_fs_filename_allocator_t() {
+ki_fs_filename_allocator_t::ki_fs_filename_allocator_t() {
 }
 
-PBOS_API ki_fs_filename_allocator_t::~ki_fs_filename_allocator_t() {
+ki_fs_filename_allocator_t::~ki_fs_filename_allocator_t() {
 }
 
-PBOS_API size_t ki_fs_filename_allocator_t::inc_ref() noexcept {
+size_t ki_fs_filename_allocator_t::inc_ref() noexcept {
 	return 0;
 }
 
-PBOS_API size_t ki_fs_filename_allocator_t::dec_ref() noexcept {
+size_t ki_fs_filename_allocator_t::dec_ref() noexcept {
 	return 0;
 }
 
-PBOS_API void *ki_fs_filename_allocator_t::alloc(size_t size, size_t alignment) noexcept {
+void *ki_fs_filename_allocator_t::alloc(size_t size, size_t alignment) noexcept {
 	return mm_kalloc(size, alignment);
 }
 
-PBOS_API void *ki_fs_filename_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
+void *ki_fs_filename_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
 	// TODO: Implement mm_krealloc and rewrite this with it.
 	return mm_krealloc(ptr, new_size, new_alignment);
 }
 
-PBOS_API void *ki_fs_filename_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
+void *ki_fs_filename_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
 	// TODO: Implement mm_krealloc and rewrite this with it.
 	// return mm_krealloc(ptr, new_size, new_alignment);
 	return nullptr;
 }
 
-PBOS_API void ki_fs_filename_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {
+void ki_fs_filename_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {
 	mm_kfree(ptr);
 }
 
 int ki_fs_filename_allocator_identity;
 
-PBOS_API void *ki_fs_filename_allocator_t::type_identity() const noexcept {
+void *ki_fs_filename_allocator_t::type_identity() const noexcept {
 	return &ki_fs_filename_allocator_identity;
 }
 
 ki_fs_filename_allocator_t ki_fs_filename_allocator;
 
-PBOS_API ki_fs_fnode_allocator_t::ki_fs_fnode_allocator_t() {
+ki_fs_fnode_allocator_t::ki_fs_fnode_allocator_t() {
 }
 
-PBOS_API ki_fs_fnode_allocator_t::~ki_fs_fnode_allocator_t() {
+ki_fs_fnode_allocator_t::~ki_fs_fnode_allocator_t() {
 }
 
-PBOS_API size_t ki_fs_fnode_allocator_t::inc_ref() noexcept {
+size_t ki_fs_fnode_allocator_t::inc_ref() noexcept {
 	return 0;
 }
 
-PBOS_API size_t ki_fs_fnode_allocator_t::dec_ref() noexcept {
+size_t ki_fs_fnode_allocator_t::dec_ref() noexcept {
 	return 0;
 }
 
-PBOS_API void *ki_fs_fnode_allocator_t::alloc(size_t size, size_t alignment) noexcept {
+void *ki_fs_fnode_allocator_t::alloc(size_t size, size_t alignment) noexcept {
 	return mm_kalloc(size, alignment);
 }
 
-PBOS_API void *ki_fs_fnode_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
+void *ki_fs_fnode_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
 	// TODO: Implement mm_krealloc and rewrite this with it.
 	return mm_krealloc(ptr, new_size, new_alignment);
 }
 
-PBOS_API void *ki_fs_fnode_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
+void *ki_fs_fnode_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
 	// TODO: Implement mm_krealloc_in_place and rewrite this with it.
 	// return mm_krealloc(ptr, new_size, new_alignment);
 	return nullptr;
 }
 
-PBOS_API void ki_fs_fnode_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {
+void ki_fs_fnode_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {
 	mm_kfree(ptr);
 }
 
 int ki_fs_fnode_allocator_identity;
 
-PBOS_API void *ki_fs_fnode_allocator_t::type_identity() const noexcept {
+void *ki_fs_fnode_allocator_t::type_identity() const noexcept {
 	return &ki_fs_fnode_allocator_identity;
 }
 
 ki_fs_fnode_allocator_t ki_fs_fnode_allocator;
 
-PBOS_API ki_fs_fcb_allocator_t::ki_fs_fcb_allocator_t() {
+ki_fs_fcb_allocator_t::ki_fs_fcb_allocator_t() {
 }
 
-PBOS_API ki_fs_fcb_allocator_t::~ki_fs_fcb_allocator_t() {
+ki_fs_fcb_allocator_t::~ki_fs_fcb_allocator_t() {
 }
 
-PBOS_API size_t ki_fs_fcb_allocator_t::inc_ref() noexcept {
+size_t ki_fs_fcb_allocator_t::inc_ref() noexcept {
 	return 0;
 }
 
-PBOS_API size_t ki_fs_fcb_allocator_t::dec_ref() noexcept {
+size_t ki_fs_fcb_allocator_t::dec_ref() noexcept {
 	return 0;
 }
 
-PBOS_API void *ki_fs_fcb_allocator_t::alloc(size_t size, size_t alignment) noexcept {
+void *ki_fs_fcb_allocator_t::alloc(size_t size, size_t alignment) noexcept {
 	return mm_kalloc(size, alignment);
 }
 
-PBOS_API void *ki_fs_fcb_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
+void *ki_fs_fcb_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
 	// TODO: Implement mm_krealloc and rewrite this with it.
 	return mm_krealloc(ptr, new_size, new_alignment);
 }
 
-PBOS_API void *ki_fs_fcb_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
+void *ki_fs_fcb_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
 	// TODO: Implement mm_krealloc and rewrite this with it.
 	// return mm_krealloc(ptr, new_size, new_alignment);
 	return nullptr;
 }
 
-PBOS_API void ki_fs_fcb_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {
+void ki_fs_fcb_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {
 	mm_kfree(ptr);
 }
 
 int ki_fs_fcb_allocator_identity;
 
-PBOS_API void *ki_fs_fcb_allocator_t::type_identity() const noexcept {
+void *ki_fs_fcb_allocator_t::type_identity() const noexcept {
 	return &ki_fs_fcb_allocator_identity;
 }
 
@@ -149,13 +150,22 @@ _fs_file_t::_fs_file_t() : _fs_fnode_t(FS_FILETYPE_FILE) {}
 
 _fs_dir_t::_fs_dir_t(kfxx::allocator_t *allocator) : _fs_fnode_t(FS_FILETYPE_DIR), subnodes(allocator) {}
 
-PBOS_NODISCARD km_result_t fs_alloc_file_fnode(fs_filesys_t *filesys, fs_fnode_t **file_out) {
+void ki_set_fcb_exdata(fs_fcb_t *fcb, void *exdata) {
+	fcb->exdata = exdata;
+}
+
+PBOS_NODISCARD void *ki_get_fcb_exdata(fs_fcb_t *fcb) {
+	return fcb->exdata;
+}
+KI_EXPORT_IMAGE_SYMBOL(ki_get_fcb_exdata);
+
+PBOS_NODISCARD km_result_t fs_alloc_file_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out) {
 	fs_file_t *ptr = kfxx::alloc_and_construct<fs_file_t>(&ki_fs_filename_allocator);
 
 	if (!ptr)
 		return KM_RESULT_NO_MEM;
 
-	ptr->fs = filesys;
+	ptr->fs = file_system;
 
 	fs_inc_fnode_ref(ptr);
 
@@ -163,14 +173,15 @@ PBOS_NODISCARD km_result_t fs_alloc_file_fnode(fs_filesys_t *filesys, fs_fnode_t
 
 	return KM_RESULT_OK;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_alloc_file_fnode);
 
-PBOS_NODISCARD km_result_t fs_alloc_dir_fnode(fs_filesys_t *filesys, fs_fnode_t **file_out) {
+PBOS_NODISCARD km_result_t fs_alloc_dir_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out) {
 	fs_dir_t *ptr = kfxx::alloc_and_construct<fs_dir_t>(&ki_fs_filename_allocator, &ki_fs_filename_allocator);
 
 	if (!ptr)
 		return KM_RESULT_NO_MEM;
 
-	ptr->fs = filesys;
+	ptr->fs = file_system;
 
 	fs_inc_fnode_ref(ptr);
 
@@ -178,23 +189,28 @@ PBOS_NODISCARD km_result_t fs_alloc_dir_fnode(fs_filesys_t *filesys, fs_fnode_t 
 
 	return KM_RESULT_OK;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_alloc_dir_fnode);
 
 void *fs_get_fnode_exdata(fs_fnode_t *file) {
 	return file->exdata;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_get_fnode_exdata);
 
 void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata) {
 	file->exdata = exdata;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_set_fnode_exdata);
 
 PBOS_NODISCARD const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out) {
 	*len_out = file->filename_len;
 	return file->filename;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_name_of_fnode);
 
 void fs_unname_fnode(fs_fnode_t *file) {
 	ki_do_unname_fnode(file);
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_unname_fnode);
 
 PBOS_NODISCARD km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len) {
 	if (file->parent)
@@ -202,6 +218,7 @@ PBOS_NODISCARD km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, s
 
 	return ki_do_rename_fnode(file, name, name_len);
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_rename_fnode);
 
 PBOS_NODISCARD km_result_t ki_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t **fcb_out) {
 	fs_fcb_t *ptr = kfxx::alloc_and_construct<fs_fcb_t>(&ki_fs_filename_allocator, file_in);
@@ -251,6 +268,7 @@ km_result_t fs_create_file(
 	fs_fnode_t **file_out) {
 	return parent->fs->ops.create_file(parent, filename, filename_len, file_out);
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_create_file);
 
 km_result_t fs_create_dir(
 	fs_fnode_t *parent,
@@ -259,11 +277,13 @@ km_result_t fs_create_dir(
 	fs_fnode_t **file_out) {
 	return parent->fs->ops.create_dir(parent, filename, filename_len, file_out);
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_create_dir);
 
 PBOS_NODISCARD km_result_t fs_create_fcb(
 	fs_fnode_t *file,
 	fs_fcb_t **fcb_out) {
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_create_fcb);
 
 km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
 	// The mount point should be a directory.
@@ -279,7 +299,7 @@ km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
 	if (!f->subnodes.shrink_buckets())
 		return KM_RESULT_NO_MEM;
 
-	fs_filesys_t *fs = parent->fs;
+	fs_file_system_t *fs = parent->fs;
 
 	KM_RETURN_IF_FAILED(fs->ops.premount(parent, file));
 
@@ -295,6 +315,7 @@ km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
 	}
 	return KM_RESULT_OK;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_mount_file);
 
 km_result_t fs_unmount_file(fs_fnode_t *file) {
 	KM_RETURN_IF_FAILED(file->parent->fs->ops.unmount_cleanup(file));
@@ -307,8 +328,9 @@ km_result_t fs_unmount_file(fs_fnode_t *file) {
 
 	return KM_RESULT_OK;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_unmount_file);
 
-PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
+km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
 	if (parent->file_type != FS_FILETYPE_DIR)
 		return KM_RESULT_UNSUPPORTED_OPERATION;
 	fs_dir_t *p = (fs_dir_t *)parent;
@@ -321,6 +343,7 @@ PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
 
 	return KM_RESULT_OK;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_link_subnode);
 
 km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_len, fs_fnode_t **file_out) {
 	if (!file)
@@ -345,6 +368,7 @@ km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_
 
 	return KM_RESULT_OK;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_child_of);
 
 km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out) {
 	fs::fnode_ptr_t file = cur_dir;
@@ -392,6 +416,7 @@ end:;
 	*file_out = new_file.release();
 	return KM_RESULT_OK;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_resolve_path);
 
 km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out) {
 	fs::fnode_ptr_t file;
@@ -406,34 +431,41 @@ km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_
 
 	return KM_RESULT_OK;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_open);
 
 km_result_t fs_close(fs_fcb_t *fcb) {
 	fcb->fnode.reset();
 	ki_destroy_fcb(fcb);
 	return KM_RESULT_OK;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_close);
 
 km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
 	return fcb->fnode->fs->ops.read(fcb, (char *)dest, size, off, bytes_read_out);
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_read);
 
 km_result_t fs_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out) {
 	return fcb->fnode->fs->ops.write(fcb, src, size, off, bytes_written_out);
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_write);
 
 km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {
 	return fcb->fnode->fs->ops.size(fcb, size_out);
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_size);
 
 void fs_inc_fnode_ref(fs_fnode_t *fnode) {
 	// TODO: Use atomic version of this:
 	++fnode->ref_num;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_inc_fnode_ref);
 
 void fs_dec_fnode_ref(fs_fnode_t *fnode) {
 	if (!--fnode->ref_num)
 		ki_destroy_fnode(fnode);
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_dec_fnode_ref);
 
 void ki_destroy_fnode(fs_fnode_t *fnode) {
 	switch (fnode->file_type) {

@@ -283,7 +283,7 @@ namespace kfxx {
 
 				it.node = nullptr;
 				it.list = nullptr;
-				it.direction = iterator_direction::invalid;
+				it.direction = iterator_direction::Invalid;
 			}
 			PBOS_FORCEINLINE iterator &operator=(const iterator &rhs) noexcept {
 				if (direction != rhs.direction)
@@ -309,7 +309,7 @@ namespace kfxx {
 				if (!node)
 					km_panic("Increasing the end iterator");
 
-				if (direction == iterator_direction::forward) {
+				if (direction == iterator_direction::Forward) {
 					node = node->next;
 				} else {
 					node = node->prev;
@@ -325,7 +325,7 @@ namespace kfxx {
 			}
 
 			PBOS_FORCEINLINE iterator &operator--() {
-				if (direction == iterator_direction::forward) {
+				if (direction == iterator_direction::Forward) {
 					if (!(node = node->prev))
 						km_panic("Dereasing the begin iterator");
 				} else {
@@ -398,16 +398,16 @@ namespace kfxx {
 		};
 
 		PBOS_FORCEINLINE iterator begin() {
-			return iterator(_first, this, iterator_direction::forward);
+			return iterator(_first, this, iterator_direction::Forward);
 		}
 		PBOS_FORCEINLINE iterator end() {
-			return iterator(nullptr, this, iterator_direction::forward);
+			return iterator(nullptr, this, iterator_direction::Forward);
 		}
 		PBOS_FORCEINLINE iterator begin_reversed() {
-			return iterator(_last, this, iterator_direction::reversed);
+			return iterator(_last, this, iterator_direction::Reversed);
 		}
 		PBOS_FORCEINLINE iterator end_reversed() {
-			return iterator(nullptr, this, iterator_direction::reversed);
+			return iterator(nullptr, this, iterator_direction::Reversed);
 		}
 
 		struct const_iterator {
@@ -431,7 +431,7 @@ namespace kfxx {
 
 				it.node = nullptr;
 				it.list = nullptr;
-				it.direction = iterator_direction::invalid;
+				it.direction = iterator_direction::Invalid;
 			}
 			PBOS_FORCEINLINE const_iterator &operator=(const const_iterator &rhs) noexcept {
 				if (direction != rhs.direction)
@@ -476,7 +476,7 @@ namespace kfxx {
 				if (!node)
 					km_panic("Increasing the end iterator");
 
-				if (direction == iterator_direction::forward) {
+				if (direction == iterator_direction::Forward) {
 					node = node->next;
 				} else {
 					node = node->prev;
@@ -492,7 +492,7 @@ namespace kfxx {
 			}
 
 			PBOS_FORCEINLINE const_iterator &operator--() {
-				if (direction == iterator_direction::forward) {
+				if (direction == iterator_direction::Forward) {
 					if (!(node = node->prev))
 						km_panic("Dereasing the begin iterator");
 				} else {
@@ -565,16 +565,16 @@ namespace kfxx {
 		};
 
 		PBOS_FORCEINLINE const_iterator begin_const() const noexcept {
-			return const_iterator((node_t *)_first, this, iterator_direction::forward);
+			return const_iterator((node_t *)_first, this, iterator_direction::Forward);
 		}
 		PBOS_FORCEINLINE const_iterator end_const() const noexcept {
-			return const_iterator(nullptr, this, iterator_direction::forward);
+			return const_iterator(nullptr, this, iterator_direction::Forward);
 		}
 		PBOS_FORCEINLINE const_iterator begin_const_reversed() const noexcept {
-			return const_iterator((node_t *)_last, this, iterator_direction::reversed);
+			return const_iterator((node_t *)_last, this, iterator_direction::Reversed);
 		}
 		PBOS_FORCEINLINE const_iterator end_const_reversed() const noexcept {
-			return const_iterator(nullptr, this, iterator_direction::reversed);
+			return const_iterator(nullptr, this, iterator_direction::Reversed);
 		}
 
 		PBOS_FORCEINLINE const_iterator begin() const noexcept {

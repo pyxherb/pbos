@@ -9,6 +9,9 @@
 #include <pbos/ki/exec/exec.hh>
 #include <pbos/ki/fs/fs.hh>
 #include <pbos/ki/km/proc.hh>
+#include <pbos/ki/km/symbol.hh>
+
+const ki_syment_t KI_EXPORTED_SYMBOLS_BEGIN[0] = {}, KI_EXPORTED_SYMBOLS_END[0] = {};
 
 // Because the operating system will never exit normally,
 // we just designed a dummy procedure to register the destructors.
@@ -41,6 +44,10 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 
 	fs_init();
 	ps_init();
+
+	for(const ki_syment_t *i = KI_EXPORTED_SYMBOLS_BEGIN; i < KI_EXPORTED_SYMBOLS_END; ++i) {
+		kd_printf("Found image symbol: %s\n", i->name);
+	}
 
 	kh_initcar_init();
 

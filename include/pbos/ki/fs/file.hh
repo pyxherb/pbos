@@ -62,6 +62,7 @@ extern ki_fs_fnode_allocator_t ki_fs_fnode_allocator;
 
 typedef struct _fs_fcb_t : public kfxx::rbtree_t<fs_fhandle_t>::node_t {
 	fs::fnode_ptr_t fnode;
+	void *exdata = nullptr;
 
 	_fs_fcb_t(fs_fnode_t *fnode);
 	~_fs_fcb_t();
@@ -72,7 +73,7 @@ typedef struct _fs_fnode_t {
 
 	_fs_fnode_t *parent = nullptr;
 
-	fs_filesys_t *fs = nullptr;
+	fs_file_system_t *fs = nullptr;
 	fs_filetype_t file_type;
 
 	size_t filename_len = 0;

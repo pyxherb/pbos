@@ -1,58 +1,55 @@
 #include <pbos/km/logger.h>
 #include <pbos/mm/mm.h>
+#include <pbos/kfxx/uuid.hh>
 #include <pbos/ki/fs/file.hh>
 #include <pbos/ki/fs/fs.hh>
 #include <pbos/ki/fs/rootfs.hh>
-#include <pbos/kfxx/uuid.hh>
+#include <pbos/ki/km/symbol.hh>
 
 PBOS_EXTERN_C_BEGIN
 
-kfxx::rbtree_t<kf_uuid_t> ki_registered_fs;
+kfxx::hash_map_t<kfxx::string_view, fs_file_system_t *> ki_registered_fs(kfxx::kernel_allocator());
 fs_fnode_t *fs_abs_root_dir;
-fs_filesys_t *fs_rootfs;
+fs_file_system_t *fs_rootfs;
 
-_fs_filesys_t::_fs_filesys_t() {
+_fs_file_system_t::_fs_file_system_t() {
 }
 
-_fs_filesys_t::~_fs_filesys_t() {
+_fs_file_system_t::~_fs_file_system_t() {
 	if (name)
 		kfxx::kernel_allocator()->release(name, name_len, alignof(char));
 }
 
-fs_filesys_t *fs_register_filesys(
+fs_file_system_t *fs_register_file_system(
 	const char *name,
 	size_t name_len,
-	kf_uuid_t *uuid,
 	fs_fsops_t *ops) {
-	fs_filesys_t *fs = (fs_filesys_t *)kfxx::alloc_and_construct<fs_filesys_t>(kfxx::kernel_allocator());
+	fs_file_system_t *fs = (fs_file_system_t *)kfxx::alloc_and_construct<fs_file_system_t>(kfxx::kernel_allocator());
 	if (!fs)
 		return nullptr;
 
 	kfxx::scope_guard release_fs_guard([fs]() noexcept {
-		kfxx::destroy_and_release<fs_filesys_t>(kfxx::kernel_allocator(), fs);
+		kfxx::destroy_and_release<fs_file_system_t>(kfxx::kernel_allocator(), fs);
 	});
 
-	if(!(fs->name = (char*)kfxx::kernel_allocator()->alloc(name_len, alignof(char))))
+	if (!(fs->name = (char *)kfxx::kernel_allocator()->alloc(name_len, alignof(char))))
 		return nullptr;
 	fs->name_len = name_len;
 	memcpy(&fs->ops, ops, sizeof(fs_fsops_t));
-	memcpy(&fs->rb_value, uuid, sizeof(kf_uuid_t));
 
-	if (!ki_registered_fs.insert(fs))
+	if (!ki_registered_fs.insert(kfxx::string_view(fs->name, name_len), +fs))
 		return nullptr;
 
 	release_fs_guard.release();
 
 	return fs;
 }
+KI_EXPORT_IMAGE_SYMBOL(fs_register_file_system);
 
 void fs_init() {
 	km_result_t result;
 
-	kf_uuid_t uuid;
-
-	uuid = ROOTFS_UUID;
-	if (!(fs_rootfs = fs_register_filesys("rootfs", strlen("rootfs"), &uuid, &ki_rootfs_ops)))
+	if (!(fs_rootfs = fs_register_file_system("rootfs", strlen("rootfs"), &ki_rootfs_ops)))
 		km_panic("Error registering root file system");
 
 	kd_printf("Registered root file system\n");

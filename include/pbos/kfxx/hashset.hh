@@ -389,7 +389,7 @@ namespace kfxx {
 				it.idx_cur_bucket = SIZE_MAX;
 				it.bucket_node_handle = bucket_t::null_node_handle();
 				it.hash_set = nullptr;
-				it.direction = iterator_direction::invalid;
+				it.direction = iterator_direction::Invalid;
 			}
 			PBOS_FORCEINLINE iterator &operator=(const iterator &rhs) noexcept {
 				if (direction != rhs.direction)
@@ -415,7 +415,7 @@ namespace kfxx {
 				if (idx_cur_bucket == SIZE_MAX)
 					km_panic("Increasing the end iterator");
 
-				if (direction == iterator_direction::forward) {
+				if (direction == iterator_direction::Forward) {
 					typename bucket_t::node_handle_t next_node = bucket_t::next(bucket_node_handle, 1);
 					if (!next_node) {
 						while ((!next_node) && (idx_cur_bucket != SIZE_MAX)) {
@@ -454,7 +454,7 @@ namespace kfxx {
 			}
 
 			PBOS_FORCEINLINE iterator &operator--() {
-				if (direction == iterator_direction::forward) {
+				if (direction == iterator_direction::Forward) {
 					if (idx_cur_bucket == SIZE_MAX) {
 						idx_cur_bucket = hash_set->_buckets.size();
 						bucket_node_handle = hash_set->_buckets.at(idx_cur_bucket).last_node();
@@ -552,33 +552,33 @@ namespace kfxx {
 				auto &cur_bucket = _buckets.at(i);
 				typename bucket_t::node_handle_t node = cur_bucket.first_node();
 				if (node) {
-					return iterator(this, i, node, iterator_direction::forward);
+					return iterator(this, i, node, iterator_direction::Forward);
 				}
 			}
 			return end();
 		}
 		PBOS_FORCEINLINE iterator end() {
-			return iterator(this, SIZE_MAX, nullptr, iterator_direction::forward);
+			return iterator(this, SIZE_MAX, nullptr, iterator_direction::Forward);
 		}
 		PBOS_FORCEINLINE iterator begin_reversed() {
 			for (size_t i = _buckets.size(); i; --i) {
 				auto &cur_bucket = _buckets.at(i);
 				typename bucket_t::node_handle_t node = cur_bucket.last_node();
 				if (node) {
-					return iterator(this, i, node, iterator_direction::reversed);
+					return iterator(this, i, node, iterator_direction::Reversed);
 				}
 			}
 
 			auto &cur_bucket = _buckets.at(0);
 			typename bucket_t::node_handle_t node = cur_bucket.last_node();
 			if (node) {
-				return iterator(this, 0, node, iterator_direction::reversed);
+				return iterator(this, 0, node, iterator_direction::Reversed);
 			}
 			return end_reversed();
 		}
 
 		PBOS_FORCEINLINE iterator end_reversed() {
-			return iterator(this, SIZE_MAX, nullptr, iterator_direction::reversed);
+			return iterator(this, SIZE_MAX, nullptr, iterator_direction::Reversed);
 		}
 
 		struct const_iterator {
@@ -648,13 +648,13 @@ namespace kfxx {
 				if (!node.hasValue())
 					return end();
 				if (typename bucket_t::node_handle_t handle = node.value(); handle)
-					return iterator(this, index, handle, iterator_direction::forward);
+					return iterator(this, index, handle, iterator_direction::Forward);
 				return end();
 			} else {
 				typename bucket_t::node_handle_t node = _get(value, index);
 				if (!node)
 					return end();
-				return iterator(this, index, node, iterator_direction::forward);
+				return iterator(this, index, node, iterator_direction::Forward);
 			}
 		}
 

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
+#include <pbos/ki/km/symbol.hh>
 
 void *mm_kalloc(size_t size, size_t alignment) {
 	// io::irq_disable_lock irq_lock;
@@ -22,7 +23,7 @@ void *mm_kalloc(size_t size, size_t alignment) {
 			j += PAGESIZE) {
 			if (!kima_lookup_vpgdesc(((char *)cur_desc->rb_value) + j)) {
 				continuous_area_base = ((char *)cur_desc->rb_value) + j;
-				it = kfxx::rbtree_t<void *>::iterator(kima_vpgdesc_query_tree.find_max_lteq(continuous_area_base), &kima_vpgdesc_query_tree, kfxx::iterator_direction::forward);
+				it = kfxx::rbtree_t<void *>::iterator(kima_vpgdesc_query_tree.find_max_lteq(continuous_area_base), &kima_vpgdesc_query_tree, kfxx::iterator_direction::Forward);
 				goto noncontinuous;
 			}
 		}
@@ -104,6 +105,7 @@ void *mm_kalloc(size_t size, size_t alignment) {
 
 	return new_free_pg;
 }
+KI_EXPORT_IMAGE_SYMBOL(mm_kalloc);
 
 PBOS_NODISCARD void *mm_krealloc(void *old_ptr, size_t size, size_t alignment) {
 	kd_assert(size);
@@ -126,7 +128,7 @@ PBOS_NODISCARD void *mm_krealloc(void *old_ptr, size_t size, size_t alignment) {
 			// Look up for a continuous existing allocated virtual page area for allocation.
 			if (!kima_lookup_vpgdesc(((char *)cur_desc->rb_value) + j)) {
 				continuous_area_base = ((char *)cur_desc->rb_value) + j;
-				it = kfxx::rbtree_t<void *>::iterator(kima_vpgdesc_query_tree.find_max_lteq(continuous_area_base), &kima_vpgdesc_query_tree, kfxx::iterator_direction::forward);
+				it = kfxx::rbtree_t<void *>::iterator(kima_vpgdesc_query_tree.find_max_lteq(continuous_area_base), &kima_vpgdesc_query_tree, kfxx::iterator_direction::Forward);
 				goto noncontinuous;
 			}
 		}
@@ -233,6 +235,7 @@ PBOS_NODISCARD void *mm_krealloc(void *old_ptr, size_t size, size_t alignment) {
 
 	return new_free_pg;
 }
+KI_EXPORT_IMAGE_SYMBOL(mm_krealloc);
 
 PBOS_NODISCARD void *mm_krealloc_in_place(void *old_ptr, size_t size, size_t alignment) {
 	kd_assert(size);
@@ -332,6 +335,7 @@ PBOS_NODISCARD void *mm_krealloc_in_place(void *old_ptr, size_t size, size_t ali
 
 	return new_free_pg;
 }
+KI_EXPORT_IMAGE_SYMBOL(mm_krealloc_in_place);
 
 void mm_kfree(void *ptr) {
 	// io::irq_disable_lock irq_lock;
@@ -351,3 +355,4 @@ void mm_kfree(void *ptr) {
 
 	kima_free_ublk(ublk);
 }
+KI_EXPORT_IMAGE_SYMBOL(mm_kfree);

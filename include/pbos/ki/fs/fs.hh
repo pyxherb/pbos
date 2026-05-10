@@ -10,14 +10,14 @@
 
 PBOS_EXTERN_C_BEGIN
 
-typedef struct _fs_filesys_t : public kfxx::rbtree_t<kf_uuid_t>::node_t {
+typedef struct _fs_file_system_t {
 	char *name;
 	size_t name_len;
 	fs_fsops_t ops;
 
-	_fs_filesys_t();
-	~_fs_filesys_t();
-} fs_filesys_t;
+	_fs_file_system_t();
+	~_fs_file_system_t();
+} fs_file_system_t;
 
 extern fs_fnode_t *fs_abs_root_dir;
 

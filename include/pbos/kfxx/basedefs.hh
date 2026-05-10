@@ -8,9 +8,9 @@
 #ifdef __cplusplus
 namespace kfxx {
 	enum class iterator_direction : uint8_t {
-		forward = 0,
-		reversed,
-		invalid
+		Forward = 0,
+		Reversed,
+		Invalid
 	};
 }
 #endif

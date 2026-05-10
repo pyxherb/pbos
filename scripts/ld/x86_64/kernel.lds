@@ -10,6 +10,7 @@ PHDRS
     text PT_LOAD;
     rodata PT_LOAD;
     data PT_LOAD;
+	exported_image_sym PT_LOAD;
 }
 
 SECTIONS
@@ -48,6 +49,13 @@ SECTIONS
 		*(.shstrtab)
 	} :rodata
 
+	.exported_image_sym :
+	{
+		KI_EXPORTED_SYMBOLS_BEGIN = .;
+		KEEP(*(.exported_image_sym))
+	} :exported_image_sym
+	KI_EXPORTED_SYMBOLS_END = .;
+
 	. = ALIGN(CONSTANT(MAXPAGESIZE));
 
 	.data :
@@ -55,6 +63,10 @@ SECTIONS
 		*(.data)
 		*(.data.*)
 	} :data
+
+	. = ALIGN(CONSTANT(MAXPAGESIZE));
+
+	. = ALIGN(CONSTANT(MAXPAGESIZE));
 
 	.init_array :
 	{

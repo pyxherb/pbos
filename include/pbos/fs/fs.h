@@ -6,8 +6,6 @@
 
 PBOS_EXTERN_C_BEGIN
 
-#define ROOTFS_UUID UUID(8ad4b63d, f097, 48e0, 9c68, 77c8606143e9)
-
 typedef struct _fs_fnode_t fs_fnode_t;
 typedef struct _fs_fcb_t fs_fcb_t;
 
@@ -28,6 +26,8 @@ typedef struct _fs_fsops_t {
 	km_result_t (*read)(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
 	/// @brief Write data into a file.
 	km_result_t (*write)(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out);
+	/// @brief Perform an I/O control operation.
+	km_result_t (*ioctl)(fs_fcb_t *fcb, size_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args);
 	/// @brief Get size of a file.
 	km_result_t (*size)(fs_fcb_t *fcb, size_t *size_out);
 
@@ -41,12 +41,11 @@ typedef struct _fs_fsops_t {
 	km_result_t (*destructor)();
 } fs_fsops_t;
 
-typedef struct _fs_filesys_t fs_filesys_t;
+typedef struct _fs_file_system_t fs_file_system_t;
 
-fs_filesys_t *fs_register_filesys(
+fs_file_system_t *fs_register_file_system(
 	const char *name,
 	size_t name_len,
-	kf_uuid_t *uuid,
 	fs_fsops_t *ops);
 
 PBOS_EXTERN_C_END

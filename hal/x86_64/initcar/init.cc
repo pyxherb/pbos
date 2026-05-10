@@ -13,7 +13,7 @@ void *hn_initcar_paddr = NULL;
 size_t hn_initcar_size = 0;
 bool hn_is_initcar_direct_mapped = true;
 
-fs_filesys_t *kh_initcar_fs = NULL;
+fs_file_system_t *kh_initcar_fs = NULL;
 fs_fnode_t *kh_initcar_dir;
 
 fs_fsops_t kh_initcar_ops = {
@@ -82,8 +82,7 @@ km_result_t kh_initcar_unmount_cleanup(fs_fnode_t *file) {
 void kh_initcar_init() {
 	km_result_t result;
 
-	kf_uuid_t uuid = INITCAR_UUID;
-	if (!(kh_initcar_fs = fs_register_filesys("initcar", strlen("initcar"), &uuid, &kh_initcar_ops)))
+	if (!(kh_initcar_fs = fs_register_file_system("initcar", strlen("initcar"), &kh_initcar_ops)))
 		km_panic("Error registering initcar file system");
 
 	kd_printf("INITCAR range: %p-%p\n",
