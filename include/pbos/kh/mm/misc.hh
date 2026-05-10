@@ -1,7 +1,7 @@
 #ifndef _PBOS_KH_MM_MISC_H_
 #define _PBOS_KH_MM_MISC_H_
 
-#include <pbos/kn/mm/mm.hh>
+#include <pbos/ki/mm/mm.hh>
 
 PBOS_EXTERN_C_BEGIN
 

@@ -1,9 +1,8 @@
-#ifndef _PBOS_KN_FS_FS_H_
-#define _PBOS_KN_FS_FS_H_
+#ifndef _PBOS_KI_FS_FS_H_
+#define _PBOS_KI_FS_FS_H_
 
 #include <pbos/fs/fs.h>
 #include <pbos/fs/file.hh>
-#include <pbos/kf/hashmap.h>
 #include <pbos/kfxx/rbtree.hh>
 #include <pbos/kfxx/rbtree.hh>
 #include <pbos/kfxx/uuid.hh>

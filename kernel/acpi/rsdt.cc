@@ -1,4 +1,4 @@
-#include <pbos/kn/acpi/rsdt.hh>
+#include <pbos/ki/acpi/rsdt.hh>
 
 void *ki_acpi_rsdp_paddr = nullptr;
 acpi_rsdp_t *ki_acpi_rsdp_vaddr = nullptr;

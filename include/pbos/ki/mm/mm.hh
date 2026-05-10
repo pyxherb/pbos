@@ -1,5 +1,5 @@
-#ifndef _PBOS_KN_KM_MM_H_
-#define _PBOS_KN_KM_MM_H_
+#ifndef _PBOS_KI_KM_MM_H_
+#define _PBOS_KI_KM_MM_H_
 
 #include "memconf.h"
 
@@ -8,7 +8,7 @@
 #include <pbos/kfxx/rbtree.hh>
 
 #include <pbos/generated/km.h>
-#include KN_ARCH_MEMCONF_HEADER_PATH
+#include KI_ARCH_MEMCONF_HEADER_PATH
 
 // #include <arch/i386/paging.h>
 

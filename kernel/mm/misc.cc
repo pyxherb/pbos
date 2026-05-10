@@ -1,5 +1,5 @@
 #include <pbos/kh/mm/misc.hh>
-#include <pbos/kn/km/proc.hh>
+#include <pbos/ki/km/proc.hh>
 
 mm_context_t **mm_cur_contexts = nullptr;
 

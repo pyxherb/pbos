@@ -1,5 +1,5 @@
-#ifndef _PBOS_KN_KM_PROC_HH_
-#define _PBOS_KN_KM_PROC_HH_
+#ifndef _PBOS_KI_KM_PROC_HH_
+#define _PBOS_KI_KM_PROC_HH_
 
 #include <pbos/ps/proc.h>
 #include <pbos/ps/sched.h>

@@ -1,8 +1,8 @@
 #include <pbos/km/logger.h>
 #include <pbos/mm/mm.h>
-#include <pbos/kn/fs/file.hh>
-#include <pbos/kn/fs/fs.hh>
-#include <pbos/kn/fs/rootfs.hh>
+#include <pbos/ki/fs/file.hh>
+#include <pbos/ki/fs/fs.hh>
+#include <pbos/ki/fs/rootfs.hh>
 #include <pbos/kfxx/uuid.hh>
 
 PBOS_EXTERN_C_BEGIN

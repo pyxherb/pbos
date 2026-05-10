@@ -104,7 +104,7 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 			  size,
 			  MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER,
 			  VMALLOC_ATOMIC))) {
-		return KM_MAKEERROR(KM_RESULT_NO_MEM);
+		return KM_RESULT_NO_MEM;
 	}
 
 	{
@@ -121,7 +121,7 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 			if (!pg) {
 				klog_printf("Error allocating physical page: %p", ptr + i);
 				--i;
-				return KM_MAKEERROR(KM_RESULT_NO_MEM);
+				return KM_RESULT_NO_MEM;
 			}
 
 			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER, MMAP_ATOMIC))) {
@@ -147,7 +147,7 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 			  size,
 			  MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE,
 			  VMALLOC_ATOMIC))) {
-		return KM_MAKEERROR(KM_RESULT_NO_MEM);
+		return KM_RESULT_NO_MEM;
 	}
 
 	{
@@ -164,7 +164,7 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 			void *pg = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 
 			if (!pg) {
-				return KM_MAKEERROR(KM_RESULT_NO_MEM);
+				return KM_RESULT_NO_MEM;
 			}
 
 			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER, MMAP_ATOMIC))) {

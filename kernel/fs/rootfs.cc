@@ -1,7 +1,7 @@
 #include <pbos/kf/hash.h>
 #include <pbos/mm/mm.h>
 #include <string.h>
-#include <pbos/kn/fs/rootfs.hh>
+#include <pbos/ki/fs/rootfs.hh>
 
 fs_fsops_t ki_rootfs_ops = {
 	.subnode = ki_rootfs_subnode,
@@ -26,11 +26,11 @@ void ki_rootfs_offload(fs_fnode_t *file) {
 }
 
 km_result_t ki_rootfs_create_file(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
-	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_OPERATION);
+	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
 km_result_t ki_rootfs_create_dir(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
-	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_OPERATION);
+	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
 km_result_t ki_rootfs_open(fs_fnode_t *file, fs_fcb_t **fcb_out) {
@@ -44,16 +44,16 @@ void ki_rootfs_close(fs_fcb_t *fcb) {
 
 km_result_t ki_rootfs_read(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out) {
 	*bytes_read_out = 0;
-	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_OPERATION);
+	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
 km_result_t ki_rootfs_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out) {
 	*bytes_written_out = 0;
-	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_OPERATION);
+	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
 km_result_t ki_rootfs_size(fs_fcb_t *fcb, size_t *size_out) {
-	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_OPERATION);
+	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
 km_result_t ki_rootfs_premount(fs_fnode_t *parent, fs_fnode_t *file) {

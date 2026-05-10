@@ -2,7 +2,7 @@
 #define _PBOS_FS_FILE_H_
 
 #include <pbos/kf/basedefs.h>
-#include <pbos/kf/hashmap.h>
+#include <pbos/km/result.h>
 #include <stdint.h>
 
 PBOS_EXTERN_C_BEGIN
@@ -39,9 +39,7 @@ typedef struct _fs_filesys_t fs_filesys_t;
 ///
 typedef struct _fs_fnode_t fs_fnode_t;
 
-typedef struct _fs_finddata_t {
-	kf_hashmap_node_t *node;
-} fs_finddata_t;
+typedef struct _fs_finddata_t fs_finddata_t;
 
 typedef size_t fs_fhandle_t;
 
@@ -70,7 +68,7 @@ PBOS_NODISCARD km_result_t fs_alloc_file_fnode(fs_filesys_t *filesys, fs_fnode_t
 PBOS_NODISCARD km_result_t fs_alloc_dir_fnode(fs_filesys_t *filesys, fs_fnode_t **file_out);
 
 PBOS_NODISCARD void *fs_get_fnode_exdata(fs_fnode_t *file);
-PBOS_NODISCARD void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata);
+void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata);
 
 PBOS_NODISCARD const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out);
 void fs_unname_fnode(fs_fnode_t *file);

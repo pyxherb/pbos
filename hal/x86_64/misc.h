@@ -21,8 +21,8 @@ extern volatile uint64_t hn_limine_requests_end_marker[];
 typedef void (*hn_ctor_t)();
 typedef void (*hn_dtor_t)();
 
-// extern hn_ctor_t *KN_CTORS_BEGIN, *KN_CTORS_END;
-// extern hn_dtor_t *KN_DTORS_BEGIN, *KN_DTORS_END;
+// extern hn_ctor_t *KI_CTORS_BEGIN, *KI_CTORS_END;
+// extern hn_dtor_t *KI_DTORS_BEGIN, *KI_DTORS_END;
 
 PBOS_EXTERN_C_END
 

@@ -29,10 +29,8 @@ typedef enum _km_results {
 
 typedef uint32_t km_result_t;
 
-#define KM_SUCCEEDED(result) (!(result))
+#define KM_SUCCESS(result) (!(result))
 #define KM_FAILED(result) (result)
-
-#define KM_MAKEERROR(result) ((result))
 
 PBOS_FORCEINLINE void km_unwrap_result(km_result_t result) {
 	if (KM_FAILED(result))

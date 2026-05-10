@@ -1,5 +1,5 @@
 #include <string.h>
-#include <pbos/kn/km/proc.hh>
+#include <pbos/ki/km/proc.hh>
 
 PBOS_EXTERN_C_BEGIN
 

@@ -6,9 +6,9 @@
 #include <pbos/kh/acpi/misc.hh>
 #include <pbos/kh/initcar.hh>
 #include <pbos/kh/mp/init.hh>
-#include <pbos/kn/exec/exec.hh>
-#include <pbos/kn/fs/fs.hh>
-#include <pbos/kn/km/proc.hh>
+#include <pbos/ki/exec/exec.hh>
+#include <pbos/ki/fs/fs.hh>
+#include <pbos/ki/km/proc.hh>
 
 // Because the operating system will never exit normally,
 // we just designed a dummy procedure to register the destructors.

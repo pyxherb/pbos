@@ -1,8 +1,8 @@
 #include <pbos/kf/hash.h>
 #include <pbos/kf/string.h>
 #include <pbos/mm/mm.h>
-#include <pbos/kn/fs/file.hh>
-#include <pbos/kn/fs/fs.hh>
+#include <pbos/ki/fs/file.hh>
+#include <pbos/ki/fs/fs.hh>
 
 fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb) {
 	return fcb->fnode.get();
@@ -183,7 +183,7 @@ void *fs_get_fnode_exdata(fs_fnode_t *file) {
 	return file->exdata;
 }
 
-PBOS_NODISCARD void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata) {
+void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata) {
 	file->exdata = exdata;
 }
 

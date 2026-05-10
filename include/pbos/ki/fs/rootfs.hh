@@ -1,5 +1,5 @@
-#ifndef _PBOS_KN_FS_ROOTFS_H_
-#define _PBOS_KN_FS_ROOTFS_H_
+#ifndef _PBOS_KI_FS_ROOTFS_H_
+#define _PBOS_KI_FS_ROOTFS_H_
 
 #include "file.hh"
 #include "fs.hh"

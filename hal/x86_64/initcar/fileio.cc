@@ -6,18 +6,18 @@
 PBOS_EXTERN_C_BEGIN
 
 km_result_t kh_initcar_subnode(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
-	return KM_MAKEERROR(KM_RESULT_NOT_FOUND);
+	return KM_RESULT_NOT_FOUND;
 }
 
 void kh_initcar_offload(fs_fnode_t *file) {
 }
 
 km_result_t kh_initcar_create_file(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
-	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_OPERATION);
+	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
 km_result_t kh_initcar_create_dir(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
-	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_OPERATION);
+	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
 km_result_t kh_initcar_open(fs_fnode_t *file, fs_fcb_t **fcb_out) {
@@ -38,7 +38,7 @@ km_result_t kh_initcar_read(fs_fcb_t *fcb, char *dest, size_t size, size_t off, 
 	if (size + off > exdata->sz_total) {
 		memcpy(dest, exdata->ptr + off, exdata->sz_total - off);
 		*bytes_read_out = exdata->sz_total - off;
-		return KM_MAKEERROR(KM_RESULT_EOF);
+		return KM_RESULT_EOF;
 	}
 	memcpy(dest, exdata->ptr + off, size);
 	*bytes_read_out = size;
@@ -48,7 +48,7 @@ km_result_t kh_initcar_read(fs_fcb_t *fcb, char *dest, size_t size, size_t off, 
 
 km_result_t kh_initcar_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out) {
 	*bytes_written_out = 0;
-	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_OPERATION);
+	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
 km_result_t kh_initcar_size(fs_fcb_t *fcb, size_t *size_out) {

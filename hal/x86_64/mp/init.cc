@@ -5,7 +5,7 @@
 #include <hal/x86_64/irq.hh>
 #include <hal/x86_64/mm.hh>
 #include <pbos/kh/acpi/misc.hh>
-#include <pbos/kn/mp/init.hh>
+#include <pbos/ki/mp/init.hh>
 #include <hal/x86_64/mm/vmmgr/vm.hh>
 
 PBOS_EXTERN_C_BEGIN

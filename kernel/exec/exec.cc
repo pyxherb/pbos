@@ -3,7 +3,7 @@
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/kfxx/uuid.hh>
-#include <pbos/kn/exec/exec.hh>
+#include <pbos/ki/exec/exec.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -21,7 +21,7 @@ km_result_t km_register_binldr(kf_uuid_t *uuid, km_binldr_t *binldr) {
 		return KM_RESULT_EXISTED;
 	ki_binldr_registry_t *reg = kfxx::alloc_and_construct<ki_binldr_registry_t>(kfxx::kernel_allocator());
 	if (!reg)
-		return KM_MAKEERROR(KM_RESULT_NO_MEM);
+		return KM_RESULT_NO_MEM;
 
 	memcpy(&reg->rb_value, &uuid, sizeof(*uuid));
 	memcpy(&reg->binldr, binldr, sizeof(km_binldr_t));
@@ -40,11 +40,11 @@ km_result_t km_exec(
 
 	ps_proc_id_t new_proc_id = ki_alloc_proc_id();
 	if (new_proc_id < 0)
-		return KM_MAKEERROR(KM_RESULT_NO_SLOT);
+		return KM_RESULT_NO_SLOT;
 
 	ps_pcb_t *pcb = ps_alloc_pcb();
 	if (!pcb) {
-		return KM_MAKEERROR(KM_RESULT_NO_MEM);
+		return KM_RESULT_NO_MEM;
 	}
 
 	kfxx::scope_guard destroy_pcb_guard([pcb]() noexcept {
@@ -52,7 +52,7 @@ km_result_t km_exec(
 	});
 
 	for (auto it = ki_registered_binldrs.begin(); it != ki_registered_binldrs.end(); ++it) {
-		if (KM_SUCCEEDED(result = static_cast<ki_binldr_registry_t *>(it.node)->binldr.load_exec(pcb, file_fp))) {
+		if (KM_SUCCESS(result = static_cast<ki_binldr_registry_t *>(it.node)->binldr.load_exec(pcb, file_fp))) {
 			io::irq_disable_lock irq_disable_lock;
 			pcb->rb_value = ki_alloc_proc_id();
 			ps_create_proc(pcb, parent);
@@ -64,14 +64,14 @@ km_result_t km_exec(
 			return result;
 	}
 
-	return KM_MAKEERROR(KM_RESULT_UNSUPPORTED_EXECFMT);
+	return KM_RESULT_UNSUPPORTED_EXECFMT;
 }
 
 km_result_t km_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
 	io::irq_disable_lock irq_disable_lock;
 
 	if (ki_registered_binprotos.find(fcb))
-		return KM_MAKEERROR(KM_RESULT_EXISTED);
+		return KM_RESULT_EXISTED;
 
 	km_binproto_t *proto = (km_binproto_t *)mm_kalloc(sizeof(km_binproto_t), alignof(km_binproto_t));
 
@@ -101,7 +101,7 @@ void km_unregister_binproto(km_binproto_t *proto) {
 
 km_result_t km_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, size_t size, mm_pgaccess_t pgaccess, km_binseg_t **seg_out) {
 	if (vaddr_base != (void *)PGFLOOR(vaddr_base))
-		return KM_MAKEERROR(KM_RESULT_INVALID_ARGS);
+		return KM_RESULT_INVALID_ARGS;
 
 	km_binseg_t *seg = (km_binseg_t *)mm_kalloc(sizeof(km_binseg_t), alignof(km_binseg_t));
 	kfxx::scope_guard seg_release_guard([seg]() noexcept {
@@ -143,7 +143,7 @@ km_result_t km_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, s
 			void *paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 
 			if (!paddr)
-				return KM_MAKEERROR(KM_RESULT_NO_MEM);
+				return KM_RESULT_NO_MEM;
 
 			page_pool->descs[i].rb_value = paddr;
 			seg->page_descs_query_tree.insert(&page_pool->descs[i]);

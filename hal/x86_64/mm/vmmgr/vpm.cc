@@ -19,7 +19,7 @@ static uintptr_t hn_pt_rounddowner(uintptr_t addr) {
 	return (addr & 0xffff000000000000ULL) | ((uintptr_t)UVADDR(PML4X(addr), PDPTX(addr), PDX(addr), PTX(addr), 0));
 }
 
-const ki_paging_config_t KN_PAGING_CONFIG_48BIT = {
+const ki_paging_config_t KI_PAGING_CONFIG_48BIT = {
 	.pgtab_level = HN_VPM_LEVEL_MAX + 1,
 
 	.addr_rounddowners = (hn_pglevel_addr_rounddowner_t[]){

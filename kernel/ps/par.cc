@@ -1,4 +1,4 @@
-#include <pbos/kn/km/proc.hh>
+#include <pbos/ki/km/proc.hh>
 
 void ki_ps_assoc_page(ps_pcb_t *pcb, void *paddr) {
 

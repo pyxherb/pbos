@@ -4,7 +4,7 @@
 #include "../mm.hh"
 #include <pbos/kfxx/allocator.hh>
 #include <string.h>
-#include <pbos/kn/mp/misc.hh>
+#include <pbos/ki/mp/misc.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -47,14 +47,14 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 		 *pml4t_vaddr = NULL;
 
 	if (!(pml4t_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))) {
-		return KM_MAKEERROR(KM_RESULT_NO_MEM);
+		return KM_RESULT_NO_MEM;
 	}
 	kfxx::scope_guard free_pml4t_paddr_guard([pml4t_paddr]() noexcept {
 		mm_pgfree(pml4t_paddr);
 	});
 
 	if (!(pml4t_vaddr = mm_kvmalloc(mm_get_cur_context(), PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0))) {
-		return KM_MAKEERROR(KM_RESULT_NO_MEM);
+		return KM_RESULT_NO_MEM;
 	}
 	kfxx::scope_guard free_pml4t_vaddr_guard([pml4t_vaddr]() noexcept {
 		mm_vmfree(mm_get_cur_context(), pml4t_vaddr, PAGESIZE);

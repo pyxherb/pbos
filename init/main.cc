@@ -6,19 +6,19 @@ PBOS_EXTERN_C_BEGIN
 typedef void (*hn_ctor_t)();
 typedef void (*hn_dtor_t)();
 
-alignas(hn_ctor_t) hn_ctor_t KN_CTORS_BEGIN[0] = {};
-alignas(hn_ctor_t) hn_ctor_t KN_CTORS_END[0] = {};
+alignas(hn_ctor_t) hn_ctor_t KI_CTORS_BEGIN[0] = {};
+alignas(hn_ctor_t) hn_ctor_t KI_CTORS_END[0] = {};
 
-alignas(hn_dtor_t) hn_dtor_t KN_DTORS_BEGIN[0] = {};
-alignas(hn_dtor_t) hn_dtor_t KN_DTORS_END[0] = {};
+alignas(hn_dtor_t) hn_dtor_t KI_DTORS_BEGIN[0] = {};
+alignas(hn_dtor_t) hn_dtor_t KI_DTORS_END[0] = {};
 
 extern "C" void __cxa_pure_virtual() {
 }
 
 void hal_call_ctors() {
-	const size_t n_ctors = KN_CTORS_END - KN_CTORS_BEGIN;
+	const size_t n_ctors = KI_CTORS_END - KI_CTORS_BEGIN;
 	for (size_t i = 0; i < n_ctors; ++i) {
-		KN_CTORS_BEGIN[i]();
+		KI_CTORS_BEGIN[i]();
 	}
 }
 

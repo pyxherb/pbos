@@ -1,5 +1,5 @@
-#ifndef _PBOS_KN_KM_MEMCONF_H_
-#define _PBOS_KN_KM_MEMCONF_H_
+#ifndef _PBOS_KI_KM_MEMCONF_H_
+#define _PBOS_KI_KM_MEMCONF_H_
 
 #include <pbos/common.h>
 #include <stddef.h>

@@ -1,8 +1,8 @@
 #include <pbos/km/logger.h>
 #include <hal/x86_64/initcar.hh>
 #include <pbos/kh/mm/misc.hh>
-#include <pbos/kn/fs/file.hh>
-#include <pbos/kn/fs/fs.hh>
+#include <pbos/ki/fs/file.hh>
+#include <pbos/ki/fs/fs.hh>
 
 PBOS_EXTERN_C_BEGIN
 

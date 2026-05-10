@@ -33,7 +33,7 @@ km_result_t kf_rbtree_insert(kf_rbtree *tree, kf_rbtree_node_t *node) {
 		else if (tree->node_cmp(node, x))
 			x = x->l;
 		else
-			return KM_MAKEERROR(KM_RESULT_EXISTED);
+			return KM_RESULT_EXISTED;
 	}
 
 	if (tree->node_cmp(node, y))

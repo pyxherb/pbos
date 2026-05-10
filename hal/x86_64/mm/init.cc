@@ -1,7 +1,7 @@
 #include <hal/x86_64/misc.h>
 #include <pbos/km/logger.h>
 #include <pbos/ps/proc.h>
-#include <pbos/kn/acpi/rsdt.hh>
+#include <pbos/ki/acpi/rsdt.hh>
 #include "../mm.hh"
 #include "hal/x86_64/initcar.hh"
 
@@ -630,7 +630,7 @@ fill_end:
 	// Load PDT.
 	arch_lpgtab(PGROUNDDOWN(mm_kernel_initial_pml4t_paddr));
 
-	ki_cur_paging_config = &KN_PAGING_CONFIG_48BIT;
+	ki_cur_paging_config = &KI_PAGING_CONFIG_48BIT;
 
 	kd_printf("Initialized paging\n");
 }

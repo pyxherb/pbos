@@ -1,11 +1,11 @@
-#ifndef _PBOS_KN_EXEC_HH_
-#define _PBOS_KN_EXEC_HH_
+#ifndef _PBOS_KI_EXEC_HH_
+#define _PBOS_KI_EXEC_HH_
 
 #include <pbos/generated/km.h>
 #include <pbos/kfxx/rbtree.hh>
 #include <pbos/kfxx/uuid.hh>
 #include <pbos/exec/exec.h>
-#include KN_ARCH_MEMCONF_HEADER_PATH
+#include KI_ARCH_MEMCONF_HEADER_PATH
 
 PBOS_EXTERN_C_BEGIN
 

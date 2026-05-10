@@ -22,7 +22,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 
 	ps_tcb_t *tcb = ps_alloc_tcb(proc);
 	if (!tcb)
-		return KM_MAKEERROR(KM_RESULT_NO_MEM);
+		return KM_RESULT_NO_MEM;
 
 	// Allocate stack for main thread.
 	if (KM_FAILED(result = ps_thread_alloc_stack(tcb, 0x200000)))
@@ -43,22 +43,22 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	{
 		if (ehdr.e_ident[EI_MAG0] != ELFMAG0 || ehdr.e_ident[EI_MAG1] != ELFMAG1 || ehdr.e_ident[EI_MAG2] != ELFMAG2 ||
 			ehdr.e_ident[EI_MAG3] != ELFMAG3)
-			return KM_MAKEERROR(KM_RESULT_MALFORMED);
+			return KM_RESULT_MALFORMED;
 
 		if (ehdr.e_ident[EI_VERSION] != EV_CURRENT)
-			return KM_MAKEERROR(KM_RESULT_MALFORMED);
+			return KM_RESULT_MALFORMED;
 
 		if (ehdr.e_ident[EI_DATA] != ELFDATA2LSB)
-			return KM_MAKEERROR(KM_RESULT_MALFORMED);
+			return KM_RESULT_MALFORMED;
 
 		if (ehdr.e_ident[EI_OSABI] != ELFOSABI_NONE)
-			return KM_MAKEERROR(KM_RESULT_MALFORMED);
+			return KM_RESULT_MALFORMED;
 
 		if (ehdr.e_type != ET_EXEC)
-			return KM_MAKEERROR(KM_RESULT_MALFORMED);
+			return KM_RESULT_MALFORMED;
 
 		if (ehdr.e_ident[EI_CLASS] != ELFCLASS64)
-			return KM_MAKEERROR(KM_RESULT_MALFORMED);
+			return KM_RESULT_MALFORMED;
 	}
 
 	Elf64_Half phdr_num = ehdr.e_phnum;
@@ -76,16 +76,16 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 			continue;
 
 		if ((((uint64_t)ph.p_vaddr) + ph.p_memsz) >= KERNEL_VBASE) {
-			return KM_MAKEERROR(KM_RESULT_INVALID_ADDR);
+			return KM_RESULT_INVALID_ADDR;
 		}
 
 		if (ph.p_filesz > ph.p_memsz)
-			return KM_MAKEERROR(KM_RESULT_MALFORMED);
+			return KM_RESULT_MALFORMED;
 
 		char *vaddr = (char *)ph.p_vaddr;
 
 		if (((uintptr_t)vaddr) % PAGESIZE)
-			return KM_MAKEERROR(KM_RESULT_MALFORMED);
+			return KM_RESULT_MALFORMED;
 
 		off = ph.p_offset;
 
@@ -96,7 +96,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 
 			tmp_pgvaddr = mm_kvmalloc(cur_context, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_WRITE, 0);
 			if (!tmp_pgvaddr)
-				return KM_MAKEERROR(KM_RESULT_NO_MEM);
+				return KM_RESULT_NO_MEM;
 
 			{
 				kfxx::scope_guard unmap_tmp_pgvaddr_guard([cur_context, tmp_pgvaddr]() noexcept {
@@ -110,7 +110,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 						paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 						klog_printf("vaddr: %p, paddr: %p\n", vaddr + j, paddr);
 						if (!paddr)
-							return KM_MAKEERROR(KM_RESULT_NO_MEM);
+							return KM_RESULT_NO_MEM;
 					}
 
 					mm_pgaccess_t pgaccess = MM_PAGE_MAPPED | MM_PAGE_USER;

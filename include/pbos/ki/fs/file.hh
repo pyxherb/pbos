@@ -1,5 +1,5 @@
-#ifndef _PBOS_KN_FS_FILE_HH_
-#define _PBOS_KN_FS_FILE_HH_
+#ifndef _PBOS_KI_FS_FILE_HH_
+#define _PBOS_KI_FS_FILE_HH_
 
 #include <pbos/fs/file.hh>
 #include <pbos/kf/list.h>

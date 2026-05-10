@@ -1,5 +1,5 @@
-#ifndef _PBOS_KN_MP_MISC_H_
-#define _PBOS_KN_MP_MISC_H_
+#ifndef _PBOS_KI_MP_MISC_H_
+#define _PBOS_KI_MP_MISC_H_
 
 #include <pbos/ps/proc.h>
 #include <pbos/kfxx/rbtree.hh>

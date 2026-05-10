@@ -1,5 +1,5 @@
-#ifndef _PBOS_KN_ACPI_RSDT_HH_
-#define _PBOS_KN_ACPI_RSDT_HH_
+#ifndef _PBOS_KI_ACPI_RSDT_HH_
+#define _PBOS_KI_ACPI_RSDT_HH_
 
 #include <pbos/acpi/rsdt.h>
 #include <pbos/km/assert.h>

@@ -1,5 +1,5 @@
-#ifndef _PBOS_KN_MP_INIT_H_
-#define _PBOS_KN_MP_INIT_H_
+#ifndef _PBOS_KI_MP_INIT_H_
+#define _PBOS_KI_MP_INIT_H_
 
 #include "misc.hh"
 

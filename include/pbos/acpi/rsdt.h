@@ -1,5 +1,5 @@
-#ifndef _PBOS_KN_ACPI_RSDP_HH_
-#define _PBOS_KN_ACPI_RSDP_HH_
+#ifndef _PBOS_KI_ACPI_RSDP_HH_
+#define _PBOS_KI_ACPI_RSDP_HH_
 
 #include <pbos/common.h>
 

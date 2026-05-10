@@ -1,7 +1,7 @@
 #ifndef _ARCH_X86_64_MEMCONF_H_
 #define _ARCH_X86_64_MEMCONF_H_
 
-#include <pbos/kn/mm/memconf.h>
+#include <pbos/ki/mm/memconf.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -78,7 +78,7 @@ typedef uint64_t pgsize_t;
 //
 // Paging configurations.
 //
-extern const ki_paging_config_t KN_PAGING_CONFIG_48BIT;
+extern const ki_paging_config_t KI_PAGING_CONFIG_48BIT;
 
 PBOS_EXTERN_C_END
 

@@ -1,7 +1,7 @@
 #ifndef _ARCH_I386_MEMCONF_H_
 #define _ARCH_I386_MEMCONF_H_
 
-#include <pbos/kn/mm/memconf.h>
+#include <pbos/ki/mm/memconf.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -18,7 +18,7 @@ PBOS_EXTERN_C_BEGIN
 #define PAGING_LEVEL_PGDIR 0
 #define PAGING_LEVEL_PGTAB 1
 
-extern const ki_paging_config_t KN_PAGING_CONFIG_32BIT;
+extern const ki_paging_config_t KI_PAGING_CONFIG_32BIT;
 
 PBOS_EXTERN_C_END
 

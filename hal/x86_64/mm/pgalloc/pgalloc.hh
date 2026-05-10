@@ -7,7 +7,7 @@
 #include <arch/x86_64/paging.h>
 #include <stdint.h>
 #include <pbos/kfxx/rbtree.hh>
-#include <pbos/kn/mm/mm.hh>
+#include <pbos/ki/mm/mm.hh>
 
 PBOS_EXTERN_C_BEGIN
 
