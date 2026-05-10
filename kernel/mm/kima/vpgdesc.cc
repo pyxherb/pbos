@@ -1,13 +1,19 @@
-#include "vpgdesc.hh"
+#include <pbos/ki/mm/kima.hh>
 #include <string.h>
 
-kima_vpgdesc_poolpg_t *kima_vpgdesc_poolpg_list = NULL;
-kfxx::rbtree_t<void *> kima_vpgdesc_query_tree, kima_vpgdesc_free_tree;
+kima_vpgdesc_t* kima_lookup_vpgdesc(kima_pool_t *pool, void* ptr) {
+	kfxx::rbtree_t<void*>::node_t* node = pool->vpgdesc_query_tree.find(ptr);
 
-void kima_free_vpgdesc(kima_vpgdesc_t *vpgdesc) {
+	if (!node)
+		return NULL;
+
+	return static_cast<kima_vpgdesc_t*>(node);
+}
+
+void kima_free_vpgdesc(kima_pool_t *pool, kima_vpgdesc_t *vpgdesc) {
 	kima_vpgdesc_poolpg_t *poolpg = (kima_vpgdesc_poolpg_t *)PGFLOOR(vpgdesc);
 
-	kima_vpgdesc_query_tree.remove(vpgdesc);
+	pool->vpgdesc_query_tree.remove(vpgdesc);
 
 	if (!(--poolpg->header.used_num)) {
 		if (poolpg->header.prev)
@@ -18,16 +24,16 @@ void kima_free_vpgdesc(kima_vpgdesc_t *vpgdesc) {
 	}
 }
 
-kima_vpgdesc_t *kima_alloc_vpgdesc(void *ptr) {
-	if (kima_vpgdesc_free_tree.size()) {
-		kima_vpgdesc_t *desc = static_cast<kima_vpgdesc_t *>(kima_vpgdesc_free_tree.begin().node);
+kima_vpgdesc_t *kima_alloc_vpgdesc(kima_pool_t *pool, void *ptr) {
+	if (pool->vpgdesc_free_tree.size()) {
+		kima_vpgdesc_t *desc = static_cast<kima_vpgdesc_t *>(pool->vpgdesc_free_tree.begin().node);
 
-		kima_vpgdesc_free_tree.remove(desc);
+		pool->vpgdesc_free_tree.remove(desc);
 
 		desc->rb_value = ptr;
 		desc->ref_count = 0;
 
-		kima_vpgdesc_query_tree.insert_unwrap(desc);
+		pool->vpgdesc_query_tree.insert_unwrap(desc);
 
 		return desc;
 	}
@@ -38,11 +44,11 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(void *ptr) {
 		return NULL;
 
 	pg->header.prev = NULL;
-	pg->header.next = kima_vpgdesc_poolpg_list;
-	if (kima_vpgdesc_poolpg_list) {
-		kima_vpgdesc_poolpg_list->header.prev = pg;
+	pg->header.next = pool->vpgdesc_poolpg_list;
+	if (pool->vpgdesc_poolpg_list) {
+		pool->vpgdesc_poolpg_list->header.prev = pg;
 	}
-	kima_vpgdesc_poolpg_list = pg;
+	pool->vpgdesc_poolpg_list = pg;
 
 	pg->header.used_num = 1;
 
@@ -50,14 +56,14 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(void *ptr) {
 	pg->slots[0].rb_value = ptr;
 	pg->slots[0].ref_count = 0;
 
-	kima_vpgdesc_query_tree.insert_unwrap(&pg->slots[0]);
+	pool->vpgdesc_query_tree.insert_unwrap(&pg->slots[0]);
 
 	for (size_t i = 1; i < PBOS_ARRAYSIZE(pg->slots); ++i) {
 		kfxx::construct_at<kima_vpgdesc_t>(&pg->slots[i]);
 
 		pg->slots[i].rb_value = &pg->slots[i];
 
-		kima_vpgdesc_free_tree.insert_unwrap(&pg->slots[i]);
+		pool->vpgdesc_free_tree.insert_unwrap(&pg->slots[i]);
 	}
 	return &pg->slots[0];
 }

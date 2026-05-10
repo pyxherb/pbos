@@ -17,7 +17,7 @@ typedef struct _dm_device_ops_t {
 	/// @brief Read data from a file.
 	km_result_t (*read)(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
 	/// @brief Write data into a file.
-	km_result_t (*write)(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out);
+	km_result_t (*write)(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
 } dm_device_ops_t;
 
 #endif

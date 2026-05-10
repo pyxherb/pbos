@@ -85,6 +85,16 @@ PBOS_NODISCARD void *mm_krealloc_in_place(void *old_ptr, size_t size, size_t ali
 ///
 void mm_kfree(void *ptr);
 
+typedef struct _ps_pcb_t ps_pcb_t;
+
+PBOS_NODISCARD void *mm_ppalloc(ps_pcb_t *proc, size_t size, size_t alignment);
+
+PBOS_NODISCARD void *mm_pprealloc(ps_pcb_t *proc, void *old_ptr, size_t size, size_t alignment);
+
+PBOS_NODISCARD void *mm_pprealloc_in_place(ps_pcb_t *proc, void *old_ptr, size_t size, size_t alignment);
+
+void mm_ppfree(ps_pcb_t *proc, void *ptr);
+
 /// @brief Do not mark the virtual pages as reserved after the allocation.
 #define VMALLOC_ATOMIC 0x00000001
 #define VMALLOC_NOSETVPM 0x40000000

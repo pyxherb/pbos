@@ -6,7 +6,6 @@
 PBOS_EXTERN_C_BEGIN
 
 void hal_init();
-void hal_call_ctors();
 
 PBOS_EXTERN_C_END
 

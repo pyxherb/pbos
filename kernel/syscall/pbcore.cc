@@ -17,6 +17,8 @@ km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint3
 	ps_pcb_t *pcb = ps_get_cur_proc();
 	mm_context_t *mm_context = ps_mm_context_of(pcb);
 
+	// TODO: Lock the pages.
+
 	if (mm_probe_user_space(mm_context, path, path_len))
 		return KM_RESULT_ACCESS_VIOLATION;
 	if (mm_probe_user_space(mm_context, ufd_out, sizeof(*ufd_out)))
@@ -59,10 +61,34 @@ km_result_t sysent_close(ps_ufd_t ufd, uint32_t flags) {
 	return KM_RESULT_OK;
 }
 
-km_result_t sysent_read(ps_ufd_t ufd, void *buf, uint32_t size) {
+km_result_t sysent_read(ps_ufd_t ufd, void *buf, uint32_t size, size_t off, size_t *bytes_read_out) {
+	ps_pcb_t *pcb = ps_get_cur_proc();
+	mm_context_t *mm_context = ps_mm_context_of(pcb);
+
+	// TODO: Lock the pages.
+
+	if (mm_probe_user_space(mm_context, buf, size))
+		return KM_RESULT_ACCESS_VIOLATION;
+
+	if (mm_probe_user_space(mm_context, bytes_read_out, sizeof(size_t)))
+		return KM_RESULT_ACCESS_VIOLATION;
+
+	ps_ufcb_t *ufcb = ps_lookup_ufcb(pcb, ufd);
+
+	if (!ufcb)
+		return KM_RESULT_INVALID_ARGS;
+
+	return fs_read(ps_kfcb_of_ufcb(ufcb), buf, size, off, bytes_read_out);
 }
 
 km_result_t sysent_write(ps_ufd_t ufd, const void *buf, uint32_t size) {
+	ps_pcb_t *pcb = ps_get_cur_proc();
+	mm_context_t *mm_context = ps_mm_context_of(pcb);
+
+	// TODO: Lock the pages.
+
+	if (mm_probe_user_space(mm_context, buf, size))
+		return KM_RESULT_ACCESS_VIOLATION;
 }
 
 km_result_t sysent_exec_child(
@@ -74,6 +100,8 @@ km_result_t sysent_exec_child(
 	ps_pcb_t *pcb = ps_get_cur_proc();
 	mm_context_t *mm_context = ps_mm_context_of(pcb);
 	km_result_t result;
+
+	// TODO: Lock the pages.
 
 	if (mm_probe_user_space(mm_context, args, args_len))
 		return KM_RESULT_ACCESS_VIOLATION;

@@ -2,7 +2,7 @@
 #include <pbos/hal/irq.h>
 #include <pbos/km/logger.h>
 #include <pbos/km/panic.h>
-#include <pbos/mm/mm.h>
+#include <pbos/ki/mm/mm.hh>
 #include <pbos/kh/acpi/misc.hh>
 #include <pbos/kh/initcar.hh>
 #include <pbos/kh/mp/init.hh>
@@ -11,19 +11,45 @@
 #include <pbos/ki/km/proc.hh>
 #include <pbos/ki/km/symbol.hh>
 
+PBOS_EXTERN_C_BEGIN
+
 const ki_syment_t KI_EXPORTED_SYMBOLS_BEGIN[0] = {}, KI_EXPORTED_SYMBOLS_END[0] = {};
+
+typedef void (*ki_ctor_t)();
+typedef void (*ki_dtor_t)();
+
+alignas(ki_ctor_t) ki_ctor_t KI_CTORS_BEGIN[0] = {};
+alignas(ki_ctor_t) ki_ctor_t KI_CTORS_END[0] = {};
+
+alignas(ki_dtor_t) ki_dtor_t KI_DTORS_BEGIN[0] = {};
+alignas(ki_dtor_t) ki_dtor_t KI_DTORS_END[0] = {};
+
+extern "C" void __cxa_pure_virtual() {
+	km_panic("Attempting to call a pure virtual function!");
+}
 
 // Because the operating system will never exit normally,
 // we just designed a dummy procedure to register the destructors.
-PBOS_EXTERN_C int atexit(void (*func)(void)) {
+int atexit(void (*func)(void)) {
 	return 0;
 }
 
-PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
+void ki_call_ctors() {
+	const size_t n_ctors = KI_CTORS_END - KI_CTORS_BEGIN;
+	for (size_t i = 0; i < n_ctors; ++i) {
+		KI_CTORS_BEGIN[i]();
+	}
+}
+
+PBOS_NORETURN void kernel_main() {
 	km_result_t result;
+
+	ki_call_ctors();
 
 	hal_init();
 	// kh_irq_init();
+
+	ki_mm_init_global_allocator();
 
 	if (kh_acpi_is_available()) {
 		kh_acpi_init();
@@ -69,3 +95,5 @@ PBOS_EXTERN_C PBOS_NORETURN void kernel_main() {
 
 	kh_enter_sched(0);
 }
+
+PBOS_EXTERN_C_END

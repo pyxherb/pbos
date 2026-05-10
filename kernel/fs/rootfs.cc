@@ -47,7 +47,7 @@ km_result_t ki_rootfs_read(fs_fcb_t *fcb, char *dest, size_t size, size_t off, s
 	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
-km_result_t ki_rootfs_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out) {
+km_result_t ki_rootfs_write(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out) {
 	*bytes_written_out = 0;
 	return KM_RESULT_UNSUPPORTED_OPERATION;
 }

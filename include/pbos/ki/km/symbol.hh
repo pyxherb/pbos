@@ -1,9 +1,11 @@
 #ifndef _PBOS_KI_KM_SYMBOL_HH_
 #define _PBOS_KI_KM_SYMBOL_HH_
 
-#include <pbos/attribs.h>
+#include <pbos/common.h>
 #include <cstddef>
 #include <type_traits>
+
+PBOS_EXTERN_C_BEGIN
 
 typedef struct _ki_syment_t {
 	const char *name;
@@ -22,5 +24,7 @@ extern const ki_syment_t KI_EXPORTED_SYMBOLS_BEGIN[], KI_EXPORTED_SYMBOLS_END[];
 		.len_name = sizeof(_sym_name##s),                                                             \
 		.addr = (void *)s                                                                             \
 	}
+
+PBOS_EXTERN_C_END
 
 #endif

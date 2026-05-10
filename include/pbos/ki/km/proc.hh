@@ -35,8 +35,8 @@ typedef struct _ps_tcb_t : public kfxx::rbtree_t<ps_thread_id_t>::node_t {
 	~_ps_tcb_t() = default;
 } ps_tcb_t;
 
-typedef struct _ps_par_t : kfxx::rbtree_t<void *>::node_t {
-} ps_par_t;
+typedef struct _ps_vmr_t : kfxx::rbtree_t<void *>::node_t {
+} ps_vmr_t;
 
 typedef struct _ps_pcb_t : kfxx::rbtree_t<ps_proc_id_t>::node_t {
 	ps_thread_id_t last_thread_id;

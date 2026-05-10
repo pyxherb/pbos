@@ -70,6 +70,14 @@
 				[
 					"size",
 					"u32"
+				],
+				[
+					"off",
+					"usize"
+				],
+				[
+					"bytes_read_out",
+					"*usize"
 				]
 			],
 			"return": "result"

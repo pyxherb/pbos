@@ -445,7 +445,7 @@ km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *
 }
 KI_EXPORT_IMAGE_SYMBOL(fs_read);
 
-km_result_t fs_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out) {
+km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out) {
 	return fcb->fnode->fs->ops.write(fcb, src, size, off, bytes_written_out);
 }
 KI_EXPORT_IMAGE_SYMBOL(fs_write);

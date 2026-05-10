@@ -12,25 +12,6 @@
 
 PBOS_EXTERN_C_BEGIN
 
-alignas(hn_ctor_t) hn_ctor_t KI_CTORS_BEGIN[0] = {};
-alignas(hn_ctor_t) hn_ctor_t KI_CTORS_END[0] = {};
-
-alignas(hn_dtor_t) hn_dtor_t KI_DTORS_BEGIN[0] = {};
-alignas(hn_dtor_t) hn_dtor_t KI_DTORS_END[0] = {};
-
-extern "C" void __cxa_pure_virtual() {
-	km_panic("Attempting to call a pure virtual function!");
-}
-
-void hal_call_ctors() {
-	kd_printf("Global ctor ptr: %p-%p\n", KI_CTORS_BEGIN, KI_CTORS_END);
-	const size_t n_ctors = KI_CTORS_END - KI_CTORS_BEGIN;
-	for (size_t i = 0; i < n_ctors; ++i) {
-		kd_printf("Calling global ctor: %p\n", KI_CTORS_BEGIN[i]);
-		KI_CTORS_BEGIN[i]();
-	}
-}
-
 void hal_init() {
 	if (LIMINE_BASE_REVISION_SUPPORTED(hn_limine_base_revision) == false) {
 		// TODO: Panic
@@ -40,8 +21,6 @@ void hal_init() {
 	mm_kernel_bottom_mapping_base_vaddr = (void *)hn_limine_hhdm_request.response->offset;
 
 	hn_klog_init();
-
-	hal_call_ctors();
 
 	kd_printf("Initializing global objects\n");
 

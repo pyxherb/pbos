@@ -14,7 +14,7 @@ km_result_t kh_initcar_create_dir(fs_fnode_t *parent, const char *name, size_t n
 km_result_t kh_initcar_open(fs_fnode_t *handle, fs_fcb_t **fcb_out);
 void kh_initcar_close(fs_fcb_t *fcb);
 km_result_t kh_initcar_read(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
-km_result_t kh_initcar_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out);
+km_result_t kh_initcar_write(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
 km_result_t kh_initcar_size(fs_fcb_t *fcb, size_t *size_out);
 void kh_initcar_destroy(fs_fnode_t *file);
 km_result_t kh_initcar_premount(fs_fnode_t *parent, fs_fnode_t *file);

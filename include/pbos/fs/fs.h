@@ -25,9 +25,9 @@ typedef struct _fs_fsops_t {
 	/// @brief Read data from a file.
 	km_result_t (*read)(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
 	/// @brief Write data into a file.
-	km_result_t (*write)(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out);
+	km_result_t (*write)(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
 	/// @brief Perform an I/O control operation.
-	km_result_t (*ioctl)(fs_fcb_t *fcb, size_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args);
+	km_result_t (*ioctl)(fs_fcb_t *fcb, uint32_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args);
 	/// @brief Get size of a file.
 	km_result_t (*size)(fs_fcb_t *fcb, size_t *size_out);
 

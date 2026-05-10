@@ -75,8 +75,6 @@ void hn_mm_init() {
 
 	hn_mm_init_stage = HN_MM_INIT_STAGE_AREAS_INITED;
 
-	ki_mm_init_kima();
-
 	kd_printf("Initialized memory manager\n");
 }
 

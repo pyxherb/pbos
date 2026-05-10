@@ -92,7 +92,7 @@ km_result_t fs_close(fs_fcb_t *fcb);
 
 PBOS_NODISCARD PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out);
 PBOS_NODISCARD PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out);
-PBOS_NODISCARD PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const char *src, size_t size, size_t off, size_t *bytes_written_out);
+PBOS_NODISCARD PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
 PBOS_NODISCARD PBOS_API km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out);
 
 PBOS_NODISCARD PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_len, fs_fnode_t **file_out);
