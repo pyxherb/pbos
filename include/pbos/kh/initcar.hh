@@ -28,7 +28,7 @@ void kh_initcar_deinit();
 
 extern fs_file_system_t *kh_initcar_fs;
 extern fs_fnode_t *kh_initcar_dir;
-extern fs_fsops_t kh_initcar_ops;
+extern fs_file_system_ops_t kh_initcar_ops;
 
 PBOS_EXTERN_C_END
 

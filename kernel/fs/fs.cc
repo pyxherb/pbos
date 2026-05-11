@@ -23,7 +23,7 @@ _fs_file_system_t::~_fs_file_system_t() {
 fs_file_system_t *fs_register_file_system(
 	const char *name,
 	size_t name_len,
-	fs_fsops_t *ops) {
+	fs_file_system_ops_t *ops) {
 	fs_file_system_t *fs = (fs_file_system_t *)kfxx::alloc_and_construct<fs_file_system_t>(kfxx::kernel_allocator());
 	if (!fs)
 		return nullptr;
@@ -35,7 +35,7 @@ fs_file_system_t *fs_register_file_system(
 	if (!(fs->name = (char *)kfxx::kernel_allocator()->alloc(name_len, alignof(char))))
 		return nullptr;
 	fs->name_len = name_len;
-	memcpy(&fs->ops, ops, sizeof(fs_fsops_t));
+	memcpy(&fs->ops, ops, sizeof(fs_file_system_ops_t));
 
 	if (!ki_registered_fs.insert(kfxx::string_view(fs->name, name_len), +fs))
 		return nullptr;

@@ -13,7 +13,7 @@ PBOS_EXTERN_C_BEGIN
 typedef struct _fs_file_system_t {
 	char *name;
 	size_t name_len;
-	fs_fsops_t ops;
+	fs_file_system_ops_t ops;
 
 	_fs_file_system_t();
 	~_fs_file_system_t();

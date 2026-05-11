@@ -16,7 +16,7 @@ typedef struct _kf_uuid_t {
 	unsigned short e2;
 } kf_uuid_t;
 
-#define UUID(_a, _b, _c, _d, _e) ((kf_uuid_t){ \
+#define KF_UUID(_a, _b, _c, _d, _e) ((kf_uuid_t){ \
 	.a = 0x##_a,                               \
 	.b = 0x##_b,                               \
 	.c = 0x##_c,                               \

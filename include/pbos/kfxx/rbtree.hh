@@ -47,25 +47,26 @@ namespace kfxx {
 		typename Comparator,
 		bool Fallible,
 		bool IsThreeway>
-	class _rbtree_impl : protected _rbtree_base {
+	class _rbtree_impl final : protected _rbtree_base {
 	public:
 		static_assert(std::is_move_assignable_v<T>, "The key must be move-assignable");
 		static_assert(std::is_move_constructible_v<T>, "The key must be move-constructible");
-		static_assert(std::is_invocable_v<Comparator, T&, T&>, "The type is not comparable with the comparator");
+		static_assert(std::is_invocable_v<Comparator, T &, T &>, "The type is not comparable with the comparator");
 		struct node_t : public _rbtree_base::node_base {
 			T rb_value;
 		};
 
 		using comparator_type = Comparator;
 
-	protected:
+	private:
 		using node_query_result_t = typename std::conditional<Fallible, option_t<node_t *>, node_t *>::type;
 
 		using this_t = _rbtree_impl<T, Comparator, Fallible, IsThreeway>;
 
 		Comparator _comparator;
 
-		PBOS_FORCEINLINE node_query_result_t _get(const T &key) const {
+		template <typename U>
+		PBOS_FORCEINLINE node_query_result_t _get(const U &key) const {
 			node_t *i = (node_t *)_root;
 
 			if constexpr (Fallible) {
@@ -281,46 +282,8 @@ namespace kfxx {
 			return y;
 		}
 
-	public:
-		PBOS_FORCEINLINE _rbtree_impl(Comparator &&comparator = {}) : _comparator(std::move(comparator)) {}
-
-		PBOS_FORCEINLINE _rbtree_impl(this_t &&other)
-			: _comparator(std::move(other._comparator)) {
-			_root = other._root;
-			_cached_min_node = other._cached_min_node;
-			_cached_max_node = other._cached_max_node;
-			_size = other._size;
-
-			other._root = nullptr;
-			other._cached_min_node = nullptr;
-			other._cached_max_node = nullptr;
-			other._size = 0;
-		}
-
-		PBOS_FORCEINLINE ~_rbtree_impl() {
-			if (_root)
-				km_panic("Destructing RB-tree without all nodes were removed!");
-		}
-
-		PBOS_FORCEINLINE this_t &operator=(this_t &&other) noexcept {
-			if (_root)
-				km_panic("Moving RB-tree without original tree's all nodes were removed!");
-
-			_root = other._root;
-			_cached_min_node = other._cached_min_node;
-			_cached_max_node = other._cached_max_node;
-			_size = other._size;
-			_comparator = std::move(other._comparator);
-
-			other._root = nullptr;
-			other._cached_min_node = nullptr;
-			other._cached_max_node = nullptr;
-			other._size = 0;
-
-			return *this;
-		}
-
-		PBOS_FORCEINLINE node_query_result_t find_max_lteq(const T &data) {
+		template <typename U>
+		PBOS_FORCEINLINE node_query_result_t _find_max_lteq(const U &data) {
 			node_t *cur_node = (node_t *)_root, *max_node = NULL;
 
 			if constexpr (Fallible) {
@@ -391,8 +354,61 @@ namespace kfxx {
 			return max_node;
 		}
 
+	public:
+		PBOS_FORCEINLINE _rbtree_impl(Comparator &&comparator = {}) : _comparator(std::move(comparator)) {}
+
+		PBOS_FORCEINLINE _rbtree_impl(this_t &&other)
+			: _comparator(std::move(other._comparator)) {
+			_root = other._root;
+			_cached_min_node = other._cached_min_node;
+			_cached_max_node = other._cached_max_node;
+			_size = other._size;
+
+			other._root = nullptr;
+			other._cached_min_node = nullptr;
+			other._cached_max_node = nullptr;
+			other._size = 0;
+		}
+
+		PBOS_FORCEINLINE ~_rbtree_impl() {
+			if (_root)
+				km_panic("Destructing RB-tree without all nodes were removed!");
+		}
+
+		PBOS_FORCEINLINE this_t &operator=(this_t &&other) noexcept {
+			if (_root)
+				km_panic("Moving RB-tree without original tree's all nodes were removed!");
+
+			_root = other._root;
+			_cached_min_node = other._cached_min_node;
+			_cached_max_node = other._cached_max_node;
+			_size = other._size;
+			_comparator = std::move(other._comparator);
+
+			other._root = nullptr;
+			other._cached_min_node = nullptr;
+			other._cached_max_node = nullptr;
+			other._size = 0;
+
+			return *this;
+		}
+
+		PBOS_FORCEINLINE node_query_result_t find_max_lteq(const T &data) {
+			return _find_max_lteq<T>(data);
+		}
+
+		template <typename U>
+		PBOS_FORCEINLINE node_query_result_t find_max_lteq_alt(const U &data) {
+			return _find_max_lteq<U>(data);
+		}
+
 		PBOS_FORCEINLINE node_query_result_t find(const T &key) const {
-			return _get(key);
+			return _get<T>(key);
+		}
+
+		template <typename U>
+		PBOS_FORCEINLINE node_query_result_t find_alt(const U &key) const {
+			return _get<U>(key);
 		}
 
 		/// @brief Insert a node into the tree.
@@ -409,7 +425,7 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE void insert_unwrap(node_t *node) {
-			if(!insert(node))
+			if (!insert(node))
 				km_panic("Calling insert_unwrap with insertion failed");
 		}
 

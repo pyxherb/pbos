@@ -9,7 +9,7 @@ PBOS_EXTERN_C_BEGIN
 typedef struct _fs_fnode_t fs_fnode_t;
 typedef struct _fs_fcb_t fs_fcb_t;
 
-typedef struct _fs_fsops_t {
+typedef struct _fs_file_system_ops_t {
 	/// @brief Access subnode.
 	km_result_t (*subnode)(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
 	/// @brief Offload a file node from the memory.
@@ -39,14 +39,14 @@ typedef struct _fs_fsops_t {
 
 	/// @brief Destructor of the file system.
 	km_result_t (*destructor)();
-} fs_fsops_t;
+} fs_file_system_ops_t;
 
 typedef struct _fs_file_system_t fs_file_system_t;
 
 fs_file_system_t *fs_register_file_system(
 	const char *name,
 	size_t name_len,
-	fs_fsops_t *ops);
+	fs_file_system_ops_t *ops);
 
 PBOS_EXTERN_C_END
 

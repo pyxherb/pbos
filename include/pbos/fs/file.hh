@@ -20,6 +20,9 @@ namespace fs {
 
 	using fnode_ptr_t = kfxx::custom_rc_ptr_t<fs_fnode_t, fnode_inc_ref, fnode_dec_ref>;
 
+	PBOS_FORCEINLINE void fcb_ptr_null_hook(fs_fcb_t *, km_result_t) noexcept {
+	}
+
 	template <typename H>
 	struct fcb_ptr_t {
 	private:
@@ -33,7 +36,7 @@ namespace fs {
 		PBOS_FORCEINLINE void reset() noexcept {
 			if (_ptr) {
 				km_result_t result = fs_close(_ptr);
-				if(KM_FAILED(result))
+				if (KM_FAILED(result))
 					_fail_hook(_ptr, result);
 				_ptr = nullptr;
 			}

@@ -16,7 +16,7 @@ bool hn_is_initcar_direct_mapped = true;
 fs_file_system_t *kh_initcar_fs = NULL;
 fs_fnode_t *kh_initcar_dir;
 
-fs_fsops_t kh_initcar_ops = {
+fs_file_system_ops_t kh_initcar_ops = {
 	.subnode = kh_initcar_subnode,
 	.offload = kh_initcar_offload,
 	.create_file = kh_initcar_create_file,

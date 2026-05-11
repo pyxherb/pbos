@@ -3,7 +3,7 @@
 #include <string.h>
 #include <pbos/ki/fs/rootfs.hh>
 
-fs_fsops_t ki_rootfs_ops = {
+fs_file_system_ops_t ki_rootfs_ops = {
 	.subnode = ki_rootfs_subnode,
 	.offload = ki_rootfs_offload,
 	.create_file = ki_rootfs_create_file,
