@@ -22,6 +22,20 @@ typedef struct _dm_device_ops_t {
 	km_result_t (*write)(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
 
 	km_result_t (*query)(dm_device_t *device, dm_device_t **subdevice_out, kf_uuid_t *mode, void *args);
+
+	km_result_t (*prelink)(dm_device_t *parent, dm_device_t *device);
+	void (*unlink_cleanup)(dm_device_t *parent, dm_device_t *device);
+
+	void (*destroy)(dm_device_t *device);
 } dm_device_ops_t;
+
+void dm_ref_device(dm_device_t *device);
+void dm_unref_device(dm_device_t *device);
+
+km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device);
+void dm_unlink_device(dm_device_t *device);
+
+void dm_set_device_exdata(dm_device_t *device, void *exdata);
+void *dm_get_device_exdata(dm_device_t *device);
 
 #endif

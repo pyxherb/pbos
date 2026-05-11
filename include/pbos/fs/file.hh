@@ -8,13 +8,13 @@
 namespace fs {
 	struct fnode_inc_ref {
 		PBOS_FORCEINLINE void operator()(fs_fnode_t *ptr) noexcept {
-			fs_inc_fnode_ref(ptr);
+			fs_ref_fnode(ptr);
 		}
 	};
 
 	struct fnode_dec_ref {
 		PBOS_FORCEINLINE void operator()(fs_fnode_t *ptr) noexcept {
-			fs_dec_fnode_ref(ptr);
+			fs_unref_fnode(ptr);
 		}
 	};
 

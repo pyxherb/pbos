@@ -82,7 +82,7 @@ km_result_t kh_initcar_unmount_cleanup(fs_fnode_t *file) {
 void kh_initcar_init() {
 	km_result_t result;
 
-	if (!(kh_initcar_fs = fs_register_file_system("initcar", strlen("initcar"), &kh_initcar_ops)))
+	if (!(kh_initcar_fs = fs_register_file_system("initcar", strlen("initcar"), &kh_initcar_ops, nullptr)))
 		km_panic("Error registering initcar file system");
 
 	kd_printf("INITCAR range: %p-%p\n",

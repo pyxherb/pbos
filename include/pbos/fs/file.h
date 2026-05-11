@@ -108,8 +108,8 @@ PBOS_NODISCARD PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *fi
 ///
 PBOS_NODISCARD PBOS_API km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out);
 
-PBOS_API PBOS_API void fs_inc_fnode_ref(fs_fnode_t *fnode);
-PBOS_API PBOS_API void fs_dec_fnode_ref(fs_fnode_t *fnode);
+PBOS_API PBOS_API void fs_ref_fnode(fs_fnode_t *fnode);
+PBOS_API PBOS_API void fs_unref_fnode(fs_fnode_t *fnode);
 
 PBOS_EXTERN_C_END
 

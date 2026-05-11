@@ -54,6 +54,9 @@ namespace kfxx {
 		static_assert(std::is_invocable_v<Comparator, T &, T &>, "The type is not comparable with the comparator");
 		struct node_t : public _rbtree_base::node_base {
 			T rb_value;
+
+			node_t() = default;
+			PBOS_FORCEINLINE node_t(T &&rb_value) : rb_value(rb_value) {}
 		};
 
 		using comparator_type = Comparator;
@@ -208,6 +211,7 @@ namespace kfxx {
 			return i;
 		}
 
+		// TODO: Use option_t for fallible comparison.
 		PBOS_FORCEINLINE bool _insert(node_t *parent, node_t *node) {
 			kd_assert(!node->l);
 			kd_assert(!node->r);
@@ -415,6 +419,7 @@ namespace kfxx {
 		/// @param node node_t to be inserted.
 		/// @return Whether the node is inserted successfully, false if node with the same key presents.
 		[[nodiscard]] PBOS_FORCEINLINE bool insert(node_t *node) {
+			// TODO: Use option_t for fallible comparison.
 			node_base *parent = nullptr;
 			node_base **slot = _get_slot(node->rb_value, parent);
 

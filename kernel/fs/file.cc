@@ -4,6 +4,7 @@
 #include <pbos/ki/fs/file.hh>
 #include <pbos/ki/fs/fs.hh>
 #include <pbos/ki/km/symbol.hh>
+#include <pbos/kf/atomic.h>
 
 fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb) {
 	return fcb->fnode.get();
@@ -33,9 +34,7 @@ void *ki_fs_filename_allocator_t::realloc(void *ptr, size_t size, size_t alignme
 }
 
 void *ki_fs_filename_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
-	// TODO: Implement mm_krealloc and rewrite this with it.
-	// return mm_krealloc(ptr, new_size, new_alignment);
-	return nullptr;
+	return mm_krealloc_in_place(ptr, new_size, new_alignment);
 }
 
 void ki_fs_filename_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {
@@ -74,9 +73,7 @@ void *ki_fs_fnode_allocator_t::realloc(void *ptr, size_t size, size_t alignment,
 }
 
 void *ki_fs_fnode_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
-	// TODO: Implement mm_krealloc_in_place and rewrite this with it.
-	// return mm_krealloc(ptr, new_size, new_alignment);
-	return nullptr;
+	return mm_krealloc_in_place(ptr, new_size, new_alignment);
 }
 
 void ki_fs_fnode_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {
@@ -167,7 +164,7 @@ PBOS_NODISCARD km_result_t fs_alloc_file_fnode(fs_file_system_t *file_system, fs
 
 	ptr->fs = file_system;
 
-	fs_inc_fnode_ref(ptr);
+	fs_ref_fnode(ptr);
 
 	*file_out = ptr;
 
@@ -183,7 +180,7 @@ PBOS_NODISCARD km_result_t fs_alloc_dir_fnode(fs_file_system_t *file_system, fs_
 
 	ptr->fs = file_system;
 
-	fs_inc_fnode_ref(ptr);
+	fs_ref_fnode(ptr);
 
 	*file_out = ptr;
 
@@ -354,7 +351,7 @@ km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_
 			if (auto it = f->subnodes.find(kfxx::string_view(filename, filename_len)); it != f->subnodes.end()) {
 				fs::fnode_ptr_t node = it.value();
 				*file_out = node.get();
-				fs_inc_fnode_ref(node.get());
+				fs_ref_fnode(node.get());
 			} else
 				KM_RETURN_IF_FAILED(file->fs->ops.subnode(file, filename, filename_len, file_out));
 			break;
@@ -455,17 +452,16 @@ km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {
 }
 KI_EXPORT_IMAGE_SYMBOL(fs_size);
 
-void fs_inc_fnode_ref(fs_fnode_t *fnode) {
-	// TODO: Use atomic version of this:
-	++fnode->ref_num;
+void fs_ref_fnode(fs_fnode_t *fnode) {
+	kf_atomic_inc_size(&fnode->ref_count);
 }
-KI_EXPORT_IMAGE_SYMBOL(fs_inc_fnode_ref);
+KI_EXPORT_IMAGE_SYMBOL(fs_ref_fnode);
 
-void fs_dec_fnode_ref(fs_fnode_t *fnode) {
-	if (!--fnode->ref_num)
+void fs_unref_fnode(fs_fnode_t *fnode) {
+	if (!kf_atomic_dec_size(&fnode->ref_count))
 		ki_destroy_fnode(fnode);
 }
-KI_EXPORT_IMAGE_SYMBOL(fs_dec_fnode_ref);
+KI_EXPORT_IMAGE_SYMBOL(fs_unref_fnode);
 
 void ki_destroy_fnode(fs_fnode_t *fnode) {
 	switch (fnode->file_type) {

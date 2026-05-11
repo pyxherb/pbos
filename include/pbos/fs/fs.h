@@ -46,7 +46,8 @@ typedef struct _fs_file_system_t fs_file_system_t;
 fs_file_system_t *fs_register_file_system(
 	const char *name,
 	size_t name_len,
-	fs_file_system_ops_t *ops);
+	fs_file_system_ops_t *ops,
+	fs_file_system_t **fs_out);
 
 PBOS_EXTERN_C_END
 

@@ -33,9 +33,7 @@ PBOS_API void *kernel_allocator_t::realloc(void *ptr, size_t size, size_t alignm
 }
 
 PBOS_API void *kernel_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
-	// TODO: Implement mm_krealloc and rewrite this with it.
-	// return mm_krealloc(ptr, new_size, new_alignment);
-	return nullptr;
+	return mm_krealloc_in_place(ptr, new_size, new_alignment);
 }
 
 PBOS_API void kernel_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {

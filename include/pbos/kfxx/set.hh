@@ -5,6 +5,8 @@
 #include "allocator.hh"
 #include "option.hh"
 #include "rbtree.hh"
+#include "scope_guard.hh"
+#include "rcobj.hh"
 
 namespace kfxx {
 	template <typename T, typename Comparator, bool Fallible, bool IsThreeway>
@@ -13,6 +15,7 @@ namespace kfxx {
 		static_assert(std::is_move_constructible_v<T>, "The element must be move-constructible");
 		using tree_t = std::conditional_t<Fallible, fallible_rbtree_t<T, Comparator, IsThreeway>, rbtree_t<T, Comparator, IsThreeway>>;
 		tree_t _tree;
+		kfxx::rc_object_ptr_t<kfxx::allocator_t> _allocator;
 		using this_t = _set_impl<T, Comparator, Fallible, IsThreeway>;
 
 	public:
@@ -36,10 +39,12 @@ namespace kfxx {
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool insert(T &&value) {
-			typename tree_t::Node *node = _tree.insert(std::move(value));
+			typename tree_t::node_t *node = kfxx::alloc_and_construct<node_t>(allocator(), std::move(value));
 
-			if (!node)
+			if (!_tree.insert(node)) {
+				kfxx::destroy_and_release(allocator(), node);
 				return false;
+			}
 
 			return true;
 		}
@@ -51,7 +56,7 @@ namespace kfxx {
 		template <typename U>
 		PBOS_FORCEINLINE remove_result_t remove_alt(const U &key) {
 			if constexpr (Fallible) {
-				auto node = _tree.template get_alt<U>(key);
+				auto node = _tree.template find_alt<U>(key);
 
 				if (!node.has_value())
 					return false;
@@ -61,7 +66,7 @@ namespace kfxx {
 
 				return true;
 			} else {
-				auto node = _tree.template get_alt<U>(key);
+				auto node = _tree.template find_alt<U>(key);
 
 				if (node)
 					_tree.remove(node);
@@ -77,7 +82,7 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE allocator_t *allocator() const {
-			return _tree.allocator();
+			return _allocator.get();
 		}
 
 		PBOS_FORCEINLINE void replace_allocator(allocator_t *rhs) noexcept {
@@ -103,7 +108,7 @@ namespace kfxx {
 		template <typename U>
 		PBOS_FORCEINLINE element_query_result_t at_alt(const U &key) {
 			if constexpr (Fallible) {
-				auto node = _tree.template get_alt<U>(key);
+				auto node = _tree.template find_alt<U>(key);
 
 				if (!node.has_value())
 					return NULL_OPTION;
@@ -112,7 +117,7 @@ namespace kfxx {
 
 				return node.value()->value;
 			} else {
-				auto node = _tree.template get_alt<U>(key);
+				auto node = _tree.template find_alt<U>(key);
 
 				assert(node);
 
@@ -127,7 +132,7 @@ namespace kfxx {
 		template <typename U>
 		PBOS_FORCEINLINE const_element_query_result_t at_alt(const U &key) const {
 			if constexpr (Fallible) {
-				auto node = _tree.template get_alt<U>(key);
+				auto node = _tree.template find_alt<U>(key);
 
 				if (!node.has_value())
 					return NULL_OPTION;
@@ -136,7 +141,7 @@ namespace kfxx {
 
 				return node.value()->value;
 			} else {
-				auto node = _tree.template get_alt<U>(key);
+				auto node = _tree.template find_alt<U>(key);
 
 				assert(node);
 
@@ -315,14 +320,14 @@ namespace kfxx {
 		template <typename U>
 		PBOS_FORCEINLINE contains_result_t contains_alt(const U &key) const {
 			if constexpr (Fallible) {
-				auto node = _tree.template get_alt<U>(key);
+				auto node = _tree.template find_alt<U>(key);
 
 				if (!node.has_value())
 					return NULL_OPTION;
 
 				return node.value();
 			} else {
-				return _tree.template get_alt<U>(key);
+				return _tree.template find_alt<U>(key);
 			}
 		}
 		PBOS_FORCEINLINE const_iterator find(const T &key) const {
@@ -339,12 +344,12 @@ namespace kfxx {
 		template <typename U>
 		PBOS_FORCEINLINE iterator find_alt(const U &key) {
 			if constexpr (Fallible) {
-				if (auto node = _tree.template get_alt<U>(key); node.has_value()) {
+				if (auto node = _tree.template find_alt<U>(key); node.has_value()) {
 					return iterator(typename tree_t::iterator(node.value(), &_tree, iterator_direction::Forward));
 				}
 				return _tree.end();
 			} else {
-				if (auto node = _tree.template get_alt<U>(key); node) {
+				if (auto node = _tree.template find_alt<U>(key); node) {
 					return iterator(typename tree_t::iterator(node, &_tree, iterator_direction::Forward));
 				}
 				return _tree.end();

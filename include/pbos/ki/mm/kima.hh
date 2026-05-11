@@ -2,6 +2,7 @@
 #define _PBOS_KI_KM_KIMA_H_
 
 #include "misc.hh"
+#include <pbos/ps/mutex.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -9,6 +10,7 @@ typedef struct _kima_ublk_poolpg_t kima_ublk_poolpg_t;
 typedef struct _kima_vpgdesc_poolpg_t kima_vpgdesc_poolpg_t;
 
 typedef struct _kima_pool_t {
+	ps::mutex_t mutex;
 	kima_ublk_poolpg_t *ublk_poolpg_list = nullptr;
 	kfxx::rbtree_t<void *> ublk_query_tree, ublk_free_tree;
 	kima_vpgdesc_poolpg_t *vpgdesc_poolpg_list = nullptr;

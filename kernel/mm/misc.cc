@@ -6,6 +6,8 @@
 
 mm_context_t **mm_cur_contexts = nullptr;
 
+ps::mutex_t ki_kernel_mmap_mutex;
+
 km_result_t mm_mmap(mm_context_t *ctxt,
 	void *vaddr,
 	void *paddr,
@@ -73,14 +75,21 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 			new_vmr->access = access;
 
 			ctxt->vmr_tree.insert_unwrap(new_vmr);
-		}
+		} else
+			remove_vmr_guard.release();
 	} else
 		remove_vmr_guard.release();
 
-	km_result_t result;
+	kfxx::scope_guard release_kernel_mmap_mutex_guard([]() noexcept {
+		ki_kernel_mmap_mutex.unlock();
+	});
 
-	if (KM_FAILED(result = kh_mmap(ctxt, aligned_vaddr, aligned_paddr, aligned_size, access, flags)))
-		return result;
+	if(is_user_space)
+		release_kernel_mmap_mutex_guard.release();
+	else
+		ki_kernel_mmap_mutex.lock();
+
+	KM_RETURN_IF_FAILED(kh_mmap(ctxt, aligned_vaddr, aligned_paddr, aligned_size, access, flags));
 
 	remove_vmr_guard.release();
 
@@ -135,6 +144,16 @@ km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t
 			kima_free(&ctxt->kima_vmr_pool, vmr);
 		}
 	}
+
+	kfxx::scope_guard release_kernel_mmap_mutex_guard([]() noexcept {
+		ki_kernel_mmap_mutex.unlock();
+	});
+
+	if(is_user_space)
+		release_kernel_mmap_mutex_guard.release();
+	else
+		ki_kernel_mmap_mutex.lock();
+
 	kh_unmmap(ctxt, aligned_vaddr, aligned_size, flags);
 	return KM_RESULT_OK;
 }

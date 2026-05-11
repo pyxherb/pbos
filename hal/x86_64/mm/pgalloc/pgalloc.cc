@@ -1,6 +1,7 @@
 #include "pgalloc.hh"
 #include <pbos/km/logger.h>
 #include <hal/x86_64/mm.hh>
+#include <pbos/kfxx/scope_guard.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -47,6 +48,11 @@ void hn_set_pgblk_used(void *pgaddr) {
 	hn_pmad_t *area = hn_pmad_get(pgaddr);
 	hn_mad_t *mad = hn_get_mad(pgaddr);
 
+	hal_lock_spinlock(&mad->spinlock);
+	kfxx::deferred unlocker([mad]() noexcept {
+		hal_unlock_spinlock(&mad->spinlock);
+	});
+
 	if (!(mad->ref_count++)) {
 		if (mad == area->free_list)
 			area->free_list = mad->next_free;
@@ -62,6 +68,11 @@ void hn_set_pgblk_used(void *pgaddr) {
 void hn_set_pgblk_free(void *addr) {
 	hn_pmad_t *area = hn_pmad_get(addr);
 	hn_mad_t *mad = hn_get_mad(addr);
+
+	hal_lock_spinlock(&mad->spinlock);
+	kfxx::deferred unlocker([mad]() noexcept {
+		hal_unlock_spinlock(&mad->spinlock);
+	});
 
 	if (!mad->ref_count)
 		return;

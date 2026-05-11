@@ -69,7 +69,7 @@ typedef struct _fs_fcb_t : public kfxx::rbtree_t<fs_fhandle_t>::node_t {
 } fs_fcb_t;
 
 typedef struct _fs_fnode_t {
-	size_t ref_num = 0;
+	size_t ref_count = 0;
 
 	_fs_fnode_t *parent = nullptr;
 

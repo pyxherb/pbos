@@ -30,10 +30,10 @@ PBOS_NORETURN void _start() {
 	_call_ctors();
 	uint32_t fd;
 	if(user_syscall(1, (uint64_t)INIT_PATH, sizeof(INIT_PATH) - 1, 0, 0, (uint64_t)&fd))
-		;
+		asm volatile("int3");
 	uint32_t proc_id;
 	if(user_syscall(5, fd, fd, (uint64_t)"", 0, (uint64_t)&proc_id))
-		;
+		asm volatile("int3");
 	while (1) {
 		asm volatile("nop");
 	}

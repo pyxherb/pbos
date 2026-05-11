@@ -8,12 +8,16 @@ kfxx::rbtree_t<ps_proc_id_t> ps_global_proc_set;
 ps_sched_t *ps_cur_sched = NULL;
 
 ps_pcb_t *ps_get_cur_proc() {
-	return ps_cur_proc_per_cpu[ps_get_cur_cpuid()];
+	if (ps_cur_proc_per_cpu)
+		return ps_cur_proc_per_cpu[ps_get_cur_cpuid()];
+	return nullptr;
 }
 KI_EXPORT_IMAGE_SYMBOL(ps_get_cur_proc);
 
 ps_tcb_t *ps_get_cur_thread() {
-	return ps_cur_thread_per_cpu[ps_get_cur_cpuid()];
+	if (ps_cur_thread_per_cpu)
+		return ps_cur_thread_per_cpu[ps_get_cur_cpuid()];
+	return nullptr;
 }
 KI_EXPORT_IMAGE_SYMBOL(ps_get_cur_thread);
 
@@ -37,7 +41,6 @@ void ps_unset_cwd(ps_pcb_t *pcb) {
 }
 
 void ps_yield_cur_thread() {
-
 }
 
 PBOS_EXTERN_C_END

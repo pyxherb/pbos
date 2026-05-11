@@ -6,6 +6,7 @@
 
 void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 	// io::irq_disable_lock irq_lock;
+	ps::mutex_guard g(pool->mutex.c_mutex());
 
 	kd_dbgcheck(size, "The size for mm_kalloc must not be 0");
 	char *continuous_area_base = nullptr;
@@ -113,6 +114,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 
 PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size, size_t alignment) {
 	kd_assert(size);
+	ps::mutex_guard g(pool->mutex.c_mutex());
 	char *continuous_area_base = nullptr;
 
 	kima_ublk_t *old_ublk = static_cast<kima_ublk_t *>(pool->ublk_query_tree.find(old_ptr));
@@ -250,6 +252,7 @@ KI_EXPORT_IMAGE_SYMBOL(mm_krealloc);
 
 PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, size_t size, size_t alignment) {
 	kd_assert(size);
+	ps::mutex_guard g(pool->mutex.c_mutex());
 	char *continuous_area_base = nullptr;
 
 	kima_ublk_t *old_ublk = static_cast<kima_ublk_t *>(pool->ublk_query_tree.find(old_ptr));
@@ -314,49 +317,14 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 		return old_ptr;
 	}
 
-	// Allocate new pages if there is no suitable continuous virtual memory area.
-	char *new_free_pg = (char *)kima_vpgalloc(NULL, PGCEIL(size + alignment));
-
-	if (size_t aligned_diff = ((uintptr_t)new_free_pg) % alignment; aligned_diff) {
-		new_free_pg += alignment - aligned_diff;
-	}
-
-	if (!new_free_pg)
-		return nullptr;
-
-	size_t i = 0;
-	kfxx::scope_guard release_vpgdesc_sg([pool, new_free_pg, &i]() noexcept {
-		for (size_t j = 0; j < i; ++j) {
-			kima_free_vpgdesc(pool, kima_lookup_vpgdesc(pool, ((char *)new_free_pg) + j * PAGESIZE));
-		}
-		pool->num_allocated_pages -= i;
-	});
-
-	for (; i < PGROUNDUP(size); ++i) {
-		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(pool, ((char *)new_free_pg) + i * PAGESIZE);
-
-		if (!vpgdesc)
-			return nullptr;
-
-		++vpgdesc->ref_count;
-	}
-
-	pool->num_allocated_pages += PGROUNDUP(size);
-
-	kima_free_ublk(pool, old_ublk);
-
-	kima_ublk_t *ublk = kima_alloc_ublk(pool, new_free_pg, size);
-	if (!ublk)
-		return nullptr;
-
-	release_vpgdesc_sg.release();
-
-	return new_free_pg;
+	return nullptr;
 }
 KI_EXPORT_IMAGE_SYMBOL(mm_krealloc_in_place);
 
 void kima_free(kima_pool_t *pool, void *ptr) {
 	// io::irq_disable_lock irq_lock;
+
+	ps::mutex_guard g(pool->mutex.c_mutex());
 
 	kima_ublk_t *ublk = kima_lookup_ublk(pool, ptr);
 	kd_assert(ublk);

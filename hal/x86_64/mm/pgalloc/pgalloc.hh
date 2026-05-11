@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <pbos/kfxx/rbtree.hh>
 #include <pbos/ki/mm/misc.hh>
+#include <pbos/hal/spinlock.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -16,6 +17,8 @@ PBOS_EXTERN_C_BEGIN
 ///
 typedef struct _hn_mad_t : public kfxx::rbtree_t<void *>::node_t {
 	struct _hn_mad_t *next_free, *prev_free;
+
+	hal_spinlock_t spinlock;
 
 	size_t ref_count;
 } hn_mad_t;
