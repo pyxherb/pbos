@@ -1,22 +1,25 @@
 #include <arch/x86_64/paging.h>
-#include <pbos/hal/irq.hh>
-#include <pbos/kfxx/scope_guard.hh>
-#include "../mm.hh"
-#include <pbos/kfxx/allocator.hh>
 #include <string.h>
+#include <pbos/hal/irq.hh>
+#include <pbos/kfxx/allocator.hh>
+#include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/mp/misc.hh>
+#include "../mm.hh"
 
 PBOS_EXTERN_C_BEGIN
 
 mm_context_t hn_kernel_mm_context;
 mm_context_t *mm_kernel_context = &hn_kernel_mm_context;
 
+_mm_context_t::~_mm_context_t() {
+}
+
 void kh_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 	if (dest == src)
 		return;
 	memcpy(
-		dest->pml4t + PML4X(KSPACE_VBASE),
-		src->pml4t + PML4X(KSPACE_VBASE),
+		((arch_pml4te_t *)dest->page_table) + PML4X(KSPACE_VBASE),
+		((arch_pml4te_t *)src->page_table) + PML4X(KSPACE_VBASE),
 		sizeof(arch_pml4te_t) * (PML4X(UINTPTR_MAX - KSPACE_VBASE + 1)));
 }
 
@@ -36,7 +39,7 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 
 	mm_context_t *new_context;
 
-	if(!(new_context = (mm_context_t*)mm_kalloc(sizeof(mm_context_t), alignof(mm_context_t))))
+	if (!(new_context = (mm_context_t *)mm_kalloc(sizeof(mm_context_t), alignof(mm_context_t))))
 		return KM_RESULT_NO_MEM;
 
 	kfxx::scope_guard free_new_context_guard([new_context]() noexcept {
@@ -69,7 +72,7 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 	free_pml4t_vaddr_guard.release();
 
 	memset(pml4t_vaddr, 0, PAGESIZE);
-	new_context->pml4t = (arch_pml4te_t *)pml4t_vaddr;
+	new_context->page_table = (arch_pml4te_t *)pml4t_vaddr;
 
 	kh_mm_copy_global_mappings(new_context, mm_get_cur_context());
 
@@ -83,10 +86,25 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 
 void mm_free_context(mm_context_t *context) {
 	// TODO: Free associated pages.
-	mm_unmmap(context, 0, KSPACE_VBASE, 0);
-	auto pml4t = mm_getmap(mm_get_cur_context(), context->pml4t, nullptr);
+	km_unwrap_result(mm_unmmap(context, 0, USER_SIZE, MMAP_IGNORE_VMR));
+
+	while (context->vmr_tree.size()) {
+		auto vmr = static_cast<ps_vmr_t *>(context->vmr_tree.begin().node);
+		context->vmr_tree.remove(vmr);
+		kfxx::destroy_at<ps_vmr_t>(vmr);
+		kima_free(&context->kima_vmr_pool, vmr);
+	}
+
+	// Free memory blocks allocated by KIMA.
+	// We must free all pages before the top-level page table is unmapped.
+	kima_free_pool(&context->kima_common_pool);
+	kima_free_pool(&context->kima_vmr_pool);
+
+	// Free the top-level page table.
+	auto pml4t = mm_getmap(mm_get_cur_context(), context->page_table, nullptr);
 	kd_assert(pml4t);
 	mm_pgfree(pml4t);
+
 	kfxx::destroy_and_release<mm_context_t>(kfxx::kernel_allocator(), context);
 }
 
@@ -99,7 +117,7 @@ void mm_switch_context(mm_context_t *context) {
 	kh_mm_copy_global_mappings(context, prev_context);
 	// ki_mm_copy_global_mappings(mm_kernel_context, prev_context);
 	// asm volatile("xchg %bx, %bx");
-	arch_lpgtab(PGROUNDDOWN(mm_getmap(prev_context, context->pml4t, NULL)));
+	arch_lpgtab(PGROUNDDOWN(mm_getmap(prev_context, context->page_table, NULL)));
 }
 
 PBOS_EXTERN_C_END

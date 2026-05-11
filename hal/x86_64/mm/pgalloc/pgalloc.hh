@@ -7,26 +7,9 @@
 #include <arch/x86_64/paging.h>
 #include <stdint.h>
 #include <pbos/kfxx/rbtree.hh>
-#include <pbos/ki/mm/mm.hh>
+#include <pbos/ki/mm/misc.hh>
 
 PBOS_EXTERN_C_BEGIN
-
-//
-// MAD allocation types.
-// For non-terminal MADs, only `MAD_ALLOC_FREE` and `MAD_ALLOC_KERNEL` (Used) are valid.
-//
-#define MAD_ALLOC_FREE 0x00		 // Free
-#define MAD_ALLOC_KERNEL 0x01	 // Used by kernel
-#define MAD_ALLOC_USER 0x02		 // Used by users
-#define MAD_ALLOC_HARDWARE 0x03	 // Used by hardwares
-
-#define MAD_P 0x01	// Present
-#define MAD_S 0x02	// Shared
-#define MAD_C 0x04	// Cached
-#define MAD_M 0x08	// Mapped
-#define MAD_L 0x10	// Locked
-#define MAD_D 0x20	// Dirty
-#define MAD_B 0x40	// Busy
 
 ///
 /// @brief Memory Allocation Descriptor (MAD), manages a single page.
@@ -36,8 +19,6 @@ typedef struct _hn_mad_t : public kfxx::rbtree_t<void *>::node_t {
 
 	size_t ref_count;
 } hn_mad_t;
-
-#define ISINRANGE(min, size, n) ((((n) >= (min))) && (n < ((min) + (size))))
 
 typedef struct _hn_madpool_t hn_madpool_t;
 
@@ -62,7 +43,7 @@ struct hn_pmad_t {
 	uint8_t type;
 	void *direct_map_base;
 	size_t direct_map_size;
-	// MAD pages were all preallocated at initializing stage.
+	// MAD pages are all preallocated at initializing stage.
 	hn_mad_t *free_list = nullptr;
 	kfxx::rbtree_t<void *> query_tree;
 };

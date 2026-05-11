@@ -9,7 +9,7 @@ typedef enum _km_results {
 
 	KM_RESULT_FAILED,				  // Failed due to unknown errors
 	KM_RESULT_NO_PERM,				  // No permission
-	KM_RESULT_INVALID_ARGS,			  // Bad arguments
+	KM_RESULT_INVALID_ARGS,			  // Invalid arguments
 	KM_RESULT_NO_MEM,				  // No memory
 	KM_RESULT_IO_ERROR,				  // I/O error
 	KM_RESULT_NOT_FOUND,			  // Not found

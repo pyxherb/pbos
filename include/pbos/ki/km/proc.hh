@@ -22,6 +22,8 @@ typedef struct _ps_tcb_t : public kfxx::rbtree_t<ps_thread_id_t>::node_t {
 
 	uint8_t priority, flags;
 
+	bool scheduled = false;
+
 	kh_user_context_t *context = nullptr;
 	void *stack = nullptr;
 	size_t stack_size = 0;
@@ -34,9 +36,6 @@ typedef struct _ps_tcb_t : public kfxx::rbtree_t<ps_thread_id_t>::node_t {
 	_ps_tcb_t() = default;
 	~_ps_tcb_t() = default;
 } ps_tcb_t;
-
-typedef struct _ps_vmr_t : kfxx::rbtree_t<void *>::node_t {
-} ps_vmr_t;
 
 typedef struct _ps_pcb_t : kfxx::rbtree_t<ps_proc_id_t>::node_t {
 	ps_thread_id_t last_thread_id;

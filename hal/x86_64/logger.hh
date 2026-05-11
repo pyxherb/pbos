@@ -5,8 +5,6 @@
 
 PBOS_EXTERN_C_BEGIN
 
-void hn_klog_init();
-
 PBOS_EXTERN_C_END
 
 #endif

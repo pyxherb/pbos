@@ -15,20 +15,10 @@ PBOS_EXTERN_C_BEGIN
 void hal_init() {
 	if (LIMINE_BASE_REVISION_SUPPORTED(hn_limine_base_revision) == false) {
 		// TODO: Panic
-		arch_halt();
+		arch_hlt();
 	}
 
 	mm_kernel_bottom_mapping_base_vaddr = (void *)hn_limine_hhdm_request.response->offset;
-
-	hn_klog_init();
-
-	kd_printf("Initializing global objects\n");
-
-	hn_mm_init();
-
-	// kh_irq_init();
-
-	kd_printf("Initialized HAL\n");
 }
 
 PBOS_EXTERN_C_END

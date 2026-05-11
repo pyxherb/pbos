@@ -3,6 +3,7 @@
 #include <pbos/km/logger.h>
 #include <string.h>
 #include <hal/x86_64/irq.hh>
+#include <hal/x86_64/proc.hh>
 #include <hal/x86_64/mm.hh>
 #include <pbos/kh/acpi/misc.hh>
 #include <pbos/ki/mp/init.hh>

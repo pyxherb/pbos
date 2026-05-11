@@ -1,18 +1,15 @@
-#ifndef _PBOS_KI_KM_MM_H_
-#define _PBOS_KI_KM_MM_H_
+#ifndef _PBOS_KI_KM_MISC_H_
+#define _PBOS_KI_KM_MISC_H_
 
 #include "memconf.h"
 
 #include <pbos/mm/mm.h>
-#include <pbos/km/panic.h>
 #include <pbos/kfxx/rbtree.hh>
 
 #include <pbos/generated/km.h>
 #include KI_ARCH_MEMCONF_HEADER_PATH
 
 PBOS_EXTERN_C_BEGIN
-
-extern mm_context_t **mm_cur_contexts;
 
 void ki_mm_init_global_allocator();
 

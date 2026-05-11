@@ -39,12 +39,6 @@ klog_logger_t *hn_active_logger;
 
 hal_spinlock_t hn_logger_spinlock = HAL_SPINLOCK_UNLOCKED;
 
-void hn_klog_init() {
-	klog_set_logger(klog_get_default_logger());
-
-	kd_printf("Initialized kernel logger\n");
-}
-
 void klog_set_logger(klog_logger_t *logger) {
 	hn_active_logger = logger;
 }

@@ -4,24 +4,15 @@
 #include <arch/x86_64/mlayout.h>
 #include <arch/x86_64/tss.h>
 #include <arch/x86_64/seg.h>
+#include <arch/x86_64/paging.h>
 #include <pbos/kfxx/rbtree.hh>
 #include <pbos/kh/mm/misc.hh>
-#include "mm/pgalloc/pgalloc.hh"
 
 PBOS_EXTERN_C_BEGIN
 
 #define HN_MAX_PGTAB_LEVEL 4
 
 #define HN_VPM_LEVEL_MAX (HN_MAX_PGTAB_LEVEL - 1)
-
-enum {
-	HN_MM_INIT_STAGE_INITIAL = 0,
-	HN_MM_INIT_STAGE_AREAS_INITIAL,
-	HN_MM_INIT_STAGE_INITIAL_AREAS_INITED,
-	HN_MM_INIT_STAGE_AREAS_INITED,
-};
-
-extern uint8_t hn_mm_init_stage;
 
 extern void *mm_kernel_bottom_mapping_base_vaddr;
 extern char mm_kernel_initial_stack[1024 * 96];
@@ -59,16 +50,10 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 	void *pde_paddr,
 	void *pte_paddr);
 
-void hn_mm_init();
-
 typedef struct _hn_tmpmap_info_t {
 	void *tmpmap_base;
 	arch_pte_t *tmpmap_pgtab_base;
 } hn_tmpmap_info_t;
-
-typedef struct _mm_context_t {
-	arch_pml4te_t *pml4t = nullptr;
-} mm_context_t;
 
 ///
 /// @brief Mapped kernel page table entry table.

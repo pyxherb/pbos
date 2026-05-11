@@ -1,5 +1,5 @@
 #include <pbos/ki/mp/init.hh>
-#include <pbos/ki/mm/mm.hh>
+#include <pbos/ki/mm/context.hh>
 #include <pbos/hal/irq.hh>
 #include <string.h>
 

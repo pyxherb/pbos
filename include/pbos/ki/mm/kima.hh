@@ -1,7 +1,7 @@
 #ifndef _PBOS_KI_KM_KIMA_H_
 #define _PBOS_KI_KM_KIMA_H_
 
-#include "mm.hh"
+#include "misc.hh"
 
 PBOS_EXTERN_C_BEGIN
 
@@ -13,6 +13,9 @@ typedef struct _kima_pool_t {
 	kfxx::rbtree_t<void *> ublk_query_tree, ublk_free_tree;
 	kima_vpgdesc_poolpg_t *vpgdesc_poolpg_list = nullptr;
 	kfxx::rbtree_t<void *> vpgdesc_query_tree, vpgdesc_free_tree;
+	size_t num_allocated_pages = 0;
+
+	~_kima_pool_t();
 } kima_pool_t;
 
 extern kima_pool_t *mm_global_pool;
@@ -79,6 +82,10 @@ PBOS_NODISCARD void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment
 PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size, size_t alignment);
 PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, size_t size, size_t alignment);
 void kima_free(kima_pool_t *pool, void *ptr);
+
+void kima_free_pool(kima_pool_t *pool);
+
+size_t kima_get_allocated_page_num(kima_pool_t *pool);
 
 PBOS_EXTERN_C_END
 

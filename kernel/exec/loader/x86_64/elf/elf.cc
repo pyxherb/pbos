@@ -1,12 +1,12 @@
 #include <arch/x86_64/mlayout.h>
 #include <arch/x86_64/paging.h>
-#include <pbos/fs/file.h>
+#include <elf.h>
 #include <pbos/exec/exec.h>
+#include <pbos/fs/file.h>
 #include <pbos/km/logger.h>
 #include <string.h>
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
-#include <elf.h>
 
 km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp);
 km_result_t ki_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp);
@@ -90,7 +90,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 		off = ph.p_offset;
 
 		mm_context_t *cur_context = mm_get_cur_context(),
-					*target_context = ps_mm_context_of(proc);
+					 *target_context = ps_mm_context_of(proc);
 		{
 			void *tmp_pgvaddr;
 
@@ -115,11 +115,11 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 
 					mm_pgaccess_t pgaccess = MM_PAGE_MAPPED | MM_PAGE_USER;
 
-					if(ph.p_flags & PF_R)
+					if (ph.p_flags & PF_R)
 						pgaccess |= MM_PAGE_READ;
-					if(ph.p_flags & PF_W)
+					if (ph.p_flags & PF_W)
 						pgaccess |= MM_PAGE_WRITE;
-					if(ph.p_flags & PF_X)
+					if (ph.p_flags & PF_X)
 						pgaccess |= MM_PAGE_EXEC;
 
 					if (KM_FAILED(result = mm_mmap(target_context, vaddr + j, paddr, PAGESIZE, pgaccess, 0)))
@@ -136,16 +136,18 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 					memset((void *)tmp_pgvaddr, 0, PAGESIZE);
 					if (j < ph.p_filesz) {
 						if (KM_FAILED(result = fs_read(
-											  file_fp,
-											  tmp_pgvaddr,
-											  PBOS_MIN(ph.p_filesz - j, PAGESIZE),
-											  off,
-											  &bytes_read))) {
+										  file_fp,
+										  tmp_pgvaddr,
+										  PBOS_MIN(ph.p_filesz - j, PAGESIZE),
+										  off,
+										  &bytes_read))) {
 							// TODO: free allocated resources here.
 							return result;
 						}
 						off += bytes_read;
 					}
+					if (j)
+						km_unwrap_result(mm_merge_mapped_area(target_context, vaddr, vaddr + j));
 				}
 			}
 

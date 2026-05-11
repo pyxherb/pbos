@@ -13,7 +13,7 @@ void mm_invlpg(void *ptr) {
 }
 
 bool mm_is_user_space(const void *ptr) {
-	return ADDR_VALUE(ptr) < 0x0000800000000000ULL;
+	return ptr < (void*)0x0000800000000000ULL;
 }
 
 bool mm_probe_user_space(mm_context_t *mm_context, const void *ptr, size_t size) {

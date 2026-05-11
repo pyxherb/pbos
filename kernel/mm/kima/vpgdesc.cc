@@ -1,25 +1,29 @@
-#include <pbos/ki/mm/kima.hh>
 #include <string.h>
+#include <pbos/ki/mm/kima.hh>
 
-kima_vpgdesc_t* kima_lookup_vpgdesc(kima_pool_t *pool, void* ptr) {
-	kfxx::rbtree_t<void*>::node_t* node = pool->vpgdesc_query_tree.find(ptr);
+kima_vpgdesc_t *kima_lookup_vpgdesc(kima_pool_t *pool, void *ptr) {
+	kfxx::rbtree_t<void *>::node_t *node = pool->vpgdesc_query_tree.find(ptr);
 
 	if (!node)
 		return NULL;
 
-	return static_cast<kima_vpgdesc_t*>(node);
+	return static_cast<kima_vpgdesc_t *>(node);
 }
 
 void kima_free_vpgdesc(kima_pool_t *pool, kima_vpgdesc_t *vpgdesc) {
 	kima_vpgdesc_poolpg_t *poolpg = (kima_vpgdesc_poolpg_t *)PGFLOOR(vpgdesc);
 
 	pool->vpgdesc_query_tree.remove(vpgdesc);
+	pool->vpgdesc_free_tree.insert_unwrap(vpgdesc);
 
 	if (!(--poolpg->header.used_num)) {
 		if (poolpg->header.prev)
 			poolpg->header.prev->header.next = poolpg->header.next;
 		if (poolpg->header.next)
 			poolpg->header.next->header.prev = poolpg->header.prev;
+		for (auto &i : poolpg->slots) {
+			pool->vpgdesc_free_tree.remove(&i);
+		}
 		kima_vpgfree(poolpg, PAGESIZE);
 	}
 }
@@ -27,6 +31,10 @@ void kima_free_vpgdesc(kima_pool_t *pool, kima_vpgdesc_t *vpgdesc) {
 kima_vpgdesc_t *kima_alloc_vpgdesc(kima_pool_t *pool, void *ptr) {
 	if (pool->vpgdesc_free_tree.size()) {
 		kima_vpgdesc_t *desc = static_cast<kima_vpgdesc_t *>(pool->vpgdesc_free_tree.begin().node);
+
+		kima_ublk_poolpg_t *poolpg = (kima_ublk_poolpg_t *)PGFLOOR(desc);
+
+		++poolpg->header.used_num;
 
 		pool->vpgdesc_free_tree.remove(desc);
 

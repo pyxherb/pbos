@@ -2,9 +2,9 @@
 #include <pbos/hal/irq.h>
 #include <pbos/km/logger.h>
 #include <pbos/km/panic.h>
-#include <pbos/ki/mm/mm.hh>
 #include <pbos/kh/acpi/misc.hh>
 #include <pbos/kh/initcar.hh>
+#include <pbos/kh/mm/init.hh>
 #include <pbos/kh/mp/init.hh>
 #include <pbos/ki/exec/exec.hh>
 #include <pbos/ki/fs/fs.hh>
@@ -47,6 +47,12 @@ PBOS_NORETURN void kernel_main() {
 	ki_call_ctors();
 
 	hal_init();
+
+	klog_set_logger(klog_get_default_logger());
+	kd_printf("Initialized kernel logger\n");
+
+	kh_mm_init();
+
 	// kh_irq_init();
 
 	ki_mm_init_global_allocator();
@@ -71,7 +77,7 @@ PBOS_NORETURN void kernel_main() {
 	fs_init();
 	ps_init();
 
-	for(const ki_syment_t *i = KI_EXPORTED_SYMBOLS_BEGIN; i < KI_EXPORTED_SYMBOLS_END; ++i) {
+	for (const ki_syment_t *i = KI_EXPORTED_SYMBOLS_BEGIN; i < KI_EXPORTED_SYMBOLS_END; ++i) {
 		kd_printf("Found image symbol: %s\n", i->name);
 	}
 

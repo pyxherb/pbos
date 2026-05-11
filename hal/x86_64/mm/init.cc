@@ -1,4 +1,5 @@
 #include <hal/x86_64/misc.h>
+#include "pgalloc/pgalloc.hh"
 #include <pbos/km/logger.h>
 #include <pbos/ps/proc.h>
 #include <pbos/ki/acpi/rsdt.hh>
@@ -6,8 +7,6 @@
 #include "hal/x86_64/initcar.hh"
 
 PBOS_EXTERN_C_BEGIN
-
-uint8_t hn_mm_init_stage = HN_MM_INIT_STAGE_INITIAL;
 
 hn_kgdt_t hn_init_kgdt;
 hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1];
@@ -40,9 +39,8 @@ static void hn_mm_init_areas();
 
 static hn_tmpmap_info_t hn_kernel_early_tmpmap_info;
 
-void hn_mm_init() {
-	mm_kernel_context->pml4t = mm_kernel_initial_pml4t;
-	hn_mm_init_stage = HN_MM_INIT_STAGE_INITIAL;
+void kh_mm_init() {
+	mm_kernel_context->page_table = mm_kernel_initial_pml4t;
 
 	hn_init_gdt();
 	hn_mm_init_pmadlist();
@@ -59,8 +57,6 @@ void hn_mm_init() {
 
 	hn_mm_init_paging();
 
-	hn_mm_init_stage = HN_MM_INIT_STAGE_AREAS_INITIAL;
-
 	hn_mm_init_areas();
 
 	hn_kernel_early_tmpmap_info.tmpmap_base = (void *)KINITTMPMAP_VBASE;
@@ -72,8 +68,6 @@ void hn_mm_init() {
 			PTX(KINITTMPMAP_VBASE));
 
 	hn_tmpmap_storage_ptr = &hn_kernel_early_tmpmap_info;
-
-	hn_mm_init_stage = HN_MM_INIT_STAGE_AREAS_INITED;
 
 	kd_printf("Initialized memory manager\n");
 }
@@ -178,8 +172,6 @@ static void hn_mm_init_areas() {
 				++cur_madpool_slot_index;
 			}
 		}
-
-		hn_mm_init_stage = HN_MM_INIT_STAGE_INITIAL_AREAS_INITED;
 
 		void *new_poolpg_pdpt_vaddr = nullptr,
 			 *new_poolpg_pdt_vaddr = nullptr,

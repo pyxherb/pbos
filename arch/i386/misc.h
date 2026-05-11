@@ -4,6 +4,6 @@
 #include <pbos/common.h>
 
 #define arch_fence() __asm__ __volatile__("" ::: "memory")
-#define arch_halt() __asm__ __volatile__("hlt");
+#define arch_hlt() __asm__ __volatile__("hlt");
 
 #endif

@@ -79,9 +79,12 @@ void hn_isr_timer_impl(
 		ps_cur_proc_per_cpu[cur_cpuid] = next_thread->parent;
 	}
 
+	if (cur_thread)
+		cur_thread->scheduled = false;
+
 	ps_cur_thread_per_cpu[cur_cpuid] = next_thread;
 
-	next_thread->flags |= PS_TCB_SCHEDULED;
+	next_thread->scheduled = true;
 
 	hn_set_sched_timer();
 

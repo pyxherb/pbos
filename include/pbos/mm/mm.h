@@ -20,14 +20,14 @@ enum {
 	MM_PHYSICAL_MEMORY_TYPE_ACPI
 };
 
-#define MM_PAGE_MAPPED 0x01   // Mapped
-#define MM_PAGE_READ 0x02	   // Read
-#define MM_PAGE_WRITE 0x04	   // Write
-#define MM_PAGE_EXEC 0x08	   // Execute
+#define MM_PAGE_MAPPED 0x01	  // Mapped
+#define MM_PAGE_READ 0x02	  // Read
+#define MM_PAGE_WRITE 0x04	  // Write
+#define MM_PAGE_EXEC 0x08	  // Execute
 #define MM_PAGE_NOCACHE 0x10  // Non-cached
-#define MM_PAGE_USER 0x20	   // User
+#define MM_PAGE_USER 0x20	  // User
 
-typedef uint8_t mm_pgaccess_t;
+typedef uint32_t mm_pgaccess_t;
 
 typedef struct _mm_context_t mm_context_t;
 
@@ -136,6 +136,7 @@ void mm_vmfree(mm_context_t *context, void *addr, size_t size);
 
 #define MMAP_ATOMIC 0x00000001
 #define MMAP_NO_REMAP 0x00000002
+#define MMAP_IGNORE_VMR 0x40000000
 #define MMAP_NO_PGTAB_ALLOC 0x40000000
 #define MMAP_NO_RC 0x80000000
 
@@ -161,6 +162,27 @@ PBOS_NODISCARD km_result_t mm_mmap(
 	mmap_flags_t flags);
 
 ///
+/// @brief Map a series of physical pages to
+///
+/// @param context
+/// @param vaddr
+/// @param paddrs
+/// @param size
+/// @param access
+/// @param flags
+/// @return PBOS_NODISCARD
+///
+PBOS_NODISCARD km_result_t mm_merge_mapped_area(
+	mm_context_t *context,
+	void *vaddr_a,
+	void *vaddr_b);
+
+PBOS_NODISCARD km_result_t mm_split_mapped_area(
+	mm_context_t *context,
+	void *area_vaddr,
+	void *split_point);
+
+///
 /// @brief Set page access of virtual pages.
 ///
 /// @param context Memory context to be operated.
@@ -168,9 +190,9 @@ PBOS_NODISCARD km_result_t mm_mmap(
 /// @param size Size of virtual memory space to be operated.
 /// @param access Page access to be applied to the virtual pages.
 ///
-void mm_set_page_access(
+PBOS_NODISCARD km_result_t mm_set_page_access(
 	mm_context_t *context,
-	const void *vaddr,
+	void *vaddr,
 	size_t size,
 	mm_pgaccess_t access);
 
@@ -182,7 +204,7 @@ void mm_set_page_access(
 /// @param size Size of virtual memory space to be unmapped.
 /// @param flags Flags for unmapping, same as mmap's.
 ///
-void mm_unmmap(mm_context_t *context, void *vaddr, size_t size, mmap_flags_t flags);
+km_result_t mm_unmmap(mm_context_t *context, void *vaddr, size_t size, mmap_flags_t flags);
 
 ///
 /// @brief Get mapping of a virtual page.

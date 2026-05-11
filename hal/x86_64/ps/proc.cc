@@ -1,3 +1,4 @@
+#include <arch/x86_64/apic.h>
 #include <pbos/fs/file.h>
 #include <pbos/fs/fs.h>
 #include <pbos/km/logger.h>
@@ -135,6 +136,14 @@ ps_cpu_id_t ps_get_cur_cpuid() {
 
 void ki_set_cur_cpuid(ps_cpu_id_t cpuid) {
 	arch_loadfs(cpuid);
+}
+
+void kh_yield_cur_thread() {
+	ps_tcb_t *tcb = ps_get_cur_thread();
+	tcb->scheduled = false;
+	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_LVT_TIMER, 0x30 | ARCH_LAPIC_LVT_TIMER_REG_PERIODIC);
+	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_INITIAL_COUNT, 0);
+	while (tcb->scheduled);
 }
 
 PBOS_EXTERN_C_END

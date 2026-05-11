@@ -80,6 +80,8 @@ fs_fnode_t *ps_get_cwd(ps_pcb_t *pcb);
 void ps_set_cwd(ps_pcb_t *pcb, fs_fnode_t *cwd_node);
 void ps_unset_cwd(ps_pcb_t *pcb);
 
+void ps_yield_cur_thread();
+
 PBOS_EXTERN_C_END
 
 #endif

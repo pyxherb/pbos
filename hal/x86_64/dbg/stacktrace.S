@@ -6,32 +6,32 @@ MSG_STACKFRAME_TRACE:
 .global hal_stacktrace
 
 hal_stacktrace:
-pushl %ebp
-movl %esp, %ebp
+pushl %rbp
+movl %rsp, %rbp
 
 	cld
-		pushl $MSG_STACKTRACE
+		pushq $MSG_STACKTRACE
 		call klog_printf
-	addl $4, %esp
+	addq $8, %rsp
 
-	movl (%esp), %ecx// ECX = Previous EBP
-	xorl %eax, %eax// EAX = Number of current frame
+	movq (%rsp), %rcx// ECX = Previous EBP
+	xorq %rax, %rax// EAX = Number of current frame
 
 	0:
-		testl %ecx, %ecx
+		testl %rcx, %rcx
 		jz 1f
 
-		movl 4(%ecx), %edx // EDX = Previous EIP
-		movl (%ecx), %ecx // ECX = Previous EBP
+		movq 8(%rcx), %rdx // EDX = Previous EIP
+		movq (%rcx), %rcx // ECX = Previous EBP
 
 		cld
-			pushl %edx
-			pushl %eax
-			pushl $MSG_STACKFRAME_TRACE
+			pushq %rdx
+			pushq %rax
+			pushq $MSG_STACKFRAME_TRACE
 			call klog_printf
-		add $12, %esp
+		add $12, %rsp
 
-		incl %eax
+		incq %rax
 
 	jmp 0b
 	1:

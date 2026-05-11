@@ -1,8 +1,8 @@
-#include <pbos/ki/mm/kima.hh>
 #include <string.h>
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/km/symbol.hh>
+#include <pbos/ki/mm/kima.hh>
 
 void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 	// io::irq_disable_lock irq_lock;
@@ -88,6 +88,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 		for (size_t j = 0; j < i; ++j) {
 			kima_free_vpgdesc(pool, kima_lookup_vpgdesc(pool, ((char *)new_free_pg) + j * PAGESIZE));
 		}
+		pool->num_allocated_pages -= i;
 	});
 
 	for (; i < PGROUNDUP(size); ++i) {
@@ -95,7 +96,11 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 
 		if (!vpgdesc)
 			return NULL;
+
+		++vpgdesc->ref_count;
 	}
+
+	pool->num_allocated_pages += PGROUNDUP(size);
 
 	kima_ublk_t *ublk = kima_alloc_ublk(pool, new_free_pg, size);
 	if (!ublk)
@@ -217,6 +222,7 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 		for (size_t j = 0; j < i; ++j) {
 			kima_free_vpgdesc(pool, kima_lookup_vpgdesc(pool, ((char *)new_free_pg) + j * PAGESIZE));
 		}
+		pool->num_allocated_pages -= i;
 	});
 
 	for (; i < PGROUNDUP(size); ++i) {
@@ -224,7 +230,13 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 
 		if (!vpgdesc)
 			return NULL;
+
+		++vpgdesc->ref_count;
 	}
+
+	pool->num_allocated_pages += PGROUNDUP(size);
+
+	kima_free_ublk(pool, old_ublk);
 
 	kima_ublk_t *ublk = kima_alloc_ublk(pool, new_free_pg, size);
 	if (!ublk)
@@ -287,7 +299,7 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 		for (size_t i = PGCEIL(old_ublk->size);
 			i > PGCEIL(size);
 			++i) {
-			kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(pool, ((char*)old_ptr) + i);
+			kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(pool, ((char *)old_ptr) + i);
 
 			kd_assert(vpgdesc);
 
@@ -317,6 +329,7 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 		for (size_t j = 0; j < i; ++j) {
 			kima_free_vpgdesc(pool, kima_lookup_vpgdesc(pool, ((char *)new_free_pg) + j * PAGESIZE));
 		}
+		pool->num_allocated_pages -= i;
 	});
 
 	for (; i < PGROUNDUP(size); ++i) {
@@ -324,7 +337,13 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 
 		if (!vpgdesc)
 			return NULL;
+
+		++vpgdesc->ref_count;
 	}
+
+	pool->num_allocated_pages += PGROUNDUP(size);
+
+	kima_free_ublk(pool, old_ublk);
 
 	kima_ublk_t *ublk = kima_alloc_ublk(pool, new_free_pg, size);
 	if (!ublk)

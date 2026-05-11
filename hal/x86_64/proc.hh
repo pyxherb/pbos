@@ -36,7 +36,11 @@ typedef struct _kh_user_context_t {
 	uint16_t cs, ds, ss, es, gs;  // Selectors
 } kh_user_context_t;
 
-#define PS_TCB_SCHEDULED 0x01
+extern void *hn_lapic_pbase;
+extern uint32_t *hn_lapic_vbase;
+extern uint32_t hn_sched_interval;
+
+// #define PS_TCB_SCHEDULED 0x01
 
 kh_user_context_t *ps_alloc_context();
 void ps_destroy_context(kh_user_context_t *context);

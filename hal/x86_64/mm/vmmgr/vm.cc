@@ -2,7 +2,7 @@
 #include <pbos/km/logger.h>
 #include <pbos/ps/proc.h>
 #include <string.h>
-#include <hal/x86_64/mm.hh>
+#include <hal/x86_64/mm/pgalloc/pgalloc.hh>
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 
@@ -65,7 +65,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 	void *const addr_limit = (void *)PGCEIL((char *)vaddr + size);
 	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
 
-	arch_pml4te_t *pml4t = context->pml4t;
+	arch_pml4te_t *pml4t = (arch_pml4te_t *)context->page_table;
 
 	size_t sz_mapped = 0;
 	for (uint16_t pml4x = PML4X(vaddr); pml4x < PML4X(addr_limit) + 1; ++pml4x) {
@@ -203,22 +203,25 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 	mmap_flags_t flags) {
 	// io::irq_disable_lock irq_lock;
 
+#ifndef NDEBUG
 	if (!ctxt)
 		km_panic("Cannot call mmap with null context");
 	if (!size)
 		km_panic("Cannot call mmap with size == 0");
-
-	kd_assert(hn_mm_init_stage >= HN_MM_INIT_STAGE_INITIAL_AREAS_INITED);
+#endif
 
 	void *const addr_limit = (char *)vaddr + size;
 	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
-	arch_pml4te_t *pml4t = ctxt->pml4t;
+	arch_pml4te_t *pml4t = (arch_pml4te_t *)ctxt->page_table;
 	bool is_cur_pgtab = ctxt == mm_get_cur_context();
+
+#ifndef NDEBUG
 	bool is_user_space = mm_is_user_space(vaddr);
 
 	if (is_user_space !=
 		mm_is_user_space((void *)(((uintptr_t)vaddr) + (size - 1))))
 		km_panic("Cannot map across user and kernel spaces");
+#endif
 
 	char *pi = (char *)paddr;
 	size_t pi_diff = paddr ? PAGESIZE : 0;
@@ -391,7 +394,7 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 	kd_assert(ctxt);
 
 	// io::irq_disable_lock irq_lock;
-	arch_pml4te_t *pml4t = ctxt->pml4t;
+	arch_pml4te_t *pml4t = (arch_pml4te_t *)ctxt->page_table;
 	void *const addr_limit = (char *)vaddr + size;
 	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
 	bool is_cur_pgtab = ctxt == mm_get_cur_context();
@@ -586,7 +589,7 @@ void *kh_vmalloc(mm_context_t *context,
 	kd_dbgcheck(
 		addr_prefix == ADDR_PREFIX(maxaddr),
 		"The address prefix of the minimum address and the maximum address does not match");
-	arch_pml4te_t *pml4t = context->pml4t;
+	arch_pml4te_t *pml4t = (arch_pml4te_t *)context->page_table;
 
 	void *p_found = NULL;  // Pointer to the free area.
 	size_t sz_found = 0;   // Size of free area found.
@@ -751,7 +754,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 	kd_dbgcheck(
 		addr_prefix == ADDR_PREFIX(maxaddr),
 		"The address prefix of the minimum address and the maximum address does not match");
-	arch_pml4te_t *pml4t = context->pml4t;
+	arch_pml4te_t *pml4t = (arch_pml4te_t *)context->page_table;
 
 	void *p_found = NULL;  // Pointer to the free area.
 	size_t sz_found = 0;   // Size of free area found.
@@ -885,7 +888,7 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 	kd_assert(ctxt);
 
 	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
-	arch_pml4te_t *pml4t = ctxt->pml4t;
+	arch_pml4te_t *pml4t = (arch_pml4te_t *)ctxt->page_table;
 
 	void *p_found = NULL;  // Pointer to the free area.
 	size_t sz_found = 0;   // Size of free area found.
@@ -1293,7 +1296,7 @@ void *hn_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *p
 	kd_assert(ctxt);
 
 	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
-	arch_pml4te_t *pml4t = ctxt->pml4t;
+	arch_pml4te_t *pml4t = (arch_pml4te_t *)ctxt->page_table;
 
 	void *p_found = NULL;  // Pointer to the free area.
 	size_t sz_found = 0;   // Size of free area found.

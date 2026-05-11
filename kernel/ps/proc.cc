@@ -36,4 +36,8 @@ void ps_unset_cwd(ps_pcb_t *pcb) {
 	pcb->cur_dir.reset();
 }
 
+void ps_yield_cur_thread() {
+
+}
+
 PBOS_EXTERN_C_END
