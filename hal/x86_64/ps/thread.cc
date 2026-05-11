@@ -127,6 +127,9 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER, MMAP_ATOMIC))) {
 				return result;
 			}
+
+			if (i)
+				km_unwrap_result(mm_merge_mapped_area(pcb->mm_context, ptr, ptr + i));
 		}
 
 		release_pages_guard.release();

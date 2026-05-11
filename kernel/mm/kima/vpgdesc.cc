@@ -14,6 +14,7 @@ void kima_free_vpgdesc(kima_pool_t *pool, kima_vpgdesc_t *vpgdesc) {
 	kima_vpgdesc_poolpg_t *poolpg = (kima_vpgdesc_poolpg_t *)PGFLOOR(vpgdesc);
 
 	pool->vpgdesc_query_tree.remove(vpgdesc);
+	vpgdesc->rb_value = vpgdesc;
 	pool->vpgdesc_free_tree.insert_unwrap(vpgdesc);
 
 	if (!(--poolpg->header.used_num)) {

@@ -23,9 +23,8 @@ void kima_free_ublk(kima_pool_t *pool, kima_ublk_t *ublk) {
 	kima_ublk_poolpg_t *poolpg = (kima_ublk_poolpg_t *)PGFLOOR(ublk);
 
 	pool->ublk_query_tree.remove(ublk);
+	ublk->rb_value = ublk;
 	pool->ublk_free_tree.insert_unwrap(ublk);
-
-	ublk->size = 0;
 
 	if (!(--poolpg->header.used_num)) {
 		if (poolpg->header.prev)

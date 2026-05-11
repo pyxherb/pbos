@@ -123,7 +123,7 @@ PBOS_NODISCARD km_result_t mm_merge_mapped_area(
 	if (!vmr_a)
 		return KM_RESULT_INVALID_ARGS;
 
-	vmr_b = static_cast<ps_vmr_t *>(context->vmr_tree.find(vaddr_a));
+	vmr_b = static_cast<ps_vmr_t *>(context->vmr_tree.find(vaddr_b));
 	if (!vmr_b)
 		return KM_RESULT_INVALID_ARGS;
 
