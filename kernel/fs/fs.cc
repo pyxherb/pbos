@@ -52,12 +52,8 @@ void fs_init() {
 	if (!(fs_rootfs = fs_register_file_system("rootfs", strlen("rootfs"), &ki_rootfs_ops)))
 		km_panic("Error registering root file system");
 
-	kd_printf("Registered root file system\n");
-
 	if (KM_FAILED(result = fs_alloc_dir_fnode(fs_rootfs, &fs_abs_root_dir)))
 		km_panic("Error creating the root directory, error code = %.0x", result);
-
-	kd_printf("Created the root directory\n");
 }
 
 PBOS_EXTERN_C_END

@@ -68,8 +68,6 @@ void kh_mm_init() {
 			PTX(KINITTMPMAP_VBASE));
 
 	hn_tmpmap_storage_ptr = &hn_kernel_early_tmpmap_info;
-
-	kd_printf("Initialized memory manager\n");
 }
 
 static void hn_mm_init_areas() {
@@ -392,8 +390,6 @@ static void hn_mm_init_areas() {
 		mm_pgfree(new_poolpg_pdt_page);
 	if (new_poolpg_ptt_page)
 		mm_pgfree(new_poolpg_ptt_page);
-
-	kd_printf("Initialized memory areas\n");
 }
 
 ///
@@ -438,8 +434,6 @@ static void hn_init_gdt() {
 	arch_loadgs(SELECTOR_KDATA);
 	arch_loadss(SELECTOR_KDATA);
 	arch_loadcs(SELECTOR_KCODE);
-
-	kd_printf("Initialized GDT\n");
 }
 
 ///
@@ -512,8 +506,6 @@ static void hn_mm_init_pmadlist() {
 				km_panic("Unknown memory map type, perhaps a bootloader bug");
 		}
 	}
-
-	kd_printf("Initialized PMAD list\n");
 }
 
 ///
@@ -621,8 +613,6 @@ fill_end:
 	arch_lpgtab(PGROUNDDOWN(mm_kernel_initial_pml4t_paddr));
 
 	ki_cur_paging_config = &KI_PAGING_CONFIG_48BIT;
-
-	kd_printf("Initialized paging\n");
 }
 
 ///

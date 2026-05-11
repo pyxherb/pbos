@@ -5,7 +5,7 @@ kima_vpgdesc_t *kima_lookup_vpgdesc(kima_pool_t *pool, void *ptr) {
 	kfxx::rbtree_t<void *>::node_t *node = pool->vpgdesc_query_tree.find(ptr);
 
 	if (!node)
-		return NULL;
+		return nullptr;
 
 	return static_cast<kima_vpgdesc_t *>(node);
 }
@@ -50,9 +50,9 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(kima_pool_t *pool, void *ptr) {
 	kima_vpgdesc_poolpg_t *pg = (kima_vpgdesc_poolpg_t *)kima_vpgalloc(NULL, PAGESIZE);
 
 	if (!pg)
-		return NULL;
+		return nullptr;
 
-	pg->header.prev = NULL;
+	pg->header.prev = nullptr;
 	pg->header.next = pool->vpgdesc_poolpg_list;
 	if (pool->vpgdesc_poolpg_list) {
 		pool->vpgdesc_poolpg_list->header.prev = pg;

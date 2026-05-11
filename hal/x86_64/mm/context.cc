@@ -11,9 +11,6 @@ PBOS_EXTERN_C_BEGIN
 mm_context_t hn_kernel_mm_context;
 mm_context_t *mm_kernel_context = &hn_kernel_mm_context;
 
-_mm_context_t::~_mm_context_t() {
-}
-
 void kh_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 	if (dest == src)
 		return;
@@ -89,9 +86,9 @@ void mm_free_context(mm_context_t *context) {
 	km_unwrap_result(mm_unmmap(context, 0, USER_SIZE, MMAP_IGNORE_VMR));
 
 	while (context->vmr_tree.size()) {
-		auto vmr = static_cast<ps_vmr_t *>(context->vmr_tree.begin().node);
+		auto vmr = static_cast<mm_vmr_t *>(context->vmr_tree.begin().node);
 		context->vmr_tree.remove(vmr);
-		kfxx::destroy_at<ps_vmr_t>(vmr);
+		kfxx::destroy_at<mm_vmr_t>(vmr);
 		kima_free(&context->kima_vmr_pool, vmr);
 	}
 

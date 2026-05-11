@@ -93,6 +93,8 @@ void klog_puts(const char *str);
 #ifndef _NDEBUG
 	#define kd_vprintf klog_vprintf
 	#define kd_printf klog_printf
+	#define dbg_printf(component, fmt, ...) klog_printf("[%s]" fmt, component, ##__VA_ARGS__)
+	#define dbg_println(component, fmt, ...) klog_printf("[%s]" fmt "\n", component, ##__VA_ARGS__)
 #else
 	#define kd_vprintf
 	#define kd_printf

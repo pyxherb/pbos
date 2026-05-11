@@ -20,7 +20,7 @@ ps_ufcb_t *ps_alloc_ufcb(ps_pcb_t *pcb, fs_fcb_t *kernel_fcb, ps_ufd_t fd) {
 	ps_ufcb_t *p = (ps_ufcb_t *)mm_kalloc(sizeof(ps_ufcb_t), alignof(ps_ufcb_t));
 	kfxx::construct_at<ps_ufcb_t>(p);
 	if (!p)
-		return NULL;
+		return nullptr;
 	p->rb_value = fd;
 	p->kernel_fcb = kernel_fcb;
 	ps_add_ufcb(pcb, p);
@@ -67,10 +67,12 @@ void ps_create_proc(
 }
 
 ps_pcb_t *ps_alloc_pcb() {
+	mm_context_t *mm_context = mm_get_cur_context();
+
 	ps_pcb_t *proc = (ps_pcb_t *)kfxx::alloc_and_construct<ps_pcb_t>(kfxx::kernel_allocator());
 
 	if (!proc)
-		return NULL;
+		return nullptr;
 
 	kfxx::scope_guard release_proc_guard([proc]() noexcept {
 		ki_destroy_proc(proc);
@@ -78,19 +80,19 @@ ps_pcb_t *ps_alloc_pcb() {
 
 	if (!(proc->mm_context = (mm_context_t *)mm_kalloc(sizeof(mm_context_t), alignof(mm_context_t)))) {
 		mm_kfree(proc);
-		return NULL;
+		return nullptr;
 	}
 
-	if (KM_FAILED(kh_mm_alloc_context(mm_get_cur_context(), &proc->mm_context))) {
+	if (KM_FAILED(kh_mm_alloc_context(mm_context, &proc->mm_context))) {
 		mm_kfree(proc->mm_context);
 		mm_kfree(proc);
-		return NULL;
+		return nullptr;
 	}
 
 	if (KM_FAILED(ps_cur_sched->prepare_proc(ps_cur_sched, proc))) {
 		mm_kfree(proc->mm_context);
 		mm_kfree(proc);
-		return NULL;
+		return nullptr;
 	}
 
 	proc->last_thread_id = 0;

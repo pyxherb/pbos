@@ -25,13 +25,13 @@ void ki_destroy_thread(ps_tcb_t *tcb) {
 ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb) {
 	ps_tcb_t *t = (ps_tcb_t *)kfxx::alloc_and_construct<ps_tcb_t>(kfxx::kernel_allocator());
 	if (!t)
-		return NULL;
+		return nullptr;
 	kfxx::scope_guard release_tcb_guard([t]() noexcept {
 		ki_destroy_thread(t);
 	});
 	if (!(t->context = ps_alloc_context())) {
 		mm_kfree(t);
-		return NULL;
+		return nullptr;
 	}
 	t->parent = pcb;
 	t->context->rflags |= (1 << 9);	 // IF
@@ -111,8 +111,10 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 		size_t i = 0;
 
 		kfxx::scope_guard release_pages_guard([pcb, size, &i, ptr]() noexcept {
-			klog_printf("Freeing stack page: %p-%p", ptr, ptr + (i - PAGESIZE));
-			mm_vmfree(pcb->mm_context, ptr, (i - PAGESIZE));
+			if (i) {
+				klog_printf("Freeing stack page: %p-%p", ptr, ptr + (i - PAGESIZE));
+				mm_vmfree(pcb->mm_context, ptr, (i - PAGESIZE));
+			}
 		});
 
 		for (; i < size; i += PAGESIZE) {
@@ -124,12 +126,18 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 				return KM_RESULT_NO_MEM;
 			}
 
+			kfxx::scope_guard release_pg_guard([pg]() noexcept {
+				mm_pgfree(pg);
+			});
+
 			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER, MMAP_ATOMIC))) {
 				return result;
 			}
 
 			if (i)
 				km_unwrap_result(mm_merge_mapped_area(pcb->mm_context, ptr, ptr + i));
+
+			release_pg_guard.release();
 		}
 
 		release_pages_guard.release();
@@ -170,7 +178,7 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 				return KM_RESULT_NO_MEM;
 			}
 
-			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER, MMAP_ATOMIC))) {
+			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, MMAP_ATOMIC))) {
 				return result;
 			}
 		}

@@ -393,6 +393,14 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
 	kd_assert(ctxt);
 
+#ifndef NDEBUG
+	bool is_user_space = mm_is_user_space(vaddr);
+
+	if (is_user_space !=
+		mm_is_user_space((void *)(((uintptr_t)vaddr) + (size - 1))))
+		km_panic("Cannot map across user and kernel spaces");
+#endif
+
 	// io::irq_disable_lock irq_lock;
 	arch_pml4te_t *pml4t = (arch_pml4te_t *)ctxt->page_table;
 	void *const addr_limit = (char *)vaddr + size;
@@ -400,7 +408,7 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 	bool is_cur_pgtab = ctxt == mm_get_cur_context();
 
 	// Walk each PML4E.
-	for (uint16_t pml4x = PML4X(vaddr); pml4x < PML4X(addr_limit) + 1; ++pml4x) {
+	for (uint16_t pml4x = PML4X(vaddr); pml4x < PML4X(addr_limit); ++pml4x) {
 		arch_pml4te_t *pml4te = &pml4t[pml4x];
 
 		if (!(pml4te->mask & PML4E_P))
@@ -515,12 +523,7 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 				}
 
 				// Check if the page table is unneeded.
-				for (uint16_t i = 0; i < initial_ptx; ++i) {
-					if (ptt[i].mask & PTE_P)
-						goto skip_release_pt;
-				}
-
-				for (uint16_t i = ptx; i < PTX_MAX; ++i) {
+				for (uint16_t i = 0; i < PTX_MAX; ++i) {
 					if (ptt[i].mask & PTE_P)
 						goto skip_release_pt;
 				}
@@ -532,12 +535,7 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 			}
 
 			// Check if the page directory is unneeded.
-			for (uint16_t i = 0; i < initial_pdx; ++i) {
-				if (pdt[i].mask & PDE_P)
-					goto skip_release_pd;
-			}
-
-			for (uint16_t i = pdx; i < PTX_MAX; ++i) {
+			for (uint16_t i = 0; i < PDX_MAX; ++i) {
 				if (pdt[i].mask & PDE_P)
 					goto skip_release_pd;
 			}
@@ -548,19 +546,14 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 		skip_release_pd:;
 		}
 
-		// Check if the PDP is unneeded.
-		for (uint16_t i = 0; i < initial_pdptx; ++i) {
+		// Check if the PML4T is unneeded.
+		for (uint16_t i = 0; i < PDPTX_MAX; ++i) {
 			if (pdpt[i].mask & PDPTE_P)
 				goto skip_release_pdp;
 		}
 
-		for (uint16_t i = pdptx; i < PTX_MAX; ++i) {
-			if (pdpt[i].mask & PDPTE_P)
-				goto skip_release_pdp;
-		}
-
-		pml4t[pdptx].mask = 0;
-		mm_pgfree(UNPGADDR(pml4t[pdptx].address));
+		pml4t[pml4x].mask = 0;
+		mm_pgfree(UNPGADDR(pml4t[pml4x].address));
 
 	skip_release_pdp:;
 	}
@@ -591,8 +584,8 @@ void *kh_vmalloc(mm_context_t *context,
 		"The address prefix of the minimum address and the maximum address does not match");
 	arch_pml4te_t *pml4t = (arch_pml4te_t *)context->page_table;
 
-	void *p_found = NULL;  // Pointer to the free area.
-	size_t sz_found = 0;   // Size of free area found.
+	void *p_found = nullptr;  // Pointer to the free area.
+	size_t sz_found = 0;	  // Size of free area found.
 
 	// Walk each PML4E.
 	for (uint16_t pml4x = PML4X(minaddr); pml4x < PML4X(maxaddr) + 1; ++pml4x) {
@@ -756,8 +749,8 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 		"The address prefix of the minimum address and the maximum address does not match");
 	arch_pml4te_t *pml4t = (arch_pml4te_t *)context->page_table;
 
-	void *p_found = NULL;  // Pointer to the free area.
-	size_t sz_found = 0;   // Size of free area found.
+	void *p_found = nullptr;  // Pointer to the free area.
+	size_t sz_found = 0;	  // Size of free area found.
 
 	// Walk each PML4E.
 	for (uint16_t pml4x = PML4X(minaddr); pml4x < PML4X(maxaddr) + 1; ++pml4x) {
@@ -890,8 +883,8 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
 	arch_pml4te_t *pml4t = (arch_pml4te_t *)ctxt->page_table;
 
-	void *p_found = NULL;  // Pointer to the free area.
-	size_t sz_found = 0;   // Size of free area found.
+	void *p_found = nullptr;  // Pointer to the free area.
+	size_t sz_found = 0;	  // Size of free area found.
 
 	// Walk PML4E.
 	uint16_t pml4x = PML4X(vaddr);
@@ -1298,8 +1291,8 @@ void *hn_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *p
 	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
 	arch_pml4te_t *pml4t = (arch_pml4te_t *)ctxt->page_table;
 
-	void *p_found = NULL;  // Pointer to the free area.
-	size_t sz_found = 0;   // Size of free area found.
+	void *p_found = nullptr;  // Pointer to the free area.
+	size_t sz_found = 0;	  // Size of free area found.
 
 	// Walk PML4E.
 	uint16_t pml4x = PML4X(vaddr);

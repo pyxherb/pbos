@@ -53,7 +53,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 
 				kima_ublk_t *ublk = kima_alloc_ublk(pool, cur_base, size);
 				if (!ublk)
-					return NULL;
+					return nullptr;
 
 				for (size_t j = 0;
 					j < PGCEIL(size);
@@ -81,7 +81,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 	}
 
 	if (!new_free_pg)
-		return NULL;
+		return nullptr;
 
 	size_t i = 0;
 	kfxx::scope_guard release_vpgdesc_sg([pool, new_free_pg, &i]() noexcept {
@@ -95,7 +95,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(pool, ((char *)new_free_pg) + i * PAGESIZE);
 
 		if (!vpgdesc)
-			return NULL;
+			return nullptr;
 
 		++vpgdesc->ref_count;
 	}
@@ -104,7 +104,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 
 	kima_ublk_t *ublk = kima_alloc_ublk(pool, new_free_pg, size);
 	if (!ublk)
-		return NULL;
+		return nullptr;
 
 	release_vpgdesc_sg.release();
 
@@ -215,7 +215,7 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 	}
 
 	if (!new_free_pg)
-		return NULL;
+		return nullptr;
 
 	size_t i = 0;
 	kfxx::scope_guard release_vpgdesc_sg([pool, new_free_pg, &i]() noexcept {
@@ -229,7 +229,7 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(pool, ((char *)new_free_pg) + i * PAGESIZE);
 
 		if (!vpgdesc)
-			return NULL;
+			return nullptr;
 
 		++vpgdesc->ref_count;
 	}
@@ -240,7 +240,7 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 
 	kima_ublk_t *ublk = kima_alloc_ublk(pool, new_free_pg, size);
 	if (!ublk)
-		return NULL;
+		return nullptr;
 
 	release_vpgdesc_sg.release();
 
@@ -322,7 +322,7 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 	}
 
 	if (!new_free_pg)
-		return NULL;
+		return nullptr;
 
 	size_t i = 0;
 	kfxx::scope_guard release_vpgdesc_sg([pool, new_free_pg, &i]() noexcept {
@@ -336,7 +336,7 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(pool, ((char *)new_free_pg) + i * PAGESIZE);
 
 		if (!vpgdesc)
-			return NULL;
+			return nullptr;
 
 		++vpgdesc->ref_count;
 	}
@@ -347,7 +347,7 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 
 	kima_ublk_t *ublk = kima_alloc_ublk(pool, new_free_pg, size);
 	if (!ublk)
-		return NULL;
+		return nullptr;
 
 	release_vpgdesc_sg.release();
 

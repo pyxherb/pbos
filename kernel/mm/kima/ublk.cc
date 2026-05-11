@@ -14,7 +14,7 @@ kima_ublk_t *kima_lookup_nearest_ublk(kima_pool_t *pool, void *ptr) {
 	kfxx::rbtree_t<void *>::node_t *node = pool->ublk_query_tree.find_max_lteq(ptr);
 
 	if (!node)
-		return NULL;
+		return nullptr;
 
 	return static_cast<kima_ublk_t *>(node);
 }
@@ -60,7 +60,7 @@ kima_ublk_t *kima_alloc_ublk(kima_pool_t *pool, void *ptr, size_t size) {
 	kima_ublk_poolpg_t *pg = (kima_ublk_poolpg_t *)kima_vpgalloc(NULL, PAGESIZE);
 
 	if (!pg)
-		return NULL;
+		return nullptr;
 
 	pg->header.prev = nullptr;
 	pg->header.next = pool->ublk_poolpg_list;

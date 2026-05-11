@@ -305,9 +305,9 @@ int do_vprintf(klog_logger_t *logger, const char *s, va_list args) {
 
 void klog_vprintf(const char *str, va_list args) {
 	// io::irq_disable_lock irq_lock;
-	hal_spinlock_lock(&hn_logger_spinlock);
+	hal_lock_spinlock(&hn_logger_spinlock);
 	do_vprintf(hn_active_logger, str, args);
-	hal_spinlock_unlock(&hn_logger_spinlock);
+	hal_unlock_spinlock(&hn_logger_spinlock);
 }
 
 void klog_printf(const char *str, ...) {

@@ -80,8 +80,6 @@ void kh_irq_init() {
 	// Check if the CPU has APIC.
 	// if (!arch_has_apic())
 		// km_panic("The kernel requires APIC support");
-
-	kd_printf("Initialized IRQ\n");
 }
 
 PBOS_EXTERN_C_END

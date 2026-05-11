@@ -73,9 +73,9 @@ namespace kfxx {
 					if constexpr (IsThreeway) {
 						auto &&result = _comparator(i->rb_value, key);
 
-						if (result.value() > 0)
+						if (result.value() < 0)
 							i = (node_t *)i->r;
-						else if (result.value() < 0)
+						else if (result.value() > 0)
 							i = (node_t *)i->l;
 						else
 							return i;
@@ -111,9 +111,9 @@ namespace kfxx {
 				while (i) {
 					if constexpr (IsThreeway) {
 						auto &&result = _comparator(i->rb_value, key);
-						if (result > 0)
+						if (result < 0)
 							i = (node_t *)i->r;
-						else if (result < 0)
+						else if (result > 0)
 							i = (node_t *)i->l;
 						else
 							return i;
@@ -142,9 +142,9 @@ namespace kfxx {
 					if constexpr (IsThreeway) {
 						auto &&result = _comparator(static_cast<node_t *>(*i)->rb_value, key);
 
-						if (result.value() > 0)
+						if (result.value() < 0)
 							i = &(*i)->r;
-						else if (result.value() < 0)
+						else if (result.value() > 0)
 							i = &(*i)->l;
 						else
 							return i;
@@ -183,9 +183,9 @@ namespace kfxx {
 
 						auto &&result = _comparator(static_cast<node_t *>(*i)->rb_value, key);
 
-						if (result > 0) {
+						if (result < 0) {
 							i = &((*i)->r);
-						} else if (result < 0) {
+						} else if (result > 0) {
 							i = &((*i)->l);
 						} else
 							return nullptr;
@@ -220,9 +220,9 @@ namespace kfxx {
 			if constexpr (Fallible) {
 				if constexpr (IsThreeway) {
 					if (auto &&result = _comparator(node->rb_value, parent->rb_value); result.has_value()) {
-						if (result.value() > 0)
+						if (result.value() < 0)
 							parent->l = node;
-						else if (result.value() < 0)
+						else if (result.value() > 0)
 							parent->r = node;
 						else
 							kd_assert(false);
@@ -243,9 +243,9 @@ namespace kfxx {
 			} else {
 				if (IsThreeway) {
 					auto &&result = _comparator(node->rb_value, parent->rb_value);
-					if (result > 0)
+					if (result < 0)
 						parent->l = node;
-					else if (result < 0)
+					else if (result > 0)
 						parent->r = node;
 					else
 						kd_assert(false);
@@ -328,10 +328,10 @@ namespace kfxx {
 					if constexpr (IsThreeway) {
 						auto &&result = _comparator(cur_node->rb_value, data);
 
-						if (result.value() > 0) {
+						if (result.value() < 0) {
 							max_node = cur_node;
 							cur_node = (node_t *)cur_node->r;
-						} else if (result.value() < 0)
+						} else if (result.value() > 0)
 							cur_node = (node_t *)cur_node->l;
 						else
 							return cur_node;
@@ -368,10 +368,10 @@ namespace kfxx {
 				while (cur_node) {
 					if constexpr (IsThreeway) {
 						auto &&result = _comparator(cur_node->rb_value, data);
-						if (result > 0) {
+						if (result < 0) {
 							max_node = cur_node;
 							cur_node = (node_t *)cur_node->r;
-						} else if (result < 0)
+						} else if (result > 0)
 							cur_node = (node_t *)cur_node->l;
 						else
 							return cur_node;
@@ -465,12 +465,12 @@ namespace kfxx {
 			return _comparator;
 		}
 
-		static node_t *get_next(const node_t *node, const node_t *lastnode_t) noexcept {
-			return (node_t *)_get_next((const node_base *)node, (const node_base *)lastnode_t);
+		static node_t *get_next(const node_t *node, const node_t *last_node) noexcept {
+			return (node_t *)_get_next((const node_base *)node, (const node_base *)last_node);
 		}
 
-		static node_t *get_prev(const node_t *node, const node_t *firstnode_t) noexcept {
-			return (node_t *)_get_prev((const node_base *)node, (const node_base *)firstnode_t);
+		static node_t *get_prev(const node_t *node, const node_t *first_node) noexcept {
+			return (node_t *)_get_prev((const node_base *)node, (const node_base *)first_node);
 		}
 
 		struct iterator {

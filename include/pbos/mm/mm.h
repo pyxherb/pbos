@@ -29,6 +29,7 @@ enum {
 
 typedef uint32_t mm_pgaccess_t;
 
+typedef struct _mm_vmr_t mm_vmr_t;
 typedef struct _mm_context_t mm_context_t;
 
 ///
@@ -216,13 +217,21 @@ km_result_t mm_unmmap(mm_context_t *context, void *vaddr, size_t size, mmap_flag
 ///
 void *mm_getmap(mm_context_t *context, const void *vaddr, mm_pgaccess_t *pgaccess_out);
 
+PBOS_NODISCARD km_result_t mm_mmap(
+	mm_context_t *context,
+	void *vaddr,
+	void *paddr,
+	size_t size,
+	mm_pgaccess_t access,
+	mmap_flags_t flags);
+
 ///
 /// @brief Initialize a memory context.
 ///
 /// @param context Pointer to the memory context buffer.
 /// @return The result code for the initialization operation.
 ///
-PBOS_NODISCARD km_result_t kh_mm_alloc_context(mm_context_t *cur_context, mm_context_t **new_context_out);
+PBOS_NODISCARD km_result_t mm_alloc_context(mm_context_t *cur_context, mm_context_t **new_context_out);
 ///
 /// @brief Free a memory context and its associated resource.
 ///
@@ -241,9 +250,13 @@ void mm_switch_context(mm_context_t *context);
 ///
 /// @param ptr Pointer to the virtual address to be invalidated.
 ///
-void mm_invlpg(void *ptr);
+void mm_invl_page(void *ptr);
 
 PBOS_PURE bool mm_is_user_space(const void *ptr);
+
+mm_vmr_t *mm_lookup_area(mm_context_t *mm_context, void *ptr);
+
+km_result_t mm_lock_page(mm_context_t *mm_context, void *ptr);
 
 ///
 /// @brief Check if accessing a space of memory in user mode violates the memory protection.
@@ -251,10 +264,12 @@ PBOS_PURE bool mm_is_user_space(const void *ptr);
 /// @param mm_context Memory context for checking.
 /// @param ptr Address of the space to be accessed.
 /// @param size Size of the space to be accessed.
-/// @return true The accessing violates the memory protection.
-/// @return false The accessing does not violate the memory protection.
+/// @return true The accessing does not violate the memory protection.
+/// @return false The accessing violates the memory protection.
 ///
-PBOS_PURE bool mm_probe_user_space(mm_context_t *mm_context, const void *ptr, size_t size);
+km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t access);
+
+km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t size);
 
 /// @brief The kernel memory context.
 extern mm_context_t *mm_kernel_context;

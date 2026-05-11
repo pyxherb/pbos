@@ -53,8 +53,6 @@ typedef uint64_t pgsize_t;
 #define ADDR_PREFIX(addr) (((uintptr_t)(addr)) & 0xffff000000000000ULL)
 #define ADDR_VALUE(addr) (((uintptr_t)(addr)) & ~0xffff000000000000ULL)
 
-#define NULLPG 0  // Used for representing an invalid page
-
 #define ISVALIDPG(pg) \
 	((pg) != 0)	 // Check if a page address is valid
 

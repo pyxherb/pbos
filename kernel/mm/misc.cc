@@ -6,9 +6,6 @@
 
 mm_context_t **mm_cur_contexts = nullptr;
 
-_ps_vmr_t::_ps_vmr_t() {
-}
-
 km_result_t mm_mmap(mm_context_t *ctxt,
 	void *vaddr,
 	void *paddr,
@@ -20,15 +17,27 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	if (!size)
 		return KM_RESULT_INVALID_ARGS;
 
-	// TODO: Check if the vaddr will overflow...
 	void *aligned_vaddr = (void *)PGFLOOR(vaddr), *aligned_paddr = (void *)PGFLOOR(paddr);
 	size_t aligned_size = PGCEIL(size);
 	char *vaddr_limit = (char *)aligned_vaddr + (size - 1);
 	bool is_user_space = mm_is_user_space(aligned_vaddr);
 
-	if (is_user_space !=
-		mm_is_user_space(vaddr_limit))
+	// Overflow is an error.
+	if (UINTPTR_MAX - (uintptr_t)aligned_vaddr < aligned_size) {
+		dbg_println(__func__, "Trying to unmap with address and size combination that will overflow");
 		return KM_RESULT_INVALID_ARGS;
+	}
+
+	if (is_user_space !=
+		mm_is_user_space(vaddr_limit)) {
+		dbg_println(__func__, "Trying to unmap across kernel and user space");
+		return KM_RESULT_INVALID_ARGS;
+	}
+
+	if ((!is_user_space) && (access & MM_PAGE_USER)) {
+		dbg_println(__func__, "Trying to map kernel space with user accessible");
+		return KM_RESULT_INVALID_ARGS;
+	}
 
 	kfxx::scope_guard remove_vmr_guard([ctxt, aligned_vaddr]() noexcept {
 		if (auto node = ctxt->vmr_tree.find(aligned_vaddr))
@@ -37,20 +46,27 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 	if (!(flags & MMAP_IGNORE_VMR)) {
 		if (is_user_space) {
-			ps_vmr_t *vmr_begin, *vmr_end;
+			ki_mm_lock_vmr(ctxt);
+			kfxx::deferred lock_release([ctxt]() noexcept {
+				ki_mm_unlock_vmr(ctxt);
+			});
 
-			vmr_begin = static_cast<ps_vmr_t *>(ctxt->vmr_tree.find_max_lteq(aligned_vaddr));
-			vmr_end = static_cast<ps_vmr_t *>(ctxt->vmr_tree.find_max_lteq(vaddr_limit));
+			mm_vmr_t *vmr_begin, *vmr_end;
+
+			vmr_begin = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find_max_lteq(aligned_vaddr));
+			vmr_end = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find_max_lteq(vaddr_limit));
 
 			if (ctxt->vmr_tree.size()) {
-				if ((vmr_end) || ((vmr_begin) && (((char *)vmr_begin->rb_value) + vmr_begin->size >= vaddr)))
+				if (((vmr_begin) && (((char *)vmr_begin->rb_value) + (vmr_begin->size - 1) >= aligned_vaddr)))
+					return KM_RESULT_EXISTED;
+				if (((vmr_end) && (((char *)vmr_end->rb_value) + (vmr_end->size - 1) >= vaddr_limit)))
 					return KM_RESULT_EXISTED;
 			}
 
-			ps_vmr_t *new_vmr = (ps_vmr_t *)kima_alloc(&ctxt->kima_vmr_pool, sizeof(ps_vmr_t), alignof(ps_vmr_t));
+			mm_vmr_t *new_vmr = (mm_vmr_t *)kima_alloc(&ctxt->kima_vmr_pool, sizeof(mm_vmr_t), alignof(mm_vmr_t));
 			if (!new_vmr)
 				return KM_RESULT_NO_MEM;
-			kfxx::construct_at<ps_vmr_t>(new_vmr);
+			kfxx::construct_at<mm_vmr_t>(new_vmr);
 
 			new_vmr->rb_value = vaddr;
 			new_vmr->size = size;
@@ -58,7 +74,8 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 			ctxt->vmr_tree.insert_unwrap(new_vmr);
 		}
-	}
+	} else
+		remove_vmr_guard.release();
 
 	km_result_t result;
 
@@ -72,25 +89,38 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 KI_EXPORT_IMAGE_SYMBOL(mm_mmap);
 
 km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
-	// TODO: Check if the vaddr will overflow...
 	if (!ctxt)
 		return KM_RESULT_INVALID_ARGS;
 	if (!size)
 		return KM_RESULT_INVALID_ARGS;
+
 	void *aligned_vaddr = (void *)PGFLOOR(vaddr);
 	size_t aligned_size = PGCEIL(size);
 	char *vaddr_limit = (char *)aligned_vaddr + (size - 1);
 	bool is_user_space = mm_is_user_space(aligned_vaddr);
 
-	if (is_user_space !=
-		mm_is_user_space(vaddr_limit))
+	// Overflow is an error.
+	if (UINTPTR_MAX - (uintptr_t)aligned_vaddr < aligned_size) {
+		dbg_println(__func__, "Trying to unmap with address and size combination that will overflow");
 		return KM_RESULT_INVALID_ARGS;
+	}
+
+	if (is_user_space !=
+		mm_is_user_space(vaddr_limit)) {
+		dbg_println(__func__, "Trying to unmap across kernel and user space");
+		return KM_RESULT_INVALID_ARGS;
+	}
 
 	if (!(flags & MMAP_IGNORE_VMR)) {
 		if (is_user_space) {
-			ps_vmr_t *vmr;
+			ki_mm_lock_vmr(ctxt);
+			kfxx::deferred lock_release([ctxt]() noexcept {
+				ki_mm_unlock_vmr(ctxt);
+			});
 
-			vmr = static_cast<ps_vmr_t *>(ctxt->vmr_tree.find(vaddr));
+			mm_vmr_t *vmr;
+
+			vmr = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find(vaddr));
 
 			if (!vmr)
 				return KM_RESULT_INVALID_ARGS;
@@ -101,7 +131,7 @@ km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t
 			aligned_size = PGCEIL(vmr->size);
 
 			ctxt->vmr_tree.remove(vmr);
-			kfxx::destroy_at<ps_vmr_t>(vmr);
+			kfxx::destroy_at<mm_vmr_t>(vmr);
 			kima_free(&ctxt->kima_vmr_pool, vmr);
 		}
 	}
@@ -117,23 +147,34 @@ PBOS_NODISCARD km_result_t mm_merge_mapped_area(
 	if (vaddr_a >= vaddr_b)
 		return KM_RESULT_INVALID_ARGS;
 
-	ps_vmr_t *vmr_a, *vmr_b;
+	ki_mm_lock_vmr(context);
+	kfxx::deferred lock_release([context]() noexcept {
+		ki_mm_unlock_vmr(context);
+	});
 
-	vmr_a = static_cast<ps_vmr_t *>(context->vmr_tree.find(vaddr_a));
-	if (!vmr_a)
-		return KM_RESULT_INVALID_ARGS;
+	mm_vmr_t *vmr_a, *vmr_b;
 
-	vmr_b = static_cast<ps_vmr_t *>(context->vmr_tree.find(vaddr_b));
-	if (!vmr_b)
+	vmr_a = static_cast<mm_vmr_t *>(context->vmr_tree.find(vaddr_a));
+	if (!vmr_a) {
+		dbg_println(__func__, "VMR not found with address %p", vaddr_a);
 		return KM_RESULT_INVALID_ARGS;
+	}
 
-	if (((char *)vmr_a->rb_value) + vmr_a->size != vmr_b->rb_value)
+	vmr_b = static_cast<mm_vmr_t *>(context->vmr_tree.find(vaddr_b));
+	if (!vmr_b) {
+		dbg_println(__func__, "VMR not found with address %p", vaddr_b);
 		return KM_RESULT_INVALID_ARGS;
+	}
+
+	if (((char *)vmr_a->rb_value) + vmr_a->size != vmr_b->rb_value) {
+		dbg_println(__func__, "VMR at %p is not neighbor of VMR %p", vaddr_a, vaddr_b);
+		return KM_RESULT_INVALID_ARGS;
+	}
 
 	vmr_a->size += vmr_b->size;
 
 	context->vmr_tree.remove(vmr_b);
-	kfxx::destroy_at<ps_vmr_t>(vmr_b);
+	kfxx::destroy_at<mm_vmr_t>(vmr_b);
 	kima_free(&context->kima_vmr_pool, vmr_b);
 
 	return KM_RESULT_OK;
@@ -144,22 +185,33 @@ PBOS_NODISCARD km_result_t mm_split_mapped_area(
 	mm_context_t *context,
 	void *area_vaddr,
 	void *split_point) {
-	if (area_vaddr >= split_point)
+	if (area_vaddr >= split_point) {
+		dbg_println(__func__, "Trying to split a mapped area with split point >= area address");
 		return KM_RESULT_INVALID_ARGS;
+	}
 
-	ps_vmr_t *vmr;
+	ki_mm_lock_vmr(context);
+	kfxx::deferred lock_release([context]() noexcept {
+		ki_mm_unlock_vmr(context);
+	});
 
-	vmr = static_cast<ps_vmr_t *>(context->vmr_tree.find(area_vaddr));
-	if (!vmr)
+	mm_vmr_t *vmr;
+
+	vmr = static_cast<mm_vmr_t *>(context->vmr_tree.find(area_vaddr));
+	if (!vmr) {
+		dbg_println(__func__, "VMR not found with address %p", area_vaddr);
 		return KM_RESULT_INVALID_ARGS;
+	}
 
-	if (((char *)vmr->rb_value) + vmr->size <= split_point)
+	if (((char *)vmr->rb_value) + vmr->size <= split_point) {
+		dbg_println(__func__, "Splitting area with split point %p which is beyond the area", split_point);
 		return KM_RESULT_INVALID_ARGS;
+	}
 
-	ps_vmr_t *new_vmr = (ps_vmr_t *)kima_alloc(&context->kima_vmr_pool, sizeof(ps_vmr_t), alignof(ps_vmr_t));
+	mm_vmr_t *new_vmr = (mm_vmr_t *)kima_alloc(&context->kima_vmr_pool, sizeof(mm_vmr_t), alignof(mm_vmr_t));
 	if (!new_vmr)
 		return KM_RESULT_NO_MEM;
-	kfxx::construct_at<ps_vmr_t>(new_vmr);
+	kfxx::construct_at<mm_vmr_t>(new_vmr);
 
 	new_vmr->rb_value = split_point;
 	new_vmr->size = (((char *)vmr->rb_value) + vmr->size) - (char *)split_point;
@@ -188,19 +240,30 @@ km_result_t mm_set_page_access(
 	bool is_user_space = mm_is_user_space(aligned_vaddr);
 
 	if (is_user_space !=
-		mm_is_user_space(vaddr_limit))
+		mm_is_user_space(vaddr_limit)) {
+		dbg_println(__func__, "Trying to set page access across kernel and user space");
 		return KM_RESULT_INVALID_ARGS;
+	}
 
 	if (is_user_space) {
-		ps_vmr_t *vmr;
+		ki_mm_lock_vmr(context);
+		kfxx::deferred lock_release([context]() noexcept {
+			ki_mm_unlock_vmr(context);
+		});
 
-		vmr = static_cast<ps_vmr_t *>(context->vmr_tree.find(vaddr));
+		mm_vmr_t *vmr;
 
-		if (!vmr)
+		vmr = static_cast<mm_vmr_t *>(context->vmr_tree.find(vaddr));
+
+		if (!vmr) {
+			dbg_println(__func__, "VMR not found with address %p", vaddr);
 			return KM_RESULT_INVALID_ARGS;
+		}
 
-		if (vmr->size != size)
+		if (vmr->size != size) {
+			dbg_println(__func__, "Operation size does not match VMR's size");
 			return KM_RESULT_INVALID_ARGS;
+		}
 		vmr->access = access;
 	}
 	kh_set_page_access(context, vaddr, size, access);
@@ -227,3 +290,183 @@ void *mm_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 	return kh_getmap(ctxt, vaddr, pgaccess_out);
 }
 KI_EXPORT_IMAGE_SYMBOL(mm_getmap);
+
+PBOS_NODISCARD km_result_t mm_alloc_context(mm_context_t *cur_context, mm_context_t **new_context_out) {
+	return kh_mm_alloc_context(cur_context, new_context_out);
+}
+KI_EXPORT_IMAGE_SYMBOL(mm_alloc_context);
+
+void ki_mm_lock_vmr(mm_context_t *mm_context) {
+	mm_context->vmr_mutex.lock();
+}
+
+void ki_mm_unlock_vmr(mm_context_t *mm_context) {
+	mm_context->vmr_mutex.unlock();
+}
+
+void ki_mm_lock_area(mm_context_t *mm_context, mm_vmr_t *vmr) {
+	vmr->mutex.lock();
+}
+
+void ki_mm_unlock_area(mm_context_t *mm_context, mm_vmr_t *vmr) {
+	vmr->mutex.unlock();
+}
+
+km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t required_access) {
+	// io::irq_disable_lock irq_lock;
+	char *p = (char *)PGFLOOR((uintptr_t)ptr);
+
+	// Overflow is an error.
+	if (UINTPTR_MAX - (uintptr_t)p < PGCEIL(size))
+		return KM_RESULT_INVALID_ARGS;
+
+	char *limit = p + (PGCEIL(size) - 1);
+
+	bool is_user_space = mm_is_user_space(p);
+	if (is_user_space !=
+		mm_is_user_space(limit))
+		return KM_RESULT_INVALID_ARGS;
+
+	mm_pgaccess_t pg_access;
+
+	if (!is_user_space) {
+		if (pg_access & MM_PAGE_USER) {
+			return KM_RESULT_ACCESS_VIOLATION;
+		}
+
+		for (size_t i = 0; i < PGCEIL(size); i += PAGESIZE) {
+			mm_getmap(mm_context, p + i, &pg_access);
+			if ((!(pg_access & MM_PAGE_MAPPED)))
+				return KM_RESULT_ACCESS_VIOLATION;
+			if ((required_access & MM_PAGE_USER) && !(pg_access & MM_PAGE_USER))
+				return KM_RESULT_ACCESS_VIOLATION;
+			if ((required_access & MM_PAGE_READ) && !(pg_access & MM_PAGE_READ))
+				return KM_RESULT_ACCESS_VIOLATION;
+			if ((required_access & MM_PAGE_WRITE) && !(pg_access & MM_PAGE_WRITE))
+				return KM_RESULT_ACCESS_VIOLATION;
+			if ((required_access & MM_PAGE_EXEC) && !(pg_access & MM_PAGE_EXEC))
+				return KM_RESULT_ACCESS_VIOLATION;
+
+			// TODO: Lock the pages...
+		}
+	} else {
+		ki_mm_lock_vmr(mm_context);
+		kfxx::deferred lock_release([mm_context]() noexcept {
+			ki_mm_unlock_vmr(mm_context);
+		});
+
+		mm_vmr_t *initial_vmr, *vmr, *last_vmr = nullptr, *vmr_end = static_cast<mm_vmr_t *>(mm_context->vmr_tree.find_max_lteq(limit));
+
+		vmr = (initial_vmr = static_cast<mm_vmr_t *>(mm_context->vmr_tree.find_max_lteq(ptr)));
+
+		if (!vmr)
+			return KM_RESULT_INVALID_ARGS;
+
+		kd_assert(vmr_end);
+
+		kfxx::scope_guard restore_guard([mm_context, initial_vmr, &vmr]() noexcept {
+			mm_vmr_t *i = vmr;
+
+			while (i) {
+				ki_mm_unlock_area(mm_context, i);
+
+				i = static_cast<mm_vmr_t *>(ki_mm_vmr_tree_t::get_prev(vmr, initial_vmr));
+			}
+		});
+
+		vmr = initial_vmr;
+
+		while (vmr) {
+			ki_mm_lock_area(mm_context, vmr);
+
+			if (last_vmr) {
+				if (((char *)last_vmr->rb_value) + last_vmr->size != vmr->rb_value)
+					return KM_RESULT_ACCESS_VIOLATION;
+			}
+			last_vmr = vmr;
+
+			pg_access = vmr->access;
+
+			if ((required_access & MM_PAGE_READ) && !(pg_access & MM_PAGE_READ))
+				return KM_RESULT_ACCESS_VIOLATION;
+			if ((required_access & MM_PAGE_WRITE) && !(pg_access & MM_PAGE_WRITE))
+				return KM_RESULT_ACCESS_VIOLATION;
+			if ((required_access & MM_PAGE_EXEC) && !(pg_access & MM_PAGE_EXEC))
+				return KM_RESULT_ACCESS_VIOLATION;
+
+			vmr = static_cast<mm_vmr_t *>(ki_mm_vmr_tree_t::get_next(vmr, vmr_end));
+		}
+
+		if (((char *)last_vmr->rb_value) + last_vmr->size < limit)
+			return KM_RESULT_ACCESS_VIOLATION;
+
+		restore_guard.release();
+	}
+
+	return KM_RESULT_OK;
+}
+KI_EXPORT_IMAGE_SYMBOL(mm_probe_and_lock_pages);
+
+km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t size) {
+	char *p = (char *)PGFLOOR((uintptr_t)ptr);
+
+	// Overflow is an error.
+	if (UINTPTR_MAX - (uintptr_t)p < PGCEIL(size))
+		return KM_RESULT_INVALID_ARGS;
+
+	char *limit = p + (PGCEIL(size) - 1);
+
+	bool is_user_space = mm_is_user_space(p);
+	if (is_user_space !=
+		mm_is_user_space(limit))
+		return KM_RESULT_INVALID_ARGS;
+
+	mm_pgaccess_t pg_access;
+
+	if (!is_user_space) {
+		if (pg_access & MM_PAGE_USER) {
+			return KM_RESULT_ACCESS_VIOLATION;
+		}
+
+		for (size_t i = 0; i < PGCEIL(size); i += PAGESIZE) {
+			mm_getmap(mm_context, p + i, &pg_access);
+			// TODO: Unlock the pages...
+		}
+	} else {
+		ki_mm_lock_vmr(mm_context);
+		kfxx::deferred lock_release([mm_context]() noexcept {
+			ki_mm_unlock_vmr(mm_context);
+		});
+
+		mm_vmr_t *initial_vmr, *vmr, *last_vmr = nullptr, *vmr_end = static_cast<mm_vmr_t *>(mm_context->vmr_tree.find_max_lteq(limit));
+
+		vmr = (initial_vmr = static_cast<mm_vmr_t *>(mm_context->vmr_tree.find_max_lteq(ptr)));
+
+		if (!vmr)
+			return KM_RESULT_INVALID_ARGS;
+
+		kd_assert(vmr_end);
+
+		vmr = initial_vmr;
+
+		while (vmr) {
+			if (last_vmr) {
+				if (((char *)last_vmr->rb_value) + last_vmr->size != vmr->rb_value)
+					km_panic("Unlocking pages with invalid area layout");
+			}
+			last_vmr = vmr;
+
+			pg_access = vmr->access;
+
+			ki_mm_unlock_area(mm_context, vmr);
+
+			vmr = static_cast<mm_vmr_t *>(ki_mm_vmr_tree_t::get_next(vmr, vmr_end));
+		}
+
+		if (((char *)last_vmr->rb_value) + last_vmr->size < limit)
+			km_panic("Unlocking pages with invalid area layout");
+	}
+
+	return KM_RESULT_OK;
+}
+KI_EXPORT_IMAGE_SYMBOL(mm_unlock_pages);

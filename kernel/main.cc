@@ -49,7 +49,6 @@ PBOS_NORETURN void kernel_main() {
 	hal_init();
 
 	klog_set_logger(klog_get_default_logger());
-	kd_printf("Initialized kernel logger\n");
 
 	kh_mm_init();
 

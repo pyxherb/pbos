@@ -106,7 +106,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 				// Allocate pages for current segment.
 				for (size_t j = 0; j < ph.p_memsz; j += PAGESIZE) {
 					void *paddr;
-					if (!(paddr = mm_getmap(target_context, vaddr + j, NULL))) {
+					if (!(paddr = mm_getmap(target_context, vaddr + j, nullptr))) {
 						paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 						klog_printf("vaddr: %p, paddr: %p\n", vaddr + j, paddr);
 						if (!paddr)

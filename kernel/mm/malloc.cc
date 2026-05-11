@@ -5,7 +5,6 @@ kima_pool_t ki_global_pool_storage;
 kima_pool_t *mm_global_pool = &ki_global_pool_storage;
 
 void ki_mm_init_global_allocator() {
-	kd_printf("Initialized global allocator\n");
 }
 
 PBOS_NODISCARD void *mm_kalloc(size_t size, size_t alignment) {

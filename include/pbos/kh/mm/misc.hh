@@ -34,6 +34,16 @@ void *kh_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access, mm_vmal
 
 void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out);
 
+PBOS_NODISCARD km_result_t kh_mm_alloc_context(mm_context_t *cur_context, mm_context_t **new_context_out);;
+
+void ki_mm_lock_vmr(mm_context_t *mm_context);
+
+void ki_mm_unlock_vmr(mm_context_t *mm_context);
+
+void ki_mm_lock_area(mm_context_t *mm_context, mm_vmr_t *vmr);
+
+void ki_mm_unlock_area(mm_context_t *mm_context, mm_vmr_t *vmr);
+
 PBOS_EXTERN_C_END
 
 #endif

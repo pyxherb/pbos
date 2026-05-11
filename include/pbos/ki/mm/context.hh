@@ -2,14 +2,16 @@
 #define _PBOS_KI_MM_CONTEXT_HH_
 
 #include "kima.hh"
+#include <pbos/ps/mutex.hh>
 
-typedef struct _ps_vmr_t : kfxx::rbtree_t<void *>::node_t {
+typedef struct _mm_vmr_t : kfxx::rbtree_t<void *>::node_t {
 	size_t size = 0;
 	mm_pgaccess_t access = 0;
-	bool rescan_needed = false;
 
-	_ps_vmr_t();
-} ps_vmr_t;
+	ps::mutex_t mutex;
+} mm_vmr_t;
+
+using ki_mm_vmr_tree_t = kfxx::rbtree_t<void *>;
 
 typedef struct _mm_context_t {
 	/// @brief An opaque pointer to the platform-specific page table.
@@ -21,9 +23,9 @@ typedef struct _mm_context_t {
 	/// @brief KIMA pool for VMR structures.
 	kima_pool_t kima_vmr_pool;
 	/// @brief The VMR tree.
-	kfxx::rbtree_t<void *> vmr_tree;
+	ki_mm_vmr_tree_t vmr_tree;
 
-	~_mm_context_t();
+	ps::mutex_t vmr_mutex;
 } mm_context_t;
 
 extern mm_context_t **mm_cur_contexts;
