@@ -15,6 +15,7 @@ typedef bool hal_spinlock_t;
 void hal_lock_spinlock(hal_spinlock_t *lock);
 bool hal_try_lock_spinlock(hal_spinlock_t *lock);
 void hal_unlock_spinlock(hal_spinlock_t *lock);
+bool hal_is_spinlock_locked(hal_spinlock_t *lock);
 
 PBOS_EXTERN_C_END
 

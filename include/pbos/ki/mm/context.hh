@@ -25,7 +25,7 @@ typedef struct _mm_context_t {
 	/// @brief The VMR tree.
 	ki_mm_vmr_tree_t vmr_tree;
 
-	ps::mutex_t vmr_mutex;
+	ps::rec_mutex_t vmr_mutex;
 } mm_context_t;
 
 extern mm_context_t **mm_cur_contexts;

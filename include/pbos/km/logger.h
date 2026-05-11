@@ -90,7 +90,7 @@ void klog_printf(const char *str, ...) PBOS_FMTARG(printf, 1, 2);
 void klog_putc(char ch);
 void klog_puts(const char *str);
 
-#ifndef _NDEBUG
+#ifndef NDEBUG
 	#define kd_vprintf klog_vprintf
 	#define kd_printf klog_printf
 	#define dbg_printf(component, fmt, ...) klog_printf("[%s]" fmt, component, ##__VA_ARGS__)

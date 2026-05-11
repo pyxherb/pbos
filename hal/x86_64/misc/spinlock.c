@@ -18,4 +18,8 @@ void hal_unlock_spinlock(hal_spinlock_t *lock) {
 	lock = HAL_SPINLOCK_UNLOCKED;
 }
 
+bool hal_is_spinlock_locked(hal_spinlock_t *lock) {
+	return lock == HAL_SPINLOCK_LOCKED;
+}
+
 PBOS_EXTERN_C_END

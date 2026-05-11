@@ -20,10 +20,29 @@ typedef struct _ps_mutex_t {
 	char _reserved[32 - sizeof(struct _ps_mutex_data_t)];
 } ps_mutex_t;
 
+struct _ps_rec_mutex_data_t {
+	ps_tcb_t *lock_thread;
+	size_t lock_times;
+	hal_spinlock_t spinlock;
+};
+
+typedef struct _ps_rec_mutex_t {
+	struct _ps_rec_mutex_data_t _data;
+	char _reserved[32 - sizeof(struct _ps_mutex_data_t)];
+} ps_rec_mutex_t;
+
 void ps_init_mutex(ps_mutex_t *mtx);
 void ps_lock_mutex(ps_mutex_t *mtx);
 bool ps_try_lock_mutex(ps_mutex_t *mtx);
 void ps_unlock_mutex(ps_mutex_t *mtx);
+bool ps_is_mutex_locked(ps_mutex_t *lock);
+
+void ps_init_rec_mutex(ps_rec_mutex_t *mtx);
+void ps_lock_rec_mutex(ps_rec_mutex_t *mtx);
+bool ps_try_lock_rec_mutex(ps_rec_mutex_t *mtx);
+void ps_unlock_rec_mutex(ps_rec_mutex_t *mtx);
+bool ps_is_rec_mutex_locked(ps_rec_mutex_t *lock);
+size_t ps_get_rec_mutex_lock_times(ps_rec_mutex_t *lock);
 
 PBOS_EXTERN_C_END
 
