@@ -45,6 +45,14 @@ void hn_isr_timer_impl(
 		cur_thread->context->rsi = rsi;
 		cur_thread->context->rdi = rdi;
 		cur_thread->context->rbp = rbp;
+		cur_thread->context->r8 = r8;
+		cur_thread->context->r9 = r9;
+		cur_thread->context->r10 = r10;
+		cur_thread->context->r11 = r11;
+		cur_thread->context->r12 = r12;
+		cur_thread->context->r13 = r13;
+		cur_thread->context->r14 = r14;
+		cur_thread->context->r15 = r15;
 		cur_thread->context->rip = (void *)rip;
 		cur_thread->context->rflags = rflags;
 		if (((uintptr_t)rip) < KSPACE_VBASE) {

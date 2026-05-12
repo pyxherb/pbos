@@ -85,7 +85,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 		ki_kernel_mmap_mutex.unlock();
 	});
 
-	if(is_user_space)
+	if (is_user_space)
 		release_kernel_mmap_mutex_guard.release();
 	else
 		ki_kernel_mmap_mutex.lock();
@@ -150,7 +150,7 @@ km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t
 		ki_kernel_mmap_mutex.unlock();
 	});
 
-	if(is_user_space)
+	if (is_user_space)
 		release_kernel_mmap_mutex_guard.release();
 	else
 		ki_kernel_mmap_mutex.lock();
@@ -297,6 +297,31 @@ void *mm_vmalloc(mm_context_t *context,
 	size_t size,
 	mm_pgaccess_t access,
 	mm_vmalloc_flags_t flags) {
+	void *aligned_minaddr = (void *)PGFLOOR(minaddr);
+	size_t aligned_size = PGCEIL(size);
+	char *vaddr_limit = (char *)aligned_minaddr + (size - 1);
+	bool is_user_space = mm_is_user_space(aligned_minaddr);
+
+	if (is_user_space !=
+		mm_is_user_space((void *)PGFLOOR(maxaddr))) {
+		kd_println(__func__, "Trying to allocate virtual memory across kernel and user space");
+		return nullptr;
+	}
+
+	kfxx::scope_guard release_user_mmap_mutex_guard([context]() noexcept {
+		context->vmr_mutex.unlock();
+	});
+	kfxx::scope_guard release_kernel_mmap_mutex_guard([]() noexcept {
+		ki_kernel_mmap_mutex.unlock();
+	});
+
+	if (is_user_space) {
+		release_kernel_mmap_mutex_guard.release();
+		context->vmr_mutex.lock();
+	} else {
+		release_user_mmap_mutex_guard.release();
+		ki_kernel_mmap_mutex.lock();
+	}
 	return kh_vmalloc(context, minaddr, maxaddr, size, access, flags);
 }
 KI_EXPORT_IMAGE_SYMBOL(mm_vmalloc);
