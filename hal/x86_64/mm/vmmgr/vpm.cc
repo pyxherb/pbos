@@ -1,4 +1,4 @@
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include "../../mm.hh"
 
 PBOS_EXTERN_C_BEGIN

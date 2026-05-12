@@ -2,8 +2,8 @@
 #include <arch/i386/paging.h>
 #include <pbos/fmt/elf.h>
 #include <pbos/fs/file.h>
-#include <pbos/exec/exec.h>
-#include <pbos/km/logger.h>
+#include <pbos/ps/exec.h>
+#include <pbos/kd/logger.h>
 #include <string.h>
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
@@ -11,7 +11,7 @@
 km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp);
 km_result_t ki_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp);
 
-km_binldr_t ki_binldr_elf = {
+km_binldr_ops_t ki_binldr_elf = {
 	.load_exec = ki_elf_load_exec,
 	.load_mod = ki_elf_load_mod
 };

@@ -1,7 +1,7 @@
 #ifndef _PBOS_PS_MUTEX_HH_
 #define _PBOS_PS_MUTEX_HH_
 
-#include <pbos/km/assert.h>
+#include <pbos/kd/assert.h>
 #include "mutex.h"
 
 namespace ps {

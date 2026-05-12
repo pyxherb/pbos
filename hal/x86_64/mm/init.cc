@@ -1,6 +1,6 @@
 #include <hal/x86_64/misc.h>
 #include "pgalloc/pgalloc.hh"
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <pbos/ps/proc.h>
 #include <pbos/ki/acpi/rsdt.hh>
 #include "../mm.hh"

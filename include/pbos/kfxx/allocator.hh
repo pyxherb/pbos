@@ -1,7 +1,7 @@
 #ifndef _PBOS_KFXX_ALLOCATOR_H_
 #define _PBOS_KFXX_ALLOCATOR_H_
 
-#include <pbos/km/assert.h>
+#include <pbos/kd/assert.h>
 #include "utils.hh"
 
 #ifdef __cplusplus

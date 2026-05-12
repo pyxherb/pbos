@@ -1,6 +1,6 @@
 #include <arch/x86_64/reg.h>
 #include <pbos/hal/spinlock.h>
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <hal/x86_64/proc.hh>
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/allocator.hh>

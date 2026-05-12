@@ -2,7 +2,7 @@
 #define _PBOS_KI_ACPI_RSDT_HH_
 
 #include <pbos/acpi/rsdt.h>
-#include <pbos/km/assert.h>
+#include <pbos/kd/assert.h>
 
 extern void *ki_acpi_rsdp_paddr;
 extern acpi_rsdp_t *ki_acpi_rsdp_vaddr;

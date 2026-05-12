@@ -26,11 +26,11 @@ add_custom_target(
     DEPENDS pbkrnl pbinit
 )
 
-add_subdirectory("exec")
 add_subdirectory("io")
 add_subdirectory("kf")
 add_subdirectory("kfxx")
-# add_subdirectory("km")
+add_subdirectory("km")
+add_subdirectory("kd")
 add_subdirectory("mm")
 add_subdirectory("fs")
 add_subdirectory("ps")

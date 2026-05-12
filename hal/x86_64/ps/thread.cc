@@ -1,4 +1,4 @@
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <hal/x86_64/proc.hh>
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/allocator.hh>

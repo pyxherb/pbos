@@ -1,7 +1,7 @@
 #ifndef _PBOS_KM_PANIC_H_
 #define _PBOS_KM_PANIC_H_
 
-#include <pbos/common.h>
+#include <pbos/kf/basedefs.h>
 
 PBOS_EXTERN_C_BEGIN
 

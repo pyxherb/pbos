@@ -1,7 +1,7 @@
 #ifndef _PEFF_UTILS_DYNARRAY_H_
 #define _PEFF_UTILS_DYNARRAY_H_
 
-#include <pbos/km/assert.h>
+#include <pbos/kd/assert.h>
 #include <string.h>
 #include <initializer_list>
 #include "allocator.hh"

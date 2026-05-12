@@ -1,6 +1,6 @@
 #include <arch/x86_64/apic.h>
 #include <pbos/acpi/madt.h>
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <string.h>
 #include <hal/x86_64/irq.hh>
 #include <hal/x86_64/proc.hh>

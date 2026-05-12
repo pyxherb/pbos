@@ -1,5 +1,5 @@
 #include <pbos/mm/mm.h>
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <hal/x86_64/mm.hh>
 #include <pbos/kfxx/scope_guard.hh>
 

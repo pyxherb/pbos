@@ -1,4 +1,4 @@
-#include <pbos/exec/exec.h>
+#include <pbos/ps/exec.h>
 #include <pbos/fs/file.h>
 #include <pbos/ps/proc.h>
 #include <pbos/syscall/pbcore.h>
@@ -125,7 +125,7 @@ km_result_t sysent_exec_child(
 	if (!ufcb)
 		return KM_RESULT_INVALID_ARGS;
 
-	return km_exec(ps_pid_of(pcb), 0, ps_kfcb_of_ufcb(ufcb), proc_id_out);
+	return ps_exec(ps_pid_of(pcb), 0, ps_kfcb_of_ufcb(ufcb), proc_id_out);
 }
 
 km_result_t sysent_fork() {

@@ -2,7 +2,7 @@
 #include <arch/x86_64/apic.h>
 #include <hal/x86_64/irq.hh>
 #include <hal/x86_64/proc.hh>
-#include <pbos/ki/exec/exec.hh>
+#include <pbos/ki/ps/exec.hh>
 #include <pbos/kh/mp/init.hh>
 #include <string.h>
 

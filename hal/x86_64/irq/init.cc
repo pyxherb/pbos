@@ -1,7 +1,7 @@
 #include <arch/x86_64/apic.h>
 #include <hal/x86_64/irq.hh>
 #include <hal/x86_64/ps/syscall.hh>
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <pbos/ps/proc.h>
 
 PBOS_EXTERN_C_BEGIN

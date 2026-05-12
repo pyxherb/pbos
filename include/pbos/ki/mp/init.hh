@@ -9,7 +9,7 @@ void mp_init();
 
 /// @brief Allocate MP resources.
 /// @note This function should be called after the topology detection.
-void mp_alloc_resources();
+void ki_mp_alloc_resources();
 
 ///
 /// @brief Initialize MP for current CPU.

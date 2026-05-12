@@ -1,5 +1,5 @@
 #include "vm.hh"
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <pbos/ps/proc.h>
 #include <string.h>
 #include <hal/x86_64/mm/pgalloc/pgalloc.hh>

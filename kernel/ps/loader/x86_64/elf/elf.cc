@@ -1,19 +1,22 @@
 #include <arch/x86_64/mlayout.h>
 #include <arch/x86_64/paging.h>
 #include <elf.h>
-#include <pbos/exec/exec.h>
+#include <pbos/ps/exec.h>
 #include <pbos/fs/file.h>
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <string.h>
 #include <pbos/hal/irq.hh>
+#include <pbos/kfxx/list.hh>
 #include <pbos/kfxx/scope_guard.hh>
 
 km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp);
 km_result_t ki_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp);
+km_result_t ki_elf_load_kernel_mod(fs_fcb_t *file_fp);
 
-km_binldr_t ki_binldr_elf = {
+km_binldr_ops_t ki_binldr_elf = {
 	.load_exec = ki_elf_load_exec,
-	.load_mod = ki_elf_load_mod
+	.load_mod = ki_elf_load_mod,
+	.load_kmod = ki_elf_load_kernel_mod
 };
 
 km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
@@ -98,6 +101,15 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 			if (!tmp_pgvaddr)
 				return KM_RESULT_NO_MEM;
 
+			mm_pgaccess_t pgaccess = MM_PAGE_MAPPED | MM_PAGE_USER;
+
+			if (ph.p_flags & PF_R)
+				pgaccess |= MM_PAGE_READ;
+			if (ph.p_flags & PF_W)
+				pgaccess |= MM_PAGE_WRITE;
+			if (ph.p_flags & PF_X)
+				pgaccess |= MM_PAGE_EXEC;
+
 			{
 				kfxx::scope_guard unmap_tmp_pgvaddr_guard([cur_context, tmp_pgvaddr]() noexcept {
 					mm_vmfree(cur_context, tmp_pgvaddr, PAGESIZE);
@@ -112,15 +124,6 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 						if (!paddr)
 							return KM_RESULT_NO_MEM;
 					}
-
-					mm_pgaccess_t pgaccess = MM_PAGE_MAPPED | MM_PAGE_USER;
-
-					if (ph.p_flags & PF_R)
-						pgaccess |= MM_PAGE_READ;
-					if (ph.p_flags & PF_W)
-						pgaccess |= MM_PAGE_WRITE;
-					if (ph.p_flags & PF_X)
-						pgaccess |= MM_PAGE_EXEC;
 
 					if (KM_FAILED(result = mm_mmap(target_context, vaddr + j, paddr, PAGESIZE, pgaccess, 0)))
 						return result;
@@ -166,3 +169,74 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 }
 
 km_result_t ki_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp) {}
+
+km_result_t ki_elf_load_kernel_mod(fs_fcb_t *file_fp) {
+	km_result_t result;
+	size_t off = 0, bytes_read;
+
+	Elf64_Ehdr ehdr;
+	if (KM_FAILED(result = fs_read(file_fp, &ehdr, sizeof(ehdr), off, &bytes_read))) {
+		// TODO: free allocated resources here.
+		return result;
+	}
+	off += bytes_read;
+
+	{
+		if (ehdr.e_ident[EI_MAG0] != ELFMAG0 || ehdr.e_ident[EI_MAG1] != ELFMAG1 || ehdr.e_ident[EI_MAG2] != ELFMAG2 ||
+			ehdr.e_ident[EI_MAG3] != ELFMAG3)
+			return KM_RESULT_MALFORMED;
+
+		if (ehdr.e_ident[EI_VERSION] != EV_CURRENT)
+			return KM_RESULT_MALFORMED;
+
+		if (ehdr.e_ident[EI_DATA] != ELFDATA2LSB)
+			return KM_RESULT_MALFORMED;
+
+		if (ehdr.e_ident[EI_OSABI] != ELFOSABI_NONE)
+			return KM_RESULT_MALFORMED;
+
+		if (ehdr.e_type != ET_REL)
+			return KM_RESULT_MALFORMED;
+
+		if (ehdr.e_ident[EI_CLASS] != ELFCLASS64)
+			return KM_RESULT_MALFORMED;
+	}
+
+	Elf64_Half shdr_num = ehdr.e_shnum;
+	off += bytes_read;
+
+	for (Elf64_Half i = 0; i < shdr_num; ++i) {
+		Elf64_Shdr sh;
+		if (KM_FAILED(result = fs_read(file_fp, &sh, sizeof(sh), ehdr.e_shoff + ehdr.e_shentsize * i, &bytes_read))) {
+			// TODO: free allocated resources here.
+			return result;
+		}
+
+		if (sh.sh_flags & SHF_ALLOC)
+			continue;
+
+		if(sh.sh_addralign % PAGESIZE)
+			return KM_RESULT_MALFORMED;
+
+		mm_pgaccess_t pgaccess = MM_PAGE_MAPPED | MM_PAGE_READ;
+
+		if (sh.sh_flags & SHF_WRITE)
+			pgaccess |= MM_PAGE_WRITE;
+		if (sh.sh_flags & SHF_EXECINSTR)
+			pgaccess |= MM_PAGE_EXEC;
+
+		switch (sh.sh_type) {
+			case SHT_PROGBITS: {
+				break;
+			}
+			case SHT_NOBITS: {
+				break;
+			}
+			case SHT_REL: {
+				break;
+			}
+		}
+	}
+
+	return KM_RESULT_OK;
+}

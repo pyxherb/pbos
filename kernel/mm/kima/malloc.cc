@@ -248,7 +248,6 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 
 	return new_free_pg;
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_krealloc);
 
 PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, size_t size, size_t alignment) {
 	kd_assert(size);
@@ -319,7 +318,6 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 
 	return nullptr;
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_krealloc_in_place);
 
 void kima_free(kima_pool_t *pool, void *ptr) {
 	// io::irq_disable_lock irq_lock;
@@ -341,4 +339,3 @@ void kima_free(kima_pool_t *pool, void *ptr) {
 
 	kima_free_ublk(pool, ublk);
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_kfree);

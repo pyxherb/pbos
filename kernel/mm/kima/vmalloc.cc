@@ -1,5 +1,5 @@
 #include <pbos/ki/mm/kima.hh>
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 
 void *kima_vpgalloc(void *addr, size_t size) {
 	kd_assert(size);

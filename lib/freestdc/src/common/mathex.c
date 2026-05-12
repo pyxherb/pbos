@@ -6,7 +6,7 @@ int digcount(int x) {
 	int count = 0;
 	while (x)
 		x /= 10, count++;
-	return count;
+	return count ? count : 1;
 }
 
 int getdigit(int x, int n) {
@@ -23,7 +23,7 @@ int udigcount(unsigned int x) {
 	int count = 0;
 	while (x)
 		x /= 10, count++;
-	return count;
+	return count ? count : 1;
 }
 
 int getudigit(unsigned int x, int n) {
@@ -34,11 +34,26 @@ int getudigit(unsigned int x, int n) {
 	return x % 10;
 }
 
+int ludigcount(unsigned long x) {
+	int count = 0;
+	while (x)
+		x /= 10, count++;
+	return count ? count : 1;
+}
+
+int getludigit(unsigned long x, int n) {
+	if ((n > ludigcount(x)) || (n < 1))
+		return -1;
+	for (uint8_t i = 1; i < n; ++i)
+		x /= 10;
+	return x % 10;
+}
+
 int lludigcount(unsigned long long x) {
 	int count = 0;
 	while (x)
 		x /= 10, count++;
-	return count;
+	return count ? count : 1;
 }
 
 int getlludigit(unsigned long long x, long long n) {
@@ -53,7 +68,7 @@ int xdigcount(unsigned int x) {
 	int count = 0;
 	while (x)
 		x >>= 4, count++;
-	return count;
+	return count ? count : 1;
 }
 
 int getxdigit(unsigned int x, int n) {
@@ -68,7 +83,7 @@ int llxdigcount(unsigned long long x) {
 	int count = 0;
 	while (x)
 		x >>= 4, count++;
-	return count;
+	return count ? count : 1;
 }
 
 int getllxdigit(unsigned long long x, int n) {
@@ -83,7 +98,7 @@ int odigcount(unsigned int x) {
 	int count = 0;
 	while (x)
 		x >>= 3, count++;
-	return count;
+	return count ? count : 1;
 }
 
 int getodigit(unsigned int x, int n) {

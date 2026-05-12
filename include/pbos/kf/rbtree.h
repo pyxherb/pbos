@@ -1,7 +1,7 @@
 #ifndef _PBOS_KF_RBTREE_H_
 #define _PBOS_KF_RBTREE_H_
 
-#include <pbos/km/assert.h>
+#include <pbos/kd/assert.h>
 #include <pbos/km/panic.h>
 #include <pbos/km/result.h>
 #include <stdbool.h>

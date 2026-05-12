@@ -4,13 +4,13 @@
 #include <pbos/generated/km.h>
 #include <pbos/kfxx/rbtree.hh>
 #include <pbos/kfxx/uuid.hh>
-#include <pbos/exec/exec.h>
+#include <pbos/ps/exec.h>
 #include KI_ARCH_MEMCONF_HEADER_PATH
 
 PBOS_EXTERN_C_BEGIN
 
 typedef struct _ki_binldr_registry_t : public kfxx::rbtree_t<kf_uuid_t>::node_t {
-	km_binldr_t binldr;
+	km_binldr_ops_t ops;
 } ki_binldr_registry_t;
 
 typedef struct _km_binseg_page_desc_t : public kfxx::rbtree_t<void *>::node_t {

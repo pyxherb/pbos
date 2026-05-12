@@ -1,5 +1,5 @@
 #include <hal/x86_64/irq.hh>
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <hal/x86_64/proc.hh>
 #include <arch/x86_64/apic.h>
 

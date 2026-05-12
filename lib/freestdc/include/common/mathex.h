@@ -17,6 +17,9 @@ int getdigit(int x, int n);
 int udigcount(unsigned int x);
 int getudigit(unsigned int x, int n);
 
+int ludigcount(unsigned long x);
+int getludigit(unsigned long x, int n);
+
 int lludigcount(unsigned long long x);
 int getlludigit(unsigned long long x, long long n);
 

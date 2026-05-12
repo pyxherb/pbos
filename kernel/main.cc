@@ -1,12 +1,12 @@
 #include <pbos/hal/init.h>
 #include <pbos/hal/irq.h>
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <pbos/km/panic.h>
 #include <pbos/kh/acpi/misc.hh>
 #include <pbos/kh/initcar.hh>
 #include <pbos/kh/mm/init.hh>
 #include <pbos/kh/mp/init.hh>
-#include <pbos/ki/exec/exec.hh>
+#include <pbos/ki/ps/exec.hh>
 #include <pbos/ki/fs/fs.hh>
 #include <pbos/ki/km/proc.hh>
 #include <pbos/ki/km/symbol.hh>
@@ -48,7 +48,7 @@ PBOS_NORETURN void kernel_main() {
 
 	hal_init();
 
-	klog_set_logger(klog_get_default_logger());
+	kd_set_logger(kd_default_logger());
 
 	kh_mm_init();
 
@@ -67,17 +67,17 @@ PBOS_NORETURN void kernel_main() {
 
 	kh_mp_alloc_platform_resources();
 
-	mp_alloc_resources();
+	ki_mp_alloc_resources();
 
 	kh_irq_init();
 
 	mp_main_cpu_init();
 
 	fs_init();
-	ps_init();
+	ki_ps_init();
 
 	for (const ki_syment_t *i = KI_EXPORTED_SYMBOLS_BEGIN; i < KI_EXPORTED_SYMBOLS_END; ++i) {
-		kd_printf("Found image symbol: %s\n", i->name);
+		dbg_printf("Found image symbol: %s\n", i->name);
 	}
 
 	kh_initcar_init();
@@ -92,7 +92,7 @@ PBOS_NORETURN void kernel_main() {
 
 		ps_proc_id_t pid;
 
-		if (KM_FAILED(result = km_exec(0, 0, init_fp.get(), &pid)))
+		if (KM_FAILED(result = ps_exec(0, 0, init_fp.get(), &pid)))
 			km_panic("Error starting the init process");
 	}
 	if (KM_FAILED(result))

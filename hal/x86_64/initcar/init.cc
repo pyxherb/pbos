@@ -1,4 +1,4 @@
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <hal/x86_64/initcar.hh>
 #include <pbos/kh/mm/misc.hh>
 #include <pbos/ki/fs/file.hh>
@@ -85,7 +85,7 @@ void kh_initcar_init() {
 	if (!(kh_initcar_fs = fs_register_file_system("initcar", strlen("initcar"), &kh_initcar_ops, nullptr)))
 		km_panic("Error registering initcar file system");
 
-	kd_printf("INITCAR range: %p-%p\n",
+	dbg_printf("INITCAR range: %p-%p\n",
 		hn_initcar_paddr,
 		((const char *)hn_initcar_paddr) + hn_initcar_size);
 
@@ -141,8 +141,8 @@ void kh_initcar_init() {
 		if (fe->flags & PBCAR_FILE_FLAG_END)
 			break;
 
-		kd_printf("File: %s\n", fe->filename);
-		kd_printf("Size: %d\n", (int)fe->size);
+		dbg_printf("File: %s\n", fe->filename);
+		dbg_printf("Size: %d\n", (int)fe->size);
 
 		fs::fnode_ptr_t file;
 		size_t filename_len = strlen(fe->filename);
@@ -159,7 +159,7 @@ void kh_initcar_init() {
 
 		fs_set_fnode_exdata(file.get(), exdata);
 
-		kd_printf("initcar: Mounting file: %s\n", fe->filename);
+		dbg_printf("initcar: Mounting file: %s\n", fe->filename);
 		if (KM_FAILED(result = fs_link_subnode(kh_initcar_dir, file.get())))
 			km_panic("Error mounting initcar file `%s', error code = %x\n", fe->filename, result);
 

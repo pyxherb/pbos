@@ -1,9 +1,9 @@
 #include <pbos/ki/km/proc.hh>
-#include <pbos/ki/exec/exec.hh>
+#include <pbos/ki/ps/exec.hh>
 
 PBOS_EXTERN_C_BEGIN
 
-void ps_init() {
+void ki_ps_init() {
 	hal_prepare_ps();
 
 	ki_init_binldrs();
@@ -14,8 +14,8 @@ void ps_init() {
 }
 
 void ki_init_binldrs() {
-	for (km_init_binldr_registry_t *i = ki_builtin_binldrs; i->binldr; ++i) {
-		km_register_binldr(&i->uuid, i->binldr);
+	for (km_init_binldr_registry_t *i = ki_builtin_binldrs; i->ops; ++i) {
+		ps_register_binldr(&i->uuid, i->ops);
 	}
 }
 

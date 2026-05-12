@@ -26,7 +26,7 @@ namespace kfxx {
 
 		using node_t = typename tree_t::node_t;
 
-		PBOS_FORCEINLINE _set_impl(allocator_t *allocator, Comparator &&comparator = {}) : _tree(allocator, std::move(comparator)) {
+		PBOS_FORCEINLINE _set_impl(allocator_t *allocator, Comparator &&comparator = {}) : _tree(std::move(comparator)) {
 		}
 		PBOS_FORCEINLINE _set_impl(this_t &&rhs) : _tree(std::move(rhs._tree)) {
 		}

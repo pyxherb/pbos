@@ -2,7 +2,7 @@
 #define _PBOS_KFXX_STRING_VIEW_HH_
 
 #include <pbos/kf/hash.h>
-#include <pbos/km/assert.h>
+#include <pbos/kd/assert.h>
 #include <string.h>
 #include <type_traits>
 #include "basedefs.hh"

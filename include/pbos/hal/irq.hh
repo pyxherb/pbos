@@ -1,7 +1,7 @@
 #ifndef _HAL_IRQ_HH_
 #define _HAL_IRQ_HH_
 
-#include <pbos/km/assert.h>
+#include <pbos/kd/assert.h>
 #include <pbos/kfxx/basedefs.hh>
 #include "irq.h"
 

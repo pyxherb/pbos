@@ -1,7 +1,7 @@
 #ifndef _PEFF_BASE_RCOBJ_H_
 #define _PEFF_BASE_RCOBJ_H_
 
-#include <pbos/km/assert.h>
+#include <pbos/kd/assert.h>
 #include <cstddef>
 #include <type_traits>
 #include "basedefs.hh"

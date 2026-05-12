@@ -1,5 +1,5 @@
 #include <arch/x86_64/apic.h>
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <hal/x86_64/irq.hh>
 #include <hal/x86_64/proc.hh>
 
@@ -51,7 +51,7 @@ void hn_isr_timer_impl(
 			// SS (32-bits?)->ESP->EFLAGS->CS (32-bits)->EIP
 			cur_thread->context->rsp = rsp_top[3];
 			// kd_assert(cur_thread->context->esp0 == (uint32_t)((char*)cur_thread->kernel_stack + cur_thread->kernel_stack_size));
-			// kd_printf("U!\n");
+			// dbg_printf("U!\n");
 
 			cur_thread->context->ds = ds;
 			cur_thread->context->ss = rsp_top[4];
@@ -59,7 +59,7 @@ void hn_isr_timer_impl(
 			// EFLAGS->CS (32-bits)->EIP
 			cur_thread->context->rsp = (uint64_t)(rsp_top[3]);
 			cur_thread->context->rsp0 = cur_thread->context->rsp;
-			// kd_printf("K!\n");
+			// dbg_printf("K!\n");
 
 			cur_thread->context->ds = ds;
 			cur_thread->context->ss = ds;
@@ -91,14 +91,14 @@ void hn_isr_timer_impl(
 	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
 	if (((uintptr_t)next_thread->context->rip) < KSPACE_VBASE) {
-		/*kd_printf(
+		/*dbg_printf(
 			"PID=%d, EIP=%.8x, ESP=%.8x, ESP0=%.8x U\n",
 			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);*/
 
 		ki_switch_to_user_thread(next_thread);
 	} else {
 		// We are already in ring 0.
-		/*kd_printf(
+		/*dbg_printf(
 			"PID=%d, EIP=%.8x, ESP=%.8x, ESP0=%.8x K\n",
 			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);*/
 		// asm volatile("xchg %bx, %bx");

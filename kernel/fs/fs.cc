@@ -1,4 +1,4 @@
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <pbos/mm/mm.h>
 #include <pbos/kfxx/uuid.hh>
 #include <pbos/ki/fs/file.hh>

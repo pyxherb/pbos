@@ -1,8 +1,8 @@
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <pbos/ki/mm/kima.hh>
 
 /*void ki_init_kima_pool(kima_pool_t *pool) {
-	kd_printf("Initialized KIMA on address %p\n", pool);
+	dbg_printf("Initialized KIMA on address %p\n", pool);
 }*/
 
 _kima_pool_t::~_kima_pool_t() {

@@ -1,4 +1,4 @@
-#include <pbos/km/logger.h>
+#include <pbos/kd/logger.h>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/kh/mm/misc.hh>
 #include <pbos/ki/km/proc.hh>
@@ -26,18 +26,18 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 	// Overflow is an error.
 	if (UINTPTR_MAX - (uintptr_t)aligned_vaddr < aligned_size) {
-		dbg_println(__func__, "Trying to unmap with address and size combination that will overflow");
+		kd_println(__func__, "Trying to unmap with address and size combination that will overflow");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
 	if (is_user_space !=
 		mm_is_user_space(vaddr_limit)) {
-		dbg_println(__func__, "Trying to unmap across kernel and user space");
+		kd_println(__func__, "Trying to unmap across kernel and user space");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
 	if ((!is_user_space) && (access & MM_PAGE_USER)) {
-		dbg_println(__func__, "Trying to map kernel space with user accessible");
+		kd_println(__func__, "Trying to map kernel space with user accessible");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
@@ -59,10 +59,11 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 			vmr_end = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find_max_lteq(vaddr_limit));
 
 			if (ctxt->vmr_tree.size()) {
+				// Check if vmr_begin and vmr_end has covered the area we are going to map.
 				if (((vmr_begin) && (((char *)vmr_begin->rb_value) + (vmr_begin->size - 1) >= aligned_vaddr)))
-					return KM_RESULT_EXISTED;
+					return KM_RESULT_INVALID_ARGS;
 				if (((vmr_end) && (((char *)vmr_end->rb_value) + (vmr_end->size - 1) >= vaddr_limit)))
-					return KM_RESULT_EXISTED;
+					return KM_RESULT_INVALID_ARGS;
 			}
 
 			mm_vmr_t *new_vmr = (mm_vmr_t *)kima_alloc(&ctxt->kima_vmr_pool, sizeof(mm_vmr_t), alignof(mm_vmr_t));
@@ -110,13 +111,13 @@ km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t
 
 	// Overflow is an error.
 	if (UINTPTR_MAX - (uintptr_t)aligned_vaddr < aligned_size) {
-		dbg_println(__func__, "Trying to unmap with address and size combination that will overflow");
+		kd_println(__func__, "Trying to unmap with address and size combination that will overflow");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
 	if (is_user_space !=
 		mm_is_user_space(vaddr_limit)) {
-		dbg_println(__func__, "Trying to unmap across kernel and user space");
+		kd_println(__func__, "Trying to unmap across kernel and user space");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
@@ -175,18 +176,18 @@ PBOS_NODISCARD km_result_t mm_merge_mapped_area(
 
 	vmr_a = static_cast<mm_vmr_t *>(context->vmr_tree.find(vaddr_a));
 	if (!vmr_a) {
-		dbg_println(__func__, "VMR not found with address %p", vaddr_a);
+		kd_println(__func__, "VMR not found with address %p", vaddr_a);
 		return KM_RESULT_INVALID_ARGS;
 	}
 
 	vmr_b = static_cast<mm_vmr_t *>(context->vmr_tree.find(vaddr_b));
 	if (!vmr_b) {
-		dbg_println(__func__, "VMR not found with address %p", vaddr_b);
+		kd_println(__func__, "VMR not found with address %p", vaddr_b);
 		return KM_RESULT_INVALID_ARGS;
 	}
 
 	if (((char *)vmr_a->rb_value) + vmr_a->size != vmr_b->rb_value) {
-		dbg_println(__func__, "VMR at %p is not neighbor of VMR %p", vaddr_a, vaddr_b);
+		kd_println(__func__, "VMR at %p is not neighbor of VMR %p", vaddr_a, vaddr_b);
 		return KM_RESULT_INVALID_ARGS;
 	}
 
@@ -205,7 +206,7 @@ PBOS_NODISCARD km_result_t mm_split_mapped_area(
 	void *area_vaddr,
 	void *split_point) {
 	if (area_vaddr >= split_point) {
-		dbg_println(__func__, "Trying to split a mapped area with split point >= area address");
+		kd_println(__func__, "Trying to split a mapped area with split point >= area address");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
@@ -218,12 +219,12 @@ PBOS_NODISCARD km_result_t mm_split_mapped_area(
 
 	vmr = static_cast<mm_vmr_t *>(context->vmr_tree.find(area_vaddr));
 	if (!vmr) {
-		dbg_println(__func__, "VMR not found with address %p", area_vaddr);
+		kd_println(__func__, "VMR not found with address %p", area_vaddr);
 		return KM_RESULT_INVALID_ARGS;
 	}
 
 	if (((char *)vmr->rb_value) + vmr->size <= split_point) {
-		dbg_println(__func__, "Splitting area with split point %p which is beyond the area", split_point);
+		kd_println(__func__, "Splitting area with split point %p which is beyond the area", split_point);
 		return KM_RESULT_INVALID_ARGS;
 	}
 
@@ -260,7 +261,7 @@ km_result_t mm_set_page_access(
 
 	if (is_user_space !=
 		mm_is_user_space(vaddr_limit)) {
-		dbg_println(__func__, "Trying to set page access across kernel and user space");
+		kd_println(__func__, "Trying to set page access across kernel and user space");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
@@ -275,12 +276,12 @@ km_result_t mm_set_page_access(
 		vmr = static_cast<mm_vmr_t *>(context->vmr_tree.find(vaddr));
 
 		if (!vmr) {
-			dbg_println(__func__, "VMR not found with address %p", vaddr);
+			kd_println(__func__, "VMR not found with address %p", vaddr);
 			return KM_RESULT_INVALID_ARGS;
 		}
 
 		if (vmr->size != size) {
-			dbg_println(__func__, "Operation size does not match VMR's size");
+			kd_println(__func__, "Operation size does not match VMR's size");
 			return KM_RESULT_INVALID_ARGS;
 		}
 		vmr->access = access;

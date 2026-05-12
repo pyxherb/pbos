@@ -3,7 +3,7 @@
 #include <pbos/hal/irq.hh>
 #include <string.h>
 
-void mp_alloc_resources() {
+void ki_mp_alloc_resources() {
 	if (!(mm_cur_contexts = (mm_context_t **)mm_kalloc(mp_num_total_cpu * sizeof(mm_context_t *), alignof(mm_context_t *)))) {
 		km_panic("Unable to allocate memory context for all CPUs");
 	}

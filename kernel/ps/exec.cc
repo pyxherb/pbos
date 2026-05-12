@@ -3,7 +3,7 @@
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/kfxx/uuid.hh>
-#include <pbos/ki/exec/exec.hh>
+#include <pbos/ki/ps/exec.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -16,7 +16,7 @@ ps_proc_id_t ki_alloc_proc_id() {
 	return _last_proc_id++;
 }
 
-km_result_t km_register_binldr(kf_uuid_t *uuid, km_binldr_t *binldr) {
+km_result_t ps_register_binldr(kf_uuid_t *uuid, km_binldr_ops_t *binldr) {
 	if(ki_registered_binldrs.find(*uuid))
 		return KM_RESULT_EXISTED;
 	ki_binldr_registry_t *reg = kfxx::alloc_and_construct<ki_binldr_registry_t>(kfxx::kernel_allocator());
@@ -24,14 +24,14 @@ km_result_t km_register_binldr(kf_uuid_t *uuid, km_binldr_t *binldr) {
 		return KM_RESULT_NO_MEM;
 
 	memcpy(&reg->rb_value, &uuid, sizeof(*uuid));
-	memcpy(&reg->binldr, binldr, sizeof(km_binldr_t));
+	memcpy(&reg->ops, binldr, sizeof(km_binldr_ops_t));
 
 	ki_registered_binldrs.insert_unwrap(reg);
 
 	return KM_RESULT_OK;
 }
 
-km_result_t km_exec(
+km_result_t ps_exec(
 	ps_proc_id_t parent,
 	se_uid_t uid,
 	fs_fcb_t *file_fp,
@@ -52,7 +52,7 @@ km_result_t km_exec(
 	});
 
 	for (auto it = ki_registered_binldrs.begin(); it != ki_registered_binldrs.end(); ++it) {
-		if (KM_SUCCESS(result = static_cast<ki_binldr_registry_t *>(it.node)->binldr.load_exec(pcb, file_fp))) {
+		if (KM_SUCCESS(result = static_cast<ki_binldr_registry_t *>(it.node)->ops.load_exec(pcb, file_fp))) {
 			io::irq_disable_lock irq_disable_lock;
 			pcb->rb_value = ki_alloc_proc_id();
 			ps_create_proc(pcb, parent);
@@ -67,7 +67,7 @@ km_result_t km_exec(
 	return KM_RESULT_UNSUPPORTED_EXECFMT;
 }
 
-km_result_t km_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
+km_result_t ps_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
 	io::irq_disable_lock irq_disable_lock;
 
 	if (ki_registered_binprotos.find(fcb))
@@ -86,20 +86,20 @@ km_result_t km_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
 	return KM_RESULT_OK;
 }
 
-km_binproto_t *km_find_binproto(fs_fcb_t *fcb) {
+km_binproto_t *ps_find_binproto(fs_fcb_t *fcb) {
 	io::irq_disable_lock irq_disable_lock;
 
 	return static_cast<km_binproto_t *>(ki_registered_binprotos.find(fcb));
 }
 
-void km_unregister_binproto(km_binproto_t *proto) {
+void ps_unregister_binproto(km_binproto_t *proto) {
 	io::irq_disable_lock irq_disable_lock;
 
 	// TODO: Check if the prototype is registered.
 	ki_registered_binprotos.remove(proto);
 }
 
-km_result_t km_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, size_t size, mm_pgaccess_t pgaccess, km_binseg_t **seg_out) {
+km_result_t ps_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, size_t size, mm_pgaccess_t pgaccess, km_binseg_t **seg_out) {
 	if (vaddr_base != (void *)PGFLOOR(vaddr_base))
 		return KM_RESULT_INVALID_ARGS;
 
@@ -173,7 +173,7 @@ km_result_t km_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, s
 	return KM_RESULT_OK;
 }
 
-void *km_get_paddr_in_binseg(km_binseg_t *seg, void *vaddr) {
+void *km_ps_paddr_in_binseg(km_binseg_t *seg, void *vaddr) {
 	return seg->page_descs_query_tree.find(vaddr);
 }
 

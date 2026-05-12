@@ -58,7 +58,7 @@ extern kfxx::rbtree_t<ps_proc_id_t> ps_global_proc_set;
 extern ps_sched_t ps_simploop_sched;
 
 void hal_prepare_ps();
-void ps_init();
+void ki_ps_init();
 
 PBOS_NORETURN void kh_enter_sched(ps_cpu_id_t cpuid);
 
