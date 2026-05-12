@@ -9,17 +9,17 @@ if [ ! -d "$LIMINE_PATH" ]; then
 	exit 1
 fi
 
-imgpath="$PWD/build/boot.raw"
+img_path="$PWD/build/boot.raw"
 
-if [ ! -f "$imgpath" ]; then
+if [ ! -f "$img_path" ]; then
 	# Create original image.
-	dd if=/dev/zero bs=256M count=1 > $imgpath
+	dd if=/dev/zero bs=256M count=1 > $img_path
 
 	# Grant privileges.
-	chmod 777 $imgpath
+	chmod 777 $img_path
 
 	# Create partitions.
-	parted $imgpath << EOF
+	parted $img_path << EOF
 mktable gpt
 mkpart EFI fat32 1MiB 63MiB
 mkpart PbOS fat32 64MiB 160MiB
@@ -30,21 +30,21 @@ else
 fi
 
 # Loop device path.
-loopDevName=$(losetup --show -f ${imgpath})
+loop_dev=$(losetup --show -f ${img_path})
 
 # Boot partition path.
-bootFsName=$(losetup --show -f ${imgpath} -o 1048576 --sizelimit `expr 1024 \* 1024 \* 63`)
+boot_fs=$(losetup --show -f ${img_path} -o 1048576 --sizelimit `expr 1024 \* 1024 \* 63`)
 
 # System partition path.
-systemFsName=$(losetup --show -f ${imgpath} -o `expr 1024 \* 1024 \* 64` --sizelimit `expr 1024 \* 1024 \* 160`)
+system_fs=$(losetup --show -f ${img_path} -o `expr 1024 \* 1024 \* 64` --sizelimit `expr 1024 \* 1024 \* 160`)
 
 if [ ! "$imgInited" ]; then
 	# Format partitions.
-	mkfs.vfat "$bootFsName"
-	mkfs.vfat "$systemFsName"
+	mkfs.vfat "$boot_fs"
+	mkfs.vfat "$system_fs"
 
 	# Mount boot partition.
-	mount "$bootFsName" /media
+	mount "$boot_fs" /media
 		# Limine Installation.
 		mkdir "/media/EFI"
 		mkdir "/media/EFI/BOOT"
@@ -56,7 +56,7 @@ if [ ! "$imgInited" ]; then
 fi
 
 # Mount system partition.
-mount "$systemFsName" /media
+mount "$system_fs" /media
 	# Copy files.
 	cp "test/bootimg-x86_64/config/limine.conf" "/media"
 
@@ -72,6 +72,6 @@ cp ./build/initcar /media/sys/initcar
 umount /media
 
 # Delete loop devices.
-losetup -d "$systemFsName"
-losetup -d "$bootFsName"
-losetup -d "$loopDevName"
+losetup -d "$system_fs"
+losetup -d "$boot_fs"
+losetup -d "$loop_dev"
