@@ -3,6 +3,17 @@ cmake_minimum_required(VERSION 3.23)
 # Setup project
 project(PbOS VERSION 0.0.1)
 
+set(PBOS_ENABLE_ASLR FALSE CACHE BOOL "Enable ASLR for the kernel")
+
+if(PBOS_ENABLE_ASLR)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIE")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE")
+    set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -fPIE")
+    set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -pie")
+    set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -pie")
+    set(CMAKE_ASM_LINK_FLAGS "${CMAKE_ASM_LINK_FLAGS} -pie")
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 

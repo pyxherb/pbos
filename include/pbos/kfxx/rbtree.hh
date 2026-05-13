@@ -5,7 +5,6 @@
 #include <pbos/km/panic.h>
 #include "fallible_cmp.hh"
 
-#ifdef __cplusplus
 namespace kfxx {
 	enum class rbcolor_t : bool {
 		BLACK = 0,
@@ -23,24 +22,24 @@ namespace kfxx {
 		node_base *_cached_min_node = nullptr, *_cached_max_node = nullptr;
 		size_t _size = 0;
 
-		PBOS_KFXX_API static node_base *_get_min_node(node_base *node) noexcept;
-		PBOS_KFXX_API static node_base *_get_max_node(node_base *node) noexcept;
+		PBOS_API static node_base *_get_min_node(node_base *node) noexcept;
+		PBOS_API static node_base *_get_max_node(node_base *node) noexcept;
 
 		PBOS_FORCEINLINE static bool _is_red(node_base *node) noexcept { return node && node->color == rbcolor_t::RED; }
 		PBOS_FORCEINLINE static bool _is_black(node_base *node) noexcept { return (!node) || node->color == rbcolor_t::BLACK; }
 
-		PBOS_KFXX_API void _lrot(node_base *x) noexcept;
-		PBOS_KFXX_API void _rrot(node_base *x) noexcept;
+		PBOS_API void _lrot(node_base *x) noexcept;
+		PBOS_API void _rrot(node_base *x) noexcept;
 
-		PBOS_KFXX_API void _insert_fixup(node_base *node) noexcept;
+		PBOS_API void _insert_fixup(node_base *node) noexcept;
 
-		PBOS_KFXX_API node_base *_remove_fixup(node_base *node) noexcept;
+		PBOS_API node_base *_remove_fixup(node_base *node) noexcept;
 
-		PBOS_KFXX_API static node_base *_get_next(const node_base *node, const node_base *lastnode_t) noexcept;
-		PBOS_KFXX_API static node_base *_get_prev(const node_base *node, const node_base *firstnode_t) noexcept;
+		PBOS_API static node_base *_get_next(const node_base *node, const node_base *lastnode_t) noexcept;
+		PBOS_API static node_base *_get_prev(const node_base *node, const node_base *firstnode_t) noexcept;
 
-		PBOS_KFXX_API _rbtree_base() noexcept;
-		PBOS_KFXX_API ~_rbtree_base();
+		PBOS_API _rbtree_base() noexcept;
+		PBOS_API ~_rbtree_base();
 	};
 
 	template <typename T,
@@ -777,6 +776,5 @@ namespace kfxx {
 	template <typename T, typename Comparator = fallible_cmp<T>, bool IsThreeway = true>
 	using fallible_rbtree_t = _rbtree_impl<T, Comparator, true, IsThreeway>;
 }
-#endif
 
 #endif

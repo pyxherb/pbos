@@ -987,49 +987,49 @@ PBOS_NODISCARD void *hn_tmpmap_early(void *paddr, size_t size, uint16_t mask) {
 	char *vaddr = nullptr;
 
 	size_t sz_found = 0;
-	for (uint16_t pml4x = PML4X(KINITTMPMAP_VBASE); pml4x < PML4X(KINITTMPMAP_VTOP + 1) + 1; ++pml4x) {
+	for (uint16_t pml4x = PML4X(mm_kernel_init_tmpmap_area); pml4x < PML4X((&mm_kernel_init_tmpmap_area[PBOS_ARRAYSIZE(mm_kernel_init_tmpmap_area)]) + 1) + 1; ++pml4x) {
 		arch_pml4te_t *pml4te = &mm_kernel_initial_pml4t[pml4x];
 
 		kd_assert(pml4te->mask & PML4E_P);
 
 		// Walk each PDPTE.
-		for (uint16_t pdptx = (pml4x == PML4X(KINITTMPMAP_VBASE) ? PDPTX(KINITTMPMAP_VBASE) : 0);
+		for (uint16_t pdptx = (pml4x == PML4X(mm_kernel_init_tmpmap_area) ? PDPTX(mm_kernel_init_tmpmap_area) : 0);
 			pdptx < PDPTX_MAX + 1;
 			++pdptx) {
 			char *const pdpt_vaddr = (char *)KVADDR(pml4x, pdptx, 0, 0, 0);
 
-			if (pdpt_vaddr > (void *)KINITTMPMAP_VTOP)
+			if (pdpt_vaddr > (void *)(&mm_kernel_init_tmpmap_area[PBOS_ARRAYSIZE(mm_kernel_init_tmpmap_area)]))
 				break;
 
-			arch_pdpte_t *pdpte = &mm_kernel_initial_pdpt[(PML4X(pdpt_vaddr) - PML4X(KBOTTOM_VBASE)) * 512 + pdptx];
+			arch_pdpte_t *pdpte = &mm_kernel_initial_pdpt[(PML4X(pdpt_vaddr) - PML4X(KERNEL_VBASE)) * 512 + pdptx];
 
 			kd_assert(pdpte->mask & PDPTE_P);
 
 			// Walk each PDE.
 			for (uint16_t pdx =
-					 (pml4x == PML4X(KINITTMPMAP_VBASE) &&
-								 pdptx == PDPTX(KINITTMPMAP_VBASE)
-							 ? PDX(KINITTMPMAP_VBASE)
+					 (pml4x == PML4X(mm_kernel_init_tmpmap_area) &&
+								 pdptx == PDPTX(mm_kernel_init_tmpmap_area)
+							 ? PDX(mm_kernel_init_tmpmap_area)
 							 : 0);
 				pdx < PDX_MAX + 1;
 				++pdx) {
 				char *const pdt_vaddr = (char *)KVADDR(pml4x, pdptx, pdx, 0, 0);
 
-				if (pdt_vaddr > (void *)KINITTMPMAP_VTOP)
+				if (pdt_vaddr > (void *)(&mm_kernel_init_tmpmap_area[PBOS_ARRAYSIZE(mm_kernel_init_tmpmap_area)]))
 					break;
 
 				arch_pde_t *pde =
-					&mm_kernel_initial_pdt[(PML4X(pdt_vaddr) - PML4X(KBOTTOM_VBASE)) * (512 * 512) +
-										   (PDPTX(pdt_vaddr) - PDPTX(KBOTTOM_VBASE)) * 512 +
+					&mm_kernel_initial_pdt[(PML4X(pdt_vaddr) - PML4X(KERNEL_VBASE)) * (512 * 512) +
+										   (PDPTX(pdt_vaddr) - PDPTX(KERNEL_VBASE)) * 512 +
 										   pdx];
 				kd_assert(pde->mask & PDE_P);
 
 				// Walk each PTE.
 				for (uint16_t ptx =
-						 (pml4x == PML4X(KINITTMPMAP_VBASE) &&
-									 pdptx == PDPTX(KINITTMPMAP_VBASE) &&
-									 pdx == PDX(KINITTMPMAP_VBASE)
-								 ? PTX(KINITTMPMAP_VBASE)
+						 (pml4x == PML4X(mm_kernel_init_tmpmap_area) &&
+									 pdptx == PDPTX(mm_kernel_init_tmpmap_area) &&
+									 pdx == PDX(mm_kernel_init_tmpmap_area)
+								 ? PTX(mm_kernel_init_tmpmap_area)
 								 : 0);
 					ptx < PTX_MAX + 1;
 					++ptx) {
@@ -1037,13 +1037,13 @@ PBOS_NODISCARD void *hn_tmpmap_early(void *paddr, size_t size, uint16_t mask) {
 						goto alloc_succeeded;
 					char *const ptt_vaddr = (char *)KVADDR(pml4x, pdptx, pdx, ptx, 0);
 
-					if (ptt_vaddr > (void *)KINITTMPMAP_VTOP)
+					if (ptt_vaddr > (void *)(&mm_kernel_init_tmpmap_area[PBOS_ARRAYSIZE(mm_kernel_init_tmpmap_area)]))
 						break;
 
 					arch_pte_t *pte =
-						&mm_kernel_initial_ptt[(PML4X(ptt_vaddr) - PML4X(KBOTTOM_VBASE)) * (512 * 512 * 512) +
-											   (PDPTX(ptt_vaddr) - PDPTX(KBOTTOM_VBASE)) * (512 * 512) +
-											   (PDX(ptt_vaddr) - PDX(KBOTTOM_VBASE)) * 512 +
+						&mm_kernel_initial_ptt[(PML4X(ptt_vaddr) - PML4X(KERNEL_VBASE)) * (512 * 512 * 512) +
+											   (PDPTX(ptt_vaddr) - PDPTX(KERNEL_VBASE)) * (512 * 512) +
+											   (PDX(ptt_vaddr) - PDX(KERNEL_VBASE)) * 512 +
 											   ptx];
 
 					if (pte->mask & PTE_P) {
@@ -1077,7 +1077,7 @@ alloc_succeeded:
 			if (pdpt_vaddr >= (void *)addr_limit)
 				break;
 
-			arch_pdpte_t *pdpte = &mm_kernel_initial_pdpt[(PML4X(pdpt_vaddr) - PML4X(KBOTTOM_VBASE)) * 512 + pdptx];
+			arch_pdpte_t *pdpte = &mm_kernel_initial_pdpt[(PML4X(pdpt_vaddr) - PML4X(KERNEL_VBASE)) * 512 + pdptx];
 			kd_assert(pdpte->mask & PDPTE_P);
 
 			for (uint32_t pdx =
@@ -1093,8 +1093,8 @@ alloc_succeeded:
 					break;
 
 				arch_pde_t *pde =
-					&mm_kernel_initial_pdt[(PML4X(pdt_vaddr) - PML4X(KBOTTOM_VBASE)) * (512 * 512) +
-										   (PDPTX(pdt_vaddr) - PDPTX(KBOTTOM_VBASE)) * 512 +
+					&mm_kernel_initial_pdt[(PML4X(pdt_vaddr) - PML4X(KERNEL_VBASE)) * (512 * 512) +
+										   (PDPTX(pdt_vaddr) - PDPTX(KERNEL_VBASE)) * 512 +
 										   pdx];
 				kd_assert(pde->mask & PDE_P);
 
@@ -1112,9 +1112,9 @@ alloc_succeeded:
 						break;
 
 					arch_pte_t *pte =
-						&mm_kernel_initial_ptt[(PML4X(ptt_vaddr) - PML4X(KBOTTOM_VBASE)) * (512 * 512 * 512) +
-											   (PDPTX(ptt_vaddr) - PDPTX(KBOTTOM_VBASE)) * (512 * 512) +
-											   (PDX(ptt_vaddr) - PDX(KBOTTOM_VBASE)) * 512 +
+						&mm_kernel_initial_ptt[(PML4X(ptt_vaddr) - PML4X(KERNEL_VBASE)) * (512 * 512 * 512) +
+											   (PDPTX(ptt_vaddr) - PDPTX(KERNEL_VBASE)) * (512 * 512) +
+											   (PDX(ptt_vaddr) - PDX(KERNEL_VBASE)) * 512 +
 											   ptx];
 					kd_assert(!(pte->mask & PTE_P));
 
@@ -1150,7 +1150,7 @@ void hn_tmpunmap_early(void *vaddr, size_t size) {
 			if (pdpt_vaddr >= (void *)addr_limit)
 				break;
 
-			arch_pdpte_t *pdpte = &mm_kernel_initial_pdpt[(PML4X(pdpt_vaddr) - PML4X(KBOTTOM_VBASE)) * 512 + pdptx];
+			arch_pdpte_t *pdpte = &mm_kernel_initial_pdpt[(PML4X(pdpt_vaddr) - PML4X(KERNEL_VBASE)) * 512 + pdptx];
 
 			for (uint32_t pdx =
 					 (pml4x == PML4X(vaddr) &&
@@ -1165,8 +1165,8 @@ void hn_tmpunmap_early(void *vaddr, size_t size) {
 					break;
 
 				arch_pde_t *pde =
-					&mm_kernel_initial_pdt[(PML4X(pdt_vaddr) - PML4X(KBOTTOM_VBASE)) * (512 * 512) +
-										   (PDPTX(pdt_vaddr) - PDPTX(KBOTTOM_VBASE)) * 512 +
+					&mm_kernel_initial_pdt[(PML4X(pdt_vaddr) - PML4X(KERNEL_VBASE)) * (512 * 512) +
+										   (PDPTX(pdt_vaddr) - PDPTX(KERNEL_VBASE)) * 512 +
 										   pdx];
 
 				for (uint32_t ptx =
@@ -1183,9 +1183,9 @@ void hn_tmpunmap_early(void *vaddr, size_t size) {
 						break;
 
 					arch_pte_t *pte =
-						&mm_kernel_initial_ptt[(PML4X(ptt_vaddr) - PML4X(KBOTTOM_VBASE)) * (512 * 512 * 512) +
-											   (PDPTX(ptt_vaddr) - PDPTX(KBOTTOM_VBASE)) * (512 * 512) +
-											   (PDX(ptt_vaddr) - PDX(KBOTTOM_VBASE)) * 512 +
+						&mm_kernel_initial_ptt[(PML4X(ptt_vaddr) - PML4X(KERNEL_VBASE)) * (512 * 512 * 512) +
+											   (PDPTX(ptt_vaddr) - PDPTX(KERNEL_VBASE)) * (512 * 512) +
+											   (PDX(ptt_vaddr) - PDX(KERNEL_VBASE)) * 512 +
 											   ptx];
 
 					pte->mask &= ~PTE_P;
@@ -1219,7 +1219,7 @@ PBOS_NODISCARD void *hn_tmpmap_post(void *paddr, size_t size, uint16_t mask) {
 			goto alloc_succeeded;
 		char *const ptt_vaddr = ((char *)tmpmap_info->tmpmap_base) + i;
 
-		if (ptt_vaddr > (void *)KINITTMPMAP_VTOP)
+		if (ptt_vaddr > (void *)(&mm_kernel_init_tmpmap_area[PBOS_ARRAYSIZE(mm_kernel_init_tmpmap_area)]))
 			break;
 
 		arch_pte_t *pte = &tmpmap_info->tmpmap_pgtab_base[i / PAGESIZE];
@@ -1270,7 +1270,7 @@ void hn_tmpunmap_post(void *vaddr, size_t size) {
 	for (size_t i = 0; i < size; i += PAGESIZE) {
 		char *const ptt_vaddr = ((char *)vaddr) + i;
 
-		if (ptt_vaddr > (void *)KINITTMPMAP_VTOP)
+		if (ptt_vaddr > (void *)(&mm_kernel_init_tmpmap_area[PBOS_ARRAYSIZE(mm_kernel_init_tmpmap_area)]))
 			break;
 
 		arch_pte_t *pte = &tmpmap_info->tmpmap_pgtab_base[(((char *)vaddr) - (char *)tmpmap_info->tmpmap_base) / PAGESIZE + (i / PAGESIZE)];

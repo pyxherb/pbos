@@ -15,7 +15,7 @@ PBOS_EXTERN_C_BEGIN
 #define HN_VPM_LEVEL_MAX (HN_MAX_PGTAB_LEVEL - 1)
 
 extern void *mm_kernel_bottom_mapping_base_vaddr;
-extern char mm_kernel_initial_stack[1024 * 96];
+extern char mm_kernel_initial_stack[1024 * 48];
 
 typedef struct _mm_context_t mm_context_t;
 
@@ -72,6 +72,8 @@ extern void *mm_kernel_initial_ptt_paddr;
 extern void *mm_kernel_initial_pdt_paddr;
 extern void *mm_kernel_initial_pdpt_paddr;
 extern void *mm_kernel_initial_pml4t_paddr;
+
+extern char mm_kernel_init_tmpmap_area[KINITTMPMAP_SIZE];
 
 #define SELECTOR_KCODE SELECTOR(0, 0, 1)
 #define SELECTOR_KDATA SELECTOR(0, 0, 2)

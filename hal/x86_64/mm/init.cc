@@ -1,10 +1,10 @@
 #include <hal/x86_64/misc.h>
-#include "pgalloc/pgalloc.hh"
 #include <pbos/kd/logger.h>
 #include <pbos/ps/proc.h>
 #include <pbos/ki/acpi/rsdt.hh>
 #include "../mm.hh"
 #include "hal/x86_64/initcar.hh"
+#include "pgalloc/pgalloc.hh"
 
 PBOS_EXTERN_C_BEGIN
 
@@ -16,12 +16,14 @@ const ki_paging_config_t *ki_cur_paging_config;
 
 void *mm_kernel_bottom_mapping_base_vaddr = nullptr;
 
-PBOS_USED char mm_kernel_initial_stack alignas(PAGESIZE)[1024 * 96];
+PBOS_USED char mm_kernel_initial_stack alignas(PAGESIZE)[1024 * 48];
 
 PBOS_USED arch_pte_t mm_kernel_initial_ptt alignas(PAGESIZE)[KINITPTT_SIZE / sizeof(arch_pte_t)];
 PBOS_USED arch_pde_t mm_kernel_initial_pdt alignas(PAGESIZE)[KINITPDT_SIZE / sizeof(arch_pde_t)];
 PBOS_USED arch_pdpte_t mm_kernel_initial_pdpt alignas(PAGESIZE)[KINITPDPT_SIZE / sizeof(arch_pdpte_t)];
 PBOS_USED arch_pml4te_t mm_kernel_initial_pml4t alignas(PAGESIZE)[KINITPML4T_SIZE / sizeof(arch_pml4te_t)];
+
+PBOS_USED char mm_kernel_init_tmpmap_area alignas(PAGESIZE)[KINITTMPMAP_SIZE];
 
 void *mm_kernel_initial_bottom_ptt_paddr = nullptr;
 void *mm_kernel_initial_bottom_pdt_paddr = nullptr;
@@ -62,9 +64,9 @@ void kh_mm_init() {
 	hn_kernel_early_tmpmap_info.tmpmap_base = (void *)KINITTMPMAP_VBASE;
 	hn_kernel_early_tmpmap_info.tmpmap_pgtab_base =
 		mm_kernel_initial_ptt +
-		((PML4X(KINITTMPMAP_VBASE) - PML4X(KBOTTOM_VBASE)) * (512 * 512 * 512) +
-			(PDPTX(KINITTMPMAP_VBASE) - PDPTX(KBOTTOM_VBASE)) * (512 * 512) +
-			(PDX(KINITTMPMAP_VBASE) - PDX(KBOTTOM_VBASE)) * 512 +
+		((PML4X(KINITTMPMAP_VBASE) - PML4X(KERNEL_VBASE)) * (512 * 512 * 512) +
+			(PDPTX(KINITTMPMAP_VBASE) - PDPTX(KERNEL_VBASE)) * (512 * 512) +
+			(PDX(KINITTMPMAP_VBASE) - PDX(KERNEL_VBASE)) * 512 +
 			PTX(KINITTMPMAP_VBASE));
 
 	hn_tmpmap_storage_ptr = &hn_kernel_early_tmpmap_info;
@@ -517,96 +519,114 @@ static void hn_mm_init_paging() {
 	memset(mm_kernel_initial_pdpt, 0, sizeof(mm_kernel_initial_pdpt));
 	memset(mm_kernel_initial_pml4t, 0, sizeof(mm_kernel_initial_pml4t));
 
-	mm_kernel_initial_ptt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)mm_kernel_initial_ptt) - hn_limine_executable_address_request.response->virtual_base) + hn_limine_executable_address_request.response->physical_base);
-	mm_kernel_initial_pdt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)mm_kernel_initial_pdt) - hn_limine_executable_address_request.response->virtual_base) + hn_limine_executable_address_request.response->physical_base);
-	mm_kernel_initial_pdpt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)mm_kernel_initial_pdpt) - hn_limine_executable_address_request.response->virtual_base) + hn_limine_executable_address_request.response->physical_base);
-	mm_kernel_initial_pml4t_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)mm_kernel_initial_pml4t) - hn_limine_executable_address_request.response->virtual_base) + hn_limine_executable_address_request.response->physical_base);
+	mm_kernel_initial_ptt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_ptt[0]) - hn_limine_executable_address_request.response->virtual_base) + hn_limine_executable_address_request.response->physical_base);
+	mm_kernel_initial_pdt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_pdt[0]) - hn_limine_executable_address_request.response->virtual_base) + hn_limine_executable_address_request.response->physical_base);
+	mm_kernel_initial_pdpt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_pdpt[0]) - hn_limine_executable_address_request.response->virtual_base) + hn_limine_executable_address_request.response->physical_base);
+	mm_kernel_initial_pml4t_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_pml4t[0]) - hn_limine_executable_address_request.response->virtual_base) + hn_limine_executable_address_request.response->physical_base);
 
 	// Map the high 2GB kernel space.
-	static_assert(PML4X(CRITICAL_VTOP) - PML4X(KBOTTOM_VBASE) == 0);
 	// Fill the PML4 Table.
 	{
-		const uint32_t pml4x = PML4X(KBOTTOM_VBASE);
+		const uint32_t pml4x = PML4X(KERNEL_VBASE);
 		char *const vaddr_pml4 = (char *)KVADDR(pml4x, 0, 0, 0, 0);
 
 		arch_pml4te_t *vpml4te = &mm_kernel_initial_pml4t[pml4x];
 
 		vpml4te->mask = PML4E_P | PML4E_RW | PML4E_U;
+		vpml4te->xd = false;
 		vpml4te->address = PGROUNDDOWN(
 			((arch_pdpte_t *)mm_kernel_initial_pdpt_paddr) +
-			((PML4X(vaddr_pml4) - PML4X(KBOTTOM_VBASE)) * 512));
+			((PML4X(vaddr_pml4) - PML4X(KERNEL_VBASE)) * 512));
 
 		kd_assert(UNPGADDR(vpml4te->address) < ((arch_pdpte_t *)mm_kernel_initial_pdpt_paddr) + PBOS_ARRAYSIZE(mm_kernel_initial_ptt));
 
 		// Fill the PDP Table.
-		for (uint32_t pdptx = (pml4x == PML4X(KBOTTOM_VBASE) ? PDPTX(KBOTTOM_VBASE) : 0); pdptx < PDPTX_MAX + 1; ++pdptx) {
+
+#define PDPT_MATCH_INITIAL_COND (pml4x == PML4X(KERNEL_VBASE))
+		for (uint32_t pdptx = (PDPT_MATCH_INITIAL_COND ? PDPTX(KERNEL_VBASE) : 0); pdptx < PDPTX_MAX + 1; ++pdptx) {
 			char *const vaddr_pdpt = (char *)KVADDR(pml4x, pdptx, 0, 0, 0);
-			arch_pdpte_t *vpdpte = &mm_kernel_initial_pdpt[(PML4X(vaddr_pdpt) - PML4X(KBOTTOM_VBASE)) * 512 + pdptx];
+			arch_pdpte_t *vpdpte = &mm_kernel_initial_pdpt[(PML4X(vaddr_pdpt) - PML4X(KERNEL_VBASE)) * 512 + pdptx];
 
 			vpdpte->mask = PDPTE_P | PDPTE_RW | PDPTE_U;
+			vpdpte->xd = false;
 			vpdpte->address = PGROUNDDOWN(
 				((arch_pde_t *)mm_kernel_initial_pdt_paddr) +
-				((PML4X(vaddr_pdpt) - PML4X(KBOTTOM_VBASE)) * 512 * 512 +
-					(PDPTX(vaddr_pdpt) - PDPTX(KBOTTOM_VBASE)) * 512));
+				((pml4x - PML4X(KERNEL_VBASE)) * 512 * 512 +
+					(pdptx - (PDPT_MATCH_INITIAL_COND ? PDPTX(KERNEL_VBASE) : 0)) * 512));
 
 			// Fill the Page Directory Table.
-			for (uint32_t pdx = (pml4x == PML4X(KBOTTOM_VBASE) &&
-										 pdptx == PDPTX(KBOTTOM_VBASE)
-									 ? PDX(KBOTTOM_VBASE)
+
+#define PDT_MATCH_INITIAL_COND (pml4x == PML4X(KERNEL_VBASE) && \
+								pdptx == PDPTX(KERNEL_VBASE))
+			for (uint32_t pdx = (PDT_MATCH_INITIAL_COND
+									 ? PDX(KERNEL_VBASE)
 									 : 0);
 				pdx < PDX_MAX + 1; ++pdx) {
 				char *const vaddr_pd = (char *)KVADDR(pml4x, pdptx, pdx, 0, 0);
 				arch_pde_t *vpde = &mm_kernel_initial_pdt[(
-					(PML4X(vaddr_pd) - PML4X(KBOTTOM_VBASE)) * 512 * 512 +
-					(PDPTX(vaddr_pd) - PDPTX(KBOTTOM_VBASE)) * 512 +
-					pdx)];
+					((pml4x - PML4X(KERNEL_VBASE)) * 512 * 512 +
+						(pdptx - (PDPT_MATCH_INITIAL_COND
+										 ? PDPTX(KERNEL_VBASE)
+										 : 0)) *
+							512 +
+						pdx))];
 
 				vpde->mask = PDE_P | PDE_RW | PDE_U;
+				vpde->xd = false;
 				vpde->address = PGROUNDDOWN(
 					((arch_pte_t *)mm_kernel_initial_ptt_paddr) +
-					(((PML4X(vaddr_pd) - PML4X(KBOTTOM_VBASE)) * 512 * 512 * 512 +
-						(PDPTX(vaddr_pd) - PDPTX(KBOTTOM_VBASE)) * 512 * 512 +
-						(PDX(vaddr_pd) - PDX(KBOTTOM_VBASE)) * 512)));
+					(((pml4x - PML4X(KERNEL_VBASE)) *
+							512 * 512 * 512 +
+						(pdptx - (PDPT_MATCH_INITIAL_COND
+										 ? PDPTX(KERNEL_VBASE)
+										 : 0)) *
+							512 * 512 +
+						(pdx - (PDT_MATCH_INITIAL_COND
+									   ? PDX(KERNEL_VBASE)
+									   : 0)) *
+							512)));
 
-				if ((((uintptr_t)vaddr_pd) > KBOTTOM_VTOP) &&
-					(((uintptr_t)KVADDR(pml4x, pdptx, pdx, PTX_MAX, PGOFF_MAX)) < CRITICAL_VBASE))
+				if ((((uintptr_t)KVADDR(pml4x, pdptx, pdx, PTX_MAX, PGOFF_MAX)) < KERNEL_VBASE))
 					continue;
 
 				// Fill the Page Table Table.
-				for (uint32_t ptx = (pml4x == PML4X(KBOTTOM_VBASE) &&
-											 pdptx == PDPTX(KBOTTOM_VBASE) &&
-											 pdx == PDX(KBOTTOM_VBASE)
-										 ? PTX(KBOTTOM_VBASE)
+
+#define PTT_MATCH_INITIAL_COND (pml4x == PML4X(KERNEL_VBASE) && \
+								pdptx == PDPTX(KERNEL_VBASE) && \
+								pdx == PDX(KERNEL_VBASE))
+				for (uint32_t ptx = (PTT_MATCH_INITIAL_COND
+										 ? PTX(KERNEL_VBASE)
 										 : 0);
 					ptx < PTX_MAX + 1;
 					++ptx) {
 					char *const vaddr_pt = (char *)KVADDR(pml4x, pdptx, pdx, ptx, 0);
-					if ((((uintptr_t)vaddr_pt) > KBOTTOM_VTOP) &&
-						(((uintptr_t)vaddr_pt) < CRITICAL_VBASE))
+					if ((((uintptr_t)vaddr_pt) < KERNEL_VBASE))
 						continue;
-					if (((uintptr_t)vaddr_pt) > INIT_CRITICAL_VTOP)
+					if (((((uintptr_t)vaddr_pt) >= (uintptr_t)mm_kernel_init_tmpmap_area)) &&
+						((((uintptr_t)vaddr_pt) < (uintptr_t)&mm_kernel_init_tmpmap_area[PBOS_ARRAYSIZE(mm_kernel_init_tmpmap_area)])))
+						continue;
+					if (((uintptr_t)vaddr_pt) >= (uintptr_t)KVADDR(PML4X_MAX, PDPTX_MAX, PDX_MAX, PTX_MAX - 1, 0))
 						goto fill_end;
 					arch_pte_t *vpte = &mm_kernel_initial_ptt[(
-																  ((PML4X(vaddr_pt) - PML4X(KBOTTOM_VBASE)) * 512 * 512 * 512 +
-																	  (PDPTX(vaddr_pt) - PDPTX(KBOTTOM_VBASE)) * 512 * 512 +
-																	  (PDX(vaddr_pt) - PDX(KBOTTOM_VBASE)) * 512)) +
+																  ((pml4x - PML4X(KERNEL_VBASE)) *
+																		  512 * 512 * 512 +
+																	  (pdptx - (PDPT_MATCH_INITIAL_COND ? PDPTX(KERNEL_VBASE)
+																										: 0)) *
+																		  512 * 512 +
+																	  (pdx - (PDT_MATCH_INITIAL_COND ? PDX(KERNEL_VBASE)
+																									 : 0)) *
+																		  512)) +
 															  ptx];
 
-					if ((((uintptr_t)vaddr_pt) > KBOTTOM_VTOP) &&
-						(((uintptr_t)vaddr_pt) < CRITICAL_VBASE)) {
-						vpte->address = PGROUNDDOWN(vaddr_pt - KBOTTOM_VBASE);
-					} else {
-						vpte->address = PGROUNDDOWN(
-							(((char *)hn_limine_executable_address_request.response->physical_base)) +
-							(((uintptr_t)vaddr_pt) - CRITICAL_VBASE));
-					}
+					vpte->address = PGROUNDDOWN(
+						(((char *)hn_limine_executable_address_request.response->physical_base)) +
+						(((uintptr_t)vaddr_pt) - KERNEL_VBASE));
 					vpte->mask = PTE_P | PTE_RW;
+					vpte->xd = false;
 				}
 			}
 		}
 	}
-
-	mm_kernel_bottom_mapping_base_vaddr = (void *)KBOTTOM_VBASE;
 
 fill_end:
 	// Load PDT.

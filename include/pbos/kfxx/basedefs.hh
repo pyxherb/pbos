@@ -3,8 +3,6 @@
 
 #include <pbos/kf/basedefs.h>
 
-#define PBOS_KFXX_API
-
 #ifdef __cplusplus
 namespace kfxx {
 	enum class iterator_direction : uint8_t {

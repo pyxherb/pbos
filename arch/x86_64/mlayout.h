@@ -45,7 +45,7 @@
 //
 // Kernel Top Page Tables
 //
-#define KINITPTT_SIZE 0x00800000  // Maps the bottom 2GB area
+#define KINITPTT_SIZE 0x00800000  // Maps the top 2GB area
 
 //
 // Kernel Initial Page Directory Table

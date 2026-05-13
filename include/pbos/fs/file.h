@@ -77,7 +77,7 @@ PBOS_NODISCARD PBOS_API const char *fs_name_of_fnode(fs_fnode_t *file, size_t *l
 PBOS_API void fs_unname_fnode(fs_fnode_t *file);
 PBOS_NODISCARD PBOS_API km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len);
 
-PBOS_API PBOS_API fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb);
+PBOS_API fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb);
 
 /// @brief Mount a file onto a directory.
 /// @param parent Parent directory to mount, the directory must be empty.
@@ -108,8 +108,8 @@ PBOS_NODISCARD PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *fi
 ///
 PBOS_NODISCARD PBOS_API km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out);
 
-PBOS_API PBOS_API void fs_ref_fnode(fs_fnode_t *fnode);
-PBOS_API PBOS_API void fs_unref_fnode(fs_fnode_t *fnode);
+PBOS_API void fs_ref_fnode(fs_fnode_t *fnode);
+PBOS_API void fs_unref_fnode(fs_fnode_t *fnode);
 
 PBOS_EXTERN_C_END
 

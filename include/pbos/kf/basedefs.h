@@ -3,6 +3,6 @@
 
 #include <pbos/common.h>
 
-#define PBOS_API
+#define PBOS_API PBOS_EXPORTED
 
 #endif

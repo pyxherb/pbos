@@ -11,7 +11,7 @@ target_include_directories(pbkrnl PRIVATE ${FREESTDC_INCLUDE_DIR_CXX})
 
 # add_dependencies(pbkrnl bootldr)
 target_link_libraries(pbkrnl PRIVATE pbarch freestdc pbhal)
-target_link_options(pbkrnl PRIVATE "-T${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/kernel.lds")
+target_link_options(pbkrnl PRIVATE "-T${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/kernel.lds" "--export-dynamic")
 
 #add_custom_target(
 #    pbkim

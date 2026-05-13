@@ -8,8 +8,8 @@
 namespace kfxx {
 	class allocator_t {
 	public:
-		PBOS_KFXX_API allocator_t();
-		PBOS_KFXX_API virtual ~allocator_t() = 0;
+		PBOS_API allocator_t();
+		PBOS_API virtual ~allocator_t() = 0;
 
 		virtual size_t inc_ref() noexcept = 0;
 		virtual size_t dec_ref() noexcept = 0;

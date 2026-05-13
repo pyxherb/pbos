@@ -6,6 +6,8 @@ target_sources(pbhal PRIVATE ${SRC})
 target_include_directories(pbhal SYSTEM BEFORE PRIVATE ${FREESTDC_INCLUDE_DIR} ${FREESTDC_INCLUDE_DIR_CXX})
 target_link_libraries(pbhal PUBLIC pbarch freestdc pbscintf)
 
+# target_compile_options(pbhal PRIVATE "-mcmodel=large")
+
 add_subdirectory("boot")
 add_subdirectory("kd")
 add_subdirectory("display")

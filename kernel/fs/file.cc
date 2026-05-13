@@ -6,7 +6,9 @@
 #include <pbos/ki/km/symbol.hh>
 #include <pbos/kf/atomic.h>
 
-fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb) {
+PBOS_EXTERN_C_BEGIN
+
+PBOS_API fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb) {
 	return fcb->fnode.get();
 }
 
@@ -481,3 +483,5 @@ void ki_destroy_fcb(fs_fcb_t *fcb) {
 		km_panic("FCB is not closed before destroying");
 	kfxx::destroy_and_release<fs_fcb_t>(&ki_fs_fcb_allocator, fcb);
 }
+
+PBOS_EXTERN_C_END

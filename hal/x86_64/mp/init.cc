@@ -208,8 +208,6 @@ void mp_main_cpu_init() {
 
 	arch_loades(SELECTOR_KDATA);
 
-	hal_irq_context_t *ctxt = irq_contexts[0];
-
 	hn_calibrate_apic();
 
 	klog_printf("Timer interval ticks: %u\n", hn_sched_interval);

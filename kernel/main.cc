@@ -13,16 +13,16 @@
 
 PBOS_EXTERN_C_BEGIN
 
-const ki_syment_t KI_EXPORTED_SYMBOLS_BEGIN[0] = {}, KI_EXPORTED_SYMBOLS_END[0] = {};
+extern const ki_syment_t KI_EXPORTED_SYMBOLS_BEGIN[], KI_EXPORTED_SYMBOLS_END[];
 
 typedef void (*ki_ctor_t)();
 typedef void (*ki_dtor_t)();
 
-alignas(ki_ctor_t) ki_ctor_t KI_CTORS_BEGIN[0] = {};
-alignas(ki_ctor_t) ki_ctor_t KI_CTORS_END[0] = {};
+extern ki_ctor_t KI_CTORS_BEGIN[] = {};
+extern ki_ctor_t KI_CTORS_END[] = {};
 
-alignas(ki_dtor_t) ki_dtor_t KI_DTORS_BEGIN[0] = {};
-alignas(ki_dtor_t) ki_dtor_t KI_DTORS_END[0] = {};
+extern ki_dtor_t KI_DTORS_BEGIN[] = {};
+extern ki_dtor_t KI_DTORS_END[] = {};
 
 extern "C" void __cxa_pure_virtual() {
 	km_panic("Attempting to call a pure virtual function!");
@@ -76,9 +76,9 @@ PBOS_NORETURN void kernel_main() {
 	fs_init();
 	ki_ps_init();
 
-	for (const ki_syment_t *i = KI_EXPORTED_SYMBOLS_BEGIN; i < KI_EXPORTED_SYMBOLS_END; ++i) {
+	/*for (const ki_syment_t *i = KI_EXPORTED_SYMBOLS_BEGIN; i < KI_EXPORTED_SYMBOLS_END; ++i) {
 		dbg_printf("Found image symbol: %s\n", i->name);
-	}
+	}*/
 
 	kh_initcar_init();
 

@@ -47,7 +47,7 @@ PBOS_NORETURN void kernel_main();
 
 void kmain() {
 	asm volatile("xorq %rbp,%rbp");
-	asm volatile("movabsq %0, %%rsp" ::"i"(mm_kernel_initial_stack + PBOS_ARRAYSIZE(mm_kernel_initial_stack)) : "memory");
+	asm volatile("movq %0, %%rsp" :: "r"(mm_kernel_initial_stack + PBOS_ARRAYSIZE(mm_kernel_initial_stack)): "memory");
 	kernel_main();
 }
 

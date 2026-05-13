@@ -9,14 +9,13 @@ PHDRS
     limine_requests PT_LOAD;
     text PT_LOAD;
     rodata PT_LOAD;
+	dynsym PT_DYNAMIC;
     data PT_LOAD;
-	exported_image_sym PT_LOAD;
 }
 
 SECTIONS
 {
 	. = 0xffffffff80000000;
-
 	.limine_requests : {
         KEEP(*(.limine_requests_start))
         KEEP(*(.limine_requests))
@@ -49,12 +48,40 @@ SECTIONS
 		*(.shstrtab)
 	} :rodata
 
-	.exported_image_sym :
+	. = ALIGN(CONSTANT(MAXPAGESIZE));
+
+	.dynamic :
 	{
 		KI_EXPORTED_SYMBOLS_BEGIN = .;
-		KEEP(*(.exported_image_sym))
-	} :exported_image_sym
-	KI_EXPORTED_SYMBOLS_END = .;
+		*(.dynamic)
+		*(.dynamic.*)
+	} :dynsym
+	.dynsym :
+	{
+		*(.dynsym)
+		*(.dynsym.*)
+	} :dynsym
+	.rela :
+	{
+		*(.rela)
+		*(.rela.*)
+	} :dynsym
+	.dynstr :
+	{
+		*(.dynstr)
+		*(.dynstr.*)
+	} :dynsym
+	.hash :
+	{
+		*(.hash)
+		*(.hash.*)
+	} :dynsym
+	.gnu.hash :
+	{
+		*(.gnu.hash)
+		*(.gnu.hash.*)
+	} :dynsym
+	KI_EXPORTED_SYMBOLS_BEGIN = .;
 
 	. = ALIGN(CONSTANT(MAXPAGESIZE));
 
@@ -63,8 +90,6 @@ SECTIONS
 		*(.data)
 		*(.data.*)
 	} :data
-
-	. = ALIGN(CONSTANT(MAXPAGESIZE));
 
 	. = ALIGN(CONSTANT(MAXPAGESIZE));
 
