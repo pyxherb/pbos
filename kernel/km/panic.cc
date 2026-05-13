@@ -3,6 +3,7 @@
 #include <pbos/kd/stacktrace.h>
 #include <pbos/kh/km/panic.h>
 #include <stdarg.h>
+#include <pbos/ki/ps/kmod.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -27,7 +28,15 @@ PBOS_NORETURN void km_panic(const char *fmt, ...) {
 
 	klog_printf("\nStack trace:\n");
 	for (void *i = kd_stack_trace_begin(); i; i = kd_stack_trace_next(i)) {
-		klog_printf("%p\n", i);
+		void *ptr = kd_stack_trace_get_address(i);
+		const char *func_name = "???";
+
+		auto sym_node = ki_registered_kernel_symbol_query_tree.find_max_lteq(ptr);
+		if (sym_node) {
+			if (((char *)sym_node->rb_value) + static_cast<ki_kernel_symbol_t *>(sym_node)->len >= (char *)ptr)
+				func_name = static_cast<ki_kernel_symbol_t *>(sym_node)->name;
+		}
+		klog_printf("%p<%s>\n", i, func_name);
 	}
 panicked:
 	kh_panic_halt();

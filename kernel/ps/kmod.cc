@@ -1,11 +1,21 @@
 #include <pbos/kfxx/allocator.hh>
+#include <pbos/kfxx/hashmap.hh>
 #include <pbos/kfxx/scope_guard.hh>
+#include <pbos/kfxx/unique_ptr.hh>
 #include <pbos/ki/km/symbol.hh>
 #include <pbos/ki/ps/exec.hh>
 #include <pbos/ki/ps/kmod.hh>
 #include <pbos/ps/mutex.hh>
 
 PBOS_EXTERN_C_BEGIN
+
+_ps_kmod_t::_ps_kmod_t(kfxx::allocator_t *allocator): registered_symbols(allocator) {
+
+}
+
+_ps_kmod_t::~_ps_kmod_t() {
+
+}
 
 ps_kmod_t *ki_ps_kmod_list = nullptr;
 ps::mutex_t ki_ps_kmod_list_mutex;
@@ -36,6 +46,12 @@ PBOS_API void ps_remove_kmod(ps_kmod_t *kmod) {
 	if (kmod->next)
 		kmod->next->prev = kmod->prev;
 
+	while(kmod->registered_symbols.size()) {
+		auto i = kmod->registered_symbols.begin();
+		ps_unregister_kernel_symbol(i->data(), i->size());
+		kmod->registered_symbols.remove(i);
+	}
+
 	while (kmod->registered_sections.size())
 		ps_remove_section_from_kmod(kmod, static_cast<ps_kmod_section_t *>(kmod->registered_sections.begin().node));
 
@@ -43,7 +59,7 @@ PBOS_API void ps_remove_kmod(ps_kmod_t *kmod) {
 }
 
 PBOS_API km_result_t ps_create_kmod(ps_kmod_t **kmod_out) {
-	ps_kmod_t *kmod = kfxx::alloc_and_construct<ps_kmod_t>(kfxx::kernel_allocator());
+	ps_kmod_t *kmod = kfxx::alloc_and_construct<ps_kmod_t>(kfxx::kernel_allocator(), kfxx::kernel_allocator());
 
 	if (!kmod)
 		return KM_RESULT_NO_MEM;
@@ -108,6 +124,82 @@ void ki_ps_destroy_kmod_section(ps_kmod_section_t *section) {
 		section->parent_mod->registered_sections.remove(section);
 
 	kfxx::destroy_and_release<ps_kmod_section_t>(kfxx::kernel_allocator(), section);
+}
+
+kfxx::hash_map_t<kfxx::string_view, ki_kernel_symbol_t *> ki_registered_kernel_symbols(kfxx::kernel_allocator());
+kfxx::rbtree_t<void *> ki_registered_kernel_symbol_query_tree;
+
+void ki_destroy_kernel_symbol(ki_kernel_symbol_t *sym) {
+	if (sym->name)
+		kfxx::kernel_allocator()->release(sym->name, sym->name_len, alignof(char));
+	kfxx::destroy_and_release<ki_kernel_symbol_t>(kfxx::kernel_allocator(), sym);
+}
+
+PBOS_API km_result_t ps_register_kernel_symbol(ps_kmod_t *kmod, const char *name, size_t name_len, void *addr, size_t len) {
+	ki_kernel_symbol_t *sym;
+	KM_RETURN_IF_FAILED(ki_do_register_kernel_symbol(name, name_len, addr, len, &sym));
+
+	kfxx::scope_guard unregister_symbol_guard([name, name_len]() noexcept {
+		ps_unregister_kernel_symbol(name, name_len);
+	});
+
+	if (!kmod->registered_symbols.insert(kfxx::string_view(sym->name, sym->name_len)))
+		return KM_RESULT_NO_MEM;
+
+	unregister_symbol_guard.release();
+	return KM_RESULT_OK;
+}
+
+km_result_t ki_do_register_kernel_symbol(const char *name, size_t name_len, void *addr, size_t len, ki_kernel_symbol_t **symbol_out) {
+	if (!ki_registered_kernel_symbols.shrink_buckets())
+		return KM_RESULT_NO_MEM;
+
+	if (auto node = ki_registered_kernel_symbol_query_tree.find_max_lteq(addr); node) {
+		if (((char *)node->rb_value) + static_cast<ki_kernel_symbol_t *>(node)->len >= addr)
+			return KM_RESULT_EXISTED;
+	}
+
+	ki_kernel_symbol_t *sym = kfxx::alloc_and_construct<ki_kernel_symbol_t>(kfxx::kernel_allocator());
+	kfxx::scope_guard release_sym_guard([sym]() noexcept {
+		ki_destroy_kernel_symbol(sym);
+	});
+
+	if (!(sym->name = (char *)kfxx::kernel_allocator()->alloc(name_len, alignof(char))))
+		return KM_RESULT_NO_MEM;
+	sym->name_len = name_len;
+
+	memcpy(sym->name, name, name_len);
+
+	sym->rb_value = addr;
+	sym->len = len;
+
+	if (symbol_out)
+		*symbol_out = sym;
+
+	if (!ki_registered_kernel_symbols.insert(kfxx::string_view(sym->name, sym->name_len), +sym))
+		return KM_RESULT_NO_MEM;
+
+	release_sym_guard.release();
+
+	return KM_RESULT_OK;
+}
+
+PBOS_API km_result_t ps_unregister_kernel_symbol(const char *name, size_t name_len) {
+	kfxx::string_view name_view = kfxx::string_view(name, name_len);
+	if (auto it = ki_registered_kernel_symbols.find(name_view); it != ki_registered_kernel_symbols.end()) {
+		ki_destroy_kernel_symbol(it.value());
+		ki_registered_kernel_symbols.remove(name_view);
+		return KM_RESULT_OK;
+	}
+	return KM_RESULT_NOT_FOUND;
+}
+
+PBOS_API void *ps_get_kernel_symbol(const char *name, size_t name_len) {
+	kfxx::string_view name_view = kfxx::string_view(name, name_len);
+	if (auto it = ki_registered_kernel_symbols.find(name_view); it != ki_registered_kernel_symbols.end()) {
+		return it.value()->rb_value;
+	}
+	return nullptr;
 }
 
 PBOS_EXTERN_C_END

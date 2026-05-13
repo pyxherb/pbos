@@ -38,7 +38,7 @@ namespace kfxx {
 		PBOS_API virtual void *type_identity() const noexcept override;
 	};
 
-	extern kernel_allocator_t g_kernel_allocator;
+	PBOS_API extern kernel_allocator_t g_kernel_allocator;
 
 	///
 	/// @brief Get the global kernel allocator.

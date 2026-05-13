@@ -20,6 +20,10 @@ PBOS_API km_result_t ps_add_section_to_kmod(ps_kmod_t *kmod, void *vaddr, size_t
 PBOS_API km_result_t ps_get_section_of_kmod(ps_kmod_t *kmod, void *vaddr, ps_kmod_section_t **section_out);
 PBOS_API void ps_remove_section_from_kmod(ps_kmod_t *kmod, ps_kmod_section_t *section);
 
+PBOS_API km_result_t ps_register_kernel_symbol(ps_kmod_t *kmod, const char *name, size_t name_len, void *addr, size_t len);
+PBOS_API km_result_t ps_unregister_kernel_symbol(const char *name, size_t name_len);
+PBOS_API void *ps_get_kernel_symbol(const char *name, size_t name_len);
+
 PBOS_EXTERN_C_END
 
 #endif

@@ -46,4 +46,4 @@ PBOS_API void *kernel_allocator_t::type_identity() const noexcept {
 	return &_ki_kernel_allocator_identity;
 }
 
-kernel_allocator_t kfxx::g_kernel_allocator;
+PBOS_API kernel_allocator_t kfxx::g_kernel_allocator;

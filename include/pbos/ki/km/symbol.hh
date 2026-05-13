@@ -18,8 +18,6 @@ static_assert(std::is_trivial_v<ki_syment_t>, "You must make ki_syment_t trivial
 
 extern const Elf64_Sym KI_EXPORTED_SYMBOLS_BEGIN[], KI_EXPORTED_SYMBOLS_END[];
 
-#define KI_EXPORT_IMAGE_SYMBOL(s)
-
 PBOS_EXTERN_C_END
 
 #endif

@@ -11,6 +11,7 @@
 #include <pbos/ki/km/proc.hh>
 #include <pbos/ki/km/symbol.hh>
 #include <pbos/ki/ps/exec.hh>
+#include <pbos/ki/ps/kmod.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -88,9 +89,17 @@ PBOS_NORETURN void kernel_main() {
 			uint8_t visibility = ELF64_ST_VISIBILITY(i->st_other);
 			kfxx::string_view name = kfxx::string_view(KI_EXPORTED_SYMBOL_NAMES_BEGIN + i->st_name);
 
-			if (visibility == STV_DEFAULT) {
+			if ((visibility == STV_DEFAULT) && i->st_value) {
 				kd_println("kernel", "Found public symbol: %s -> %p", name.data(), (void *)i->st_value);
 				// TODO: Handle value when ASLR enabled...
+				if (KM_FAILED(result = ki_do_register_kernel_symbol(name.data(), name.size(), (void *)i->st_value, i->st_size, nullptr))) {
+					switch (result) {
+						case KM_RESULT_NO_MEM:
+							km_panic("Error registering kernel symbols because of out of memory");
+						default:
+							km_panic("Error registering kernel symbol %s, result = %u", name.data(), result);
+					}
+				}
 			} else {
 				kd_println("kernel", "Skipped symbol: %s -> %p", name.data(), (void *)i->st_value);
 			}

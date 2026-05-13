@@ -377,8 +377,8 @@ namespace kfxx {
 			return const_cast<this_t *>(this)->find_max_lteq_alt(key);
 		}
 
-		PBOS_FORCEINLINE kfxx::option_t<T> remove(const iterator &iterator) {
-			return _tree.remove(iterator._iterator);
+		PBOS_FORCEINLINE void remove(const iterator &iterator) {
+			_tree.remove(iterator._iterator);
 		}
 	};
 

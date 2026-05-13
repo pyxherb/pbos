@@ -4,10 +4,35 @@
 #include <memory>
 #include <type_traits>
 #include <utility>
+#include "allocator.hh"
 #include "basedefs.hh"
+#include "rcobj.hh"
 
 namespace kfxx {
-	template <typename T, typename D>
+	template <typename T>
+	struct kernel_allocator_deleter {
+		PBOS_FORCEINLINE void operator()(T *ptr) noexcept {
+			kfxx::destroy_and_release<T>(kfxx::kernel_allocator(), ptr);
+		}
+	};
+
+	template <typename T>
+	struct allocator_deleter {
+	private:
+		rc_object_ptr_t<allocator_t> _allocator;
+
+	public:
+		PBOS_FORCEINLINE allocator_deleter(allocator_t *allocator) noexcept : _allocator(allocator) {}
+		PBOS_FORCEINLINE ~allocator_deleter() {}
+		PBOS_FORCEINLINE void operator()(T *ptr) noexcept {
+			kfxx::destroy_and_release<T>(_allocator, ptr);
+		}
+		PBOS_FORCEINLINE void set_allocator(allocator_t *ptr) noexcept {
+			_allocator = ptr;
+		}
+	};
+
+	template <typename T, typename D = kernel_allocator_deleter<T>>
 	struct unique_ptr_t {
 	private:
 		static_assert(std::is_invocable_v<D, T *>, "The deleter is not invocable");
@@ -116,6 +141,14 @@ namespace kfxx {
 
 		PBOS_FORCEINLINE bool operator!=(const this_t &rhs) const noexcept {
 			return _ptr != rhs._ptr;
+		}
+
+		PBOS_FORCEINLINE const D &get_deleter() const noexcept {
+			return _deleter;
+		}
+
+		PBOS_FORCEINLINE D &get_deleter() noexcept {
+			return _deleter;
 		}
 	};
 }
