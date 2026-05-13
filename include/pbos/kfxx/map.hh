@@ -10,16 +10,16 @@ namespace kfxx {
 	private:
 		static_assert(std::is_move_constructible_v<K>, "The key must be move-constructible");
 		static_assert(std::is_move_constructible_v<V>, "The value must be move-constructible");
-		struct Pair {
+		struct pair_t {
 			uninit_t<K> key;
 			uninit_t<V> value;
 			bool key_constructed;
 			bool value_constructed;
 			bool for_query;
 
-			PBOS_FORCEINLINE Pair() : key_constructed(false), value_constructed(false), for_query(true) {}
-			PBOS_FORCEINLINE Pair(K &&key, V &&value, bool for_query) : key(std::move(key)), value(std::move(value)), for_query(for_query), key_constructed(true), value_constructed(true) {}
-			PBOS_FORCEINLINE Pair(Pair &&rhs) noexcept : for_query(false) {
+			PBOS_FORCEINLINE pair_t() : key_constructed(false), value_constructed(false), for_query(true) {}
+			PBOS_FORCEINLINE pair_t(K &&key, V &&value, bool for_query) : key(std::move(key)), value(std::move(value)), for_query(for_query), key_constructed(true), value_constructed(true) {}
+			PBOS_FORCEINLINE pair_t(pair_t &&rhs) noexcept : for_query(false) {
 				if (rhs.key_constructed) {
 					key = std::move(rhs.key.get());
 					rhs.key_constructed = false;
@@ -32,7 +32,7 @@ namespace kfxx {
 				}
 			}
 
-			PBOS_FORCEINLINE ~Pair() {
+			PBOS_FORCEINLINE ~pair_t() {
 				if (key_constructed)
 					key.destroy();
 				if (value_constructed)
@@ -41,98 +41,98 @@ namespace kfxx {
 		};
 
 		/// @brief Extended pair used for query by key only.
-		struct QueryPair : public Pair {
+		struct query_pair_t : public pair_t {
 			const K *query_key;
 
-			PBOS_FORCEINLINE QueryPair(const K *query_key) : Pair(), query_key(query_key) {}
+			PBOS_FORCEINLINE query_pair_t(const K *query_key) : pair_t(), query_key(query_key) {}
 		};
 
 		/// @brief Wrapped comparator for comparing pairs by key.
-		struct PairComparator {
+		struct pair_cmp_t {
 			Lt inner_cmp;
 
-			PBOS_FORCEINLINE PairComparator(Lt &&inner_cmp) : inner_cmp(std::move(inner_cmp)) {}
+			PBOS_FORCEINLINE pair_cmp_t(Lt &&inner_cmp) : inner_cmp(std::move(inner_cmp)) {}
 
-			PBOS_FORCEINLINE decltype(std::declval<Lt>()(std::declval<K>(), std::declval<K>())) operator()(const Pair &lhs, const Pair &rhs) const {
-				const K &l = lhs.for_query ? *((const QueryPair &)lhs).query_key : lhs.key.get(),
-						&r = rhs.for_query ? *((const QueryPair &)rhs).query_key : rhs.key.get();
+			PBOS_FORCEINLINE decltype(std::declval<Lt>()(std::declval<K>(), std::declval<K>())) operator()(const pair_t &lhs, const pair_t &rhs) const {
+				const K &l = lhs.for_query ? *((const query_pair_t &)lhs).query_key : lhs.key.get(),
+						&r = rhs.for_query ? *((const query_pair_t &)rhs).query_key : rhs.key.get();
 				return inner_cmp(l, r);
 			}
 
 			template <typename U>
-			PBOS_FORCEINLINE decltype(std::declval<Lt>()(std::declval<K>(), std::declval<U>())) operator()(const Pair &lhs, const U &rhs) const {
-				const K &l = lhs.for_query ? *((const QueryPair &)lhs).query_key : lhs.key.get();
+			PBOS_FORCEINLINE decltype(std::declval<Lt>()(std::declval<K>(), std::declval<U>())) operator()(const pair_t &lhs, const U &rhs) const {
+				const K &l = lhs.for_query ? *((const query_pair_t &)lhs).query_key : lhs.key.get();
 				return inner_cmp(l, rhs);
 			}
 
 			template <typename U>
-			PBOS_FORCEINLINE decltype(std::declval<Lt>()(std::declval<U>(), std::declval<K>())) operator()(const U &lhs, const Pair &rhs) const {
-				const K &r = rhs.for_query ? *((const QueryPair &)rhs).query_key : rhs.key.get();
+			PBOS_FORCEINLINE decltype(std::declval<Lt>()(std::declval<U>(), std::declval<K>())) operator()(const U &lhs, const pair_t &rhs) const {
+				const K &r = rhs.for_query ? *((const query_pair_t &)rhs).query_key : rhs.key.get();
 				return inner_cmp(lhs, r);
 			}
 		};
 
-		using SetType = std::conditional_t<Fallible, fallible_set_t<Pair, PairComparator, IsThreeway>, set_t<Pair, PairComparator, IsThreeway>>;
+		using set_t = std::conditional_t<Fallible, fallible_set_t<pair_t, pair_cmp_t, IsThreeway>, set_t<pair_t, pair_cmp_t, IsThreeway>>;
 
-		SetType _set;
+		set_t _set;
 
-		using ThisType = _map_impl<K, V, Lt, Fallible, IsThreeway>;
+		using this_t = _map_impl<K, V, Lt, Fallible, IsThreeway>;
 
 	public:
-		using NodeType = typename SetType::NodeType;
+		using node_t = typename set_t::node_t;
 
-		using RemoveResultType = typename SetType::RemoveResultType;
-		using ElementQueryResultType = typename std::conditional_t<Fallible, option_t<V &>, V &>;
-		using ConstElementQueryResultType = typename std::conditional_t<Fallible, option_t<const V &>, const V &>;
-		using ContainsResultType = typename SetType::ContainsResultType;
+		using remove_result_t = typename set_t::remove_result_t;
+		using element_query_result_t = typename std::conditional_t<Fallible, option_t<V &>, V &>;
+		using const_element_query_result_t = typename std::conditional_t<Fallible, option_t<const V &>, const V &>;
+		using contains_result_t = typename set_t::contains_result_t;
 
-		PBOS_FORCEINLINE _map_impl(allocator_t *allocator, Lt &&comparator = {}) : _set(allocator, PairComparator(std::move(comparator))) {}
-		PBOS_FORCEINLINE _map_impl(ThisType &&rhs) : _set(std::move(rhs._set)) {
+		PBOS_FORCEINLINE _map_impl(allocator_t *allocator, Lt &&comparator = {}) : _set(allocator, pair_cmp_t(std::move(comparator))) {}
+		PBOS_FORCEINLINE _map_impl(this_t &&rhs) : _set(std::move(rhs._set)) {
 		}
-		PBOS_FORCEINLINE ThisType &operator=(ThisType &&rhs) noexcept {
+		PBOS_FORCEINLINE this_t &operator=(this_t &&rhs) noexcept {
 			clear();
 			_set = std::move(rhs._set);
 			return *this;
 		}
 
 		PBOS_FORCEINLINE bool insert(K &&key, V &&value) {
-			Pair pair = Pair(std::move(key), std::move(value), false);
+			pair_t pair = pair_t(std::move(key), std::move(value), false);
 			return _set.insert(std::move(pair));
 		}
 
-		PBOS_FORCEINLINE RemoveResultType remove(const K &key) {
-			return _set.remove(QueryPair(&key));
+		PBOS_FORCEINLINE remove_result_t remove(const K &key) {
+			return _set.remove(query_pair_t(&key));
 		}
 
 		template <typename U>
-		PBOS_FORCEINLINE RemoveResultType remove_alt(const U &key) {
+		PBOS_FORCEINLINE remove_result_t remove_alt(const U &key) {
 			return _set.template remove_alt<U>(key);
 		}
 
-		PBOS_FORCEINLINE ContainsResultType contains(const K &key) const {
-			return _set.contains(QueryPair(&key));
+		PBOS_FORCEINLINE contains_result_t contains(const K &key) const {
+			return _set.contains(query_pair_t(&key));
 		}
 
 		template <typename U>
-		PBOS_FORCEINLINE ContainsResultType contains_alt(const U &key) const {
+		PBOS_FORCEINLINE contains_result_t contains_alt(const U &key) const {
 			return _set.template contains_alt<U>(key);
 		}
 
-		PBOS_FORCEINLINE ElementQueryResultType at(const K &key) {
+		PBOS_FORCEINLINE element_query_result_t at(const K &key) {
 			if constexpr (Fallible) {
-				auto v = _set.at(QueryPair(&key));
+				auto v = _set.at(query_pair_t(&key));
 
 				if (!v.has_value())
 					return NULL_OPTION;
 
 				return v.value().value.get();
 			} else {
-				return _set.at(QueryPair(&key)).value.get();
+				return _set.at(query_pair_t(&key)).value.get();
 			}
 		}
 
 		template <typename U>
-		PBOS_FORCEINLINE ElementQueryResultType at_alt(const U &key) {
+		PBOS_FORCEINLINE element_query_result_t at_alt(const U &key) {
 			if constexpr (Fallible) {
 				auto v = _set.template at_alt<U>(key);
 
@@ -145,21 +145,21 @@ namespace kfxx {
 			}
 		}
 
-		PBOS_FORCEINLINE ConstElementQueryResultType at(const K &key) const {
+		PBOS_FORCEINLINE const_element_query_result_t at(const K &key) const {
 			if constexpr (Fallible) {
-				auto v = _set.at(QueryPair(&key));
+				auto v = _set.at(query_pair_t(&key));
 
 				if (!v.has_value())
 					return NULL_OPTION;
 
 				return v.value().value.get();
 			} else {
-				return _set.at(QueryPair(&key)).value.get();
+				return _set.at(query_pair_t(&key)).value.get();
 			}
 		}
 
 		template <typename U>
-		PBOS_FORCEINLINE ElementQueryResultType at_alt(const U &key) const {
+		PBOS_FORCEINLINE element_query_result_t at_alt(const U &key) const {
 			if constexpr (Fallible) {
 				auto v = _set.template at_alt<U>(key);
 
@@ -197,8 +197,8 @@ namespace kfxx {
 		}
 
 		struct Iterator {
-			typename SetType::Iterator _iterator;
-			PBOS_FORCEINLINE Iterator(typename SetType::Iterator &&iterator_in) : _iterator(iterator_in) {
+			typename set_t::Iterator _iterator;
+			PBOS_FORCEINLINE Iterator(typename set_t::Iterator &&iterator_in) : _iterator(iterator_in) {
 			}
 			Iterator(const Iterator &rhs) = default;
 			Iterator(Iterator &&rhs) = default;
@@ -331,35 +331,35 @@ namespace kfxx {
 		};
 
 		PBOS_FORCEINLINE ConstIterator begin() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->begin());
+			return ConstIterator(const_cast<this_t *>(this)->begin());
 		}
 		PBOS_FORCEINLINE ConstIterator end() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->end());
+			return ConstIterator(const_cast<this_t *>(this)->end());
 		}
 		PBOS_FORCEINLINE ConstIterator begin_const() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->begin());
+			return ConstIterator(const_cast<this_t *>(this)->begin());
 		}
 		PBOS_FORCEINLINE ConstIterator end_const() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->end());
+			return ConstIterator(const_cast<this_t *>(this)->end());
 		}
 		PBOS_FORCEINLINE ConstIterator begin_const_reversed() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->begin_reversed());
+			return ConstIterator(const_cast<this_t *>(this)->begin_reversed());
 		}
 		PBOS_FORCEINLINE ConstIterator end_const_reversed() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->end_reversed());
+			return ConstIterator(const_cast<this_t *>(this)->end_reversed());
 		}
 
 		PBOS_FORCEINLINE ConstIterator find(const K &key) const {
-			return const_cast<ThisType *>(this)->find(key);
+			return const_cast<this_t *>(this)->find(key);
 		}
 
 		template <typename U>
 		PBOS_FORCEINLINE ConstIterator find_alt(const U &key) const {
-			return const_cast<ThisType *>(this)->template find_alt<U>(key);
+			return const_cast<this_t *>(this)->template find_alt<U>(key);
 		}
 
 		PBOS_FORCEINLINE Iterator find(const K &key) {
-			return Iterator(_set.find(QueryPair(&key)));
+			return Iterator(_set.find(query_pair_t(&key)));
 		}
 
 		template <typename U>
@@ -368,16 +368,16 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE ConstIterator find_max_lteq(const K &key) const {
-			return const_cast<ThisType *>(this)->find_max_lteq(key);
+			return const_cast<this_t *>(this)->find_max_lteq(key);
 		}
 
 		template <typename U>
 		PBOS_FORCEINLINE ConstIterator find_max_lteq_alt(const U &key) const {
-			return const_cast<ThisType *>(this)->find_max_lteq_alt<U>(key);
+			return const_cast<this_t *>(this)->find_max_lteq_alt<U>(key);
 		}
 
 		PBOS_FORCEINLINE Iterator find_max_lteq(const K &key) {
-			return Iterator(_set.find_max_lteq(QueryPair(&key)));
+			return Iterator(_set.find_max_lteq(query_pair_t(&key)));
 		}
 
 		template <typename U>
@@ -386,7 +386,7 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE kfxx::option_t<std::pair<K, V>> remove(const Iterator &iterator) {
-			kfxx::option_t<Pair> pair = _set.remove(iterator._iterator);
+			kfxx::option_t<pair_t> pair = _set.remove(iterator._iterator);
 			if (pair.has_value()) {
 				assert(((*pair).key_constructed && (*pair).value_constructed) ||
 					   ((!(*pair).key_constructed) && (!(*pair).key_constructed)));

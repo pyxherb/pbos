@@ -60,13 +60,13 @@ set(C_STANDARD 99)
 find_program(CMAKE_C_COMPILER NAMES gcc clang REQUIRED)
 set(CMAKE_C_COMPILER_TARGET x86_64-elf)
 
-set(CMAKE_C_FLAGS "-fvisibility=hidden -m64 -fno-stack-protector -mno-stack-arg-probe -mno-red-zone -mno-mmx -mno-sse -fno-builtin -ffreestanding")
+set(CMAKE_C_FLAGS "-fvisibility=hidden -m64 -fno-stack-protector -mno-stack-arg-probe -mno-red-zone -mno-mmx -mno-sse -fno-builtin -ffreestanding -fPIE")
 set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_C_FLAGS_RELWITHDBGINFO "-O2 -g")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 set(CMAKE_C_FLAGS_MINSIZEREL "-Os")
 
-set(CMAKE_C_LINK_FLAGS "-m elf_x86_64")
+set(CMAKE_C_LINK_FLAGS "-m elf_x86_64 -pie")
 set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> <CMAKE_C_LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
 
 #
@@ -78,13 +78,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_program(CMAKE_CXX_COMPILER NAMES g++ clang++ REQUIRED)
 set(CMAKE_CXX_COMPILER_TARGET x86_64-elf)
 
-set(CMAKE_CXX_FLAGS "-fvisibility=hidden -m64 -fno-stack-protector -fno-exceptions -fno-rtti -fno-use-cxa-atexit -mno-stack-arg-probe -mno-red-zone -mno-mmx -mno-sse -fno-builtin -ffreestanding")
+set(CMAKE_CXX_FLAGS "-fvisibility=hidden -m64 -fno-stack-protector -fno-exceptions -fno-rtti -fno-use-cxa-atexit -mno-stack-arg-probe -mno-red-zone -mno-mmx -mno-sse -fno-builtin -ffreestanding -fPIE")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELWITHDBGINFO "-O2 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 set(CMAKE_CXX_FLAGS_MINSIZEREL "-Os")
 
-set(CMAKE_CXX_LINK_FLAGS "-m elf_x86_64")
+set(CMAKE_CXX_LINK_FLAGS "-m elf_x86_64 -pie")
 set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> <CMAKE_CXX_LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
 
 #
@@ -94,7 +94,7 @@ find_program(CMAKE_ASM_COMPILER NAMES as clang gcc REQUIRED)
 set(CMAKE_ASM_COMPILER_TARGET x86_64-elf)
 
 if (${CMAKE_ASM_COMPILER} STREQUAL CMAKE_C_COMPILER)
-    set(CMAKE_ASM_FLAGS "-m64 -fno-builtin -ffreestanding")
+    set(CMAKE_ASM_FLAGS "-m64 -fno-builtin -ffreestanding -fPIE")
 else()
     set(CMAKE_ASM_FLAGS "-march=x86_64")
 endif()
@@ -103,7 +103,7 @@ set(CMAKE_ASM_FLAGS_RELWITHDBGINFO "-O2 -g")
 set(CMAKE_ASM_FLAGS_RELEASE "-O2")
 set(CMAKE_ASM_FLAGS_MINSIZEREL "-Os")
 
-set(CMAKE_ASM_LINK_FLAGS "-m elf_x86_64")
+set(CMAKE_ASM_LINK_FLAGS "-m elf_x86_64 -pie")
 set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> <CMAKE_ASM_LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
 
 if(CMAKE_HOST_WIN32)

@@ -10,6 +10,8 @@ PHDRS
     text PT_LOAD;
     rodata PT_LOAD;
 	dynsym PT_DYNAMIC;
+	dynsym_rodata PT_LOAD;
+	dynstr_rodata PT_LOAD;
     data PT_LOAD;
 }
 
@@ -52,15 +54,16 @@ SECTIONS
 
 	.dynamic :
 	{
-		KI_EXPORTED_SYMBOLS_BEGIN = .;
 		*(.dynamic)
 		*(.dynamic.*)
 	} :dynsym
 	.dynsym :
 	{
+		KI_EXPORTED_SYMBOLS_BEGIN = .;
 		*(.dynsym)
 		*(.dynsym.*)
-	} :dynsym
+		KI_EXPORTED_SYMBOLS_END = .;
+	} :dynsym :dynsym_rodata
 	.rela :
 	{
 		*(.rela)
@@ -68,9 +71,11 @@ SECTIONS
 	} :dynsym
 	.dynstr :
 	{
+		KI_EXPORTED_SYMBOL_NAMES_BEGIN = .;
 		*(.dynstr)
 		*(.dynstr.*)
-	} :dynsym
+		KI_EXPORTED_SYMBOL_NAMES_END = .;
+	} :dynsym :dynstr_rodata
 	.hash :
 	{
 		*(.hash)
@@ -81,7 +86,6 @@ SECTIONS
 		*(.gnu.hash)
 		*(.gnu.hash.*)
 	} :dynsym
-	KI_EXPORTED_SYMBOLS_BEGIN = .;
 
 	. = ALIGN(CONSTANT(MAXPAGESIZE));
 

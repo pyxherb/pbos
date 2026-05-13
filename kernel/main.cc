@@ -2,18 +2,20 @@
 #include <pbos/hal/irq.h>
 #include <pbos/kd/logger.h>
 #include <pbos/km/panic.h>
+#include <pbos/kfxx/map.hh>
 #include <pbos/kh/acpi/misc.hh>
 #include <pbos/kh/initcar.hh>
 #include <pbos/kh/mm/init.hh>
 #include <pbos/kh/mp/init.hh>
-#include <pbos/ki/ps/exec.hh>
 #include <pbos/ki/fs/fs.hh>
 #include <pbos/ki/km/proc.hh>
 #include <pbos/ki/km/symbol.hh>
+#include <pbos/ki/ps/exec.hh>
 
 PBOS_EXTERN_C_BEGIN
 
-extern const ki_syment_t KI_EXPORTED_SYMBOLS_BEGIN[], KI_EXPORTED_SYMBOLS_END[];
+extern const Elf64_Sym KI_EXPORTED_SYMBOLS_BEGIN[], KI_EXPORTED_SYMBOLS_END[];
+extern const char KI_EXPORTED_SYMBOL_NAMES_BEGIN[], KI_EXPORTED_SYMBOL_NAMES_END[];
 
 typedef void (*ki_ctor_t)();
 typedef void (*ki_dtor_t)();
@@ -79,6 +81,22 @@ PBOS_NORETURN void kernel_main() {
 	/*for (const ki_syment_t *i = KI_EXPORTED_SYMBOLS_BEGIN; i < KI_EXPORTED_SYMBOLS_END; ++i) {
 		dbg_printf("Found image symbol: %s\n", i->name);
 	}*/
+
+	kd_println("kernel", "Scanning for kernel symbols...");
+	{
+		for (const Elf64_Sym *i = KI_EXPORTED_SYMBOLS_BEGIN; i != KI_EXPORTED_SYMBOLS_END; ++i) {
+			uint8_t bind = ELF64_ST_BIND(i->st_info);
+
+			if (bind == STB_GLOBAL) {
+				kfxx::string_view name = kfxx::string_view(KI_EXPORTED_SYMBOL_NAMES_BEGIN + i->st_name);
+
+				kd_println("kernel", "Found global symbol: %s -> %p", name.data(), (void *)i->st_value);
+
+				// TODO: Handle value when ASLR enabled...
+			}
+		}
+	}
+	kd_println("kernel", "Symbol scanning completed");
 
 	kh_initcar_init();
 

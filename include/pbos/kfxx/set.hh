@@ -26,7 +26,7 @@ namespace kfxx {
 
 		using node_t = typename tree_t::node_t;
 
-		PBOS_FORCEINLINE _set_impl(allocator_t *allocator, Comparator &&comparator = {}) : _tree(std::move(comparator)) {
+		PBOS_FORCEINLINE _set_impl(allocator_t *allocator, Comparator &&comparator = {}) : _allocator(allocator), _tree(std::move(comparator)) {
 		}
 		PBOS_FORCEINLINE _set_impl(this_t &&rhs) : _tree(std::move(rhs._tree)) {
 		}
@@ -113,13 +113,13 @@ namespace kfxx {
 				if (!node.has_value())
 					return NULL_OPTION;
 
-				assert(node.value());
+				kd_assert(node.value());
 
 				return node.value()->value;
 			} else {
 				auto node = _tree.template find_alt<U>(key);
 
-				assert(node);
+				kd_assert(node);
 
 				return node->rb_value;
 			}
@@ -137,13 +137,13 @@ namespace kfxx {
 				if (!node.has_value())
 					return NULL_OPTION;
 
-				assert(node.value());
+				kd_assert(node.value());
 
 				return node.value()->value;
 			} else {
 				auto node = _tree.template find_alt<U>(key);
 
-				assert(node);
+				kd_assert(node);
 
 				return node->rb_value;
 			}

@@ -48,14 +48,13 @@ namespace kfxx {
 		bool IsThreeway>
 	class _rbtree_impl final : protected _rbtree_base {
 	public:
-		static_assert(std::is_move_assignable_v<T>, "The key must be move-assignable");
-		static_assert(std::is_move_constructible_v<T>, "The key must be move-constructible");
+		static_assert(std::is_move_assignable_v<T> || std::is_move_constructible_v<T>, "The key must be move-assignable or move-constructible");
 		static_assert(std::is_invocable_v<Comparator, T &, T &>, "The type is not comparable with the comparator");
 		struct node_t : public _rbtree_base::node_base {
 			T rb_value;
 
 			node_t() = default;
-			PBOS_FORCEINLINE node_t(T &&rb_value) : rb_value(rb_value) {}
+			PBOS_FORCEINLINE node_t(T &&rb_value) : rb_value(std::move(rb_value)) {}
 		};
 
 		using comparator_type = Comparator;
