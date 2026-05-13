@@ -20,7 +20,7 @@ _fs_file_system_t::~_fs_file_system_t() {
 		kfxx::kernel_allocator()->release(name, name_len, alignof(char));
 }
 
-PBOS_API fs_file_system_t *fs_register_file_system(
+PBOS_API PBOS_API fs_file_system_t *fs_register_file_system(
 	const char *name,
 	size_t name_len,
 	fs_file_system_ops_t *ops,
@@ -48,9 +48,8 @@ PBOS_API fs_file_system_t *fs_register_file_system(
 
 	return fs;
 }
-KI_EXPORT_IMAGE_SYMBOL(fs_register_file_system);
 
-void fs_init() {
+void ki_fs_init() {
 	km_result_t result;
 
 	if (!(fs_rootfs = fs_register_file_system("rootfs", strlen("rootfs"), &ki_rootfs_ops, nullptr)))

@@ -4,5 +4,6 @@
 #include <pbos/common.h>
 
 #define PBOS_API PBOS_EXPORTED
+#define PBOS_PRIVATE
 
 #endif

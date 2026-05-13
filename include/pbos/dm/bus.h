@@ -17,14 +17,14 @@ typedef struct _dm_bus_ops_t {
 	void (*unregister_device)(dm_bus_t *bus, dm_device_t *device);
 } dm_bus_ops_t;
 
-void dm_set_bus_exdata(dm_bus_t *bus, void *exdata);
-void *dm_get_bus_exdata(dm_bus_t *bus);
+PBOS_API void dm_set_bus_exdata(dm_bus_t *bus, void *exdata);
+PBOS_API void *dm_get_bus_exdata(dm_bus_t *bus);
 
-km_result_t dm_register_bus(const char *name, size_t name_len, const dm_bus_ops_t *ops);
-void dm_unregister_bus(dm_bus_t *bus);
+PBOS_API km_result_t dm_register_bus(const char *name, size_t name_len, const dm_bus_ops_t *ops);
+PBOS_API void dm_unregister_bus(dm_bus_t *bus);
 
-km_result_t dm_register_device_to_bus(dm_bus_t *bus, dm_device_t *device);
-void dm_unregister_device_from_bus(dm_device_t *device);
+PBOS_API km_result_t dm_register_device_to_bus(dm_bus_t *bus, dm_device_t *device);
+PBOS_API void dm_unregister_device_from_bus(dm_device_t *device);
 
 PBOS_EXTERN_C_END
 

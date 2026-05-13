@@ -10,7 +10,7 @@ PBOS_EXTERN_C_BEGIN
 ps_kmod_t *ki_ps_kmod_list = nullptr;
 ps::mutex_t ki_ps_kmod_list_mutex;
 
-km_result_t ps_load_kmod(fs_fcb_t *file_fp, ps_kmod_t **kmod_out) {
+PBOS_API km_result_t ps_load_kmod(fs_fcb_t *file_fp, ps_kmod_t **kmod_out) {
 	km_result_t result;
 
 	for (auto it = ki_registered_binldrs.begin(); it != ki_registered_binldrs.end(); ++it) {
@@ -24,9 +24,8 @@ km_result_t ps_load_kmod(fs_fcb_t *file_fp, ps_kmod_t **kmod_out) {
 
 	return KM_RESULT_UNSUPPORTED_EXECFMT;
 }
-KI_EXPORT_IMAGE_SYMBOL(ps_load_kmod);
 
-void ps_remove_kmod(ps_kmod_t *kmod) {
+PBOS_API void ps_remove_kmod(ps_kmod_t *kmod) {
 	ps::mutex_guard g(ki_ps_kmod_list_mutex.c_mutex());
 
 	if (ki_ps_kmod_list == kmod)
@@ -42,9 +41,8 @@ void ps_remove_kmod(ps_kmod_t *kmod) {
 
 	kfxx::destroy_and_release<ps_kmod_t>(kfxx::kernel_allocator(), kmod);
 }
-KI_EXPORT_IMAGE_SYMBOL(ps_remove_kmod);
 
-km_result_t ps_create_kmod(ps_kmod_t **kmod_out) {
+PBOS_API km_result_t ps_create_kmod(ps_kmod_t **kmod_out) {
 	ps_kmod_t *kmod = kfxx::alloc_and_construct<ps_kmod_t>(kfxx::kernel_allocator());
 
 	if (!kmod)
@@ -68,22 +66,19 @@ km_result_t ps_create_kmod(ps_kmod_t **kmod_out) {
 
 	return KM_RESULT_OK;
 }
-KI_EXPORT_IMAGE_SYMBOL(ps_create_kmod);
 
-km_result_t ps_add_section_to_kmod(ps_kmod_t *kmod, void *vaddr, size_t size, ps_kmod_section_t **section_out) {
+PBOS_API km_result_t ps_add_section_to_kmod(ps_kmod_t *kmod, void *vaddr, size_t size, ps_kmod_section_t **section_out) {
 	KM_RETURN_IF_FAILED(ki_ps_alloc_kmod_section(vaddr, size, kmod, section_out));
 	return KM_RESULT_OK;
 }
-KI_EXPORT_IMAGE_SYMBOL(ps_add_section_to_kmod);
 
-void ps_remove_section_from_kmod(ps_kmod_t *kmod, ps_kmod_section_t *section) {
+PBOS_API void ps_remove_section_from_kmod(ps_kmod_t *kmod, ps_kmod_section_t *section) {
 	kd_dbgcheck(kmod, "The kmod for %s must not be empty", __func__);
 	kd_dbgcheck(section, "The section for %s must not be empty", __func__);
 	if (section->parent_mod != kmod)
 		km_panic("Removing section %p with parent %p which is mismatched", section->rb_value, kmod);
 	ki_ps_destroy_kmod_section(section);
 }
-KI_EXPORT_IMAGE_SYMBOL(ps_remove_section_from_kmod);
 
 km_result_t ki_ps_alloc_kmod_section(void *vaddr, size_t size, ps_kmod_t *kmod, ps_kmod_section_t **section_out) {
 	ps_kmod_section_t *section = kfxx::alloc_and_construct<ps_kmod_section_t>(kfxx::kernel_allocator());

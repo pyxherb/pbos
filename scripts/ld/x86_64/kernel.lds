@@ -26,13 +26,13 @@ SECTIONS
 
 	. = ALIGN(CONSTANT(MAXPAGESIZE));
 
-	KI_KCODE_BEGIN = .;
+	HIDDEN(KI_KCODE_BEGIN = .);
 	.text :
 	{
 		*(.text)
 		*(.text.*)
 	} :text
-	KI_KCODE_END = .;
+	HIDDEN(KI_KCODE_END = .);
 
 	. = ALIGN(CONSTANT(MAXPAGESIZE));
 
@@ -59,10 +59,10 @@ SECTIONS
 	} :dynsym
 	.dynsym :
 	{
-		KI_EXPORTED_SYMBOLS_BEGIN = .;
+		HIDDEN(KI_EXPORTED_SYMBOLS_BEGIN = .);
 		*(.dynsym)
 		*(.dynsym.*)
-		KI_EXPORTED_SYMBOLS_END = .;
+		HIDDEN(KI_EXPORTED_SYMBOLS_END = .);
 	} :dynsym :dynsym_rodata
 	.rela :
 	{
@@ -71,10 +71,10 @@ SECTIONS
 	} :dynsym
 	.dynstr :
 	{
-		KI_EXPORTED_SYMBOL_NAMES_BEGIN = .;
+		HIDDEN(KI_EXPORTED_SYMBOL_NAMES_BEGIN = .);
 		*(.dynstr)
 		*(.dynstr.*)
-		KI_EXPORTED_SYMBOL_NAMES_END = .;
+		HIDDEN(KI_EXPORTED_SYMBOL_NAMES_END = .);
 	} :dynsym :dynstr_rodata
 	.hash :
 	{
@@ -99,19 +99,19 @@ SECTIONS
 
 	.init_array :
 	{
-		KI_CTORS_BEGIN = .;
+		HIDDEN(KI_CTORS_BEGIN = .);
 		KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.init_array.*)))
 		KEEP(*(.init_array EXCLUDE_FILE(*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o) .init_array))
 	} :data
-	KI_CTORS_END = .;
+	HIDDEN(KI_CTORS_END = .);
 
 	.fini_array :
 	{
-		KI_DTORS_BEGIN = .;
+		HIDDEN(KI_DTORS_BEGIN = .);
 		KEEP(*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.fini_array.*)))
 		KEEP(*(.fini_array EXCLUDE_FILE(*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o) .fini_array))
 	} :data
-	KI_DTORS_END = .;
+	HIDDEN(KI_DTORS_END = .);
 
 	. = ALIGN(CONSTANT(MAXPAGESIZE));
 

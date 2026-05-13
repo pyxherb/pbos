@@ -9,18 +9,18 @@
 
 class ki_dm_bus_allocator_t : public kfxx::allocator_t {
 public:
-	PBOS_API ki_dm_bus_allocator_t();
-	PBOS_API virtual ~ki_dm_bus_allocator_t();
+	PBOS_PRIVATE ki_dm_bus_allocator_t();
+	PBOS_PRIVATE virtual ~ki_dm_bus_allocator_t();
 
-	PBOS_API virtual size_t inc_ref() noexcept override;
-	PBOS_API virtual size_t dec_ref() noexcept override;
+	PBOS_PRIVATE virtual size_t inc_ref() noexcept override;
+	PBOS_PRIVATE virtual size_t dec_ref() noexcept override;
 
-	PBOS_API virtual void *alloc(size_t size, size_t alignment) noexcept override;
-	PBOS_API virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_API virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_API virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
+	PBOS_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
 
-	PBOS_API virtual void *type_identity() const noexcept override;
+	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
 };
 
 typedef struct _dm_bus_t {

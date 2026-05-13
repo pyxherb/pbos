@@ -26,6 +26,13 @@ add_custom_target(
     DEPENDS pbkrnl pbinit
 )
 
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/kernel.lds.ph.cc
+    COMMAND cmake -E touch ${CMAKE_CURRENT_BINARY_DIR}/kernel.lds.ph.cc
+    DEPENDS "${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/kernel.lds"
+)
+target_sources(pbkrnl PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/kernel.lds.ph.cc)
+
 add_subdirectory("io")
 add_subdirectory("kf")
 add_subdirectory("kfxx")

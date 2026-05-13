@@ -8,7 +8,7 @@ mm_context_t **mm_cur_contexts = nullptr;
 
 ps::mutex_t ki_kernel_mmap_mutex;
 
-km_result_t mm_mmap(mm_context_t *ctxt,
+PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 	void *vaddr,
 	void *paddr,
 	size_t size,
@@ -96,9 +96,8 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 	return KM_RESULT_OK;
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_mmap);
 
-km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
+PBOS_API km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
 	if (!ctxt)
 		return KM_RESULT_INVALID_ARGS;
 	if (!size)
@@ -158,9 +157,8 @@ km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t
 	kh_unmmap(ctxt, aligned_vaddr, aligned_size, flags);
 	return KM_RESULT_OK;
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_unmmap);
 
-PBOS_NODISCARD km_result_t mm_merge_mapped_area(
+PBOS_NODISCARD PBOS_API km_result_t mm_merge_mapped_area(
 	mm_context_t *context,
 	void *vaddr_a,
 	void *vaddr_b) {
@@ -199,9 +197,8 @@ PBOS_NODISCARD km_result_t mm_merge_mapped_area(
 
 	return KM_RESULT_OK;
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_merge_mapped_area);
 
-PBOS_NODISCARD km_result_t mm_split_mapped_area(
+PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
 	mm_context_t *context,
 	void *area_vaddr,
 	void *split_point) {
@@ -243,9 +240,8 @@ PBOS_NODISCARD km_result_t mm_split_mapped_area(
 
 	return KM_RESULT_OK;
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_split_mapped_area);
 
-km_result_t mm_set_page_access(
+PBOS_API km_result_t mm_set_page_access(
 	mm_context_t *context,
 	void *vaddr,
 	size_t size,
@@ -289,9 +285,8 @@ km_result_t mm_set_page_access(
 	kh_set_page_access(context, vaddr, size, access);
 	return KM_RESULT_OK;
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_set_page_access);
 
-void *mm_vmalloc(mm_context_t *context,
+PBOS_API void *mm_vmalloc(mm_context_t *context,
 	const void *minaddr,
 	const void *maxaddr,
 	size_t size,
@@ -324,22 +319,18 @@ void *mm_vmalloc(mm_context_t *context,
 	}
 	return kh_vmalloc(context, minaddr, maxaddr, size, access, flags);
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_vmalloc);
 
-void *mm_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags) {
+PBOS_API void *mm_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags) {
 	return kh_kvmalloc(ctxt, size, access, flags);
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_kvmalloc);
 
-void *mm_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
+PBOS_API void *mm_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
 	return kh_getmap(ctxt, vaddr, pgaccess_out);
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_getmap);
 
-PBOS_NODISCARD km_result_t mm_alloc_context(mm_context_t *cur_context, mm_context_t **new_context_out) {
+PBOS_NODISCARD PBOS_API km_result_t mm_alloc_context(mm_context_t *cur_context, mm_context_t **new_context_out) {
 	return kh_mm_alloc_context(cur_context, new_context_out);
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_alloc_context);
 
 void ki_mm_lock_vmr(mm_context_t *mm_context) {
 	mm_context->vmr_mutex.lock();
@@ -357,7 +348,7 @@ void ki_mm_unlock_area(mm_context_t *mm_context, mm_vmr_t *vmr) {
 	vmr->mutex.unlock();
 }
 
-km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t required_access) {
+PBOS_API km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t required_access) {
 	// io::irq_disable_lock irq_lock;
 	char *p = (char *)PGFLOOR((uintptr_t)ptr);
 
@@ -450,9 +441,8 @@ km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr, size_t 
 
 	return KM_RESULT_OK;
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_probe_and_lock_pages);
 
-km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t size) {
+PBOS_API km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t size) {
 	char *p = (char *)PGFLOOR((uintptr_t)ptr);
 
 	// Overflow is an error.
@@ -514,4 +504,3 @@ km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t size) {
 
 	return KM_RESULT_OK;
 }
-KI_EXPORT_IMAGE_SYMBOL(mm_unlock_pages);

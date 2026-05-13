@@ -22,7 +22,7 @@ typedef struct _fs_file_system_t {
 extern fs_fnode_t *fs_abs_root_dir;
 
 /// @brief Initialize the file system facilities.
-void fs_init();
+void ki_fs_init();
 
 PBOS_EXTERN_C_END
 

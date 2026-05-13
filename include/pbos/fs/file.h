@@ -64,8 +64,8 @@ PBOS_NODISCARD PBOS_API km_result_t fs_create_fcb(
 	fs_fnode_t *file,
 	fs_fcb_t **fcb_out);
 
-void PBOS_API ki_set_fcb_exdata(fs_fcb_t *fcb, void *exdata);
-PBOS_NODISCARD PBOS_API void *ki_get_fcb_exdata(fs_fcb_t *fcb);
+PBOS_API void fs_set_fcb_exdata(fs_fcb_t *fcb, void *exdata);
+PBOS_NODISCARD PBOS_API void *fs_get_fcb_exdata(fs_fcb_t *fcb);
 
 PBOS_NODISCARD PBOS_API km_result_t fs_alloc_file_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out);
 PBOS_NODISCARD PBOS_API km_result_t fs_alloc_dir_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out);

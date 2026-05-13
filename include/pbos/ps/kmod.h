@@ -8,17 +8,17 @@ PBOS_EXTERN_C_BEGIN
 typedef struct _ps_kmod_section_t ps_kmod_section_t;
 typedef struct _ps_kmod_t ps_kmod_t;
 
-km_result_t ps_load_kmod(fs_fcb_t *file_fp, ps_kmod_t **kmod_out);
+PBOS_API km_result_t ps_load_kmod(fs_fcb_t *file_fp, ps_kmod_t **kmod_out);
 ///
 /// @brief Remove and destroy a kernel module.
 ///
 /// @param kmod Kernel module to be removed.
 ///
-void ps_remove_kmod(ps_kmod_t *kmod);
-km_result_t ps_create_kmod(ps_kmod_t **kmod_out);
-km_result_t ps_add_section_to_kmod(ps_kmod_t *kmod, void *vaddr, size_t size, ps_kmod_section_t **section_out);
-km_result_t ps_get_section_of_kmod(ps_kmod_t *kmod, void *vaddr, ps_kmod_section_t **section_out);
-void ps_remove_section_from_kmod(ps_kmod_t *kmod, ps_kmod_section_t *section);
+PBOS_API void ps_remove_kmod(ps_kmod_t *kmod);
+PBOS_API km_result_t ps_create_kmod(ps_kmod_t **kmod_out);
+PBOS_API km_result_t ps_add_section_to_kmod(ps_kmod_t *kmod, void *vaddr, size_t size, ps_kmod_section_t **section_out);
+PBOS_API km_result_t ps_get_section_of_kmod(ps_kmod_t *kmod, void *vaddr, ps_kmod_section_t **section_out);
+PBOS_API void ps_remove_section_from_kmod(ps_kmod_t *kmod, ps_kmod_section_t *section);
 
 PBOS_EXTERN_C_END
 

@@ -1,5 +1,6 @@
 #include <pbos/attribs.h>
 #include <pbos/common.h>
+#include <pbos/syscall/pbcore.h>
 
 PBOS_EXTERN_C_BEGIN
 

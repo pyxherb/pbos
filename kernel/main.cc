@@ -75,7 +75,7 @@ PBOS_NORETURN void kernel_main() {
 
 	mp_main_cpu_init();
 
-	fs_init();
+	ki_fs_init();
 	ki_ps_init();
 
 	/*for (const ki_syment_t *i = KI_EXPORTED_SYMBOLS_BEGIN; i < KI_EXPORTED_SYMBOLS_END; ++i) {
@@ -85,14 +85,14 @@ PBOS_NORETURN void kernel_main() {
 	kd_println("kernel", "Scanning for kernel symbols...");
 	{
 		for (const Elf64_Sym *i = KI_EXPORTED_SYMBOLS_BEGIN; i != KI_EXPORTED_SYMBOLS_END; ++i) {
-			uint8_t bind = ELF64_ST_BIND(i->st_info);
+			uint8_t visibility = ELF64_ST_VISIBILITY(i->st_other);
+			kfxx::string_view name = kfxx::string_view(KI_EXPORTED_SYMBOL_NAMES_BEGIN + i->st_name);
 
-			if (bind == STB_GLOBAL) {
-				kfxx::string_view name = kfxx::string_view(KI_EXPORTED_SYMBOL_NAMES_BEGIN + i->st_name);
-
-				kd_println("kernel", "Found global symbol: %s -> %p", name.data(), (void *)i->st_value);
-
+			if (visibility == STV_DEFAULT) {
+				kd_println("kernel", "Found public symbol: %s -> %p", name.data(), (void *)i->st_value);
 				// TODO: Handle value when ASLR enabled...
+			} else {
+				kd_println("kernel", "Skipped symbol: %s -> %p", name.data(), (void *)i->st_value);
 			}
 		}
 	}

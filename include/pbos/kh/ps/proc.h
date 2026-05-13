@@ -3,6 +3,10 @@
 
 #include <pbos/ps/proc.h>
 
+PBOS_EXTERN_C_BEGIN
+
 void kh_yield_cur_thread();
+
+PBOS_EXTERN_C_END
 
 #endif

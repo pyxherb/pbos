@@ -90,18 +90,16 @@ void ki_dm_destroy_device(dm_device_t *device) {
 	kfxx::destroy_and_release<dm_device_t>(&ki_dm_device_allocator, device);
 }
 
-void dm_ref_device(dm_device_t *device) {
+PBOS_API void dm_ref_device(dm_device_t *device) {
 	kf_atomic_inc_size(&device->ref_count);
 }
-KI_EXPORT_IMAGE_SYMBOL(dm_ref_device);
 
-void dm_unref_device(dm_device_t *device) {
+PBOS_API void dm_unref_device(dm_device_t *device) {
 	if (!kf_atomic_dec_size(&device->ref_count))
 		ki_dm_destroy_device(device);
 }
-KI_EXPORT_IMAGE_SYMBOL(dm_unref_device);
 
-km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device) {
+PBOS_API km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device) {
 	ps::rec_mutex_guard gp(parent->device_mutex.c_mutex()),
 		gd(device->device_mutex.c_mutex());
 
@@ -126,9 +124,8 @@ km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device) {
 
 	return KM_RESULT_OK;
 }
-KI_EXPORT_IMAGE_SYMBOL(dm_link_device);
 
-void dm_unlink_device(dm_device_t *device) {
+PBOS_API void dm_unlink_device(dm_device_t *device) {
 	ps::rec_mutex_guard gp(device->parent_device->device_mutex.c_mutex()),
 		gd(device->device_mutex.c_mutex());
 
@@ -148,14 +145,11 @@ void dm_unlink_device(dm_device_t *device) {
 
 	dm_unref_device(device);
 }
-KI_EXPORT_IMAGE_SYMBOL(dm_unlink_device);
 
-void dm_set_device_exdata(dm_device_t *device, void *exdata) {
+PBOS_API void dm_set_device_exdata(dm_device_t *device, void *exdata) {
 	device->exdata = exdata;
 }
-KI_EXPORT_IMAGE_SYMBOL(dm_set_device_exdata);
 
-void *dm_get_device_exdata(dm_device_t *device) {
+PBOS_API void *dm_get_device_exdata(dm_device_t *device) {
 	return device->exdata;
 }
-KI_EXPORT_IMAGE_SYMBOL(dm_get_device_exdata);
