@@ -5,8 +5,8 @@
 #include "allocator.hh"
 #include "option.hh"
 #include "rbtree.hh"
-#include "scope_guard.hh"
 #include "rcobj.hh"
+#include "scope_guard.hh"
 
 namespace kfxx {
 	template <typename T, typename Comparator, bool Fallible, bool IsThreeway>
@@ -16,7 +16,7 @@ namespace kfxx {
 		using tree_t = std::conditional_t<Fallible, fallible_rbtree_t<T, Comparator, IsThreeway>, rbtree_t<T, Comparator, IsThreeway>>;
 		tree_t _tree;
 		kfxx::rc_object_ptr_t<kfxx::allocator_t> _allocator;
-		using this_t = _set_impl<T, Comparator, Fallible, IsThreeway>;
+		using this_t = kfxx::_set_impl<T, Comparator, Fallible, IsThreeway>;
 
 	public:
 		using remove_result_t = typename std::conditional_t<Fallible, bool, void>;
@@ -26,9 +26,9 @@ namespace kfxx {
 
 		using node_t = typename tree_t::node_t;
 
-		PBOS_FORCEINLINE _set_impl(allocator_t *allocator, Comparator &&comparator = {}) : _allocator(allocator), _tree(std::move(comparator)) {
+		PBOS_FORCEINLINE _set_impl(allocator_t *allocator, Comparator &&comparator = {}) noexcept : _allocator(allocator), _tree(std::move(comparator)) {
 		}
-		PBOS_FORCEINLINE _set_impl(this_t &&rhs) : _tree(std::move(rhs._tree)) {
+		PBOS_FORCEINLINE _set_impl(this_t &&rhs) noexcept : _tree(std::move(rhs._tree)) {
 		}
 		PBOS_FORCEINLINE ~_set_impl() {
 		}
@@ -98,7 +98,9 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE void clear() {
-			_tree.clear();
+			_tree.clear([this](tree_t::node_t *node) {
+				kfxx::destroy_and_release<this_t::node_t>(_allocator.get(), node);
+			});
 		}
 
 		PBOS_FORCEINLINE element_query_result_t at(const T &key) {

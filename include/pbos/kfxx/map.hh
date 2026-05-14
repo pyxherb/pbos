@@ -8,8 +8,8 @@ namespace kfxx {
 	template <typename K, typename V, typename Lt, bool Fallible, bool IsThreeway>
 	class _map_impl final {
 	private:
-		static_assert(std::is_move_constructible_v<K>, "The key must be move-constructible");
-		static_assert(std::is_move_constructible_v<V>, "The value must be move-constructible");
+		// static_assert(std::is_move_constructible_v<K>, "The key must be move-constructible");
+		// static_assert(std::is_move_constructible_v<V>, "The value must be move-constructible");
 		struct pair_t {
 			uninit_t<K> key;
 			uninit_t<V> value;
@@ -401,9 +401,9 @@ namespace kfxx {
 		}
 	};
 
-	template <typename K, typename V, typename Lt = std::less<K>, bool IsThreeway = false>
+	template <typename K, typename V, typename Lt = cmp<K>, bool IsThreeway = true>
 	using map_t = _map_impl<K, V, Lt, false, IsThreeway>;
-	template <typename K, typename V, typename Lt = std::less<K>, bool IsThreeway = false>
+	template <typename K, typename V, typename Lt = fallible_cmp<K>, bool IsThreeway = true>
 	using fallible_map_t = _map_impl<K, V, Lt, true, IsThreeway>;
 }
 

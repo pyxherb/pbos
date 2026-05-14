@@ -29,6 +29,27 @@ km_result_t ps_exec(
 	ps_proc_id_t *pid_out);
 km_result_t ps_register_binldr(kf_uuid_t *uuid, km_binldr_ops_t *binldr);
 
+///
+/// @brief Register a cached read-only data page. The page will be referenced 1 time after successfully registered.
+///
+/// @param paddr Physical address of the page.
+/// @param vaddr Virtual address of the mapped page, used for hashing the content.
+/// @return Result indicating if the operation was performed successfully or any error occured.
+///
+km_result_t ps_register_cached_ro_page(void *paddr, void *allocated_cmp_vpage, void *vaddr);
+km_result_t ps_unregister_cached_ro_page(void *paddr);
+///
+/// @brief Fetch a cached read-only data page.
+///
+/// @param vaddr Virtual address to the page to be queried.
+/// @param allocated_cmp_vpage An virtual page for comparison which should be provided and freed by the caller.
+/// @param paddr_out Address where the physical address of the page with the same content if there is.
+/// @return @c KM_RESULT_OK if found, @c KM_RESULT_NOT_FOUND if not found.
+///
+km_result_t ps_fetch_cached_ro_page(void *vaddr, void *allocated_cmp_vpage, void **paddr_out);
+void ps_ref_cached_ro_page(void *paddr);
+void ps_unref_cached_ro_page(void *paddr);
+
 km_result_t ps_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out);
 km_binproto_t *ps_find_binproto(fs_fcb_t *fcb);
 void ps_unregister_binproto(km_binproto_t *proto);

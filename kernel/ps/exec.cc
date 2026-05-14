@@ -1,6 +1,8 @@
+#include <pbos/kf/hash.h>
 #include <string.h>
 #include <hal/x86_64/proc.hh>
 #include <pbos/hal/irq.hh>
+#include <pbos/kfxx/map.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/kfxx/uuid.hh>
 #include <pbos/ki/ps/exec.hh>
@@ -17,7 +19,7 @@ ps_proc_id_t ki_alloc_proc_id() {
 }
 
 km_result_t ps_register_binldr(kf_uuid_t *uuid, km_binldr_ops_t *binldr) {
-	if(ki_registered_binldrs.find(*uuid))
+	if (ki_registered_binldrs.find(*uuid))
 		return KM_RESULT_EXISTED;
 	ki_binldr_registry_t *reg = kfxx::alloc_and_construct<ki_binldr_registry_t>(kfxx::kernel_allocator());
 	if (!reg)
@@ -84,6 +86,35 @@ km_result_t ps_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
 	*proto_out = proto;
 
 	return KM_RESULT_OK;
+}
+
+kfxx::map_t<uint64_t, kfxx::set_t<void *>> ki_cached_ro_pages_hash_map;
+// TODO: Add a R/W lock for the hash map.
+
+km_result_t ps_register_cached_ro_page(void *paddr, void *allocated_cmp_vpage, void *vaddr) {
+	uint64_t hash_code = kf_djb_hash64((const char *)vaddr, PAGESIZE);
+
+	if(auto it = ki_cached_ro_pages_hash_map.find(hash_code); it != ki_cached_ro_pages_hash_map.end()) {
+		// TODO: Implement this...
+	}
+
+	return KM_RESULT_OK;
+}
+
+km_result_t ps_fetch_cached_ro_page(void *vaddr, void *allocated_cmp_vpage, void **paddr_out) {
+	uint64_t hash_code = kf_djb_hash64((const char *)vaddr, PAGESIZE);
+
+	if(auto it = ki_cached_ro_pages_hash_map.find(hash_code); it != ki_cached_ro_pages_hash_map.end()) {
+		// TODO: Implement this...
+	}
+
+	return KM_RESULT_OK;
+}
+
+void ps_ref_cached_ro_page(void *paddr) {
+}
+
+void ps_unref_cached_ro_page(void *paddr) {
 }
 
 km_binproto_t *ps_find_binproto(fs_fcb_t *fcb) {

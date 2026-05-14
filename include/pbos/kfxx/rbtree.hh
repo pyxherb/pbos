@@ -86,16 +86,16 @@ namespace kfxx {
 
 						if ((result = _comparator(i->rb_value, key)).has_value()) {
 							if (result.value()) {
-	#ifndef NDEBUG
+#ifndef NDEBUG
 								if ((result = _comparator(key, i->rb_value)).has_value()) {
 									kd_assert(!result.value());
 									i = (node_t *)i->r;
 								} else {
 									return NULL_OPTION;
 								}
-	#else
+#else
 								i = (node_t *)i->r;
-	#endif
+#endif
 							} else if ((result = _comparator(key, i->rb_value)).has_value()) {
 								if (result.value()) {
 									i = (node_t *)i->l;
@@ -155,16 +155,16 @@ namespace kfxx {
 
 						if ((result = _comparator(static_cast<node_t *>(*i)->rb_value, key)).has_value()) {
 							if (result.value()) {
-	#ifndef NDEBUG
+#ifndef NDEBUG
 								if ((result = _comparator(key, static_cast<node_t *>(*i)->rb_value)).has_value()) {
 									kd_assert(!result.value());
 									i = &(*i)->r;
 								} else {
 									return nullptr;
 								}
-	#else
+#else
 								i = (node_base **)&(*i)->r;
-	#endif
+#endif
 							} else if ((result = _comparator(key, static_cast<node_t *>(*i)->rb_value)).has_value()) {
 								if (result.value()) {
 									i = &(*i)->l;
@@ -305,17 +305,17 @@ namespace kfxx {
 
 						if ((result = _comparator(cur_node->rb_value, data)).has_value()) {
 							if (result.value()) {
-	#ifndef NDEBUG
+#ifndef NDEBUG
 								if ((result = _comparator(data, cur_node->rb_value)).has_value()) {
 									kd_assert(!result.value());
 									cur_node = (node_t *)cur_node->r;
 								} else {
 									return NULL_OPTION;
 								}
-	#else
+#else
 								max_node = cur_node;
 								cur_node = (node_t *)cur_node->r;
-	#endif
+#endif
 							} else if ((result = _comparator(data, cur_node->rb_value)).has_value()) {
 								if (result.value()) {
 									cur_node = (node_t *)cur_node->l;
@@ -441,7 +441,9 @@ namespace kfxx {
 
 		typedef void (*node_deleter_t)(node_t *node);
 
-		PBOS_FORCEINLINE void clear(node_deleter_t deleter) {
+		template <typename D>
+		PBOS_FORCEINLINE void clear(D &&deleter) {
+			auto d = std::move(deleter);
 			if (_root) {
 				node_t *node = (node_t *)_root;
 				node_t *max_node = (node_t *)_get_max_node(node);
@@ -457,12 +459,12 @@ namespace kfxx {
 						while (cur_node->p && (cur_node == cur_node->p->r)) {
 							node_to_delete = cur_node;
 							cur_node = (node_t *)cur_node->p;
-							deleter(node_to_delete);
+							d(node_to_delete);
 						}
 
 						node_to_delete = cur_node;
 						cur_node = (node_t *)cur_node->p;
-						deleter(node_to_delete);
+						d(node_to_delete);
 					}
 				}
 				_root = nullptr;
