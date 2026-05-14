@@ -11,22 +11,36 @@
 PBOS_EXTERN_C_BEGIN
 
 enum {
+	/// @brief Physical memory type that is available for common storage purposes.
 	MM_PHYSICAL_MEMORY_TYPE_AVAILABLE = 0,
+	/// @brief Physical memory type that is reserved for hardwares.
 	MM_PHYSICAL_MEMORY_TYPE_HARDWARE,
+	/// @brief Physical memory type that is critical to the system and thus to be reserved.
 	MM_PHYSICAL_MEMORY_TYPE_CRITICAL,
+	/// @brief Physical memory type that contains data used during system startup.
 	MM_PHYSICAL_MEMORY_TYPE_BOOTDATA,
+	/// @brief Physical memory type for defective memory regions.
 	MM_PHYSICAL_MEMORY_TYPE_BAD,
+	/// @brief Physical memory type for reserved hibernation memory.
 	MM_PHYSICAL_MEMORY_TYPE_HIBERNATION,
+	/// @brief Physical memory type for ACPI reserved memory.
 	MM_PHYSICAL_MEMORY_TYPE_ACPI
 };
 
-#define MM_PAGE_MAPPED 0x01	  // Mapped
-#define MM_PAGE_READ 0x02	  // Read
-#define MM_PAGE_WRITE 0x04	  // Write
-#define MM_PAGE_EXEC 0x08	  // Execute
-#define MM_PAGE_NOCACHE 0x10  // Non-cached
-#define MM_PAGE_USER 0x20	  // User
+/// @brief The page is mapped.
+#define MM_PAGE_MAPPED 0x01
+/// @brief The page can be read.
+#define MM_PAGE_READ 0x02
+/// @brief The page can be written.
+#define MM_PAGE_WRITE 0x04
+/// @brief The page can be executed.
+#define MM_PAGE_EXEC 0x08
+/// @brief The page should not be cached.
+#define MM_PAGE_NOCACHE 0x10
+/// @brief The page can be accessed by the user.
+#define MM_PAGE_USER 0x20
 
+/// @brief Type used for representing access mode of a page.
 typedef uint32_t mm_pgaccess_t;
 
 typedef struct _mm_vmr_t mm_vmr_t;
@@ -75,8 +89,24 @@ void mm_refpg(void *ptr);
 ///
 PBOS_NODISCARD PBOS_API void *mm_kalloc(size_t size, size_t alignment);
 
+///
+/// @brief Reallocated an allocated memory block.
+///
+/// @param old_ptr Pointer to the old block.
+/// @param size Wanted size of the new block.
+/// @param alignment Alignment of the new block./
+/// @return Pointer to newly allocated block, or @c NULL will be returned if failed (the old block will be kept).
+///
 PBOS_NODISCARD PBOS_API void *mm_krealloc(void *old_ptr, size_t size, size_t alignment);
 
+///
+/// @brief Reallocated an allocated memory block in place (does not change the address).
+///
+/// @param old_ptr Pointer to the old block.
+/// @param size Wanted size of the new block.
+/// @param alignment Alignment of the new block./
+/// @return Pointer to the resized block, or @c NULL will be returned if failed (the content will be kept).
+///
 PBOS_NODISCARD PBOS_API void *mm_krealloc_in_place(void *old_ptr, size_t size, size_t alignment);
 
 ///

@@ -11,8 +11,6 @@
 typedef uint32_t se_uid_t;
 typedef uint32_t se_gid_t;
 
-typedef struct _se_gmember_iterator_t se_gmember_iterator_t;
-
-se_gid_t se_groupof(se_uid_t uid);
+se_gid_t se_group_of_user(se_uid_t uid);
 
 #endif

@@ -4,4 +4,8 @@
 #include <pbos/se/user.h>
 #include <pbos/kf/rbtree.h>
 
+typedef struct _se_psc_t {
+	se_uid_t owner_uid;
+} se_psc_t;
+
 #endif

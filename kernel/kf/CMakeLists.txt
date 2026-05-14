@@ -1,6 +1,6 @@
 file(GLOB SRC *.h *.hh *.c *.cc *.S)
 target_sources(pbkrnl PRIVATE ${SRC})
 
-if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "i386")
-    add_subdirectory("i386")
+if (IS_DIRECTORY "./${CMAKE_SYSTEM_PROCESSOR}")
+    add_subdirectory("./${CMAKE_SYSTEM_PROCESSOR}")
 endif()

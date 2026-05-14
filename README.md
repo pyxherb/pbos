@@ -6,6 +6,13 @@ PbOS stands for Paging-based Operating System.
 
 ## Building
 
+To build PbOS, you should first set the `PBOS_ARCH` and `PBOS_TRIPLET` environment variables like following:
+
+```sh
+export PBOS_ARCH=x86_64
+export PBOS_TRIPLET=x86_64-pc
+```
+
 ### Windows
 
 To build PbOS on Windows, you will need:

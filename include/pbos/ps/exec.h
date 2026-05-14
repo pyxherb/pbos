@@ -36,7 +36,7 @@ void ps_unregister_binproto(km_binproto_t *proto);
 /// @brief Add a segment to a binproto.
 ///
 /// @param proto binproto to be operated.
-/// @param vaddr_base Base virtual address to the segment, must be page-aligned, or `KM_RESULT_INVALID_ARGS` will be returned.
+/// @param vaddr_base Base virtual address to the segment, must be page-aligned, or @c KM_RESULT_INVALID_ARGS will be returned.
 /// @param size Size of the segment.
 /// @param pgaccess Page access to be applied to the segment.
 /// @return KM_RESULT_INVALID_ARGS If the arguments are invalid.
