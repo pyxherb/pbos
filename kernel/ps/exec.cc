@@ -9,6 +9,88 @@
 
 PBOS_EXTERN_C_BEGIN
 
+ki_ps_cached_ro_pages_buckets_allocator_t::ki_ps_cached_ro_pages_buckets_allocator_t() {
+}
+
+ki_ps_cached_ro_pages_buckets_allocator_t::~ki_ps_cached_ro_pages_buckets_allocator_t() {
+}
+
+size_t ki_ps_cached_ro_pages_buckets_allocator_t::inc_ref() noexcept {
+	return 0;
+}
+
+size_t ki_ps_cached_ro_pages_buckets_allocator_t::dec_ref() noexcept {
+	return 0;
+}
+
+void *ki_ps_cached_ro_pages_buckets_allocator_t::alloc(size_t size, size_t alignment) noexcept {
+	return mm_kalloc(size, alignment);
+}
+
+void *ki_ps_cached_ro_pages_buckets_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
+	// TODO: Implement mm_krealloc and rewrite this with it.
+	return mm_krealloc(ptr, new_size, new_alignment);
+}
+
+void *ki_ps_cached_ro_pages_buckets_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
+	// TODO: Implement mm_krealloc and rewrite this with it.
+	// return mm_krealloc(ptr, new_size, new_alignment);
+	return nullptr;
+}
+
+void ki_ps_cached_ro_pages_buckets_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {
+	mm_kfree(ptr);
+}
+
+int ki_ps_cached_ro_pages_buckets_allocator_identity;
+
+void *ki_ps_cached_ro_pages_buckets_allocator_t::type_identity() const noexcept {
+	return &ki_ps_cached_ro_pages_buckets_allocator_identity;
+}
+
+ki_ps_cached_ro_pages_buckets_allocator_t ki_ps_cached_ro_pages_buckets_allocator;
+
+ki_ps_cached_ro_pages_registry_allocator_t::ki_ps_cached_ro_pages_registry_allocator_t() {
+}
+
+ki_ps_cached_ro_pages_registry_allocator_t::~ki_ps_cached_ro_pages_registry_allocator_t() {
+}
+
+size_t ki_ps_cached_ro_pages_registry_allocator_t::inc_ref() noexcept {
+	return 0;
+}
+
+size_t ki_ps_cached_ro_pages_registry_allocator_t::dec_ref() noexcept {
+	return 0;
+}
+
+void *ki_ps_cached_ro_pages_registry_allocator_t::alloc(size_t size, size_t alignment) noexcept {
+	return mm_kalloc(size, alignment);
+}
+
+void *ki_ps_cached_ro_pages_registry_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
+	// TODO: Implement mm_krealloc and rewrite this with it.
+	return mm_krealloc(ptr, new_size, new_alignment);
+}
+
+void *ki_ps_cached_ro_pages_registry_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
+	// TODO: Implement mm_krealloc and rewrite this with it.
+	// return mm_krealloc(ptr, new_size, new_alignment);
+	return nullptr;
+}
+
+void ki_ps_cached_ro_pages_registry_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {
+	mm_kfree(ptr);
+}
+
+int ki_ps_cached_ro_pages_registry_allocator_identity;
+
+void *ki_ps_cached_ro_pages_registry_allocator_t::type_identity() const noexcept {
+	return &ki_ps_cached_ro_pages_registry_allocator_identity;
+}
+
+ki_ps_cached_ro_pages_registry_allocator_t ki_ps_cached_ro_pages_registry_allocator;
+
 kfxx::rbtree_t<kf_uuid_t> ki_registered_binldrs;
 kfxx::rbtree_t<fs_fcb_t *> ki_registered_binprotos;
 
@@ -88,13 +170,18 @@ km_result_t ps_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
 	return KM_RESULT_OK;
 }
 
-kfxx::map_t<uint64_t, kfxx::set_t<void *>> ki_cached_ro_pages_hash_map;
-// TODO: Add a R/W lock for the hash map.
+typedef struct _ki_cached_ro_page_registry : public kfxx::rbtree_t<void *>::node_t {
+	size_t ref_count = 0;
+} ki_cached_ro_page_registry;
+
+kfxx::map_t<uint64_t, kfxx::rbtree_t<void *>> ki_cached_ro_pages_hash_map(&ki_ps_cached_ro_pages_buckets_allocator);
+kfxx::map_t<void *, uint64_t> ki_cached_ro_pages_paddr_to_hash_map(&ki_ps_cached_ro_pages_buckets_allocator);
+// TODO: Add a read/write lock for the hash map.
 
 km_result_t ps_register_cached_ro_page(void *paddr, void *allocated_cmp_vpage, void *vaddr) {
 	uint64_t hash_code = kf_djb_hash64((const char *)vaddr, PAGESIZE);
 
-	if(auto it = ki_cached_ro_pages_hash_map.find(hash_code); it != ki_cached_ro_pages_hash_map.end()) {
+	if (auto it = ki_cached_ro_pages_hash_map.find(hash_code); it != ki_cached_ro_pages_hash_map.end()) {
 		// TODO: Implement this...
 	}
 
@@ -104,7 +191,7 @@ km_result_t ps_register_cached_ro_page(void *paddr, void *allocated_cmp_vpage, v
 km_result_t ps_fetch_cached_ro_page(void *vaddr, void *allocated_cmp_vpage, void **paddr_out) {
 	uint64_t hash_code = kf_djb_hash64((const char *)vaddr, PAGESIZE);
 
-	if(auto it = ki_cached_ro_pages_hash_map.find(hash_code); it != ki_cached_ro_pages_hash_map.end()) {
+	if (auto it = ki_cached_ro_pages_hash_map.find(hash_code); it != ki_cached_ro_pages_hash_map.end()) {
 		// TODO: Implement this...
 	}
 
@@ -112,9 +199,32 @@ km_result_t ps_fetch_cached_ro_page(void *vaddr, void *allocated_cmp_vpage, void
 }
 
 void ps_ref_cached_ro_page(void *paddr) {
+	if (auto it = ki_cached_ro_pages_paddr_to_hash_map.find(paddr); it != ki_cached_ro_pages_paddr_to_hash_map.end()) {
+		auto &tree = ki_cached_ro_pages_hash_map.at(it.value());
+		auto registry = tree.find(paddr);
+		if (!registry)
+			km_panic("Read-only page registry does not present: %p", paddr);
+
+		kf_atomic_inc_size(&registry->ref_count);
+	} else
+		km_panic("Unreferencing invalid cached read-only page: %p", paddr);
 }
 
 void ps_unref_cached_ro_page(void *paddr) {
+	if (auto it = ki_cached_ro_pages_paddr_to_hash_map.find(paddr); it != ki_cached_ro_pages_paddr_to_hash_map.end()) {
+		auto &tree = ki_cached_ro_pages_hash_map.at(it.value());
+		auto registry = tree.find(paddr);
+		if (!registry)
+			km_panic("Read-only page registry does not present: %p", paddr);
+
+		if (!kf_atomic_dec_size(&registry->ref_count)) {
+			tree.remove(paddr);
+			kfxx::destroy_and_release<ki_cached_ro_page_registry>(&ki_ps_cached_ro_pages_registry_allocator, registry);
+			if (!tree.size())
+				ki_cached_ro_pages_hash_map.remove(it.value());
+		}
+	} else
+		km_panic("Unreferencing invalid cached read-only page: %p", paddr);
 }
 
 km_binproto_t *ps_find_binproto(fs_fcb_t *fcb) {
