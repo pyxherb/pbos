@@ -2,7 +2,7 @@
 #include <string.h>
 #include <emmintrin.h>
 
-void *memset(void *dest, int c, size_t n) {
+FREESTDC_WEAK void *memset(void *dest, int c, size_t n) {
 	c &= 0xff;
 	if (!(n & 0b111)) {
 		uint64_t _c = c;

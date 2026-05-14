@@ -3,7 +3,11 @@
 
 #include <pbos/common.h>
 
-#define PBOS_API PBOS_EXPORTED
+#if PBOS_COMPILING_KERNEL
+	#define PBOS_API PBOS_EXPORTED
+#else
+	#define PBOS_API
+#endif
 #define PBOS_PRIVATE
 
 #endif

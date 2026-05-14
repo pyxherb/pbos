@@ -38,6 +38,7 @@ add_subdirectory("lib")
 include_directories("lib")
 
 add_subdirectory("hal")
+add_subdirectory("modules")
 add_subdirectory("kernel")
 
 add_subdirectory("test")

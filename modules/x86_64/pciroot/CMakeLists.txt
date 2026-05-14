@@ -1,0 +1,8 @@
+file(GLOB SRC *.c *.cc *.h *.S)
+add_executable(pciroot ${SRC})
+target_link_libraries(pciroot PRIVATE pbarch)
+
+get_property(FREESTDC_INCLUDE_DIR GLOBAL PROPERTY FREESTDC_INCLUDE_DIR)
+get_property(FREESTDC_INCLUDE_DIR_CXX GLOBAL PROPERTY FREESTDC_INCLUDE_DIR_CXX)
+target_include_directories(pciroot PRIVATE ${FREESTDC_INCLUDE_DIR})
+target_include_directories(pciroot PRIVATE ${FREESTDC_INCLUDE_DIR_CXX})
