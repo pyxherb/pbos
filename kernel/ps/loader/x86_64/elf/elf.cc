@@ -1,22 +1,24 @@
 #include <arch/x86_64/mlayout.h>
 #include <arch/x86_64/paging.h>
 #include <elf.h>
-#include <pbos/ps/exec.h>
 #include <pbos/fs/file.h>
 #include <pbos/kd/logger.h>
+#include <pbos/ps/exec.h>
+#include <pbos/ps/kmod.h>
 #include <string.h>
 #include <pbos/hal/irq.hh>
+#include <pbos/kfxx/dynarray.hh>
 #include <pbos/kfxx/list.hh>
 #include <pbos/kfxx/scope_guard.hh>
 
 km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp);
 km_result_t ki_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp);
-km_result_t ki_elf_load_kernel_mod(fs_fcb_t *file_fp);
+km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp);
 
 km_binldr_ops_t ki_binldr_elf = {
 	.load_exec = ki_elf_load_exec,
 	.load_mod = ki_elf_load_mod,
-	.load_kmod = ki_elf_load_kernel_mod
+	.load_kmod = ki_elf_load_kmod
 };
 
 km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
@@ -171,7 +173,8 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 
 km_result_t ki_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp) {}
 
-km_result_t ki_elf_load_kernel_mod(fs_fcb_t *file_fp) {
+km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
+	mm_context_t *mm_context = mm_get_cur_context();
 	km_result_t result;
 	size_t off = 0, bytes_read;
 	const size_t page_size = mm_get_page_size();
@@ -197,27 +200,224 @@ km_result_t ki_elf_load_kernel_mod(fs_fcb_t *file_fp) {
 		if (ehdr.e_ident[EI_OSABI] != ELFOSABI_NONE)
 			return KM_RESULT_MALFORMED;
 
-		if (ehdr.e_type != ET_REL)
+		if (ehdr.e_type != ET_DYN)
 			return KM_RESULT_MALFORMED;
 
 		if (ehdr.e_ident[EI_CLASS] != ELFCLASS64)
 			return KM_RESULT_MALFORMED;
 	}
 
-	Elf64_Half shdr_num = ehdr.e_shnum;
-	off += bytes_read;
+	kfxx::DynArray<Elf64_Phdr> loaded_phdrs(kfxx::kernel_allocator());
 
-	for (Elf64_Half i = 0; i < shdr_num; ++i) {
-		Elf64_Shdr sh;
-		if (KM_FAILED(result = fs_read(file_fp, &sh, sizeof(sh), ehdr.e_shoff + ehdr.e_shentsize * i, &bytes_read))) {
-			// TODO: free allocated resources here.
+	Elf64_Half phdr_num = ehdr.e_phnum;
+	if (!loaded_phdrs.resize(phdr_num))
+		return KM_RESULT_NO_MEM;
+
+	for (Elf64_Half i = 0; i < phdr_num; ++i) {
+		// Current program header.
+		if (KM_FAILED(result = fs_read(file_fp, &loaded_phdrs.at(i), sizeof(Elf64_Phdr), ehdr.e_phoff + ehdr.e_phentsize * i, &bytes_read))) {
 			return result;
 		}
+	}
 
-		if (sh.sh_flags & SHF_ALLOC)
-			continue;
+	kfxx::DynArray<Elf64_Dyn> dyn_entries(kfxx::kernel_allocator());
+	size_t max_size = 0;
 
-		if(sh.sh_addralign % page_size)
+	for (auto &i : loaded_phdrs) {
+		switch (i.p_type) {
+			case PT_LOAD: {
+				if (i.p_filesz > i.p_memsz)
+					return KM_RESULT_MALFORMED;
+			}
+			case PT_INTERP:
+				kd_println(__func__, "Trying to load a kernel module with PT_INTERP segments");
+				return KM_RESULT_INVALID_ARGS;
+			case PT_DYNAMIC: {
+				if (!dyn_entries.resize(kfxx::ceil_align_to(i.p_filesz, alignof(Elf64_Dyn)))) {
+					return KM_RESULT_NO_MEM;
+				}
+				if (KM_FAILED(result = fs_read(file_fp, dyn_entries.data(), i.p_filesz, i.p_offset, &bytes_read))) {
+					return result;
+				}
+				break;
+			}
+		}
+
+		size_t seg_max_addr = i.p_vaddr + i.p_memsz;
+		if (seg_max_addr >= max_size)
+			max_size = seg_max_addr;
+	}
+
+	char *vaddr_base = (char *)mm_kvmalloc(mm_context, max_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_EXEC, 0),
+		 *vaddr_limit = vaddr_base + (max_size - 1);
+	if (!vaddr_base)
+		return KM_RESULT_NO_MEM;
+
+	auto check_if_addr_is_inside_valid_region = [vaddr_base, vaddr_limit](const void *vaddr) -> bool {
+		if (((const char *)vaddr >= vaddr_base) && ((const char *)vaddr <= vaddr_limit))
+			return true;
+		return false;
+	};
+
+	size_t mapped_phdr_idx = 0;
+	kfxx::ScopeGuard unmap_guard([mm_context, vaddr_base, &loaded_phdrs, &mapped_phdr_idx]() noexcept {
+		for (size_t j = 0; j < mapped_phdr_idx; ++mapped_phdr_idx) {
+			km_unwrap_result(mm_unmmap(mm_context, vaddr_base + loaded_phdrs.at(j).p_vaddr, 0, 0));
+		}
+	});
+	char *last_vaddr = vaddr_base;
+	while (mapped_phdr_idx < loaded_phdrs.size()) {
+		auto &phdr = loaded_phdrs.at(mapped_phdr_idx);
+		if (phdr.p_type == PT_LOAD) {
+			if (!mm_split_mapped_area(mm_context, last_vaddr, vaddr_base + phdr.p_vaddr)) {
+				return KM_RESULT_NO_MEM;
+			}
+			last_vaddr = vaddr_base + phdr.p_vaddr;
+			++mapped_phdr_idx;
+			memset(last_vaddr, 0, phdr.p_memsz);
+			if (KM_FAILED(result = fs_read(file_fp, last_vaddr, phdr.p_filesz, phdr.p_offset, &bytes_read))) {
+				return result;
+			}
+		}
+	}
+
+	Elf64_Sym *symtab = nullptr;
+	const char *strtab = nullptr;
+	Elf64_Rela *rela = nullptr, *jmprel = nullptr;
+	uint64_t rela_size = 0, jmprel_size = 0;
+	void *init = 0, *fini = 0;
+
+	for (size_t i = 0; i < dyn_entries.size(); ++i) {
+		auto &entry = dyn_entries.at(i);
+
+		if (entry.d_tag == DT_NULL)
+			break;
+		switch (entry.d_tag) {
+			case DT_SYMTAB:
+				symtab = (Elf64_Sym *)(vaddr_base + entry.d_un.d_ptr);
+				break;
+			case DT_STRTAB:
+				strtab = (const char *)(vaddr_base + entry.d_un.d_ptr);
+				break;
+			case DT_RELA:
+				rela = (Elf64_Rela *)(vaddr_base + entry.d_un.d_ptr);
+				break;
+			case DT_RELASZ:
+				rela_size = entry.d_un.d_val;
+				break;
+			case DT_JMPREL:
+				jmprel = (Elf64_Rela *)(vaddr_base + entry.d_un.d_ptr);
+				break;
+			case DT_PLTRELSZ:
+				jmprel_size = entry.d_un.d_val;
+				break;
+			case DT_INIT:
+				init = (vaddr_base + entry.d_un.d_ptr);
+				break;
+			case DT_FINI:
+				fini = (vaddr_base + entry.d_un.d_ptr);
+				break;
+		}
+	}
+
+	if (!symtab)
+		return KM_RESULT_MALFORMED;
+	if (!strtab)
+		return KM_RESULT_MALFORMED;
+
+	if (!check_if_addr_is_inside_valid_region(symtab))
+		return KM_RESULT_MALFORMED;
+	if (!check_if_addr_is_inside_valid_region(strtab))
+		return KM_RESULT_MALFORMED;
+	if (!check_if_addr_is_inside_valid_region(rela))
+		return KM_RESULT_MALFORMED;
+	if (!check_if_addr_is_inside_valid_region(((char *)rela) + rela_size))
+		return KM_RESULT_MALFORMED;
+	if (!check_if_addr_is_inside_valid_region(((char *)jmprel) + jmprel_size))
+		return KM_RESULT_MALFORMED;
+	if (!check_if_addr_is_inside_valid_region(init))
+		return KM_RESULT_MALFORMED;
+	if (!check_if_addr_is_inside_valid_region(fini))
+		return KM_RESULT_MALFORMED;
+
+	if (rela && rela_size) {
+		size_t count = rela_size / sizeof(Elf64_Rela);
+		for (size_t i = 0; i < count; i++) {
+			Elf64_Addr *loc = (Elf64_Addr *)(vaddr_base + rela[i].r_offset);
+
+			if (!check_if_addr_is_inside_valid_region(loc))
+				return KM_RESULT_MALFORMED;
+
+			Elf64_Xword type = ELF64_R_TYPE(rela[i].r_info);
+			Elf64_Xword sym_idx = ELF64_R_SYM(rela[i].r_info);
+
+			switch (type) {
+				case R_X86_64_RELATIVE:
+					// Write relative address
+					*loc = (uint64_t)(vaddr_base + rela[i].r_addend);
+					break;
+
+				case R_X86_64_GLOB_DAT: {
+					// Write GOT.
+					const char *name = strtab + symtab[sym_idx].st_name;
+					void *sym_addr = ps_get_kernel_symbol(name, strlen(name));
+					if (!sym_addr) {
+						kd_println(__func__, "Unresolved symbol: %s", name);
+						return KM_RESULT_UNRESOLVED_SYMBOL;
+					}
+					*loc = (Elf64_Addr)sym_addr + rela[i].r_addend;
+					break;
+				}
+				default:
+					return KM_RESULT_MALFORMED;
+			}
+		}
+	}
+
+	if (jmprel && jmprel_size) {
+		size_t count = jmprel_size / sizeof(Elf64_Rela);
+		for (size_t i = 0; i < count; i++) {
+			Elf64_Addr *loc = (Elf64_Addr *)(vaddr_base + jmprel[i].r_offset);
+
+			if (!check_if_addr_is_inside_valid_region(loc))
+				return KM_RESULT_MALFORMED;
+
+			Elf64_Xword type = ELF64_R_TYPE(jmprel[i].r_info);
+			Elf64_Xword sym_idx = ELF64_R_SYM(jmprel[i].r_info);
+
+			if (type != R_X86_64_JUMP_SLOT)
+				continue;
+
+			{
+				const char *name = strtab + symtab[sym_idx].st_name;
+				void *func = ps_get_kernel_symbol(name, strlen(name));
+				if (!func) {
+					kd_println(__func__, "Unresolved symbol: %s", name);
+					return KM_RESULT_UNRESOLVED_SYMBOL;
+				}
+				*loc = (Elf64_Addr)func + jmprel[i].r_addend;
+			}
+		}
+	}
+
+	// TODO: Do we need to call init and fini?
+
+	/*kfxx::DynArray<Elf64_Shdr> loaded_shdrs(kfxx::kernel_allocator());
+
+	Elf64_Half shdr_num = ehdr.e_shnum;
+	if (!loaded_shdrs.resize(shdr_num))
+		return KM_RESULT_NO_MEM;
+
+	for (Elf64_Half i = 0; i < shdr_num; ++i) {
+		if (KM_FAILED(result = fs_read(file_fp, &loaded_shdrs.at(i), sizeof(Elf64_Shdr), ehdr.e_shoff + ehdr.e_shentsize * i, &bytes_read))) {
+			return result;
+		}
+	}
+
+	for (size_t i = 0; i < loaded_shdrs.size(); ++i) {
+		auto &sh = loaded_shdrs.at(i);
+
+		if (sh.sh_addralign % page_size)
 			return KM_RESULT_MALFORMED;
 
 		mm_pgaccess_t pgaccess = MM_PAGE_MAPPED | MM_PAGE_READ;
@@ -238,7 +438,7 @@ km_result_t ki_elf_load_kernel_mod(fs_fcb_t *file_fp) {
 				break;
 			}
 		}
-	}
+	}*/
 
 	return KM_RESULT_OK;
 }

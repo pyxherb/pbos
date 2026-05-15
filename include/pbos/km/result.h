@@ -25,6 +25,7 @@ typedef enum _km_results {
 	KM_RESULT_UNSUPPORTED_EXECFMT,	  // Unsupport executable format
 	KM_RESULT_ACCESS_VIOLATION,		  // Access violation
 	KM_RESULT_DIR_NOT_EMPTY,		  // Directory is not empty
+	KM_RESULT_UNRESOLVED_SYMBOL,	  // Unresolved symbol
 } km_results;
 
 typedef uint32_t km_result_t;
