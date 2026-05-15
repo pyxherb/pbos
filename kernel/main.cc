@@ -8,7 +8,7 @@
 #include <pbos/kh/mm/init.hh>
 #include <pbos/kh/mp/init.hh>
 #include <pbos/ki/fs/fs.hh>
-#include <pbos/ki/km/proc.hh>
+#include <pbos/ki/ps/proc.hh>
 #include <pbos/ki/km/symbol.hh>
 #include <pbos/ki/ps/exec.hh>
 #include <pbos/ki/ps/kmod.hh>

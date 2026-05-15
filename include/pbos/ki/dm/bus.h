@@ -7,7 +7,7 @@
 #include <pbos/kfxx/hashmap.hh>
 #include <pbos/kfxx/string_view.hh>
 
-class ki_dm_bus_allocator_t : public kfxx::Allocator {
+class ki_dm_bus_allocator_t : public kfxx::Alloc {
 public:
 	PBOS_PRIVATE ki_dm_bus_allocator_t();
 	PBOS_PRIVATE virtual ~ki_dm_bus_allocator_t();

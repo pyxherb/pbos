@@ -88,7 +88,7 @@ extern hn_madpool_t *hn_global_mad_pool_list;
 #define PMAD_FOREACH(i) \
 	for (hn_pmad_t *i = hn_pmad_list; i->type != KN_PMEM_END; ++i)
 
-hn_mad_t *hn_get_mad(pgaddr_t pgaddr);
+hn_mad_t *hn_get_mad(void **pgaddr);
 
 hn_pmad_t *hn_pmad_get(pgaddr_t addr);
 

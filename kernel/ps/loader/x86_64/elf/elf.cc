@@ -22,6 +22,7 @@ km_binldr_ops_t ki_binldr_elf = {
 km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	km_result_t result;
 	size_t off = 0, bytes_read;
+	const size_t page_size = mm_get_page_size();
 
 	ps_tcb_t *tcb = ps_alloc_tcb(proc);
 	if (!tcb)
@@ -87,7 +88,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 
 		char *vaddr = (char *)ph.p_vaddr;
 
-		if (((uintptr_t)vaddr) % PAGESIZE)
+		if (((uintptr_t)vaddr) % page_size)
 			return KM_RESULT_MALFORMED;
 
 		off = ph.p_offset;
@@ -97,7 +98,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 		{
 			void *tmp_pgvaddr;
 
-			tmp_pgvaddr = mm_kvmalloc(cur_context, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_WRITE, 0);
+			tmp_pgvaddr = mm_kvmalloc(cur_context, page_size, MM_PAGE_MAPPED | MM_PAGE_WRITE, 0);
 			if (!tmp_pgvaddr)
 				return KM_RESULT_NO_MEM;
 
@@ -111,12 +112,12 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 				pgaccess |= MM_PAGE_EXEC;
 
 			{
-				kfxx::ScopeGuard unmap_tmp_pgvaddr_guard([cur_context, tmp_pgvaddr]() noexcept {
-					mm_vmfree(cur_context, tmp_pgvaddr, PAGESIZE);
+				kfxx::ScopeGuard unmap_tmp_pgvaddr_guard([cur_context, tmp_pgvaddr, page_size]() noexcept {
+					mm_vmfree(cur_context, tmp_pgvaddr, page_size);
 				});
 
 				// Allocate pages for current segment.
-				for (size_t j = 0; j < ph.p_memsz; j += PAGESIZE) {
+				for (size_t j = 0; j < ph.p_memsz; j += page_size) {
 					void *paddr;
 					if (!(paddr = mm_getmap(target_context, vaddr + j, nullptr))) {
 						paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
@@ -125,23 +126,23 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 							return KM_RESULT_NO_MEM;
 					}
 
-					if (KM_FAILED(result = mm_mmap(target_context, vaddr + j, paddr, PAGESIZE, pgaccess, 0)))
+					if (KM_FAILED(result = mm_mmap(target_context, vaddr + j, paddr, page_size, pgaccess, 0)))
 						return result;
 					if (KM_FAILED(
 							result = mm_mmap(
 								cur_context,
 								tmp_pgvaddr,
 								paddr,
-								PAGESIZE,
+								page_size,
 								MM_PAGE_WRITE | MM_PAGE_MAPPED,
 								0)))
 						return result;
-					memset((void *)tmp_pgvaddr, 0, PAGESIZE);
+					memset((void *)tmp_pgvaddr, 0, page_size);
 					if (j < ph.p_filesz) {
 						if (KM_FAILED(result = fs_read(
 										  file_fp,
 										  tmp_pgvaddr,
-										  PBOS_MIN(ph.p_filesz - j, PAGESIZE),
+										  PBOS_MIN(ph.p_filesz - j, page_size),
 										  off,
 										  &bytes_read))) {
 							// TODO: free allocated resources here.
@@ -173,6 +174,7 @@ km_result_t ki_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp) {}
 km_result_t ki_elf_load_kernel_mod(fs_fcb_t *file_fp) {
 	km_result_t result;
 	size_t off = 0, bytes_read;
+	const size_t page_size = mm_get_page_size();
 
 	Elf64_Ehdr ehdr;
 	if (KM_FAILED(result = fs_read(file_fp, &ehdr, sizeof(ehdr), off, &bytes_read))) {
@@ -215,7 +217,7 @@ km_result_t ki_elf_load_kernel_mod(fs_fcb_t *file_fp) {
 		if (sh.sh_flags & SHF_ALLOC)
 			continue;
 
-		if(sh.sh_addralign % PAGESIZE)
+		if(sh.sh_addralign % page_size)
 			return KM_RESULT_MALFORMED;
 
 		mm_pgaccess_t pgaccess = MM_PAGE_MAPPED | MM_PAGE_READ;

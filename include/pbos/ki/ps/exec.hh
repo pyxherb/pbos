@@ -6,11 +6,11 @@
 #include <pbos/kfxx/uuid.hh>
 #include <pbos/ps/exec.h>
 #include <pbos/kfxx/allocator.hh>
-#include KI_ARCH_MEMCONF_HEADER_PATH
+#include <pbos/ki/mm/context.hh>
 
 PBOS_EXTERN_C_BEGIN
 
-class ki_ps_cached_ro_pages_buckets_allocator_t : public kfxx::Allocator {
+class ki_ps_cached_ro_pages_buckets_allocator_t : public kfxx::Alloc {
 public:
 	PBOS_PRIVATE ki_ps_cached_ro_pages_buckets_allocator_t();
 	PBOS_PRIVATE virtual ~ki_ps_cached_ro_pages_buckets_allocator_t();
@@ -26,7 +26,7 @@ public:
 	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
 };
 
-class ki_ps_cached_ro_pages_registry_allocator_t : public kfxx::Allocator {
+class ki_ps_cached_ro_pages_registry_allocator_t : public kfxx::Alloc {
 public:
 	PBOS_PRIVATE ki_ps_cached_ro_pages_registry_allocator_t();
 	PBOS_PRIVATE virtual ~ki_ps_cached_ro_pages_registry_allocator_t();
@@ -42,11 +42,11 @@ public:
 	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
 };
 
-typedef struct _ki_binldr_registry_t : public kfxx::RBTree<kf_uuid_t>::node_t {
+typedef struct _ki_binldr_registry_t : public kfxx::RBTree<kf_uuid_t>::Node {
 	km_binldr_ops_t ops;
 } ki_binldr_registry_t;
 
-typedef struct _km_binseg_page_desc_t : public kfxx::RBTree<void *>::node_t {
+typedef struct _km_binseg_page_desc_t : public kfxx::RBTree<void *>::Node {
 } km_binseg_page_desc_t;
 
 typedef struct alignas(PAGESIZE) _km_binseg_page_pool_t {
@@ -67,7 +67,7 @@ typedef struct _km_binseg_t {
 	mm_pgaccess_t access;
 } km_binseg_t;
 
-typedef struct _km_binproto_t : public kfxx::RBTree<fs_fcb_t *>::node_t {
+typedef struct _km_binproto_t : public kfxx::RBTree<fs_fcb_t *>::Node {
 	km_binseg_t *segments = nullptr;
 } km_binproto_t;
 

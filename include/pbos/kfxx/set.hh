@@ -15,7 +15,7 @@ namespace kfxx {
 		static_assert(std::is_move_constructible_v<T>, "The element must be move-constructible");
 		using tree_t = std::conditional_t<Fallible, FallibleRBTree<T, Comparator, IsThreeway>, RBTree<T, Comparator, IsThreeway>>;
 		tree_t _tree;
-		kfxx::RcObjectPtr<kfxx::Allocator> _allocator;
+		kfxx::RcObjectPtr<kfxx::Alloc> _allocator;
 		using ThisType = kfxx::SetImpl<T, Comparator, Fallible, IsThreeway>;
 
 	public:
@@ -24,9 +24,9 @@ namespace kfxx {
 		using const_element_query_result_t = typename std::conditional_t<Fallible, Option<const T &>, const T &>;
 		using ContainsResultType = typename std::conditional_t<Fallible, Option<bool>, bool>;
 
-		using node_t = typename tree_t::node_t;
+		using Node = typename tree_t::Node;
 
-		PBOS_FORCEINLINE SetImpl(Allocator *allocator, Comparator &&comparator = {}) noexcept : _allocator(allocator), _tree(std::move(comparator)) {
+		PBOS_FORCEINLINE SetImpl(Alloc *allocator, Comparator &&comparator = {}) noexcept : _allocator(allocator), _tree(std::move(comparator)) {
 		}
 		PBOS_FORCEINLINE SetImpl(ThisType &&rhs) noexcept : _tree(std::move(rhs._tree)) {
 		}
@@ -39,7 +39,7 @@ namespace kfxx {
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool insert(T &&value) {
-			typename tree_t::node_t *node = kfxx::alloc_and_construct<node_t>(allocator(), std::move(value));
+			typename tree_t::Node *node = kfxx::alloc_and_construct<Node>(allocator(), std::move(value));
 
 			if (!_tree.insert(node)) {
 				kfxx::destroy_and_release(allocator(), node);
@@ -81,11 +81,11 @@ namespace kfxx {
 			return _tree.size();
 		}
 
-		PBOS_FORCEINLINE Allocator *allocator() const {
+		PBOS_FORCEINLINE Alloc *allocator() const {
 			return _allocator.get();
 		}
 
-		PBOS_FORCEINLINE void replace_allocator(Allocator *rhs) noexcept {
+		PBOS_FORCEINLINE void replace_allocator(Alloc *rhs) noexcept {
 			_tree.replace_allocator(rhs);
 		}
 
@@ -98,8 +98,8 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE void clear() {
-			_tree.clear([this](tree_t::node_t *node) {
-				kfxx::destroy_and_release<ThisType::node_t>(_allocator.get(), node);
+			_tree.clear([this](tree_t::Node *node) {
+				kfxx::destroy_and_release<ThisType::Node>(_allocator.get(), node);
 			});
 		}
 
@@ -379,8 +379,8 @@ namespace kfxx {
 			return const_cast<ThisType *>(this)->find_max_lteq_alt(key);
 		}
 
-		PBOS_FORCEINLINE void remove(const Iterator &Iterator) {
-			_tree.remove(Iterator._iterator);
+		PBOS_FORCEINLINE void remove(const Iterator &iterator) {
+			_tree.remove(iterator._iterator);
 		}
 	};
 

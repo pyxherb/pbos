@@ -1,5 +1,5 @@
-#ifndef _PBOS_KI_KM_PROC_HH_
-#define _PBOS_KI_KM_PROC_HH_
+#ifndef _PBOS_KI_PS_PROC_HH_
+#define _PBOS_KI_PS_PROC_HH_
 
 #include <pbos/ps/proc.h>
 #include <pbos/ps/sched.h>
@@ -10,14 +10,14 @@
 
 PBOS_EXTERN_C_BEGIN
 
-typedef struct _ps_ufcb_t : public kfxx::RBTree<ps_ufd_t>::node_t {
+typedef struct _ps_ufcb_t : public kfxx::RBTree<ps_ufd_t>::Node {
 	fs_fcb_t *kernel_fcb;
 
 	_ps_ufcb_t() = default;
 	~_ps_ufcb_t() = default;
 } ps_ufcb_t;
 
-typedef struct _ps_tcb_t : public kfxx::RBTree<ps_thread_id_t>::node_t {
+typedef struct _ps_tcb_t : public kfxx::RBTree<ps_thread_id_t>::Node {
 	ps_pcb_t *parent = nullptr;
 
 	uint8_t priority, flags;
@@ -37,7 +37,7 @@ typedef struct _ps_tcb_t : public kfxx::RBTree<ps_thread_id_t>::node_t {
 	~_ps_tcb_t() = default;
 } ps_tcb_t;
 
-typedef struct _ps_pcb_t : kfxx::RBTree<ps_proc_id_t>::node_t {
+typedef struct _ps_pcb_t : kfxx::RBTree<ps_proc_id_t>::Node {
 	ps_thread_id_t last_thread_id;
 	kfxx::RBTree<void *> parp_list;
 	mm_context_t *mm_context;
@@ -77,6 +77,9 @@ void ki_ps_deassoc_page(ps_pcb_t *pcb, void *paddr);
 void ki_switch_to_user_process(ps_pcb_t *pcb);
 PBOS_NORETURN void ki_switch_to_user_thread(ps_tcb_t *tcb);
 PBOS_NORETURN void ki_switch_to_kernel_thread(ps_tcb_t *tcb);
+
+kh_user_context_t *ps_alloc_context();
+void ps_destroy_context(kh_user_context_t *context);
 
 PBOS_EXTERN_C_END
 

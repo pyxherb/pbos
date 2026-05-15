@@ -4,7 +4,7 @@
 #include "kima.hh"
 #include <pbos/ps/mutex.hh>
 
-typedef struct _mm_vmr_t : kfxx::RBTree<void *>::node_t {
+typedef struct _mm_vmr_t : kfxx::RBTree<void *>::Node {
 	size_t size = 0;
 	mm_pgaccess_t access = 0;
 
@@ -26,6 +26,8 @@ typedef struct _mm_context_t {
 	ki_mm_vmr_tree_t vmr_tree;
 
 	ps::RecMutex vmr_mutex;
+
+	_mm_context_t();
 } mm_context_t;
 
 extern mm_context_t **mm_cur_contexts;

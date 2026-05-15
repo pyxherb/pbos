@@ -1,12 +1,22 @@
 #include <pbos/kd/logger.h>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/kh/mm/misc.hh>
-#include <pbos/ki/km/proc.hh>
+#include <pbos/ki/ps/proc.hh>
 #include <pbos/ki/km/symbol.hh>
 
 mm_context_t **mm_cur_contexts = nullptr;
+const ki_paging_config_t *ki_cur_paging_config;
 
 ps::Mutex ki_kernel_mmap_mutex;
+
+_mm_context_t::_mm_context_t() {
+	ki_init_kima_pool(&this->kima_common_pool);
+	ki_init_kima_pool(&this->kima_vmr_pool);
+}
+
+PBOS_PURE PBOS_API size_t mm_get_page_size() {
+	return kh_get_page_size();
+}
 
 PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 	void *vaddr,
@@ -350,6 +360,7 @@ void ki_mm_unlock_area(mm_context_t *mm_context, mm_vmr_t *vmr) {
 
 PBOS_API km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t required_access) {
 	// io::LocalIrqLock irq_lock;
+	const size_t page_size = mm_get_page_size();
 	char *p = (char *)PGFLOOR((uintptr_t)ptr);
 
 	// Overflow is an error.
@@ -370,7 +381,7 @@ PBOS_API km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr
 			return KM_RESULT_ACCESS_VIOLATION;
 		}
 
-		for (size_t i = 0; i < PGCEIL(size); i += PAGESIZE) {
+		for (size_t i = 0; i < PGCEIL(size); i += page_size) {
 			mm_getmap(mm_context, p + i, &pg_access);
 			if ((!(pg_access & MM_PAGE_MAPPED)))
 				return KM_RESULT_ACCESS_VIOLATION;
@@ -443,6 +454,7 @@ PBOS_API km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr
 }
 
 PBOS_API km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t size) {
+	const size_t page_size = mm_get_page_size();
 	char *p = (char *)PGFLOOR((uintptr_t)ptr);
 
 	// Overflow is an error.
@@ -463,7 +475,7 @@ PBOS_API km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t
 			return KM_RESULT_ACCESS_VIOLATION;
 		}
 
-		for (size_t i = 0; i < PGCEIL(size); i += PAGESIZE) {
+		for (size_t i = 0; i < PGCEIL(size); i += page_size) {
 			mm_getmap(mm_context, p + i, &pg_access);
 			// TODO: Unlock the pages...
 		}

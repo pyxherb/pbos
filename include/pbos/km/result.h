@@ -37,10 +37,10 @@ PBOS_FORCEINLINE void km_unwrap_result(km_result_t result) {
 		km_panic("Unwrap failed!");
 }
 
-#define KM_RETURN_IF_FAILED(expr)      \
-	do {                               \
-		km_result_t _ = (expr);        \
-		if (KM_FAILED(expr)) return _; \
+#define KM_RETURN_IF_FAILED(expr)   \
+	do {                            \
+		km_result_t _ = (expr);     \
+		if (KM_FAILED(_)) return _; \
 	} while (false)
 
 #endif

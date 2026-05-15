@@ -79,14 +79,14 @@ namespace kfxx {
 		using ThisType = MapImpl<K, V, Lt, Fallible, IsThreeway>;
 
 	public:
-		using node_t = typename Set::node_t;
+		using Node = typename Set::Node;
 
 		using RemoveResultType = typename Set::RemoveResultType;
 		using element_query_result_t = typename std::conditional_t<Fallible, Option<V &>, V &>;
 		using const_element_query_result_t = typename std::conditional_t<Fallible, Option<const V &>, const V &>;
 		using ContainsResultType = typename Set::ContainsResultType;
 
-		PBOS_FORCEINLINE MapImpl(Allocator *allocator, Lt &&comparator = {}) : _set(allocator, pair_cmp_t(std::move(comparator))) {}
+		PBOS_FORCEINLINE MapImpl(Alloc *allocator, Lt &&comparator = {}) : _set(allocator, pair_cmp_t(std::move(comparator))) {}
 		PBOS_FORCEINLINE MapImpl(ThisType &&rhs) : _set(std::move(rhs._set)) {
 		}
 		PBOS_FORCEINLINE ThisType &operator=(ThisType &&rhs) noexcept {
@@ -172,11 +172,11 @@ namespace kfxx {
 			}
 		}
 
-		PBOS_FORCEINLINE Allocator *allocator() const {
+		PBOS_FORCEINLINE Alloc *allocator() const {
 			return _set.allocator();
 		}
 
-		PBOS_FORCEINLINE void replace_allocator(Allocator *rhs) noexcept {
+		PBOS_FORCEINLINE void replace_allocator(Alloc *rhs) noexcept {
 			_set.replace_allocator(rhs);
 		}
 
@@ -385,8 +385,8 @@ namespace kfxx {
 			return Iterator(_set.template find_max_lteq_alt<U>(key));
 		}
 
-		PBOS_FORCEINLINE kfxx::Option<std::pair<K, V>> remove(const Iterator &Iterator) {
-			kfxx::Option<Pair> pair = _set.remove(Iterator._iterator);
+		PBOS_FORCEINLINE kfxx::Option<std::pair<K, V>> remove(const Iterator &iterator) {
+			kfxx::Option<Pair> pair = _set.remove(iterator._iterator);
 			if (pair.has_value()) {
 				assert(((*pair).key_constructed && (*pair).value_constructed) ||
 					   ((!(*pair).key_constructed) && (!(*pair).key_constructed)));

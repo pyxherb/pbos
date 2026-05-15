@@ -11,15 +11,15 @@ namespace kfxx {
 	template <typename T>
 	class List {
 	public:
-		struct node_t {
-			node_t *prev = nullptr, *next = nullptr;
+		struct Node {
+			Node *prev = nullptr, *next = nullptr;
 			T data;
 
-			PBOS_FORCEINLINE node_t(T &&data) : data(std::move(data)) {
+			PBOS_FORCEINLINE Node(T &&data) : data(std::move(data)) {
 			}
 		};
 
-		using NodeHandle = node_t *;
+		using NodeHandle = Node *;
 
 		static PBOS_FORCEINLINE NodeHandle null_node_handle() {
 			return nullptr;
@@ -28,31 +28,31 @@ namespace kfxx {
 	private:
 		using ThisType = List<T>;
 
-		node_t *_first = nullptr, *_last = nullptr;
+		Node *_first = nullptr, *_last = nullptr;
 		size_t _length = 0;
-		RcObjectPtr<Allocator> _allocator;
+		RcObjectPtr<Alloc> _allocator;
 
-		[[nodiscard]] PBOS_FORCEINLINE node_t *_alloc_node(T &&data) {
-			node_t *node = (node_t *)_allocator->alloc(sizeof(node_t), alignof(node_t));
+		[[nodiscard]] PBOS_FORCEINLINE Node *_alloc_node(T &&data) {
+			Node *node = (Node *)_allocator->alloc(sizeof(Node), alignof(Node));
 			if (!node)
 				return nullptr;
 
 			ScopeGuard ScopeGuard([this, node]() noexcept {
-				_allocator->release(node, sizeof(node_t), alignof(node_t));
+				_allocator->release(node, sizeof(Node), alignof(Node));
 			});
-			construct_at<node_t>(node, std::move(data));
+			construct_at<Node>(node, std::move(data));
 			ScopeGuard.release();
 
 			return node;
 		}
 
-		PBOS_FORCEINLINE void _delete_node(node_t *node) {
-			std::destroy_at<node_t>(node);
+		PBOS_FORCEINLINE void _delete_node(Node *node) {
+			std::destroy_at<Node>(node);
 
-			_allocator->release(node, sizeof(node_t), alignof(node_t));
+			_allocator->release(node, sizeof(Node), alignof(Node));
 		}
 
-		PBOS_FORCEINLINE void _prepend(node_t *dest, node_t *node) noexcept {
+		PBOS_FORCEINLINE void _prepend(Node *dest, Node *node) noexcept {
 			if (dest) {
 				if (dest->prev)
 					dest->prev->next = node;
@@ -71,7 +71,7 @@ namespace kfxx {
 			++_length;
 		}
 
-		PBOS_FORCEINLINE void _append(node_t *dest, node_t *node) noexcept {
+		PBOS_FORCEINLINE void _append(Node *dest, Node *node) noexcept {
 			if (dest) {
 				if (dest->next)
 					dest->next->prev = node;
@@ -90,7 +90,7 @@ namespace kfxx {
 			++_length;
 		}
 
-		PBOS_FORCEINLINE void _remove(node_t *dest) {
+		PBOS_FORCEINLINE void _remove(Node *dest) {
 			kd_assert(dest);
 
 			if (dest == _first) {
@@ -109,7 +109,7 @@ namespace kfxx {
 		}
 
 	public:
-		PBOS_FORCEINLINE List(Allocator *allocator) : _allocator(allocator) {}
+		PBOS_FORCEINLINE List(Alloc *allocator) : _allocator(allocator) {}
 		List(const ThisType &other) = delete;
 		PBOS_FORCEINLINE List(ThisType &&other) : _first(other._first), _last(other._last), _length(other._length), _allocator(std::move(other._allocator)) {
 			other._first = nullptr;
@@ -123,8 +123,8 @@ namespace kfxx {
 		}
 		PBOS_FORCEINLINE ThisType &operator=(const ThisType &other) = delete;
 		PBOS_FORCEINLINE ~List() {
-			for (node_t *i = _first; i != nullptr;) {
-				node_t *next = i->next;
+			for (Node *i = _first; i != nullptr;) {
+				Node *next = i->next;
 
 				_delete_node(i);
 
@@ -153,7 +153,7 @@ namespace kfxx {
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE NodeHandle push_front(T &&data) {
-			node_t *new_node = _alloc_node(std::move(data));
+			Node *new_node = _alloc_node(std::move(data));
 			if (!new_node)
 				return nullptr;
 			_prepend(_first, new_node);
@@ -165,7 +165,7 @@ namespace kfxx {
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE NodeHandle push_back(T &&data) {
-			node_t *new_node = _alloc_node(std::move(data));
+			Node *new_node = _alloc_node(std::move(data));
 			if (!new_node)
 				return nullptr;
 			_append(_last, new_node);
@@ -189,7 +189,7 @@ namespace kfxx {
 			_remove(node);
 		}
 
-		PBOS_FORCEINLINE static node_t *next(NodeHandle cur_node, size_t index) {
+		PBOS_FORCEINLINE static Node *next(NodeHandle cur_node, size_t index) {
 			while (index) {
 				kd_assert(cur_node);
 				cur_node = cur_node->next;
@@ -199,7 +199,7 @@ namespace kfxx {
 			return cur_node;
 		}
 
-		PBOS_FORCEINLINE static node_t *prev(NodeHandle cur_node, size_t index) {
+		PBOS_FORCEINLINE static Node *prev(NodeHandle cur_node, size_t index) {
 			while (index) {
 				kd_assert(cur_node);
 				cur_node = cur_node->prev;
@@ -246,8 +246,8 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE void clear() {
-			for (node_t *i = _first; i;) {
-				node_t *next_node = i->next;
+			for (Node *i = _first; i;) {
+				Node *next_node = i->next;
 
 				_delete_node(i);
 
@@ -263,12 +263,12 @@ namespace kfxx {
 		}
 
 		struct Iterator {
-			node_t *node;
+			Node *node;
 			ThisType *list;
 			IteratorDirection direction;
 
 			PBOS_FORCEINLINE Iterator(
-				node_t *node,
+				Node *node,
 				ThisType *list,
 				IteratorDirection direction)
 				: node(node),
@@ -342,7 +342,7 @@ namespace kfxx {
 				return it;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const node_t *node) const noexcept {
+			PBOS_FORCEINLINE bool operator==(const Node *node) const noexcept {
 				return node == node;
 			}
 
@@ -357,7 +357,7 @@ namespace kfxx {
 				return *this == it;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const node_t *node) const noexcept {
+			PBOS_FORCEINLINE bool operator!=(const Node *node) const noexcept {
 				return node != node;
 			}
 
@@ -411,12 +411,12 @@ namespace kfxx {
 		}
 
 		struct ConstIterator {
-			const node_t *node;
+			const Node *node;
 			const List<T> *list;
 			IteratorDirection direction;
 
 			PBOS_FORCEINLINE ConstIterator(
-				const node_t *node,
+				const Node *node,
 				const List<T> *list,
 				IteratorDirection direction)
 				: node(node),
@@ -509,7 +509,7 @@ namespace kfxx {
 				return it;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const node_t *node) const noexcept {
+			PBOS_FORCEINLINE bool operator==(const Node *node) const noexcept {
 				return node == node;
 			}
 
@@ -524,7 +524,7 @@ namespace kfxx {
 				return *this == it;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const node_t *node) const noexcept {
+			PBOS_FORCEINLINE bool operator!=(const Node *node) const noexcept {
 				return node != node;
 			}
 
@@ -565,13 +565,13 @@ namespace kfxx {
 		};
 
 		PBOS_FORCEINLINE ConstIterator begin_const() const noexcept {
-			return ConstIterator((node_t *)_first, this, IteratorDirection::Forward);
+			return ConstIterator((Node *)_first, this, IteratorDirection::Forward);
 		}
 		PBOS_FORCEINLINE ConstIterator end_const() const noexcept {
 			return ConstIterator(nullptr, this, IteratorDirection::Forward);
 		}
 		PBOS_FORCEINLINE ConstIterator begin_const_reversed() const noexcept {
-			return ConstIterator((node_t *)_last, this, IteratorDirection::Reversed);
+			return ConstIterator((Node *)_last, this, IteratorDirection::Reversed);
 		}
 		PBOS_FORCEINLINE ConstIterator end_const_reversed() const noexcept {
 			return ConstIterator(nullptr, this, IteratorDirection::Reversed);
@@ -584,7 +584,7 @@ namespace kfxx {
 			return end_const();
 		}
 
-		PBOS_FORCEINLINE Allocator *allocator() const {
+		PBOS_FORCEINLINE Alloc *allocator() const {
 			return _allocator.get();
 		}
 	};

@@ -16,12 +16,14 @@ bool kh_acpi_is_required() {
 void kh_acpi_init() {
 	dbg_printf("Initializing ACPI...\n");
 
+	const size_t page_size = mm_get_page_size();
+
 	bool is_acpi_rsdp_direct_mmap = true;
 	if (!(ki_acpi_rsdp_vaddr = (acpi_rsdp_t *)kh_get_direct_mmap(ki_acpi_rsdp_paddr))) {
 		is_acpi_rsdp_direct_mmap = false;
-		if (!(ki_acpi_rsdp_vaddr = (acpi_rsdp_t *)mm_kvmalloc(mm_get_cur_context(), PAGESIZE, MM_PAGE_MAPPED, 0)))
+		if (!(ki_acpi_rsdp_vaddr = (acpi_rsdp_t *)mm_kvmalloc(mm_get_cur_context(), page_size, MM_PAGE_MAPPED, 0)))
 			km_panic("Error allocating virtual memory area for ACPI RSDP");
-		if (KM_FAILED(mm_mmap(mm_get_cur_context(), ki_acpi_rsdp_vaddr, ki_acpi_rsdp_paddr, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
+		if (KM_FAILED(mm_mmap(mm_get_cur_context(), ki_acpi_rsdp_vaddr, ki_acpi_rsdp_paddr, page_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
 			km_panic("Error mapping ACPI RSDP");
 	}
 
@@ -39,7 +41,7 @@ void kh_acpi_init() {
 			rsdt_paddr = (void *)((acpi_xsdp_t *)ki_acpi_rsdp_vaddr)->xsdt_addr;
 			if (!is_acpi_rsdp_direct_mmap) {
 				uint32_t len = ((acpi_xsdp_t *)ki_acpi_rsdp_vaddr)->length;
-				mm_unmmap(mm_get_cur_context(), ki_acpi_rsdp_vaddr, PAGESIZE, 0);
+				mm_unmmap(mm_get_cur_context(), ki_acpi_rsdp_vaddr, page_size, 0);
 				if (!(ki_acpi_rsdp_vaddr = (acpi_rsdp_t *)mm_kvmalloc(mm_get_cur_context(), len, MM_PAGE_MAPPED, 0)))
 					km_panic("Error allocating virtual memory area for ACPI XSDP");
 				if (KM_FAILED(mm_mmap(mm_get_cur_context(), ki_acpi_rsdp_vaddr, ki_acpi_rsdp_paddr, len, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
@@ -56,9 +58,9 @@ void kh_acpi_init() {
 
 	if (!(ki_acpi_rsdt_vaddr = (acpi_sdt_header_t *)kh_get_direct_mmap(rsdt_paddr))) {
 		is_acpi_rsdt_direct_mmap = false;
-		if (!(ki_acpi_rsdt_vaddr = (acpi_sdt_header_t *)mm_kvmalloc(mm_get_cur_context(), PAGESIZE, MM_PAGE_MAPPED, 0)))
+		if (!(ki_acpi_rsdt_vaddr = (acpi_sdt_header_t *)mm_kvmalloc(mm_get_cur_context(), page_size, MM_PAGE_MAPPED, 0)))
 			km_panic("Error allocating virtual memory area for ACPI RSDT");
-		if (KM_FAILED(mm_mmap(mm_get_cur_context(), ki_acpi_rsdt_vaddr, (void *)(uint64_t)ki_acpi_rsdp_vaddr->rsdt_addr, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
+		if (KM_FAILED(mm_mmap(mm_get_cur_context(), ki_acpi_rsdt_vaddr, (void *)(uint64_t)ki_acpi_rsdp_vaddr->rsdt_addr, page_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
 			km_panic("Error mapping ACPI RSDT");
 	}
 
@@ -69,7 +71,7 @@ void kh_acpi_init() {
 
 	if (!is_acpi_rsdt_direct_mmap) {
 		uint32_t len = ki_acpi_rsdt_vaddr->length;
-		mm_unmmap(mm_get_cur_context(), ki_acpi_rsdt_vaddr, PAGESIZE, 0);
+		mm_unmmap(mm_get_cur_context(), ki_acpi_rsdt_vaddr, page_size, 0);
 		if (!(ki_acpi_rsdt_vaddr = (acpi_sdt_header_t *)mm_kvmalloc(mm_get_cur_context(), len, MM_PAGE_MAPPED, 0)))
 			km_panic("Error reallocating virtual memory area for ACPI RSDT");
 		if (KM_FAILED(mm_mmap(mm_get_cur_context(), ki_acpi_rsdt_vaddr, rsdt_paddr, len, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
@@ -96,15 +98,15 @@ void kh_acpi_init() {
 				is_direct_map = false;
 				if (!(vaddr_base = (char *)mm_kvmalloc(mm_get_cur_context(), i, MM_PAGE_READ | MM_PAGE_WRITE, 0)))
 					km_panic("Error mapping ACPI root tables");
-				km_unwrap_result(mm_mmap(mm_get_cur_context(), vaddr_base, paddr, PAGESIZE, MM_PAGE_READ | MM_PAGE_WRITE, 0));
+				km_unwrap_result(mm_mmap(mm_get_cur_context(), vaddr_base, paddr, page_size, MM_PAGE_READ | MM_PAGE_WRITE, 0));
 			}
 
-			size_t off = ((uintptr_t)paddr) % PAGESIZE;
+			size_t off = ((uintptr_t)paddr) % page_size;
 			acpi_sdt_header_t *vaddr = (acpi_sdt_header_t *)(vaddr_base + off);
 
 			if (!(is_direct_map)) {
 				uint32_t len = vaddr->length;
-				mm_unmmap(mm_get_cur_context(), vaddr_base, PAGESIZE, 0);
+				mm_unmmap(mm_get_cur_context(), vaddr_base, page_size, 0);
 				if (!(vaddr_base = (char *)mm_kvmalloc(mm_get_cur_context(), len, MM_PAGE_MAPPED, 0)))
 					km_panic("Error reallocating virtual memory area for ACPI RSDT");
 				if (KM_FAILED(mm_mmap(mm_get_cur_context(), vaddr_base, paddr, len, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))

@@ -3,7 +3,7 @@
 
 #include <pbos/kf/list.h>
 #include <pbos/kf/rbtree.h>
-#include <pbos/ki/km/proc.hh>
+#include <pbos/ki/ps/proc.hh>
 #ifdef __cplusplus
 	#include "mm.hh"
 #else
@@ -41,9 +41,6 @@ extern uint32_t *hn_lapic_vbase;
 extern uint32_t hn_sched_interval;
 
 // #define PS_TCB_SCHEDULED 0x01
-
-kh_user_context_t *ps_alloc_context();
-void ps_destroy_context(kh_user_context_t *context);
 
 void ps_save_context(kh_user_context_t *ctxt);
 PBOS_NORETURN void ps_load_user_context(const kh_user_context_t *ctxt);

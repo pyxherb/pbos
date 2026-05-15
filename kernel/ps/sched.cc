@@ -1,4 +1,4 @@
-#include <pbos/ki/km/proc.hh>
+#include <pbos/ki/ps/proc.hh>
 #include <pbos/ki/km/symbol.hh>
 
 PBOS_API ps_sched_t *ps_get_sched() {

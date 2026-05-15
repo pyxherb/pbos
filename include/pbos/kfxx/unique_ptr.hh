@@ -10,29 +10,29 @@
 
 namespace kfxx {
 	template <typename T>
-	struct KernelAllocatorDeleter {
+	struct KernelAllocDeleter {
 		PBOS_FORCEINLINE void operator()(T *ptr) noexcept {
 			kfxx::destroy_and_release<T>(kfxx::kernel_allocator(), ptr);
 		}
 	};
 
 	template <typename T>
-	struct AllocatorDeleter {
+	struct AllocDeleter {
 	private:
-		RcObjectPtr<Allocator> _allocator;
+		RcObjectPtr<Alloc> _allocator;
 
 	public:
-		PBOS_FORCEINLINE AllocatorDeleter(Allocator *allocator) noexcept : _allocator(allocator) {}
-		PBOS_FORCEINLINE ~AllocatorDeleter() {}
+		PBOS_FORCEINLINE AllocDeleter(Alloc *allocator) noexcept : _allocator(allocator) {}
+		PBOS_FORCEINLINE ~AllocDeleter() {}
 		PBOS_FORCEINLINE void operator()(T *ptr) noexcept {
 			kfxx::destroy_and_release<T>(_allocator, ptr);
 		}
-		PBOS_FORCEINLINE void set_allocator(Allocator *ptr) noexcept {
+		PBOS_FORCEINLINE void set_allocator(Alloc *ptr) noexcept {
 			_allocator = ptr;
 		}
 	};
 
-	template <typename T, typename D = KernelAllocatorDeleter<T>>
+	template <typename T, typename D = KernelAllocDeleter<T>>
 	struct UniquePtr {
 	private:
 		static_assert(std::is_invocable_v<D, T *>, "The deleter is not invocable");

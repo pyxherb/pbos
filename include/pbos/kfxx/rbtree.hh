@@ -7,15 +7,15 @@
 
 namespace kfxx {
 	enum class RBColor : bool {
-		BLACK = 0,
-		RED = 1
+		Black = 0,
+		Red = 1
 	};
 
 	class _RBTreeBase {
 	public:
 		struct NodeBase {
 			NodeBase *p = nullptr, *l = nullptr, *r = nullptr;
-			RBColor color = RBColor::BLACK;
+			RBColor color = RBColor::Black;
 		};
 
 		NodeBase *_root = nullptr;
@@ -25,8 +25,8 @@ namespace kfxx {
 		PBOS_API static NodeBase *_get_min_node(NodeBase *node) noexcept;
 		PBOS_API static NodeBase *_get_max_node(NodeBase *node) noexcept;
 
-		PBOS_FORCEINLINE static bool _is_red(NodeBase *node) noexcept { return node && node->color == RBColor::RED; }
-		PBOS_FORCEINLINE static bool _is_black(NodeBase *node) noexcept { return (!node) || node->color == RBColor::BLACK; }
+		PBOS_FORCEINLINE static bool _is_red(NodeBase *node) noexcept { return node && node->color == RBColor::Red; }
+		PBOS_FORCEINLINE static bool _is_black(NodeBase *node) noexcept { return (!node) || node->color == RBColor::Black; }
 
 		PBOS_API void _lrot(NodeBase *x) noexcept;
 		PBOS_API void _rrot(NodeBase *x) noexcept;
@@ -35,8 +35,8 @@ namespace kfxx {
 
 		PBOS_API NodeBase *_remove_fixup(NodeBase *node) noexcept;
 
-		PBOS_API static NodeBase *_get_next(const NodeBase *node, const NodeBase *lastnode_t) noexcept;
-		PBOS_API static NodeBase *_get_prev(const NodeBase *node, const NodeBase *firstnode_t) noexcept;
+		PBOS_API static NodeBase *_get_next(const NodeBase *node, const NodeBase *last_node) noexcept;
+		PBOS_API static NodeBase *_get_prev(const NodeBase *node, const NodeBase *first_node) noexcept;
 
 		PBOS_API _RBTreeBase() noexcept;
 		PBOS_API ~_RBTreeBase();
@@ -50,15 +50,15 @@ namespace kfxx {
 	public:
 		static_assert(std::is_move_assignable_v<T> || std::is_move_constructible_v<T>, "The key must be move-assignable or move-constructible");
 		static_assert(std::is_invocable_v<Comparator, T &, T &>, "The type is not comparable with the comparator");
-		struct node_t : public _RBTreeBase::NodeBase {
+		struct Node : public _RBTreeBase::NodeBase {
 			T rb_value;
 
-			node_t() = default;
-			PBOS_FORCEINLINE node_t(T &&rb_value) : rb_value(std::move(rb_value)) {}
+			Node() = default;
+			PBOS_FORCEINLINE Node(T &&rb_value) : rb_value(std::move(rb_value)) {}
 		};
 
 	private:
-		using NodeQueryResultType = typename std::conditional<Fallible, Option<node_t *>, node_t *>::type;
+		using NodeQueryResultType = typename std::conditional<Fallible, Option<Node *>, Node *>::type;
 
 		using ThisType = RBTreeImpl<T, Comparator, Fallible, IsThreeway>;
 
@@ -66,19 +66,22 @@ namespace kfxx {
 
 		template <typename U>
 		PBOS_FORCEINLINE NodeQueryResultType _get(const U &key) const {
-			node_t *i = (node_t *)_root;
+			Node *i = (Node *)_root;
 
 			if constexpr (Fallible) {
 				while (i) {
 					if constexpr (IsThreeway) {
 						auto &&result = _comparator(i->rb_value, key);
 
-						if (result.value() < 0)
-							i = (node_t *)i->r;
-						else if (result.value() > 0)
-							i = (node_t *)i->l;
-						else
-							return i;
+						if (result) {
+							if (result.value() < 0)
+								i = (Node *)i->r;
+							else if (result.value() > 0)
+								i = (Node *)i->l;
+							else
+								return i;
+						} else
+							return NULL_OPTION;
 					} else {
 						Option<bool> result;
 
@@ -87,16 +90,16 @@ namespace kfxx {
 #ifndef NDEBUG
 								if ((result = _comparator(key, i->rb_value)).has_value()) {
 									kd_assert(!result.value());
-									i = (node_t *)i->r;
+									i = (Node *)i->r;
 								} else {
 									return NULL_OPTION;
 								}
 #else
-								i = (node_t *)i->r;
+								i = (Node *)i->r;
 #endif
 							} else if ((result = _comparator(key, i->rb_value)).has_value()) {
 								if (result.value()) {
-									i = (node_t *)i->l;
+									i = (Node *)i->l;
 								} else
 									return i;
 							} else {
@@ -112,17 +115,17 @@ namespace kfxx {
 					if constexpr (IsThreeway) {
 						auto &&result = _comparator(i->rb_value, key);
 						if (result < 0)
-							i = (node_t *)i->r;
+							i = (Node *)i->r;
 						else if (result > 0)
-							i = (node_t *)i->l;
+							i = (Node *)i->l;
 						else
 							return i;
 					} else {
 						if (_comparator(i->rb_value, key)) {
 							kd_assert(!_comparator(key, i->rb_value));
-							i = (node_t *)i->r;
+							i = (Node *)i->r;
 						} else if (_comparator(key, i->rb_value)) {
-							i = (node_t *)i->l;
+							i = (Node *)i->l;
 						} else
 							return i;
 					}
@@ -132,7 +135,7 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE NodeBase **_get_slot(const T &key, NodeBase *&parent_out) {
-			NodeBase **i = &_root;
+			NodeBase **i = (NodeBase **)&_root;
 			parent_out = nullptr;
 
 			if constexpr (Fallible) {
@@ -140,32 +143,35 @@ namespace kfxx {
 					parent_out = *i;
 
 					if constexpr (IsThreeway) {
-						auto &&result = _comparator(static_cast<node_t *>(*i)->rb_value, key);
+						auto &&result = _comparator(static_cast<Node *>(*i)->rb_value, key);
 
-						if (result.value() < 0)
-							i = &(*i)->r;
-						else if (result.value() > 0)
-							i = &(*i)->l;
-						else
-							return i;
+						if (result) {
+							if (result.value() < 0)
+								i = (NodeBase **)&static_cast<Node *>(*i)->r;
+							else if (result.value() > 0)
+								i = (NodeBase **)&static_cast<Node *>(*i)->l;
+							else
+								return nullptr;
+						} else
+							return nullptr;
 					} else {
 						Option<bool> result;
 
-						if ((result = _comparator(static_cast<node_t *>(*i)->rb_value, key)).has_value()) {
+						if ((result = _comparator(static_cast<Node *>(*i)->rb_value, key)).has_value()) {
 							if (result.value()) {
 #ifndef NDEBUG
-								if ((result = _comparator(key, static_cast<node_t *>(*i)->rb_value)).has_value()) {
+								if ((result = _comparator(key, static_cast<Node *>(*i)->rb_value)).has_value()) {
 									kd_assert(!result.value());
-									i = &(*i)->r;
+									i = (NodeBase **)&static_cast<Node *>(*i)->r;
 								} else {
 									return nullptr;
 								}
 #else
-								i = (NodeBase **)&(*i)->r;
+								i = (NodeBase **)&static_cast<Node *>(*i)->r;
 #endif
-							} else if ((result = _comparator(key, static_cast<node_t *>(*i)->rb_value)).has_value()) {
+							} else if ((result = _comparator(key, static_cast<Node *>(*i)->rb_value)).has_value()) {
 								if (result.value()) {
-									i = &(*i)->l;
+									i = (NodeBase **)&static_cast<Node *>(*i)->l;
 								} else
 									return i;
 							} else {
@@ -181,12 +187,12 @@ namespace kfxx {
 					while (*i) {
 						parent_out = *i;
 
-						auto &&result = _comparator(static_cast<node_t *>(*i)->rb_value, key);
+						auto &&result = _comparator(static_cast<Node *>(*i)->rb_value, key);
 
 						if (result < 0) {
-							i = &((*i)->r);
+							i = (NodeBase **)&((*i)->r);
 						} else if (result > 0) {
-							i = &((*i)->l);
+							i = (NodeBase **)&((*i)->l);
 						} else
 							return nullptr;
 					}
@@ -194,11 +200,11 @@ namespace kfxx {
 					while (*i) {
 						parent_out = *i;
 
-						if (_comparator(static_cast<node_t *>(*i)->rb_value, key)) {
-							kd_assert(!_comparator(key, static_cast<node_t *>(*i)->rb_value));
-							i = &((*i)->r);
-						} else if (_comparator(key, static_cast<node_t *>(*i)->rb_value)) {
-							i = &((*i)->l);
+						if (_comparator(static_cast<Node *>(*i)->rb_value, key)) {
+							kd_assert(!_comparator(key, static_cast<Node *>(*i)->rb_value));
+							i = (NodeBase **)&((*i)->r);
+						} else if (_comparator(key, static_cast<Node *>(*i)->rb_value)) {
+							i = (NodeBase **)&((*i)->l);
 						} else
 							return nullptr;
 					}
@@ -208,13 +214,13 @@ namespace kfxx {
 		}
 
 		// TODO: Use Option for fallible comparison.
-		PBOS_FORCEINLINE bool _insert(node_t *parent, node_t *node) {
+		PBOS_FORCEINLINE bool _insert(Node *parent, Node *node) {
 			kd_assert(!node->l);
 			kd_assert(!node->r);
 
 			if (!_root) {
 				_root = node;
-				node->color = RBColor::BLACK;
+				node->color = RBColor::Black;
 				goto update_node_caches;
 			}
 
@@ -258,7 +264,7 @@ namespace kfxx {
 				}
 			}
 			node->p = parent;
-			node->color = RBColor::RED;
+			node->color = RBColor::Red;
 
 			_insert_fixup(node);
 
@@ -271,8 +277,8 @@ namespace kfxx {
 			return true;
 		}
 
-		PBOS_FORCEINLINE node_t *_remove(node_t *node) {
-			node_t *y = (node_t *)_remove_fixup(node);
+		PBOS_FORCEINLINE Node *_remove(Node *node) {
+			Node *y = (Node *)_remove_fixup(node);
 
 			_cached_min_node = _get_min_node(_root);
 			_cached_max_node = _get_max_node(_root);
@@ -284,7 +290,7 @@ namespace kfxx {
 
 		template <typename U>
 		PBOS_FORCEINLINE NodeQueryResultType _find_max_lteq(const U &data) {
-			node_t *cur_node = (node_t *)_root, *max_node = NULL;
+			Node *cur_node = (Node *)_root, *max_node = NULL;
 
 			if constexpr (Fallible) {
 				while (cur_node) {
@@ -293,9 +299,9 @@ namespace kfxx {
 
 						if (result.value() < 0) {
 							max_node = cur_node;
-							cur_node = (node_t *)cur_node->r;
+							cur_node = (Node *)cur_node->r;
 						} else if (result.value() > 0)
-							cur_node = (node_t *)cur_node->l;
+							cur_node = (Node *)cur_node->l;
 						else
 							return cur_node;
 					} else {
@@ -306,17 +312,16 @@ namespace kfxx {
 #ifndef NDEBUG
 								if ((result = _comparator(data, cur_node->rb_value)).has_value()) {
 									kd_assert(!result.value());
-									cur_node = (node_t *)cur_node->r;
+									cur_node = (Node *)cur_node->r;
 								} else {
 									return NULL_OPTION;
 								}
-#else
-								max_node = cur_node;
-								cur_node = (node_t *)cur_node->r;
 #endif
+								max_node = cur_node;
+								cur_node = (Node *)cur_node->r;
 							} else if ((result = _comparator(data, cur_node->rb_value)).has_value()) {
 								if (result.value()) {
-									cur_node = (node_t *)cur_node->l;
+									cur_node = (Node *)cur_node->l;
 								} else
 									return cur_node;
 							} else {
@@ -333,18 +338,18 @@ namespace kfxx {
 						auto &&result = _comparator(cur_node->rb_value, data);
 						if (result < 0) {
 							max_node = cur_node;
-							cur_node = (node_t *)cur_node->r;
+							cur_node = (Node *)cur_node->r;
 						} else if (result > 0)
-							cur_node = (node_t *)cur_node->l;
+							cur_node = (Node *)cur_node->l;
 						else
 							return cur_node;
 					} else {
 						if (_comparator(cur_node->rb_value, data)) {
 							kd_assert(!_comparator(data, cur_node->rb_value));
 							max_node = cur_node;
-							cur_node = (node_t *)cur_node->r;
+							cur_node = (Node *)cur_node->r;
 						} else if (_comparator(data, cur_node->rb_value)) {
-							cur_node = (node_t *)cur_node->l;
+							cur_node = (Node *)cur_node->l;
 						} else
 							return cur_node;
 					}
@@ -412,9 +417,9 @@ namespace kfxx {
 		}
 
 		/// @brief Insert a node into the tree.
-		/// @param node node_t to be inserted.
+		/// @param node Node to be inserted.
 		/// @return Whether the node is inserted successfully, false if node with the same key presents.
-		[[nodiscard]] PBOS_FORCEINLINE bool insert(node_t *node) {
+		[[nodiscard]] PBOS_FORCEINLINE bool insert(Node *node) {
 			// TODO: Use Option for fallible comparison.
 			NodeBase *parent = nullptr;
 			NodeBase **slot = _get_slot(node->rb_value, parent);
@@ -422,46 +427,46 @@ namespace kfxx {
 			if (!slot)
 				return false;
 
-			return _insert(static_cast<node_t *>(parent), node);
+			return _insert(static_cast<Node *>(parent), node);
 		}
 
-		PBOS_FORCEINLINE void insert_unwrap(node_t *node) {
+		PBOS_FORCEINLINE void insert_unwrap(Node *node) {
 			if (!insert(node))
 				km_panic("Calling insert_unwrap with insertion failed");
 		}
 
-		PBOS_FORCEINLINE void remove(node_t *node) {
-			node_t *y = _remove(node);
+		PBOS_FORCEINLINE void remove(Node *node) {
+			Node *y = _remove(node);
 			y->l = nullptr;
 			y->r = nullptr;
 			y->p = nullptr;
 		}
 
-		typedef void (*node_deleter_t)(node_t *node);
+		typedef void (*node_deleter_t)(Node *node);
 
 		template <typename D>
 		PBOS_FORCEINLINE void clear(D &&deleter) {
 			auto d = std::move(deleter);
 			if (_root) {
-				node_t *node = (node_t *)_root;
-				node_t *max_node = (node_t *)_get_max_node(node);
-				node_t *cur_node = (node_t *)_get_min_node(node);
-				node_t *parent = (node_t *)node->p;
+				Node *node = (Node *)_root;
+				Node *max_node = (Node *)_get_max_node(node);
+				Node *cur_node = (Node *)_get_min_node(node);
+				Node *parent = (Node *)node->p;
 
 				while (cur_node != parent) {
 					if (cur_node->r) {
-						cur_node = (node_t *)_get_min_node(cur_node->r);
+						cur_node = (Node *)_get_min_node(cur_node->r);
 					} else {
-						node_t *node_to_delete = cur_node;
+						Node *node_to_delete = cur_node;
 
 						while (cur_node->p && (cur_node == cur_node->p->r)) {
 							node_to_delete = cur_node;
-							cur_node = (node_t *)cur_node->p;
+							cur_node = (Node *)cur_node->p;
 							d(node_to_delete);
 						}
 
 						node_to_delete = cur_node;
-						cur_node = (node_t *)cur_node->p;
+						cur_node = (Node *)cur_node->p;
 						d(node_to_delete);
 					}
 				}
@@ -484,21 +489,21 @@ namespace kfxx {
 			return _comparator;
 		}
 
-		static node_t *get_next(const node_t *node, const node_t *last_node) noexcept {
-			return (node_t *)_get_next((const NodeBase *)node, (const NodeBase *)last_node);
+		static Node *get_next(const Node *node, const Node *last_node) noexcept {
+			return (Node *)_get_next((const NodeBase *)node, (const NodeBase *)last_node);
 		}
 
-		static node_t *get_prev(const node_t *node, const node_t *first_node) noexcept {
-			return (node_t *)_get_prev((const NodeBase *)node, (const NodeBase *)first_node);
+		static Node *get_prev(const Node *node, const Node *first_node) noexcept {
+			return (Node *)_get_prev((const NodeBase *)node, (const NodeBase *)first_node);
 		}
 
 		struct Iterator {
-			node_t *node;
+			Node *node;
 			ThisType *tree;
 			IteratorDirection direction;
 
 			PBOS_FORCEINLINE Iterator(
-				node_t *node,
+				Node *node,
 				ThisType *tree,
 				IteratorDirection direction)
 				: node(node),
@@ -563,7 +568,7 @@ namespace kfxx {
 						km_panic("Dereasing the begin Iterator");
 
 					if (!node)
-						node = (node_t *)tree->_cached_max_node;
+						node = (Node *)tree->_cached_max_node;
 					else
 						node = ThisType::get_prev(node, nullptr);
 				} else {
@@ -571,7 +576,7 @@ namespace kfxx {
 						km_panic("Dereasing the begin Iterator");
 
 					if (!node)
-						node = (node_t *)tree->_cached_min_node;
+						node = (Node *)tree->_cached_min_node;
 					else
 						node = ThisType::get_next(node, nullptr);
 				}
@@ -591,8 +596,8 @@ namespace kfxx {
 				return --Iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const node_t *node) const noexcept {
-				return node == node;
+			PBOS_FORCEINLINE bool operator==(const Node *node) const noexcept {
+				return this->node == node;
 			}
 
 			PBOS_FORCEINLINE bool operator==(const Iterator &it) const {
@@ -606,8 +611,8 @@ namespace kfxx {
 				return *this == it;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const node_t *node) const noexcept {
-				return node != node;
+			PBOS_FORCEINLINE bool operator!=(const Node *node) const noexcept {
+				return this->node != node;
 			}
 
 			PBOS_FORCEINLINE bool operator!=(const Iterator &it) const {
@@ -647,13 +652,13 @@ namespace kfxx {
 		};
 
 		PBOS_FORCEINLINE Iterator begin() {
-			return Iterator((node_t *)_get_min_node(_root), this, IteratorDirection::Forward);
+			return Iterator((Node *)_get_min_node(_root), this, IteratorDirection::Forward);
 		}
 		PBOS_FORCEINLINE Iterator end() {
 			return Iterator(nullptr, this, IteratorDirection::Forward);
 		}
 		PBOS_FORCEINLINE Iterator begin_reversed() {
-			return Iterator((node_t *)_cached_max_node, this, IteratorDirection::Reversed);
+			return Iterator((Node *)_cached_max_node, this, IteratorDirection::Reversed);
 		}
 		PBOS_FORCEINLINE Iterator end_reversed() {
 			return Iterator(nullptr, this, IteratorDirection::Reversed);
@@ -725,7 +730,7 @@ namespace kfxx {
 				return _iterator != it._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const node_t *node) const {
+			PBOS_FORCEINLINE bool operator==(const Node *node) const {
 				return _iterator == node;
 			}
 

@@ -71,9 +71,9 @@ PBOS_API void _RBTreeBase::_insert_fixup(NodeBase* node) noexcept {
 			u = gp->r;
 
 			if (_is_red(u)) {
-				p->color = RBColor::BLACK;
-				u->color = RBColor::BLACK;
-				gp->color = RBColor::RED;
+				p->color = RBColor::Black;
+				u->color = RBColor::Black;
+				gp->color = RBColor::Red;
 				node = gp;
 				continue;
 			}
@@ -83,17 +83,17 @@ PBOS_API void _RBTreeBase::_insert_fixup(NodeBase* node) noexcept {
 					std::swap(node, p);
 				}
 				_rrot(gp);
-				p->color = RBColor::BLACK;
-				gp->color = RBColor::RED;
+				p->color = RBColor::Black;
+				gp->color = RBColor::Red;
 			}
 		}
 		else {
 			u = gp->l;
 
 			if (_is_red(u)) {
-				p->color = RBColor::BLACK;
-				u->color = RBColor::BLACK;
-				gp->color = RBColor::RED;
+				p->color = RBColor::Black;
+				u->color = RBColor::Black;
+				gp->color = RBColor::Red;
 				node = gp;
 				continue;
 			}
@@ -103,13 +103,13 @@ PBOS_API void _RBTreeBase::_insert_fixup(NodeBase* node) noexcept {
 					std::swap(node, p);
 				}
 				_lrot(gp);
-				p->color = RBColor::BLACK;
-				gp->color = RBColor::RED;
+				p->color = RBColor::Black;
+				gp->color = RBColor::Red;
 			}
 		}
 	}
 
-	_root->color = RBColor::BLACK;
+	_root->color = RBColor::Black;
 }
 
 PBOS_API _RBTreeBase::NodeBase* _RBTreeBase::_remove_fixup(NodeBase* node) noexcept {
@@ -174,29 +174,29 @@ PBOS_API _RBTreeBase::NodeBase* _RBTreeBase::_remove_fixup(NodeBase* node) noexc
 				auto w = p->r;
 
 				if (_is_red(w)) {
-					w->color = RBColor::BLACK;
-					p->color = RBColor::RED;
+					w->color = RBColor::Black;
+					p->color = RBColor::Red;
 					_lrot(p);
 					w = p->r;
 				}
 
 				if (_is_black(w->l) && _is_black(w->r)) {
-					w->color = RBColor::RED;
+					w->color = RBColor::Red;
 					x = p;
 					p = p->p;
 				}
 				else {
 					if (_is_black(w->r)) {
 						if (w->l)
-							w->l->color = RBColor::BLACK;
-						w->color = RBColor::RED;
+							w->l->color = RBColor::Black;
+						w->color = RBColor::Red;
 						_rrot(w);
 						w = p->r;
 					}
 					w->color = p->color;
-					p->color = RBColor::BLACK;
+					p->color = RBColor::Black;
 					if (w->r)
-						w->r->color = RBColor::BLACK;
+						w->r->color = RBColor::Black;
 					_lrot(p);
 					break;
 				}
@@ -205,36 +205,36 @@ PBOS_API _RBTreeBase::NodeBase* _RBTreeBase::_remove_fixup(NodeBase* node) noexc
 				auto w = p->l;
 
 				if (_is_red(w)) {
-					w->color = RBColor::BLACK;
-					p->color = RBColor::RED;
+					w->color = RBColor::Black;
+					p->color = RBColor::Red;
 					_rrot(p);
 					w = p->l;
 				}
 
 				if (_is_black(w->r) && _is_black(w->l)) {
-					w->color = RBColor::RED;
+					w->color = RBColor::Red;
 					x = p;
 					p = p->p;
 				}
 				else {
 					if (_is_black(w->l)) {
 						if (w->r)
-							w->r->color = RBColor::BLACK;
-						w->color = RBColor::RED;
+							w->r->color = RBColor::Black;
+						w->color = RBColor::Red;
 						_lrot(w);
 						w = p->l;
 					}
 					w->color = p->color;
-					p->color = RBColor::BLACK;
+					p->color = RBColor::Black;
 					if (w->l)
-						w->l->color = RBColor::BLACK;
+						w->l->color = RBColor::Black;
 					_rrot(p);
 					break;
 				}
 			}
 		}
 		if (x)
-			x->color = RBColor::BLACK;
+			x->color = RBColor::Black;
 	}
 
 	return y;

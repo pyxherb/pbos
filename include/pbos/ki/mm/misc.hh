@@ -6,7 +6,7 @@
 #include <pbos/mm/mm.h>
 #include <pbos/kfxx/rbtree.hh>
 
-#include <pbos/generated/km.h>
+#include <pbos/generated/mm.h>
 #include KI_ARCH_MEMCONF_HEADER_PATH
 
 PBOS_EXTERN_C_BEGIN

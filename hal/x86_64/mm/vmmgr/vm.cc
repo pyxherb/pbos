@@ -2,7 +2,7 @@
 #include <pbos/kd/logger.h>
 #include <pbos/ps/proc.h>
 #include <string.h>
-#include <hal/x86_64/mm/pgalloc/pgalloc.hh>
+#include <pbos/ki/mm/pgalloc.hh>
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 
@@ -27,12 +27,12 @@ static uint16_t hn_pgaccess_to_pgmask(mm_pgaccess_t access) {
 }
 
 void *kh_get_direct_mmap(void *paddr) {
-	hn_pmad_t *pmad = hn_pmad_get(paddr);
+	ki_pmad_t *pmad = ki_get_pmad(paddr);
 
 	if ((!pmad) || (!pmad->direct_map_base))
 		return nullptr;
 
-	ptrdiff_t off = (((char *)paddr) - (char *)pmad->base);
+	ptrdiff_t off = (((char *)paddr) - (char *)pmad->rb_value);
 	char *p = (char *)pmad->direct_map_base + off;
 
 	if (p > (char *)DIRECTPHYMEM_VTOP)

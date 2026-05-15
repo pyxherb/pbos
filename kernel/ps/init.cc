@@ -1,4 +1,4 @@
-#include <pbos/ki/km/proc.hh>
+#include <pbos/ki/ps/proc.hh>
 #include <pbos/ki/ps/exec.hh>
 
 PBOS_EXTERN_C_BEGIN

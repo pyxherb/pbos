@@ -2,7 +2,7 @@
 #include <pbos/ki/mm/kima.hh>
 
 kima_vpgdesc_t *kima_lookup_vpgdesc(kima_pool_t *pool, void *ptr) {
-	kfxx::RBTree<void *>::node_t *node = pool->vpgdesc_query_tree.find(ptr);
+	kfxx::RBTree<void *>::Node *node = pool->vpgdesc_query_tree.find(ptr);
 
 	if (!node)
 		return nullptr;
@@ -11,7 +11,7 @@ kima_vpgdesc_t *kima_lookup_vpgdesc(kima_pool_t *pool, void *ptr) {
 }
 
 void kima_free_vpgdesc(kima_pool_t *pool, kima_vpgdesc_t *vpgdesc) {
-	kima_vpgdesc_poolpg_t *poolpg = (kima_vpgdesc_poolpg_t *)PGFLOOR(vpgdesc);
+	kima_vpgdesc_poolpg_t *poolpg = (kima_vpgdesc_poolpg_t *)kfxx::floor_align_to((uintptr_t)vpgdesc, pool->page_size);
 
 	pool->vpgdesc_query_tree.remove(vpgdesc);
 	vpgdesc->rb_value = vpgdesc;
@@ -22,10 +22,11 @@ void kima_free_vpgdesc(kima_pool_t *pool, kima_vpgdesc_t *vpgdesc) {
 			poolpg->header.prev->header.next = poolpg->header.next;
 		if (poolpg->header.next)
 			poolpg->header.next->header.prev = poolpg->header.prev;
-		for (auto &i : poolpg->slots) {
-			pool->vpgdesc_free_tree.remove(&i);
+		kima_vpgdesc_t *slots = (kima_vpgdesc_t *)(((uintptr_t)poolpg) + pool->vpgdesc_slots_off);
+		for (size_t i = 0; i < pool->vpgdesc_slots_size; ++i) {
+			pool->vpgdesc_free_tree.remove(&slots[i]);
 		}
-		kima_vpgfree(poolpg, PAGESIZE);
+		kima_vpgfree(pool, poolpg, pool->page_size);
 	}
 }
 
@@ -33,7 +34,7 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(kima_pool_t *pool, void *ptr) {
 	if (pool->vpgdesc_free_tree.size()) {
 		kima_vpgdesc_t *desc = static_cast<kima_vpgdesc_t *>(pool->vpgdesc_free_tree.begin().node);
 
-		kima_ublk_poolpg_t *poolpg = (kima_ublk_poolpg_t *)PGFLOOR(desc);
+		kima_ublk_poolpg_t *poolpg = (kima_ublk_poolpg_t *)kfxx::floor_align_to((uintptr_t)desc, pool->page_size);
 
 		++poolpg->header.used_num;
 
@@ -47,7 +48,7 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(kima_pool_t *pool, void *ptr) {
 		return desc;
 	}
 
-	kima_vpgdesc_poolpg_t *pg = (kima_vpgdesc_poolpg_t *)kima_vpgalloc(NULL, PAGESIZE);
+	kima_vpgdesc_poolpg_t *pg = (kima_vpgdesc_poolpg_t *)kima_vpgalloc(pool, NULL, pool->page_size);
 
 	if (!pg)
 		return nullptr;
@@ -61,18 +62,20 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(kima_pool_t *pool, void *ptr) {
 
 	pg->header.used_num = 1;
 
-	kfxx::construct_at<kima_vpgdesc_t>(&pg->slots[0]);
-	pg->slots[0].rb_value = ptr;
-	pg->slots[0].ref_count = 0;
+	kima_vpgdesc_t *slots = (kima_vpgdesc_t *)(((uintptr_t)pg) + pool->vpgdesc_slots_off);
 
-	pool->vpgdesc_query_tree.insert_unwrap(&pg->slots[0]);
+	kfxx::construct_at<kima_vpgdesc_t>(&slots[0]);
+	slots[0].rb_value = ptr;
+	slots[0].ref_count = 0;
 
-	for (size_t i = 1; i < PBOS_ARRAYSIZE(pg->slots); ++i) {
-		kfxx::construct_at<kima_vpgdesc_t>(&pg->slots[i]);
+	pool->vpgdesc_query_tree.insert_unwrap(&slots[0]);
 
-		pg->slots[i].rb_value = &pg->slots[i];
+	for (size_t i = 1; i < pool->vpgdesc_slots_size; ++i) {
+		kfxx::construct_at<kima_vpgdesc_t>(&slots[i]);
 
-		pool->vpgdesc_free_tree.insert_unwrap(&pg->slots[i]);
+		slots[i].rb_value = &slots[i];
+
+		pool->vpgdesc_free_tree.insert_unwrap(&slots[i]);
 	}
-	return &pg->slots[0];
+	return &slots[0];
 }

@@ -5,6 +5,7 @@
 #include <pbos/ki/mm/kima.hh>
 
 void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
+	kd_assert(pool->_initialized);
 	// io::LocalIrqLock irq_lock;
 	ps::MutexGuard g(pool->mutex.c_mutex());
 
@@ -20,8 +21,8 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 		}
 
 		for (size_t j = 0;
-			j < PGCEIL(size);
-			j += PAGESIZE) {
+			j < kfxx::ceil_align_to(size, pool->page_size);
+			j += pool->page_size) {
 			if (!kima_lookup_vpgdesc(pool, ((char *)cur_desc->rb_value) + j)) {
 				continuous_area_base = ((char *)cur_desc->rb_value) + j;
 				it = kfxx::RBTree<void *>::Iterator(pool->vpgdesc_query_tree.find_max_lteq(continuous_area_base), &pool->vpgdesc_query_tree, kfxx::IteratorDirection::Forward);
@@ -30,7 +31,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 		}
 
 		{
-			void *const limit = ((char *)cur_desc->rb_value) + (PGCEIL(size) - size);
+			void *const limit = ((char *)cur_desc->rb_value) + (kfxx::ceil_align_to(size, pool->page_size) - size);
 
 			for (char *cur_base = (char *)cur_desc->rb_value;
 				cur_base <= limit;) {
@@ -57,8 +58,8 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 					return nullptr;
 
 				for (size_t j = 0;
-					j < PGCEIL(size);
-					j += PAGESIZE) {
+					j < kfxx::ceil_align_to(size, pool->page_size);
+					j += pool->page_size) {
 					kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(pool, ((char *)cur_desc->rb_value) + j);
 
 					if (!vpgdesc)
@@ -75,7 +76,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 	noncontinuous:;
 	}
 
-	char *new_free_pg = (char *)kima_vpgalloc(NULL, PGCEIL(size + alignment));
+	char *new_free_pg = (char *)kima_vpgalloc(pool, NULL, kfxx::ceil_align_to(size + alignment, pool->page_size));
 
 	if (size_t aligned_diff = ((uintptr_t)new_free_pg) % alignment; aligned_diff) {
 		new_free_pg += alignment - aligned_diff;
@@ -86,14 +87,14 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 
 	size_t i = 0;
 	kfxx::ScopeGuard release_vpgdesc_sg([pool, new_free_pg, &i]() noexcept {
-		for (size_t j = 0; j < i; ++j) {
-			kima_free_vpgdesc(pool, kima_lookup_vpgdesc(pool, ((char *)new_free_pg) + j * PAGESIZE));
+		for (size_t j = 0; j < i; j += pool->page_size) {
+			kima_free_vpgdesc(pool, kima_lookup_vpgdesc(pool, ((char *)new_free_pg) + j));
 		}
 		pool->num_allocated_pages -= i;
 	});
 
-	for (; i < PGROUNDUP(size); ++i) {
-		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(pool, ((char *)new_free_pg) + i * PAGESIZE);
+	for (; i < size; i += pool->page_size) {
+		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(pool, ((char *)new_free_pg) + i);
 
 		if (!vpgdesc)
 			return nullptr;
@@ -101,7 +102,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 		++vpgdesc->ref_count;
 	}
 
-	pool->num_allocated_pages += PGROUNDUP(size);
+	pool->num_allocated_pages += kfxx::ceil_align_to(size, pool->page_size) / pool->page_size;
 
 	kima_ublk_t *ublk = kima_alloc_ublk(pool, new_free_pg, size);
 	if (!ublk)
@@ -113,6 +114,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 }
 
 PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size, size_t alignment) {
+	kd_assert(pool->_initialized);
 	kd_assert(size);
 	ps::MutexGuard g(pool->mutex.c_mutex());
 	char *continuous_area_base = nullptr;
@@ -129,8 +131,8 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 		}
 
 		for (size_t j = 0;
-			j < PGCEIL(size);
-			j += PAGESIZE) {
+			j < kfxx::ceil_align_to(size, pool->page_size);
+			j += pool->page_size) {
 			// Look up for a continuous existing allocated virtual page area for allocation.
 			if (!kima_lookup_vpgdesc(pool, ((char *)cur_desc->rb_value) + j)) {
 				continuous_area_base = ((char *)cur_desc->rb_value) + j;
@@ -140,7 +142,7 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 		}
 
 		{
-			void *const limit = ((char *)cur_desc->rb_value) + (PGCEIL(size) - size);
+			void *const limit = ((char *)cur_desc->rb_value) + (kfxx::ceil_align_to(size, pool->page_size) - size);
 
 			for (char *cur_base = (char *)cur_desc->rb_value;
 				cur_base <= limit;) {
@@ -169,8 +171,8 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 				pool->ublk_query_tree.remove(old_ublk);
 
 				for (size_t j = 0;
-					j < PGCEIL(size);
-					j += PAGESIZE) {
+					j < kfxx::ceil_align_to(size, pool->page_size);
+					j += pool->page_size) {
 					kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(pool, ((char *)cur_desc->rb_value) + j);
 
 					if (!vpgdesc)
@@ -186,9 +188,9 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 				// And because we had increased the reference counter of the new used pages,
 				// the old unused pages will be freed as they didn't get the reference counter
 				// increased.
-				for (uintptr_t i = PGFLOOR(old_ptr);
-					i < PGCEIL(((char *)old_ptr) + old_ublk->size);
-					i += PAGESIZE) {
+				for (uintptr_t i = kfxx::floor_align_to((uintptr_t)old_ptr, pool->page_size);
+					i < kfxx::ceil_align_to(((uintptr_t)old_ptr) + old_ublk->size, pool->page_size);
+					i += pool->page_size) {
 					kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(pool, (void *)i);
 
 					kd_assert(vpgdesc);
@@ -210,7 +212,7 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 	noncontinuous:;
 	}
 	// Allocate new pages if there is no suitable continuous virtual memory area.
-	char *new_free_pg = (char *)kima_vpgalloc(NULL, PGCEIL(size + alignment));
+	char *new_free_pg = (char *)kima_vpgalloc(pool, NULL, kfxx::ceil_align_to(size + alignment, pool->page_size));
 
 	if (size_t aligned_diff = ((uintptr_t)new_free_pg) % alignment; aligned_diff) {
 		new_free_pg += alignment - aligned_diff;
@@ -221,14 +223,14 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 
 	size_t i = 0;
 	kfxx::ScopeGuard release_vpgdesc_sg([pool, new_free_pg, &i]() noexcept {
-		for (size_t j = 0; j < i; ++j) {
-			kima_free_vpgdesc(pool, kima_lookup_vpgdesc(pool, ((char *)new_free_pg) + j * PAGESIZE));
+		for (size_t j = 0; j < i; j += pool->page_size) {
+			kima_free_vpgdesc(pool, kima_lookup_vpgdesc(pool, ((char *)new_free_pg) + j));
 		}
 		pool->num_allocated_pages -= i;
 	});
 
-	for (; i < PGROUNDUP(size); ++i) {
-		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(pool, ((char *)new_free_pg) + i * PAGESIZE);
+	for (; i < pool->page_size; ++i) {
+		kima_vpgdesc_t *vpgdesc = kima_alloc_vpgdesc(pool, ((char *)new_free_pg) + i);
 
 		if (!vpgdesc)
 			return nullptr;
@@ -236,7 +238,7 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 		++vpgdesc->ref_count;
 	}
 
-	pool->num_allocated_pages += PGROUNDUP(size);
+	pool->num_allocated_pages += kfxx::ceil_align_to(size, pool->page_size) / pool->page_size;
 
 	kima_free_ublk(pool, old_ublk);
 
@@ -250,6 +252,7 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 }
 
 PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, size_t size, size_t alignment) {
+	kd_assert(pool->_initialized);
 	kd_assert(size);
 	ps::MutexGuard g(pool->mutex.c_mutex());
 	char *continuous_area_base = nullptr;
@@ -260,8 +263,8 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 	kima_vpgdesc_t *cur_desc = static_cast<kima_vpgdesc_t *>(pool->vpgdesc_query_tree.find(old_ptr));
 
 	for (size_t j = 0;
-		j < PGCEIL(size);
-		j += PAGESIZE) {
+		j < kfxx::ceil_align_to(size, pool->page_size);
+		j += pool->page_size) {
 		// Look up for a continuous existing allocated virtual page area for allocation.
 		if (!kima_lookup_vpgdesc(pool, ((char *)cur_desc->rb_value) + j)) {
 			continuous_area_base = ((char *)cur_desc->rb_value) + j;
@@ -270,7 +273,7 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 	}
 
 	{
-		void *const limit = ((char *)cur_desc->rb_value) + (PGCEIL(size) - size);
+		void *const limit = ((char *)cur_desc->rb_value) + (kfxx::ceil_align_to(size, pool->page_size) - size);
 
 		if (size_t aligned_diff = ((uintptr_t)old_ptr) % alignment; aligned_diff)
 			return nullptr;
@@ -287,8 +290,8 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 		pool->ublk_query_tree.remove(old_ublk);
 
 		for (size_t j = 0;
-			j < PGCEIL(size);
-			j += PAGESIZE) {
+			j < kfxx::ceil_align_to(size, pool->page_size);
+			j += pool->page_size) {
 			kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(pool, ((char *)cur_desc->rb_value) + j);
 
 			if (!vpgdesc)
@@ -298,8 +301,8 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 		}
 
 		// Release unused old pages if the new size is smaller than the old size.
-		for (size_t i = PGCEIL(old_ublk->size);
-			i > PGCEIL(size);
+		for (size_t i = kfxx::ceil_align_to(old_ublk->size, pool->page_size);
+			i > kfxx::ceil_align_to(size, pool->page_size);
 			++i) {
 			kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(pool, ((char *)old_ptr) + i);
 
@@ -320,15 +323,16 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 }
 
 void kima_free(kima_pool_t *pool, void *ptr) {
+	kd_assert(pool->_initialized);
 	// io::LocalIrqLock irq_lock;
 
 	ps::MutexGuard g(pool->mutex.c_mutex());
 
 	kima_ublk_t *ublk = kima_lookup_ublk(pool, ptr);
 	kd_assert(ublk);
-	for (uintptr_t i = PGFLOOR(ublk->rb_value);
-		i < PGCEIL(((char *)ublk->rb_value) + ublk->size);
-		i += PAGESIZE) {
+	for (uintptr_t i = kfxx::floor_align_to((uintptr_t)ublk->rb_value, pool->page_size);
+		i < kfxx::ceil_align_to(((uintptr_t)ublk->rb_value) + ublk->size, pool->page_size);
+		i += pool->page_size) {
 		kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(pool, (void *)i);
 
 		kd_assert(vpgdesc);

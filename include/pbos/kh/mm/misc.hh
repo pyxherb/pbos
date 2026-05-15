@@ -5,6 +5,8 @@
 
 PBOS_EXTERN_C_BEGIN
 
+PBOS_PURE size_t kh_get_page_size();
+
 void *kh_get_direct_mmap(void *paddr);
 
 PBOS_NODISCARD km_result_t kh_mmap(

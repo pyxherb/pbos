@@ -147,7 +147,7 @@ _fs_fnode_t::~_fs_fnode_t() {
 
 _fs_file_t::_fs_file_t() : _fs_fnode_t(FS_FILETYPE_FILE) {}
 
-_fs_dir_t::_fs_dir_t(kfxx::Allocator *allocator) : _fs_fnode_t(FS_FILETYPE_DIR), subnodes(allocator) {}
+_fs_dir_t::_fs_dir_t(kfxx::Alloc *allocator) : _fs_fnode_t(FS_FILETYPE_DIR), subnodes(allocator) {}
 
 PBOS_API void fs_set_fcb_exdata(fs_fcb_t *fcb, void *exdata) {
 	fcb->exdata = exdata;

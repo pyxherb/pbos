@@ -4,6 +4,10 @@
 
 PBOS_EXTERN_C_BEGIN
 
+PBOS_PURE size_t kh_get_page_size() {
+	return PAGESIZE;
+}
+
 mm_context_t *mm_get_cur_context() {
 	return mm_cur_contexts ? mm_cur_contexts[ps_get_cur_cpuid()] : mm_kernel_context;
 }

@@ -138,9 +138,7 @@ km_result_t ps_exec(
 
 	for (auto it = ki_registered_binldrs.begin(); it != ki_registered_binldrs.end(); ++it) {
 		if (KM_SUCCESS(result = static_cast<ki_binldr_registry_t *>(it.node)->ops.load_exec(pcb, file_fp))) {
-			io::LocalIrqLock LocalIrqLock;
-			pcb->rb_value = ki_alloc_proc_id();
-			ps_create_proc(pcb, parent);
+			KM_RETURN_IF_FAILED(ps_create_proc(pcb, parent));
 			destroy_pcb_guard.release();
 			return KM_RESULT_OK;
 		}
@@ -171,7 +169,7 @@ km_result_t ps_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
 	return KM_RESULT_OK;
 }
 
-typedef struct _ki_cached_ro_page_registry : public kfxx::RBTree<void *>::node_t {
+typedef struct _ki_cached_ro_page_registry : public kfxx::RBTree<void *>::Node {
 	size_t ref_count = 0;
 } ki_cached_ro_page_registry;
 
@@ -181,7 +179,8 @@ ps::RwMutex ki_ro_pages_cache_lock;
 // TODO: Add a read/write lock for the hash map.
 
 km_result_t ps_register_cached_ro_page(void *paddr, void *allocated_cmp_vpage, void *vaddr) {
-	uint64_t hash_code = kf_djb_hash64((const char *)vaddr, PAGESIZE);
+	const size_t page_size = mm_get_page_size();
+	uint64_t hash_code = kf_djb_hash64((const char *)vaddr, page_size);
 
 	ps::WriteRwMutexGuard g(ki_ro_pages_cache_lock.c_mutex());
 
@@ -193,7 +192,8 @@ km_result_t ps_register_cached_ro_page(void *paddr, void *allocated_cmp_vpage, v
 }
 
 km_result_t ps_fetch_cached_ro_page(void *vaddr, void *allocated_cmp_vpage, void **paddr_out) {
-	uint64_t hash_code = kf_djb_hash64((const char *)vaddr, PAGESIZE);
+	const size_t page_size = mm_get_page_size();
+	uint64_t hash_code = kf_djb_hash64((const char *)vaddr, page_size);
 
 	ps::ReadRwMutexGuard g(ki_ro_pages_cache_lock.c_mutex());
 
@@ -259,7 +259,9 @@ void ps_unregister_binproto(km_binproto_t *proto) {
 }
 
 km_result_t ps_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, size_t size, mm_pgaccess_t pgaccess, km_binseg_t **seg_out) {
-	if (vaddr_base != (void *)PGFLOOR(vaddr_base))
+	const size_t page_size = mm_get_page_size();
+
+	if (vaddr_base != (void *)kfxx::floor_align_to((uintptr_t)vaddr_base, page_size))
 		return KM_RESULT_INVALID_ARGS;
 
 	km_binseg_t *seg = (km_binseg_t *)mm_kalloc(sizeof(km_binseg_t), alignof(km_binseg_t));
@@ -285,7 +287,7 @@ km_result_t ps_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, s
 		}
 	});
 	while (seg->cur_offset < size) {
-		km_binseg_page_pool_t *page_pool = (km_binseg_page_pool_t *)mm_kalloc(sizeof(km_binseg_page_pool_t), PAGESIZE);
+		km_binseg_page_pool_t *page_pool = (km_binseg_page_pool_t *)mm_kalloc(sizeof(km_binseg_page_pool_t), page_size);
 		kfxx::ScopeGuard release_cur_page_pool_guard([seg, page_pool]() noexcept {
 			for (size_t i = 0; i < page_pool->used_num; ++i) {
 				mm_pgfree(page_pool->descs[i].rb_value);
@@ -308,7 +310,7 @@ km_result_t ps_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, s
 			seg->page_descs_query_tree.insert(&page_pool->descs[i]);
 
 			++page_pool->used_num;
-			if ((seg->cur_offset += PAGESIZE) >= size)
+			if ((seg->cur_offset += page_size) >= size)
 				break;
 		}
 		release_cur_page_pool_guard.release();

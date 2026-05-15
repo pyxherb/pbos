@@ -35,6 +35,13 @@ add_custom_command(
 )
 target_sources(pbkrnl PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/kernel.lds.ph.cc)
 
+set(PBOS_INITIAL_MM_AREA_STORAGE_NUM 256 CACHE STRING "Number of initial memory area storage")
+
+configure_file(
+    "config.hh.in"
+    ${CMAKE_CURRENT_SOURCE_DIR}/generated/config.hh
+)
+
 add_subdirectory("io")
 add_subdirectory("kf")
 add_subdirectory("kfxx")

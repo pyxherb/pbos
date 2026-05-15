@@ -21,7 +21,7 @@ namespace kfxx {
 
 		size_t _length = 0;
 		size_t _capacity = 0;
-		RcObjectPtr<Allocator> _allocator;
+		RcObjectPtr<Alloc> _allocator;
 		T *_data;
 
 		PBOS_FORCEINLINE static size_t _get_grown_capacity(size_t length, size_t old_capacity) {
@@ -410,7 +410,7 @@ namespace kfxx {
 		using ThisType = DynArray<T>;
 
 	public:
-		PBOS_FORCEINLINE DynArray(Allocator *allocator) : _allocator(allocator), _data(nullptr) {
+		PBOS_FORCEINLINE DynArray(Alloc *allocator) : _allocator(allocator), _data(nullptr) {
 		}
 		PBOS_FORCEINLINE DynArray(ThisType &&rhs) noexcept : _allocator(std::move(rhs._allocator)), _data(std::move(rhs._data)), _length(rhs._length), _capacity(rhs._capacity) {
 			rhs._data = nullptr;
@@ -713,7 +713,7 @@ namespace kfxx {
 			kd_assert(result);
 		}
 
-		PBOS_FORCEINLINE Allocator *allocator() const {
+		PBOS_FORCEINLINE Alloc *allocator() const {
 			return _allocator.get();
 		}
 

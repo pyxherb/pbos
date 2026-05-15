@@ -11,6 +11,10 @@ PBOS_EXTERN_C_BEGIN
 
 typedef uint32_t ps_proc_access_t;
 
+#define PS_PROC_ID_MAX UINT32_MAX
+#define PS_THREAD_ID_MAX UINT32_MAX
+#define PS_CPU_ID_MAX UINT32_MAX
+
 typedef uint32_t ps_proc_id_t;
 typedef uint32_t ps_thread_id_t;
 typedef uint32_t ps_cpu_id_t;
@@ -46,7 +50,7 @@ extern ps_tcb_t **ps_cur_thread_per_cpu;
 #define PS_PROC_P 0x01	// Present
 #define PS_PROC_A 0x02	// Available
 
-void ps_create_proc(
+PBOS_NODISCARD km_result_t ps_create_proc(
 	ps_pcb_t *pcb,
 	ps_proc_id_t parent);
 ps_thread_id_t ps_create_thread(
@@ -63,6 +67,7 @@ void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread);
 
 ps_pcb_t *ps_alloc_pcb();
 ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb);
+
 km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size);
 km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size);
 mm_context_t *ps_mm_context_of(ps_pcb_t *pcb);

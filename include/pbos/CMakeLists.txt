@@ -8,3 +8,4 @@ function(add_config_header filepath)
 endfunction()
 
 add_config_header("km.h.in")
+add_config_header("mm.h.in")

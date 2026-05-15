@@ -8,7 +8,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-typedef struct _ps_kmod_section_t : public kfxx::RBTree<void *>::node_t {
+typedef struct _ps_kmod_section_t : public kfxx::RBTree<void *>::Node {
 	size_t size = 0;
 	ps_kmod_t *parent_mod = nullptr;
 } ps_kmod_section_t;
@@ -18,7 +18,7 @@ typedef struct _ps_kmod_t {
 	kfxx::RBTree<void *> registered_sections;
 	kfxx::Set<kfxx::StringView> registered_symbols;
 
-	_ps_kmod_t(kfxx::Allocator *allocator);
+	_ps_kmod_t(kfxx::Alloc *allocator);
 	~_ps_kmod_t();
 } ps_kmod_t;
 
@@ -27,7 +27,7 @@ extern ps_kmod_t *ki_ps_kmod_list;
 km_result_t ki_ps_alloc_kmod_section(void *vaddr, size_t size, ps_kmod_t *kmod, ps_kmod_section_t **section_out);
 void ki_ps_destroy_kmod_section(ps_kmod_section_t *section);
 
-typedef struct _ki_kernel_symbol_t : public kfxx::RBTree<void *>::node_t {
+typedef struct _ki_kernel_symbol_t : public kfxx::RBTree<void *>::Node {
 	char *name = nullptr;
 	size_t name_len = 0;
 	size_t len;

@@ -235,7 +235,7 @@ namespace kfxx {
 			}
 			size_t index = ((size_t)hash_code) % _buckets.size();
 			bucket_t &bucket = _buckets.at(index);
-			RcObjectPtr<Allocator> alloc = bucket.allocator();
+			RcObjectPtr<Alloc> alloc = bucket.allocator();
 
 			typename bucket_t::NodeHandle node;
 
@@ -285,7 +285,7 @@ namespace kfxx {
 		}
 
 	public:
-		PBOS_FORCEINLINE HashSetImpl(Allocator *allocator) : _buckets(allocator) {
+		PBOS_FORCEINLINE HashSetImpl(Alloc *allocator) : _buckets(allocator) {
 		}
 
 		PBOS_FORCEINLINE HashSetImpl(ThisType &&other)
@@ -352,15 +352,15 @@ namespace kfxx {
 			_buckets.clear_and_shrink();
 		}
 
-		PBOS_FORCEINLINE Allocator *allocator() const {
+		PBOS_FORCEINLINE Alloc *allocator() const {
 			return _buckets.allocator();
 		}
 
-		PBOS_FORCEINLINE void replace_allocator(Allocator *rhs) noexcept {
+		PBOS_FORCEINLINE void replace_allocator(Alloc *rhs) noexcept {
 			for (auto &i : _buckets) {
-				i.replaceAllocator(rhs);
+				i.replaceAlloc(rhs);
 			}
-			_buckets.replaceAllocator(rhs);
+			_buckets.replaceAlloc(rhs);
 		}
 
 		struct Iterator {

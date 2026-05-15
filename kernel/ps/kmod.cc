@@ -9,7 +9,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-_ps_kmod_t::_ps_kmod_t(kfxx::Allocator *allocator): registered_symbols(allocator) {
+_ps_kmod_t::_ps_kmod_t(kfxx::Alloc *allocator): registered_symbols(allocator) {
 
 }
 

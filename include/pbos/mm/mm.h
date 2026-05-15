@@ -306,6 +306,8 @@ extern mm_context_t *mm_kernel_context;
 
 PBOS_PURE PBOS_API mm_context_t *mm_get_cur_context();
 
+PBOS_PURE PBOS_API size_t mm_get_page_size();
+
 PBOS_EXTERN_C_END
 
 #endif

@@ -4,7 +4,7 @@
 #include "bus.h"
 #include <pbos/dm/device.h>
 
-class ki_dm_device_allocator_t : public kfxx::Allocator {
+class ki_dm_device_allocator_t : public kfxx::Alloc {
 public:
 	PBOS_PRIVATE ki_dm_device_allocator_t();
 	PBOS_PRIVATE virtual ~ki_dm_device_allocator_t();

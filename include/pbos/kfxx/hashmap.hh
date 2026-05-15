@@ -81,7 +81,7 @@ namespace kfxx {
 		using ConstElementQueryResultType = typename std::conditional_t<Fallible, Option<const V &>, const V &>;
 		using ContainsResultType = typename SetType::ContainsResultType;
 
-		PBOS_FORCEINLINE HashMapImpl(Allocator *allocator) : _set(allocator) {}
+		PBOS_FORCEINLINE HashMapImpl(Alloc *allocator) : _set(allocator) {}
 		PBOS_FORCEINLINE HashMapImpl(ThisType &&rhs) : comparator(std::move(rhs.comparator)), _set(std::move(rhs._set)) {
 		}
 
@@ -152,11 +152,11 @@ namespace kfxx {
 			}
 		}
 
-		PBOS_FORCEINLINE Allocator *allocator() const {
+		PBOS_FORCEINLINE Alloc *allocator() const {
 			return _set.allocator();
 		}
 
-		PBOS_FORCEINLINE void replace_allocator(Allocator *rhs) noexcept {
+		PBOS_FORCEINLINE void replace_allocator(Alloc *rhs) noexcept {
 			_set.replace_allocator(rhs);
 		}
 

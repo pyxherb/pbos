@@ -11,12 +11,24 @@ typedef struct _kima_vpgdesc_poolpg_t kima_vpgdesc_poolpg_t;
 
 typedef struct _kima_pool_t {
 	ps::Mutex mutex;
+
 	kima_ublk_poolpg_t *ublk_poolpg_list = nullptr;
 	kfxx::RBTree<void *> ublk_query_tree, ublk_free_tree;
+
 	kima_vpgdesc_poolpg_t *vpgdesc_poolpg_list = nullptr;
 	kfxx::RBTree<void *> vpgdesc_query_tree, vpgdesc_free_tree;
+
 	size_t num_allocated_pages = 0;
 
+	size_t page_size = 0;
+
+	bool _initialized = false;
+
+	size_t ublk_slots_off, ublk_slots_size;
+
+	size_t vpgdesc_slots_off, vpgdesc_slots_size;
+
+	_kima_pool_t();
 	~_kima_pool_t();
 } kima_pool_t;
 
@@ -28,7 +40,7 @@ void ki_init_kima_pool(kima_pool_t *pool);
 // User block definitions.
 //
 
-typedef struct _kima_ublk_t : public kfxx::RBTree<void *>::node_t {
+typedef struct _kima_ublk_t : public kfxx::RBTree<void *>::Node {
 	size_t size;
 } kima_ublk_t;
 
@@ -41,7 +53,6 @@ typedef struct _kima_ublk_poolpg_header_t {
 
 typedef struct _kima_ublk_poolpg_t {
 	kima_ublk_poolpg_header_t header;
-	kima_ublk_t slots[(PAGESIZE - sizeof(kima_ublk_poolpg_header_t)) / sizeof(kima_ublk_t)];
 } kima_ublk_poolpg_t;
 
 kima_ublk_t* kima_lookup_ublk(kima_pool_t *pool, void* ptr);
@@ -53,7 +64,7 @@ void kima_free_ublk(kima_pool_t *pool, kima_ublk_t *ublk);
 // Virtual page descriptor definitions.
 //
 
-typedef struct _kima_vpgdesc_t : public kfxx::RBTree<void *>::node_t {
+typedef struct _kima_vpgdesc_t : public kfxx::RBTree<void *>::Node {
 	size_t ref_count;
 } kima_vpgdesc_t;
 
@@ -66,15 +77,14 @@ typedef struct _kima_vpgdesc_poolpg_header_t {
 
 typedef struct _kima_vpgdesc_poolpg_t {
 	kima_vpgdesc_poolpg_header_t header;
-	kima_vpgdesc_t slots[(PAGESIZE - sizeof(kima_vpgdesc_poolpg_header_t)) / sizeof(kima_vpgdesc_t)];
 } kima_vpgdesc_poolpg_t;
 
 kima_vpgdesc_t* kima_lookup_vpgdesc(kima_pool_t *pool, void* ptr);
 kima_vpgdesc_t *kima_alloc_vpgdesc(kima_pool_t *pool, void *ptr);
 void kima_free_vpgdesc(kima_pool_t *pool, kima_vpgdesc_t *vpgdesc);
 
-void *kima_vpgalloc(void *addr, size_t size);
-void kima_vpgfree(void *addr, size_t size);
+void *kima_vpgalloc(kima_pool_t *pool, void *addr, size_t size);
+void kima_vpgfree(kima_pool_t *pool, void *addr, size_t size);
 
 //
 // Common allocation APIs.
