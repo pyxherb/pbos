@@ -30,7 +30,7 @@ hn_mad_t *hn_get_mad(void *pgaddr) {
 	if (!pmad)
 		km_panic("No PMAD corresponds to physical address %p", pgaddr);
 
-	kfxx::rbtree_t<void *>::node_t *mad;
+	kfxx::RBTree<void *>::node_t *mad;
 	if ((mad = pmad->query_tree.find(pgaddr))) {
 		return static_cast<hn_mad_t *>(mad);
 	}
@@ -49,7 +49,7 @@ void hn_set_pgblk_used(void *pgaddr) {
 	hn_mad_t *mad = hn_get_mad(pgaddr);
 
 	hal_lock_spinlock(&mad->spinlock);
-	kfxx::deferred unlocker([mad]() noexcept {
+	kfxx::Deferred unlocker([mad]() noexcept {
 		hal_unlock_spinlock(&mad->spinlock);
 	});
 
@@ -70,7 +70,7 @@ void hn_set_pgblk_free(void *addr) {
 	hn_mad_t *mad = hn_get_mad(addr);
 
 	hal_lock_spinlock(&mad->spinlock);
-	kfxx::deferred unlocker([mad]() noexcept {
+	kfxx::Deferred unlocker([mad]() noexcept {
 		hal_unlock_spinlock(&mad->spinlock);
 	});
 

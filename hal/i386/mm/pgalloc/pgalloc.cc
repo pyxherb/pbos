@@ -33,7 +33,7 @@ hn_mad_t *hn_get_mad(pgaddr_t pgaddr) {
 	if (!pmad)
 		km_panic("No PMAD corresponds to physical address %p", UNPGADDR(pgaddr));
 
-	kfxx::rbtree_t<pgaddr_t>::node_t *mad;
+	kfxx::RBTree<pgaddr_t>::node_t *mad;
 	if ((mad = pmad->query_tree.find(pgaddr))) {
 		return static_cast<hn_mad_t *>(mad);
 	}

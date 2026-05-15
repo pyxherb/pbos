@@ -10,7 +10,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-class ki_ps_cached_ro_pages_buckets_allocator_t : public kfxx::allocator_t {
+class ki_ps_cached_ro_pages_buckets_allocator_t : public kfxx::Allocator {
 public:
 	PBOS_PRIVATE ki_ps_cached_ro_pages_buckets_allocator_t();
 	PBOS_PRIVATE virtual ~ki_ps_cached_ro_pages_buckets_allocator_t();
@@ -26,7 +26,7 @@ public:
 	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
 };
 
-class ki_ps_cached_ro_pages_registry_allocator_t : public kfxx::allocator_t {
+class ki_ps_cached_ro_pages_registry_allocator_t : public kfxx::Allocator {
 public:
 	PBOS_PRIVATE ki_ps_cached_ro_pages_registry_allocator_t();
 	PBOS_PRIVATE virtual ~ki_ps_cached_ro_pages_registry_allocator_t();
@@ -42,11 +42,11 @@ public:
 	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
 };
 
-typedef struct _ki_binldr_registry_t : public kfxx::rbtree_t<kf_uuid_t>::node_t {
+typedef struct _ki_binldr_registry_t : public kfxx::RBTree<kf_uuid_t>::node_t {
 	km_binldr_ops_t ops;
 } ki_binldr_registry_t;
 
-typedef struct _km_binseg_page_desc_t : public kfxx::rbtree_t<void *>::node_t {
+typedef struct _km_binseg_page_desc_t : public kfxx::RBTree<void *>::node_t {
 } km_binseg_page_desc_t;
 
 typedef struct alignas(PAGESIZE) _km_binseg_page_pool_t {
@@ -63,19 +63,19 @@ typedef struct _km_binseg_t {
 	size_t size;
 	size_t cur_offset;
 	km_binseg_page_pool_t *pages = nullptr, *cur_page_pool = nullptr;
-	kfxx::rbtree_t<void *> page_descs_query_tree;
+	kfxx::RBTree<void *> page_descs_query_tree;
 	mm_pgaccess_t access;
 } km_binseg_t;
 
-typedef struct _km_binproto_t : public kfxx::rbtree_t<fs_fcb_t *>::node_t {
+typedef struct _km_binproto_t : public kfxx::RBTree<fs_fcb_t *>::node_t {
 	km_binseg_t *segments = nullptr;
 } km_binproto_t;
 
-extern kfxx::rbtree_t<kf_uuid_t> ki_registered_binldrs;
+extern kfxx::RBTree<kf_uuid_t> ki_registered_binldrs;
 
 extern km_init_binldr_registry_t ki_builtin_binldrs[];
 
-extern kfxx::rbtree_t<fs_fcb_t *> ki_registered_binprotos;
+extern kfxx::RBTree<fs_fcb_t *> ki_registered_binprotos;
 
 void ki_load_init();
 void ki_init_binldrs();

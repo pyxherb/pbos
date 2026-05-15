@@ -4,14 +4,14 @@
 #include "kima.hh"
 #include <pbos/ps/mutex.hh>
 
-typedef struct _mm_vmr_t : kfxx::rbtree_t<void *>::node_t {
+typedef struct _mm_vmr_t : kfxx::RBTree<void *>::node_t {
 	size_t size = 0;
 	mm_pgaccess_t access = 0;
 
-	ps::mutex_t mutex;
+	ps::Mutex mutex;
 } mm_vmr_t;
 
-using ki_mm_vmr_tree_t = kfxx::rbtree_t<void *>;
+using ki_mm_vmr_tree_t = kfxx::RBTree<void *>;
 
 typedef struct _mm_context_t {
 	/// @brief An opaque pointer to the platform-specific page table.
@@ -25,7 +25,7 @@ typedef struct _mm_context_t {
 	/// @brief The VMR tree.
 	ki_mm_vmr_tree_t vmr_tree;
 
-	ps::rec_mutex_t vmr_mutex;
+	ps::RecMutex vmr_mutex;
 } mm_context_t;
 
 extern mm_context_t **mm_cur_contexts;

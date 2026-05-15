@@ -42,32 +42,32 @@ km_result_t ki_mm_init_context(mm_context_t *context) {
 	if (!(pdt_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))) {
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	}
-	kfxx::scope_guard free_pdt_paddr_guard([pdt_paddr]() noexcept {
+	kfxx::ScopeGuard free_pdt_paddr_guard([pdt_paddr]() noexcept {
 		mm_pgfree(pdt_paddr);
 	});
 
 	if (!(pdt_vaddr = mm_kvmalloc(mm_get_cur_context(), PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0))) {
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	}
-	kfxx::scope_guard free_pdt_vaddr_guard([pdt_vaddr]() noexcept {
+	kfxx::ScopeGuard free_pdt_vaddr_guard([pdt_vaddr]() noexcept {
 		mm_vmfree(mm_get_cur_context(), pdt_vaddr, PAGESIZE);
 	});
 
-	kfxx::rbtree_t<void *> *vpm_query_tree;
+	kfxx::RBTree<void *> *vpm_query_tree;
 
-	if (!(vpm_query_tree = (kfxx::rbtree_t<void *> *)mm_kmalloc(
-			  sizeof(kfxx::rbtree_t<void *>) * ki_cur_paging_config->pgtab_level,
-			  alignof(kfxx::rbtree_t<void *>)))) {
+	if (!(vpm_query_tree = (kfxx::RBTree<void *> *)mm_kmalloc(
+			  sizeof(kfxx::RBTree<void *>) * ki_cur_paging_config->pgtab_level,
+			  alignof(kfxx::RBTree<void *>)))) {
 		return KM_MAKEERROR(KM_RESULT_NO_MEM);
 	}
 
 	for (size_t i = 0; i < ki_cur_paging_config->pgtab_level; ++i) {
-		kfxx::construct_at<kfxx::rbtree_t<void *>>(vpm_query_tree + i);
+		kfxx::construct_at<kfxx::RBTree<void *>>(vpm_query_tree + i);
 	}
 
-	kfxx::scope_guard free_vpm_query_tree_guard([vpm_query_tree]() noexcept {
+	kfxx::ScopeGuard free_vpm_query_tree_guard([vpm_query_tree]() noexcept {
 		for (size_t i = 0; i < ki_cur_paging_config->pgtab_level; ++i) {
-			kfxx::destroy_at<kfxx::rbtree_t<void *>>(vpm_query_tree + i);
+			kfxx::destroy_at<kfxx::RBTree<void *>>(vpm_query_tree + i);
 		}
 		mm_kfree(vpm_query_tree);
 	});
@@ -128,7 +128,7 @@ void mm_free_context(mm_context_t *context) {
 
 	// Free VPD query tree and pools.
 	for (size_t i = 0; i < ki_cur_paging_config->pgtab_level; ++i) {
-		context->uspace_vpm_query_tree[i].clear([](kfxx::rbtree_t<void *>::node_t *node) noexcept {
+		context->uspace_vpm_query_tree[i].clear([](kfxx::RBTree<void *>::node_t *node) noexcept {
 			ki_vpm_nodefree(static_cast<hn_vpm_t *>(node));
 		});
 	}
@@ -143,7 +143,7 @@ void mm_free_context(mm_context_t *context) {
 
 void mm_switch_context(mm_context_t *context) {
 	kd_assert(context);
-	io::irq_disable_lock irq_lock;
+	io::LocalIrqLock irq_lock;
 
 	mm_context_t *prev_context = mm_get_cur_context();
 	mm_cur_contexts[ps_get_cur_cpuid()] = context;

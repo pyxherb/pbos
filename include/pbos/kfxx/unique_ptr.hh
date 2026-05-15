@@ -10,36 +10,36 @@
 
 namespace kfxx {
 	template <typename T>
-	struct kernel_allocator_deleter {
+	struct KernelAllocatorDeleter {
 		PBOS_FORCEINLINE void operator()(T *ptr) noexcept {
 			kfxx::destroy_and_release<T>(kfxx::kernel_allocator(), ptr);
 		}
 	};
 
 	template <typename T>
-	struct allocator_deleter {
+	struct AllocatorDeleter {
 	private:
-		rc_object_ptr_t<allocator_t> _allocator;
+		RcObjectPtr<Allocator> _allocator;
 
 	public:
-		PBOS_FORCEINLINE allocator_deleter(allocator_t *allocator) noexcept : _allocator(allocator) {}
-		PBOS_FORCEINLINE ~allocator_deleter() {}
+		PBOS_FORCEINLINE AllocatorDeleter(Allocator *allocator) noexcept : _allocator(allocator) {}
+		PBOS_FORCEINLINE ~AllocatorDeleter() {}
 		PBOS_FORCEINLINE void operator()(T *ptr) noexcept {
 			kfxx::destroy_and_release<T>(_allocator, ptr);
 		}
-		PBOS_FORCEINLINE void set_allocator(allocator_t *ptr) noexcept {
+		PBOS_FORCEINLINE void set_allocator(Allocator *ptr) noexcept {
 			_allocator = ptr;
 		}
 	};
 
-	template <typename T, typename D = kernel_allocator_deleter<T>>
-	struct unique_ptr_t {
+	template <typename T, typename D = KernelAllocatorDeleter<T>>
+	struct UniquePtr {
 	private:
 		static_assert(std::is_invocable_v<D, T *>, "The deleter is not invocable");
 		T *_ptr;
 		[[no_unique_address]] D _deleter;
 
-		using this_t = kfxx::unique_ptr_t<T, D>;
+		using ThisType = kfxx::UniquePtr<T, D>;
 
 	public:
 		PBOS_FORCEINLINE void reset() noexcept {
@@ -49,23 +49,23 @@ namespace kfxx {
 			}
 		}
 
-		PBOS_FORCEINLINE unique_ptr_t(T *ptr, D deleter = {}) noexcept : _ptr(ptr), _deleter(std::move(deleter)) {
+		PBOS_FORCEINLINE UniquePtr(T *ptr, D deleter = {}) noexcept : _ptr(ptr), _deleter(std::move(deleter)) {
 		}
-		unique_ptr_t(const this_t &other) noexcept = delete;
-		PBOS_FORCEINLINE unique_ptr_t(this_t &&other) noexcept : _ptr(other._ptr), _deleter(other._deleter) {
+		UniquePtr(const ThisType &other) noexcept = delete;
+		PBOS_FORCEINLINE UniquePtr(ThisType &&other) noexcept : _ptr(other._ptr), _deleter(other._deleter) {
 			other._ptr = nullptr;
 		}
-		PBOS_FORCEINLINE ~unique_ptr_t() {
+		PBOS_FORCEINLINE ~UniquePtr() {
 			reset();
 		}
 
-		PBOS_FORCEINLINE this_t &operator=(T *ptr) noexcept {
+		PBOS_FORCEINLINE ThisType &operator=(T *ptr) noexcept {
 			reset();
 			_ptr = ptr;
 			return *this;
 		}
-		this_t &operator=(const this_t &other) = delete;
-		PBOS_FORCEINLINE this_t &operator=(this_t &&other) noexcept {
+		ThisType &operator=(const ThisType &other) = delete;
+		PBOS_FORCEINLINE ThisType &operator=(ThisType &&other) noexcept {
 			reset();
 
 			_deleter = std::move(other._deleter);
@@ -123,11 +123,11 @@ namespace kfxx {
 			return _ptr != rhs;
 		}
 
-		PBOS_FORCEINLINE bool operator<(const this_t &rhs) const noexcept {
+		PBOS_FORCEINLINE bool operator<(const ThisType &rhs) const noexcept {
 			return _ptr < rhs._ptr;
 		}
 
-		PBOS_FORCEINLINE bool operator>(const this_t &rhs) const noexcept {
+		PBOS_FORCEINLINE bool operator>(const ThisType &rhs) const noexcept {
 			return _ptr > rhs._ptr;
 		}
 
@@ -135,11 +135,11 @@ namespace kfxx {
 			return _ptr;
 		}
 
-		PBOS_FORCEINLINE bool operator==(const this_t &rhs) const noexcept {
+		PBOS_FORCEINLINE bool operator==(const ThisType &rhs) const noexcept {
 			return _ptr == rhs._ptr;
 		}
 
-		PBOS_FORCEINLINE bool operator!=(const this_t &rhs) const noexcept {
+		PBOS_FORCEINLINE bool operator!=(const ThisType &rhs) const noexcept {
 			return _ptr != rhs._ptr;
 		}
 

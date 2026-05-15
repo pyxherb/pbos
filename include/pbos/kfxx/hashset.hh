@@ -11,12 +11,12 @@
 namespace kfxx {
 	namespace details {
 		template <typename T, typename V = void>
-		struct hash_code_result_type_extractor_t {
+		struct HashCodeResultTypeExtractor {
 			using type = T;
 		};
 
 		template <typename T>
-		struct hash_code_result_type_extractor_t<T, std::void_t<decltype(std::declval<T>().value())>> {
+		struct HashCodeResultTypeExtractor<T, std::void_t<decltype(std::declval<T>().value())>> {
 			using type = typename T::value_type;
 		};
 	}
@@ -27,11 +27,11 @@ namespace kfxx {
 		typename Hasher,
 		bool Fallible>
 	// PBOS_REQUIRES_CONCEPT(std::invocable<EqCmp, const T &, const T &>)
-	class hash_set_impl_t {
+	class HashSetImpl {
 	public:
 		static_assert(std::is_move_constructible_v<T>, "The element must be move-constructible");
 		using hasher_result_t = decltype(std::declval<Hasher>()(std::declval<T>()));
-		using hash_code_t = typename details::hash_code_result_type_extractor_t<hasher_result_t>::type;
+		using hash_code_t = typename details::HashCodeResultTypeExtractor<hasher_result_t>::type;
 
 		struct element_t {
 			T data;
@@ -43,20 +43,20 @@ namespace kfxx {
 			element_t &operator=(element_t &&rhs) = default;
 		};
 
-		using bucket_t = list_t<element_t>;
+		using bucket_t = List<element_t>;
 
 	public:
-		using remove_result_t = typename std::conditional_t<Fallible, bool, void>;
-		using element_query_result_t = typename std::conditional_t<Fallible, option_t<T &>, T &>;
-		using bucket_node_handle_query_result_t = typename std::conditional_t<Fallible, option_t<typename bucket_t::node_handle_t>, typename bucket_t::node_handle_t>;
-		using const_element_query_result_t = typename std::conditional_t<Fallible, option_t<const T &>, const T &>;
-		using contains_result_t = typename std::conditional_t<Fallible, option_t<bool>, bool>;
+		using RemoveResultType = typename std::conditional_t<Fallible, bool, void>;
+		using element_query_result_t = typename std::conditional_t<Fallible, Option<T &>, T &>;
+		using bucket_node_handle_query_result_t = typename std::conditional_t<Fallible, Option<typename bucket_t::NodeHandle>, typename bucket_t::NodeHandle>;
+		using const_element_query_result_t = typename std::conditional_t<Fallible, Option<const T &>, const T &>;
+		using ContainsResultType = typename std::conditional_t<Fallible, Option<bool>, bool>;
 
 	private:
-		using this_type = hash_set_impl_t<T, EqCmp, Hasher, Fallible>;
+		using ThisType = HashSetImpl<T, EqCmp, Hasher, Fallible>;
 
-		using buckets_type = dynarray_t<bucket_t>;
-		buckets_type _buckets;
+		using BucketsType = DynArray<bucket_t>;
+		BucketsType _buckets;
 
 		size_t _size = 0;
 		EqCmp _equality_comparator;
@@ -75,7 +75,7 @@ namespace kfxx {
 			return 0;
 		}
 
-		[[nodiscard]] PBOS_FORCEINLINE static bool _resize_buckets(size_t new_size, buckets_type &old_buckets, buckets_type &new_buckets) {
+		[[nodiscard]] PBOS_FORCEINLINE static bool _resize_buckets(size_t new_size, BucketsType &old_buckets, BucketsType &new_buckets) {
 			{
 				if (!new_buckets.resize_uninit(new_size)) {
 					return false;
@@ -86,11 +86,11 @@ namespace kfxx {
 			}
 
 			const size_t n_old_buckets = old_buckets.size();
-			scope_guard restore_guard([new_size, &old_buckets, &new_buckets, n_old_buckets]() noexcept {
+			ScopeGuard restore_guard([new_size, &old_buckets, &new_buckets, n_old_buckets]() noexcept {
 				for (size_t i = 0; i < new_size; ++i) {
 					bucket_t &bucket = new_buckets.at(i);
 
-					for (typename bucket_t::node_handle_t j = bucket.first_node(); j; j = j->next) {
+					for (typename bucket_t::NodeHandle j = bucket.first_node(); j; j = j->next) {
 						size_t index = ((size_t)j->data.hash_code) % n_old_buckets;
 
 						bucket.detach(j);
@@ -103,8 +103,8 @@ namespace kfxx {
 			for (size_t i = 0; i < n_old_buckets; ++i) {
 				bucket_t &bucket = old_buckets.at(i);
 
-				for (typename bucket_t::node_handle_t j = bucket.first_node(); j;) {
-					typename bucket_t::node_handle_t next = j->next;
+				for (typename bucket_t::NodeHandle j = bucket.first_node(); j;) {
+					typename bucket_t::NodeHandle next = j->next;
 					size_t index = ((size_t)j->data.hash_code) % new_size;
 
 					bucket.detach(j);
@@ -141,7 +141,7 @@ namespace kfxx {
 
 			switch (_check_capacity()) {
 				case 1: {
-					buckets_type new_buckets(_buckets.allocator());
+					BucketsType new_buckets(_buckets.allocator());
 					if (!_resize_buckets(size ? size << 1 : 1, _buckets, new_buckets)) {
 						return false;
 					}
@@ -151,7 +151,7 @@ namespace kfxx {
 				case 0:
 					break;
 				case -1: {
-					buckets_type new_buckets(_buckets.allocator());
+					BucketsType new_buckets(_buckets.allocator());
 					if (!_resize_buckets(size >> 1, _buckets, new_buckets)) {
 						return false;
 					}
@@ -215,7 +215,7 @@ namespace kfxx {
 			return true;
 		}
 
-		[[nodiscard]] PBOS_FORCEINLINE remove_result_t _remove(const T &data, bool force_resize_buckets) {
+		[[nodiscard]] PBOS_FORCEINLINE RemoveResultType _remove(const T &data, bool force_resize_buckets) {
 			if (!_buckets.size()) {
 				if constexpr (Fallible) {
 					return true;
@@ -235,9 +235,9 @@ namespace kfxx {
 			}
 			size_t index = ((size_t)hash_code) % _buckets.size();
 			bucket_t &bucket = _buckets.at(index);
-			rc_object_ptr_t<allocator_t> alloc = bucket.allocator();
+			RcObjectPtr<Allocator> alloc = bucket.allocator();
 
-			typename bucket_t::node_handle_t node;
+			typename bucket_t::NodeHandle node;
 
 			if constexpr (Fallible) {
 				bucket_node_handle_query_result_t maybe_node = _get_bucket_slot(bucket, data);
@@ -251,7 +251,7 @@ namespace kfxx {
 			}
 
 			if (node) {
-				typename bucket_t::node_handle_t next_node = bucket_t::next(node, 1);
+				typename bucket_t::NodeHandle next_node = bucket_t::next(node, 1);
 
 				bucket.detach(node);
 				bucket.delete_node(node);
@@ -285,10 +285,10 @@ namespace kfxx {
 		}
 
 	public:
-		PBOS_FORCEINLINE hash_set_impl_t(allocator_t *allocator) : _buckets(allocator) {
+		PBOS_FORCEINLINE HashSetImpl(Allocator *allocator) : _buckets(allocator) {
 		}
 
-		PBOS_FORCEINLINE hash_set_impl_t(this_type &&other)
+		PBOS_FORCEINLINE HashSetImpl(ThisType &&other)
 			: _buckets(std::move(other._buckets)),
 			  _size(other._size),
 			  _equality_comparator(std::move(other._equality_comparator)),
@@ -296,7 +296,7 @@ namespace kfxx {
 			other._size = 0;
 		}
 
-		PBOS_FORCEINLINE this_type &operator=(this_type &&other) noexcept {
+		PBOS_FORCEINLINE ThisType &operator=(ThisType &&other) noexcept {
 			clear_and_shrink();
 
 			_buckets = std::move(other._buckets);
@@ -317,7 +317,7 @@ namespace kfxx {
 			return _insert(std::move(data), true);
 		}
 
-		[[nodiscard]] PBOS_FORCEINLINE remove_result_t remove(const T &data) {
+		[[nodiscard]] PBOS_FORCEINLINE RemoveResultType remove(const T &data) {
 			if constexpr (Fallible) {
 				return _remove(data, false).hasValue();
 			} else {
@@ -330,7 +330,7 @@ namespace kfxx {
 			return _get(data, index);
 		}
 
-		[[nodiscard]] PBOS_FORCEINLINE contains_result_t contains(const T &data) const {
+		[[nodiscard]] PBOS_FORCEINLINE ContainsResultType contains(const T &data) const {
 			size_t index;
 			if constexpr (Fallible) {
 				auto maybe_handle = _get(data, index);
@@ -352,35 +352,35 @@ namespace kfxx {
 			_buckets.clear_and_shrink();
 		}
 
-		PBOS_FORCEINLINE allocator_t *allocator() const {
+		PBOS_FORCEINLINE Allocator *allocator() const {
 			return _buckets.allocator();
 		}
 
-		PBOS_FORCEINLINE void replace_allocator(allocator_t *rhs) noexcept {
+		PBOS_FORCEINLINE void replace_allocator(Allocator *rhs) noexcept {
 			for (auto &i : _buckets) {
 				i.replaceAllocator(rhs);
 			}
 			_buckets.replaceAllocator(rhs);
 		}
 
-		struct iterator {
+		struct Iterator {
 			size_t idx_cur_bucket;
-			typename bucket_t::node_handle_t bucket_node_handle;
-			this_type *hash_set;
-			iterator_direction direction;
+			typename bucket_t::NodeHandle bucket_node_handle;
+			ThisType *hash_set;
+			IteratorDirection direction;
 
-			PBOS_FORCEINLINE iterator(
-				this_type *hash_set,
+			PBOS_FORCEINLINE Iterator(
+				ThisType *hash_set,
 				size_t idx_cur_bucket,
-				typename bucket_t::node_handle_t bucket_node_handle,
-				iterator_direction direction)
+				typename bucket_t::NodeHandle bucket_node_handle,
+				IteratorDirection direction)
 				: idx_cur_bucket(idx_cur_bucket),
 				  bucket_node_handle(bucket_node_handle),
 				  hash_set(hash_set),
 				  direction(direction) {}
 
-			iterator(const iterator &it) = default;
-			PBOS_FORCEINLINE iterator(iterator &&it) {
+			Iterator(const Iterator &it) = default;
+			PBOS_FORCEINLINE Iterator(Iterator &&it) {
 				idx_cur_bucket = it.idx_cur_bucket;
 				bucket_node_handle = it.bucket_node_handle;
 				hash_set = it.hash_set;
@@ -389,34 +389,34 @@ namespace kfxx {
 				it.idx_cur_bucket = SIZE_MAX;
 				it.bucket_node_handle = bucket_t::null_node_handle();
 				it.hash_set = nullptr;
-				it.direction = iterator_direction::Invalid;
+				it.direction = IteratorDirection::Invalid;
 			}
-			PBOS_FORCEINLINE iterator &operator=(const iterator &rhs) noexcept {
+			PBOS_FORCEINLINE Iterator &operator=(const Iterator &rhs) noexcept {
 				if (direction != rhs.direction)
-					km_panic("Incompatible iterator direction");
+					km_panic("Incompatible Iterator direction");
 				idx_cur_bucket = rhs.idx_cur_bucket;
 				bucket_node_handle = rhs.bucket_node_handle;
 				hash_set = rhs.hash_set;
 				return *this;
 			}
-			PBOS_FORCEINLINE iterator &operator=(iterator &&rhs) noexcept {
+			PBOS_FORCEINLINE Iterator &operator=(Iterator &&rhs) noexcept {
 				if (direction != rhs.direction)
-					km_panic("Incompatible iterator direction");
-				construct_at<iterator>(this, std::move(rhs));
+					km_panic("Incompatible Iterator direction");
+				construct_at<Iterator>(this, std::move(rhs));
 				return *this;
 			}
 
-			PBOS_FORCEINLINE bool copy(iterator &dest) noexcept {
+			PBOS_FORCEINLINE bool copy(Iterator &dest) noexcept {
 				dest = *this;
 				return true;
 			}
 
-			PBOS_FORCEINLINE iterator &operator++() {
+			PBOS_FORCEINLINE Iterator &operator++() {
 				if (idx_cur_bucket == SIZE_MAX)
-					km_panic("Increasing the end iterator");
+					km_panic("Increasing the end Iterator");
 
-				if (direction == iterator_direction::Forward) {
-					typename bucket_t::node_handle_t next_node = bucket_t::next(bucket_node_handle, 1);
+				if (direction == IteratorDirection::Forward) {
+					typename bucket_t::NodeHandle next_node = bucket_t::next(bucket_node_handle, 1);
 					if (!next_node) {
 						while ((!next_node) && (idx_cur_bucket != SIZE_MAX)) {
 							if (++idx_cur_bucket >= hash_set->_buckets.size()) {
@@ -429,7 +429,7 @@ namespace kfxx {
 					}
 					bucket_node_handle = next_node;
 				} else {
-					typename bucket_t::node_handle_t next_node = bucket_t::prev(bucket_node_handle, 1);
+					typename bucket_t::NodeHandle next_node = bucket_t::prev(bucket_node_handle, 1);
 					if (!next_node) {
 						while ((!next_node) && (idx_cur_bucket != SIZE_MAX)) {
 							if (!idx_cur_bucket) {
@@ -447,23 +447,23 @@ namespace kfxx {
 				return *this;
 			}
 
-			PBOS_FORCEINLINE iterator operator++(int) {
-				iterator it = *this;
+			PBOS_FORCEINLINE Iterator operator++(int) {
+				Iterator it = *this;
 				++(*this);
 				return it;
 			}
 
-			PBOS_FORCEINLINE iterator &operator--() {
-				if (direction == iterator_direction::Forward) {
+			PBOS_FORCEINLINE Iterator &operator--() {
+				if (direction == IteratorDirection::Forward) {
 					if (idx_cur_bucket == SIZE_MAX) {
 						idx_cur_bucket = hash_set->_buckets.size();
 						bucket_node_handle = hash_set->_buckets.at(idx_cur_bucket).last_node();
 					} else {
-						typename bucket_t::node_handle_t next_node = bucket_t::prev(bucket_node_handle, 1);
+						typename bucket_t::NodeHandle next_node = bucket_t::prev(bucket_node_handle, 1);
 						if (!next_node) {
 							while (!next_node) {
 								if (!idx_cur_bucket) {
-									km_panic("Decreasing the beginning iterator");
+									km_panic("Decreasing the beginning Iterator");
 								} else {
 									--idx_cur_bucket;
 									next_node = hash_set->_buckets.at(idx_cur_bucket).last_node();
@@ -477,11 +477,11 @@ namespace kfxx {
 						idx_cur_bucket = 0;
 						bucket_node_handle = hash_set->_buckets.at(0).first_node();
 					} else {
-						typename bucket_t::node_handle_t next_node = bucket_t::next(bucket_node_handle, 1);
+						typename bucket_t::NodeHandle next_node = bucket_t::next(bucket_node_handle, 1);
 						if (!next_node) {
 							while (!next_node) {
 								if (++idx_cur_bucket >= hash_set->_buckets.size()) {
-									km_panic("Decreasing the beginning iterator");
+									km_panic("Decreasing the beginning Iterator");
 								} else {
 									next_node = hash_set->_buckets.at(idx_cur_bucket).first_node();
 								}
@@ -494,115 +494,115 @@ namespace kfxx {
 				return *this;
 			}
 
-			PBOS_FORCEINLINE iterator operator--(int) {
-				iterator it = *this;
+			PBOS_FORCEINLINE Iterator operator--(int) {
+				Iterator it = *this;
 				--(*this);
 				return it;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const iterator &it) const {
+			PBOS_FORCEINLINE bool operator==(const Iterator &it) const {
 				if (hash_set != it.hash_set)
 					km_panic("Cannot compare iterators from different containers");
 				return bucket_node_handle == it.bucket_node_handle;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const iterator &&rhs) const {
-				const iterator it = rhs;
+			PBOS_FORCEINLINE bool operator==(const Iterator &&rhs) const {
+				const Iterator it = rhs;
 				return *this == it;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const iterator &it) const {
+			PBOS_FORCEINLINE bool operator!=(const Iterator &it) const {
 				if (hash_set != it.hash_set)
 					km_panic("Cannot compare iterators from different containers");
 				return bucket_node_handle != it.bucket_node_handle;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(iterator &&rhs) const {
-				iterator it = rhs;
+			PBOS_FORCEINLINE bool operator!=(Iterator &&rhs) const {
+				Iterator it = rhs;
 				return *this != it;
 			}
 
 			PBOS_FORCEINLINE T &operator*() {
 				if (!bucket_node_handle)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return bucket_node_handle->data.data;
 			}
 
 			PBOS_FORCEINLINE T &operator*() const {
 				if (!bucket_node_handle)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return bucket_node_handle->data.data;
 			}
 
 			PBOS_FORCEINLINE T *operator->() {
 				if (!bucket_node_handle)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return &bucket_node_handle->data.data;
 			}
 
 			PBOS_FORCEINLINE T *operator->() const {
 				if (!bucket_node_handle)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return &bucket_node_handle->data.data;
 			}
 		};
 
-		PBOS_FORCEINLINE iterator begin() {
+		PBOS_FORCEINLINE Iterator begin() {
 			for (size_t i = 0; i < _buckets.size(); ++i) {
 				auto &cur_bucket = _buckets.at(i);
-				typename bucket_t::node_handle_t node = cur_bucket.first_node();
+				typename bucket_t::NodeHandle node = cur_bucket.first_node();
 				if (node) {
-					return iterator(this, i, node, iterator_direction::Forward);
+					return Iterator(this, i, node, IteratorDirection::Forward);
 				}
 			}
 			return end();
 		}
-		PBOS_FORCEINLINE iterator end() {
-			return iterator(this, SIZE_MAX, nullptr, iterator_direction::Forward);
+		PBOS_FORCEINLINE Iterator end() {
+			return Iterator(this, SIZE_MAX, nullptr, IteratorDirection::Forward);
 		}
-		PBOS_FORCEINLINE iterator begin_reversed() {
+		PBOS_FORCEINLINE Iterator begin_reversed() {
 			for (size_t i = _buckets.size(); i; --i) {
 				auto &cur_bucket = _buckets.at(i);
-				typename bucket_t::node_handle_t node = cur_bucket.last_node();
+				typename bucket_t::NodeHandle node = cur_bucket.last_node();
 				if (node) {
-					return iterator(this, i, node, iterator_direction::Reversed);
+					return Iterator(this, i, node, IteratorDirection::Reversed);
 				}
 			}
 
 			auto &cur_bucket = _buckets.at(0);
-			typename bucket_t::node_handle_t node = cur_bucket.last_node();
+			typename bucket_t::NodeHandle node = cur_bucket.last_node();
 			if (node) {
-				return iterator(this, 0, node, iterator_direction::Reversed);
+				return Iterator(this, 0, node, IteratorDirection::Reversed);
 			}
 			return end_reversed();
 		}
 
-		PBOS_FORCEINLINE iterator end_reversed() {
-			return iterator(this, SIZE_MAX, nullptr, iterator_direction::Reversed);
+		PBOS_FORCEINLINE Iterator end_reversed() {
+			return Iterator(this, SIZE_MAX, nullptr, IteratorDirection::Reversed);
 		}
 
-		struct const_iterator {
-			iterator _iterator;
-			PBOS_FORCEINLINE const_iterator(iterator &&iterator_in) : _iterator(iterator_in) {
+		struct ConstIterator {
+			Iterator _iterator;
+			PBOS_FORCEINLINE ConstIterator(Iterator &&iterator_in) : _iterator(iterator_in) {
 			}
-			const_iterator(const const_iterator &rhs) = default;
-			const_iterator(const_iterator &&rhs) = default;
-			const_iterator &operator=(const const_iterator &rhs) = default;
-			const_iterator &operator=(const_iterator &&rhs) = default;
+			ConstIterator(const ConstIterator &rhs) = default;
+			ConstIterator(ConstIterator &&rhs) = default;
+			ConstIterator &operator=(const ConstIterator &rhs) = default;
+			ConstIterator &operator=(ConstIterator &&rhs) = default;
 
-			PBOS_FORCEINLINE bool operator==(const const_iterator &rhs) const {
+			PBOS_FORCEINLINE bool operator==(const ConstIterator &rhs) const {
 				return _iterator == rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const_iterator &&rhs) const {
+			PBOS_FORCEINLINE bool operator==(ConstIterator &&rhs) const {
 				return _iterator == rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const const_iterator &rhs) const {
+			PBOS_FORCEINLINE bool operator!=(const ConstIterator &rhs) const {
 				return _iterator == rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const_iterator &&rhs) const {
+			PBOS_FORCEINLINE bool operator!=(ConstIterator &&rhs) const {
 				return _iterator == rhs._iterator;
 			}
 
@@ -622,49 +622,49 @@ namespace kfxx {
 				return &*_iterator;
 			}
 
-			PBOS_FORCEINLINE const_iterator &operator++() {
+			PBOS_FORCEINLINE ConstIterator &operator++() {
 				++_iterator;
 				return *this;
 			}
 		};
 
-		PBOS_FORCEINLINE const_iterator begin_const() const noexcept {
-			return const_iterator(const_cast<this_type *>(this)->begin());
+		PBOS_FORCEINLINE ConstIterator begin_const() const noexcept {
+			return ConstIterator(const_cast<ThisType *>(this)->begin());
 		}
-		PBOS_FORCEINLINE const_iterator end_const() const noexcept {
-			return const_iterator(const_cast<this_type *>(this)->end());
+		PBOS_FORCEINLINE ConstIterator end_const() const noexcept {
+			return ConstIterator(const_cast<ThisType *>(this)->end());
 		}
-		PBOS_FORCEINLINE const_iterator begin_const_reversed() const noexcept {
-			return const_iterator(const_cast<this_type *>(this)->begin_reversed());
+		PBOS_FORCEINLINE ConstIterator begin_const_reversed() const noexcept {
+			return ConstIterator(const_cast<ThisType *>(this)->begin_reversed());
 		}
-		PBOS_FORCEINLINE const_iterator end_const_reversed() const noexcept {
-			return const_iterator(const_cast<this_type *>(this)->end_reversed());
+		PBOS_FORCEINLINE ConstIterator end_const_reversed() const noexcept {
+			return ConstIterator(const_cast<ThisType *>(this)->end_reversed());
 		}
 
-		PBOS_FORCEINLINE iterator find(const T &value) {
+		PBOS_FORCEINLINE Iterator find(const T &value) {
 			size_t index;
 			if constexpr (Fallible) {
 				bucket_node_handle_query_result_t node = _get(value, index);
 				if (!node.hasValue())
 					return end();
-				if (typename bucket_t::node_handle_t handle = node.value(); handle)
-					return iterator(this, index, handle, iterator_direction::Forward);
+				if (typename bucket_t::NodeHandle handle = node.value(); handle)
+					return Iterator(this, index, handle, IteratorDirection::Forward);
 				return end();
 			} else {
-				typename bucket_t::node_handle_t node = _get(value, index);
+				typename bucket_t::NodeHandle node = _get(value, index);
 				if (!node)
 					return end();
-				return iterator(this, index, node, iterator_direction::Forward);
+				return Iterator(this, index, node, IteratorDirection::Forward);
 			}
 		}
 
-		PBOS_FORCEINLINE const_iterator find(const T &value) const {
-			return const_iterator(const_cast<this_type *>(this)->find(value));
+		PBOS_FORCEINLINE ConstIterator find(const T &value) const {
+			return ConstIterator(const_cast<ThisType *>(this)->find(value));
 		}
 
 		PBOS_FORCEINLINE element_query_result_t at(const T &value) {
 			size_t index;
-			typename bucket_t::node_handle_t node;
+			typename bucket_t::NodeHandle node;
 			if constexpr (Fallible) {
 				auto maybe_node = _get(value, index);
 
@@ -682,7 +682,7 @@ namespace kfxx {
 
 		PBOS_FORCEINLINE const_element_query_result_t at(const T &value) const {
 			size_t index;
-			typename bucket_t::node_handle_t node;
+			typename bucket_t::NodeHandle node;
 			if constexpr (Fallible) {
 				auto maybe_node = _get(value, index);
 
@@ -707,10 +707,10 @@ namespace kfxx {
 		}
 	};
 
-	template <typename T, typename EqCmp = std::equal_to<T>, typename Hasher = kfxx::hash<T>>
-	using hash_set_t = hash_set_impl_t<T, EqCmp, Hasher, false>;
-	template <typename T, typename EqCmp = fallible_equal_to<T>, typename Hasher = fallible_hash<T>>
-	using fallible_hash_set_t = hash_set_impl_t<T, EqCmp, Hasher, true>;
+	template <typename T, typename EqCmp = std::equal_to<T>, typename Hasher = kfxx::Hash<T>>
+	using HashSet = HashSetImpl<T, EqCmp, Hasher, false>;
+	template <typename T, typename EqCmp = FallibleEq<T>, typename Hasher = FallibleHash<T>>
+	using FallibleHashSet = HashSetImpl<T, EqCmp, Hasher, true>;
 }
 
 #endif

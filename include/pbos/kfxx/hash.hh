@@ -6,82 +6,82 @@
 
 namespace kfxx {
 	template <typename T>
-	struct hash {
+	struct Hash {
 		static_assert(std::false_type::value, "Hasher not found");
 	};
 
 	template <>
-	struct hash<signed char> {
+	struct Hash<signed char> {
 		PBOS_FORCEINLINE size_t operator()(signed char x) const {
 			return (size_t)x;
 		}
 	};
 
 	template <>
-	struct hash<unsigned char> {
+	struct Hash<unsigned char> {
 		PBOS_FORCEINLINE size_t operator()(unsigned char x) const {
 			return (size_t)x;
 		}
 	};
 
 	template <>
-	struct hash<char> {
+	struct Hash<char> {
 		PBOS_FORCEINLINE size_t operator()(char x) const {
 			return (size_t)x;
 		}
 	};
 
 	template <>
-	struct hash<short> {
+	struct Hash<short> {
 		PBOS_FORCEINLINE size_t operator()(short x) const {
 			return (size_t)x;
 		}
 	};
 
 	template <>
-	struct hash<unsigned short> {
+	struct Hash<unsigned short> {
 		PBOS_FORCEINLINE size_t operator()(unsigned short x) const {
 			return (size_t)x;
 		}
 	};
 
 	template <>
-	struct hash<int> {
+	struct Hash<int> {
 		PBOS_FORCEINLINE size_t operator()(int x) const {
 			return (size_t)x;
 		}
 	};
 
 	template <>
-	struct hash<unsigned int> {
+	struct Hash<unsigned int> {
 		PBOS_FORCEINLINE size_t operator()(unsigned int x) const {
 			return (size_t)x;
 		}
 	};
 
 	template <>
-	struct hash<long> {
+	struct Hash<long> {
 		PBOS_FORCEINLINE size_t operator()(long x) const {
 			return (size_t)x;
 		}
 	};
 
 	template <>
-	struct hash<unsigned long> {
+	struct Hash<unsigned long> {
 		PBOS_FORCEINLINE size_t operator()(unsigned long x) const {
 			return (size_t)x;
 		}
 	};
 
 	template <>
-	struct hash<long long> {
+	struct Hash<long long> {
 		PBOS_FORCEINLINE size_t operator()(long long x) const {
 			return (size_t)x;
 		}
 	};
 
 	template <>
-	struct hash<unsigned long long> {
+	struct Hash<unsigned long long> {
 		PBOS_FORCEINLINE size_t operator()(unsigned long long x) const {
 			return (size_t)x;
 		}

@@ -5,16 +5,16 @@
 #include "mutex.h"
 
 namespace ps {
-	class mutex_t final {
+	class Mutex final {
 	private:
 		ps_mutex_t _mutex;
 
 	public:
-		PBOS_FORCEINLINE mutex_t() noexcept {
+		PBOS_FORCEINLINE Mutex() noexcept {
 			ps_init_mutex(&_mutex);
 		}
 
-		PBOS_FORCEINLINE ~mutex_t() {
+		PBOS_FORCEINLINE ~Mutex() {
 			kd_assert(!ps_is_mutex_locked(&_mutex));
 		}
 
@@ -35,16 +35,16 @@ namespace ps {
 		}
 	};
 
-	class rec_mutex_t final {
+	class RecMutex final {
 	private:
 		ps_rec_mutex_t _mutex;
 
 	public:
-		PBOS_FORCEINLINE rec_mutex_t() noexcept {
+		PBOS_FORCEINLINE RecMutex() noexcept {
 			ps_init_rec_mutex(&_mutex);
 		}
 
-		PBOS_FORCEINLINE ~rec_mutex_t() {
+		PBOS_FORCEINLINE ~RecMutex() {
 			kd_assert(!ps_is_rec_mutex_locked(&_mutex));
 		}
 
@@ -65,45 +65,108 @@ namespace ps {
 		}
 	};
 
-	class mutex_guard {
+	class RwMutex final {
+	private:
+		ps_rw_mutex_t _mutex;
+
+	public:
+		PBOS_FORCEINLINE RwMutex() noexcept {
+			ps_init_rw_mutex(&_mutex);
+		}
+
+		PBOS_FORCEINLINE ~RwMutex() {
+		}
+
+		PBOS_FORCEINLINE void read_lock() noexcept {
+			ps_read_lock_rw_mutex(&_mutex);
+		}
+
+		PBOS_FORCEINLINE void read_unlock() noexcept {
+			ps_read_unlock_rw_mutex(&_mutex);
+		}
+
+		PBOS_FORCEINLINE ps_rw_mutex_t &c_mutex() noexcept {
+			return _mutex;
+		}
+	};
+
+	class MutexGuard {
 	private:
 		ps_mutex_t &_mutex;
 
 	public:
-		PBOS_FORCEINLINE mutex_guard(ps_mutex_t &rec_mutex) : _mutex(rec_mutex) {
+		PBOS_FORCEINLINE MutexGuard(ps_mutex_t &rec_mutex) : _mutex(rec_mutex) {
 			ps_lock_mutex(&_mutex);
 		}
 
-		PBOS_FORCEINLINE ~mutex_guard() {
+		PBOS_FORCEINLINE ~MutexGuard() {
 			ps_unlock_mutex(&_mutex);
 		}
 
-		mutex_guard(const mutex_guard &) = delete;
-		mutex_guard(mutex_guard &&) = delete;
-		mutex_guard &operator=(const mutex_guard &) = delete;
-		mutex_guard &operator=(mutex_guard &&) = delete;
+		MutexGuard(const MutexGuard &) = delete;
+		MutexGuard(MutexGuard &&) = delete;
+		MutexGuard &operator=(const MutexGuard &) = delete;
+		MutexGuard &operator=(MutexGuard &&) = delete;
 	};
 
-	class rec_mutex_guard {
+	class RecMutexGuard {
 	private:
 		ps_rec_mutex_t &_rec_mutex;
 		size_t _lock_times;
 
 	public:
-		PBOS_FORCEINLINE rec_mutex_guard(ps_rec_mutex_t &rec_mutex) : _rec_mutex(rec_mutex) {
+		PBOS_FORCEINLINE RecMutexGuard(ps_rec_mutex_t &rec_mutex) : _rec_mutex(rec_mutex) {
 			ps_lock_rec_mutex(&_rec_mutex);
 			_lock_times = ps_get_rec_mutex_lock_times(&rec_mutex);
 		}
 
-		PBOS_FORCEINLINE ~rec_mutex_guard() {
+		PBOS_FORCEINLINE ~RecMutexGuard() {
 			kd_dbgcheck(_lock_times == ps_get_rec_mutex_lock_times(&_rec_mutex), "The lock times does not match the previous");
 			ps_unlock_rec_mutex(&_rec_mutex);
 		}
 
-		rec_mutex_guard(const rec_mutex_guard &) = delete;
-		rec_mutex_guard(rec_mutex_guard &&) = delete;
-		rec_mutex_guard &operator=(const rec_mutex_guard &) = delete;
-		rec_mutex_guard &operator=(rec_mutex_guard &&) = delete;
+		RecMutexGuard(const RecMutexGuard &) = delete;
+		RecMutexGuard(RecMutexGuard &&) = delete;
+		RecMutexGuard &operator=(const RecMutexGuard &) = delete;
+		RecMutexGuard &operator=(RecMutexGuard &&) = delete;
+	};
+
+	class ReadRwMutexGuard {
+	private:
+		ps_rw_mutex_t &_rw_mutex;
+
+	public:
+		PBOS_FORCEINLINE ReadRwMutexGuard(ps_rw_mutex_t &rec_mutex) : _rw_mutex(rec_mutex) {
+			ps_read_lock_rw_mutex(&_rw_mutex);
+		}
+
+		PBOS_FORCEINLINE ~ReadRwMutexGuard() {
+			ps_read_unlock_rw_mutex(&_rw_mutex);
+		}
+
+		ReadRwMutexGuard(const ReadRwMutexGuard &) = delete;
+		ReadRwMutexGuard(ReadRwMutexGuard &&) = delete;
+		ReadRwMutexGuard &operator=(const ReadRwMutexGuard &) = delete;
+		ReadRwMutexGuard &operator=(ReadRwMutexGuard &&) = delete;
+	};
+
+	class WriteRwMutexGuard {
+	private:
+		ps_rw_mutex_t &_rw_mutex;
+
+	public:
+		PBOS_FORCEINLINE WriteRwMutexGuard(ps_rw_mutex_t &rec_mutex) : _rw_mutex(rec_mutex) {
+			ps_write_lock_rw_mutex(&_rw_mutex);
+		}
+
+		PBOS_FORCEINLINE ~WriteRwMutexGuard() {
+			ps_write_unlock_rw_mutex(&_rw_mutex);
+		}
+
+		WriteRwMutexGuard(const WriteRwMutexGuard &) = delete;
+		WriteRwMutexGuard(WriteRwMutexGuard &&) = delete;
+		WriteRwMutexGuard &operator=(const WriteRwMutexGuard &) = delete;
+		WriteRwMutexGuard &operator=(WriteRwMutexGuard &&) = delete;
 	};
 }
 

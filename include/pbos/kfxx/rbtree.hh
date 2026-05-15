@@ -6,68 +6,66 @@
 #include "fallible_cmp.hh"
 
 namespace kfxx {
-	enum class rbcolor_t : bool {
+	enum class RBColor : bool {
 		BLACK = 0,
 		RED = 1
 	};
 
-	class _rbtree_base {
+	class _RBTreeBase {
 	public:
-		struct node_base {
-			node_base *p = nullptr, *l = nullptr, *r = nullptr;
-			rbcolor_t color = rbcolor_t::BLACK;
+		struct NodeBase {
+			NodeBase *p = nullptr, *l = nullptr, *r = nullptr;
+			RBColor color = RBColor::BLACK;
 		};
 
-		node_base *_root = nullptr;
-		node_base *_cached_min_node = nullptr, *_cached_max_node = nullptr;
+		NodeBase *_root = nullptr;
+		NodeBase *_cached_min_node = nullptr, *_cached_max_node = nullptr;
 		size_t _size = 0;
 
-		PBOS_API static node_base *_get_min_node(node_base *node) noexcept;
-		PBOS_API static node_base *_get_max_node(node_base *node) noexcept;
+		PBOS_API static NodeBase *_get_min_node(NodeBase *node) noexcept;
+		PBOS_API static NodeBase *_get_max_node(NodeBase *node) noexcept;
 
-		PBOS_FORCEINLINE static bool _is_red(node_base *node) noexcept { return node && node->color == rbcolor_t::RED; }
-		PBOS_FORCEINLINE static bool _is_black(node_base *node) noexcept { return (!node) || node->color == rbcolor_t::BLACK; }
+		PBOS_FORCEINLINE static bool _is_red(NodeBase *node) noexcept { return node && node->color == RBColor::RED; }
+		PBOS_FORCEINLINE static bool _is_black(NodeBase *node) noexcept { return (!node) || node->color == RBColor::BLACK; }
 
-		PBOS_API void _lrot(node_base *x) noexcept;
-		PBOS_API void _rrot(node_base *x) noexcept;
+		PBOS_API void _lrot(NodeBase *x) noexcept;
+		PBOS_API void _rrot(NodeBase *x) noexcept;
 
-		PBOS_API void _insert_fixup(node_base *node) noexcept;
+		PBOS_API void _insert_fixup(NodeBase *node) noexcept;
 
-		PBOS_API node_base *_remove_fixup(node_base *node) noexcept;
+		PBOS_API NodeBase *_remove_fixup(NodeBase *node) noexcept;
 
-		PBOS_API static node_base *_get_next(const node_base *node, const node_base *lastnode_t) noexcept;
-		PBOS_API static node_base *_get_prev(const node_base *node, const node_base *firstnode_t) noexcept;
+		PBOS_API static NodeBase *_get_next(const NodeBase *node, const NodeBase *lastnode_t) noexcept;
+		PBOS_API static NodeBase *_get_prev(const NodeBase *node, const NodeBase *firstnode_t) noexcept;
 
-		PBOS_API _rbtree_base() noexcept;
-		PBOS_API ~_rbtree_base();
+		PBOS_API _RBTreeBase() noexcept;
+		PBOS_API ~_RBTreeBase();
 	};
 
 	template <typename T,
 		typename Comparator,
 		bool Fallible,
 		bool IsThreeway>
-	class _rbtree_impl final : protected _rbtree_base {
+	class RBTreeImpl final : protected _RBTreeBase {
 	public:
 		static_assert(std::is_move_assignable_v<T> || std::is_move_constructible_v<T>, "The key must be move-assignable or move-constructible");
 		static_assert(std::is_invocable_v<Comparator, T &, T &>, "The type is not comparable with the comparator");
-		struct node_t : public _rbtree_base::node_base {
+		struct node_t : public _RBTreeBase::NodeBase {
 			T rb_value;
 
 			node_t() = default;
 			PBOS_FORCEINLINE node_t(T &&rb_value) : rb_value(std::move(rb_value)) {}
 		};
 
-		using comparator_type = Comparator;
-
 	private:
-		using node_query_result_t = typename std::conditional<Fallible, option_t<node_t *>, node_t *>::type;
+		using NodeQueryResultType = typename std::conditional<Fallible, Option<node_t *>, node_t *>::type;
 
-		using this_t = _rbtree_impl<T, Comparator, Fallible, IsThreeway>;
+		using ThisType = RBTreeImpl<T, Comparator, Fallible, IsThreeway>;
 
 		Comparator _comparator;
 
 		template <typename U>
-		PBOS_FORCEINLINE node_query_result_t _get(const U &key) const {
+		PBOS_FORCEINLINE NodeQueryResultType _get(const U &key) const {
 			node_t *i = (node_t *)_root;
 
 			if constexpr (Fallible) {
@@ -82,7 +80,7 @@ namespace kfxx {
 						else
 							return i;
 					} else {
-						option_t<bool> result;
+						Option<bool> result;
 
 						if ((result = _comparator(i->rb_value, key)).has_value()) {
 							if (result.value()) {
@@ -133,8 +131,8 @@ namespace kfxx {
 			return nullptr;
 		}
 
-		PBOS_FORCEINLINE node_base **_get_slot(const T &key, node_base *&parent_out) {
-			node_base **i = &_root;
+		PBOS_FORCEINLINE NodeBase **_get_slot(const T &key, NodeBase *&parent_out) {
+			NodeBase **i = &_root;
 			parent_out = nullptr;
 
 			if constexpr (Fallible) {
@@ -151,7 +149,7 @@ namespace kfxx {
 						else
 							return i;
 					} else {
-						option_t<bool> result;
+						Option<bool> result;
 
 						if ((result = _comparator(static_cast<node_t *>(*i)->rb_value, key)).has_value()) {
 							if (result.value()) {
@@ -163,7 +161,7 @@ namespace kfxx {
 									return nullptr;
 								}
 #else
-								i = (node_base **)&(*i)->r;
+								i = (NodeBase **)&(*i)->r;
 #endif
 							} else if ((result = _comparator(key, static_cast<node_t *>(*i)->rb_value)).has_value()) {
 								if (result.value()) {
@@ -209,14 +207,14 @@ namespace kfxx {
 			return i;
 		}
 
-		// TODO: Use option_t for fallible comparison.
+		// TODO: Use Option for fallible comparison.
 		PBOS_FORCEINLINE bool _insert(node_t *parent, node_t *node) {
 			kd_assert(!node->l);
 			kd_assert(!node->r);
 
 			if (!_root) {
 				_root = node;
-				node->color = rbcolor_t::BLACK;
+				node->color = RBColor::BLACK;
 				goto update_node_caches;
 			}
 
@@ -233,7 +231,7 @@ namespace kfxx {
 						return false;
 					}
 				} else {
-					option_t<bool> result;
+					Option<bool> result;
 					if ((result = _comparator(node->rb_value, parent->rb_value)).has_value()) {
 						if (result.value())
 							parent->l = node;
@@ -260,7 +258,7 @@ namespace kfxx {
 				}
 			}
 			node->p = parent;
-			node->color = rbcolor_t::RED;
+			node->color = RBColor::RED;
 
 			_insert_fixup(node);
 
@@ -285,7 +283,7 @@ namespace kfxx {
 		}
 
 		template <typename U>
-		PBOS_FORCEINLINE node_query_result_t _find_max_lteq(const U &data) {
+		PBOS_FORCEINLINE NodeQueryResultType _find_max_lteq(const U &data) {
 			node_t *cur_node = (node_t *)_root, *max_node = NULL;
 
 			if constexpr (Fallible) {
@@ -301,7 +299,7 @@ namespace kfxx {
 						else
 							return cur_node;
 					} else {
-						option_t<bool> result;
+						Option<bool> result;
 
 						if ((result = _comparator(cur_node->rb_value, data)).has_value()) {
 							if (result.value()) {
@@ -357,9 +355,9 @@ namespace kfxx {
 		}
 
 	public:
-		PBOS_FORCEINLINE _rbtree_impl(Comparator &&comparator = {}) : _comparator(std::move(comparator)) {}
+		PBOS_FORCEINLINE RBTreeImpl(Comparator &&comparator = {}) : _comparator(std::move(comparator)) {}
 
-		PBOS_FORCEINLINE _rbtree_impl(this_t &&other)
+		PBOS_FORCEINLINE RBTreeImpl(ThisType &&other)
 			: _comparator(std::move(other._comparator)) {
 			_root = other._root;
 			_cached_min_node = other._cached_min_node;
@@ -372,12 +370,12 @@ namespace kfxx {
 			other._size = 0;
 		}
 
-		PBOS_FORCEINLINE ~_rbtree_impl() {
+		PBOS_FORCEINLINE ~RBTreeImpl() {
 			if (_root)
 				km_panic("Destructing RB-tree without all nodes were removed!");
 		}
 
-		PBOS_FORCEINLINE this_t &operator=(this_t &&other) noexcept {
+		PBOS_FORCEINLINE ThisType &operator=(ThisType &&other) noexcept {
 			if (_root)
 				km_panic("Moving RB-tree without original tree's all nodes were removed!");
 
@@ -395,21 +393,21 @@ namespace kfxx {
 			return *this;
 		}
 
-		PBOS_FORCEINLINE node_query_result_t find_max_lteq(const T &data) {
+		PBOS_FORCEINLINE NodeQueryResultType find_max_lteq(const T &data) {
 			return _find_max_lteq<T>(data);
 		}
 
 		template <typename U>
-		PBOS_FORCEINLINE node_query_result_t find_max_lteq_alt(const U &data) {
+		PBOS_FORCEINLINE NodeQueryResultType find_max_lteq_alt(const U &data) {
 			return _find_max_lteq<U>(data);
 		}
 
-		PBOS_FORCEINLINE node_query_result_t find(const T &key) const {
+		PBOS_FORCEINLINE NodeQueryResultType find(const T &key) const {
 			return _get<T>(key);
 		}
 
 		template <typename U>
-		PBOS_FORCEINLINE node_query_result_t find_alt(const U &key) const {
+		PBOS_FORCEINLINE NodeQueryResultType find_alt(const U &key) const {
 			return _get<U>(key);
 		}
 
@@ -417,9 +415,9 @@ namespace kfxx {
 		/// @param node node_t to be inserted.
 		/// @return Whether the node is inserted successfully, false if node with the same key presents.
 		[[nodiscard]] PBOS_FORCEINLINE bool insert(node_t *node) {
-			// TODO: Use option_t for fallible comparison.
-			node_base *parent = nullptr;
-			node_base **slot = _get_slot(node->rb_value, parent);
+			// TODO: Use Option for fallible comparison.
+			NodeBase *parent = nullptr;
+			NodeBase **slot = _get_slot(node->rb_value, parent);
 
 			if (!slot)
 				return false;
@@ -487,124 +485,124 @@ namespace kfxx {
 		}
 
 		static node_t *get_next(const node_t *node, const node_t *last_node) noexcept {
-			return (node_t *)_get_next((const node_base *)node, (const node_base *)last_node);
+			return (node_t *)_get_next((const NodeBase *)node, (const NodeBase *)last_node);
 		}
 
 		static node_t *get_prev(const node_t *node, const node_t *first_node) noexcept {
-			return (node_t *)_get_prev((const node_base *)node, (const node_base *)first_node);
+			return (node_t *)_get_prev((const NodeBase *)node, (const NodeBase *)first_node);
 		}
 
-		struct iterator {
+		struct Iterator {
 			node_t *node;
-			this_t *tree;
-			iterator_direction direction;
+			ThisType *tree;
+			IteratorDirection direction;
 
-			PBOS_FORCEINLINE iterator(
+			PBOS_FORCEINLINE Iterator(
 				node_t *node,
-				this_t *tree,
-				iterator_direction direction)
+				ThisType *tree,
+				IteratorDirection direction)
 				: node(node),
 				  tree(tree),
 				  direction(direction) {}
 
-			iterator(const iterator &it) = default;
-			PBOS_FORCEINLINE iterator(iterator &&it) {
+			Iterator(const Iterator &it) = default;
+			PBOS_FORCEINLINE Iterator(Iterator &&it) {
 				node = it.node;
 				tree = it.tree;
 				direction = it.direction;
 
-				it.direction = iterator_direction::Invalid;
+				it.direction = IteratorDirection::Invalid;
 			}
-			PBOS_FORCEINLINE iterator &operator=(const iterator &rhs) noexcept {
+			PBOS_FORCEINLINE Iterator &operator=(const Iterator &rhs) noexcept {
 				if (direction != rhs.direction)
-					km_panic("Incompatible iterator direction");
+					km_panic("Incompatible Iterator direction");
 				node = rhs.node;
 				tree = rhs.tree;
 				return *this;
 			}
-			PBOS_FORCEINLINE iterator &operator=(iterator &&rhs) noexcept {
+			PBOS_FORCEINLINE Iterator &operator=(Iterator &&rhs) noexcept {
 				if (direction != rhs.direction)
-					km_panic("Incompatible iterator direction");
-				construct_at<iterator>(this, std::move(rhs));
+					km_panic("Incompatible Iterator direction");
+				construct_at<Iterator>(this, std::move(rhs));
 				return *this;
 			}
 
-			PBOS_FORCEINLINE bool copy(iterator &dest) noexcept {
+			PBOS_FORCEINLINE bool copy(Iterator &dest) noexcept {
 				dest = *this;
 				return true;
 			}
 
-			PBOS_FORCEINLINE iterator &operator++() {
+			PBOS_FORCEINLINE Iterator &operator++() {
 				if (!node)
-					km_panic("Increasing the end iterator");
+					km_panic("Increasing the end Iterator");
 
-				if (direction == iterator_direction::Forward) {
-					node = this_t::get_next(node, nullptr);
+				if (direction == IteratorDirection::Forward) {
+					node = ThisType::get_next(node, nullptr);
 				} else {
-					node = this_t::get_prev(node, nullptr);
+					node = ThisType::get_prev(node, nullptr);
 				}
 
 				return *this;
 			}
 
-			PBOS_FORCEINLINE iterator operator++(int) {
-				iterator it = *this;
+			PBOS_FORCEINLINE Iterator operator++(int) {
+				Iterator it = *this;
 				++(*this);
 				return it;
 			}
 
-			PBOS_FORCEINLINE iterator next() {
-				iterator iterator = *this;
+			PBOS_FORCEINLINE Iterator next() {
+				Iterator Iterator = *this;
 
-				return ++iterator;
+				return ++Iterator;
 			}
 
-			PBOS_FORCEINLINE iterator &operator--() {
-				if (direction == iterator_direction::Forward) {
+			PBOS_FORCEINLINE Iterator &operator--() {
+				if (direction == IteratorDirection::Forward) {
 					if (node == tree->_cached_min_node)
-						km_panic("Dereasing the begin iterator");
+						km_panic("Dereasing the begin Iterator");
 
 					if (!node)
 						node = (node_t *)tree->_cached_max_node;
 					else
-						node = this_t::get_prev(node, nullptr);
+						node = ThisType::get_prev(node, nullptr);
 				} else {
 					if (node == tree->_cached_max_node)
-						km_panic("Dereasing the begin iterator");
+						km_panic("Dereasing the begin Iterator");
 
 					if (!node)
 						node = (node_t *)tree->_cached_min_node;
 					else
-						node = this_t::get_next(node, nullptr);
+						node = ThisType::get_next(node, nullptr);
 				}
 
 				return *this;
 			}
 
-			PBOS_FORCEINLINE iterator operator--(int) {
-				iterator it = *this;
+			PBOS_FORCEINLINE Iterator operator--(int) {
+				Iterator it = *this;
 				--(*this);
 				return it;
 			}
 
-			PBOS_FORCEINLINE iterator prev() {
-				iterator iterator = *this;
+			PBOS_FORCEINLINE Iterator prev() {
+				Iterator Iterator = *this;
 
-				return --iterator;
+				return --Iterator;
 			}
 
 			PBOS_FORCEINLINE bool operator==(const node_t *node) const noexcept {
 				return node == node;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const iterator &it) const {
+			PBOS_FORCEINLINE bool operator==(const Iterator &it) const {
 				if (tree != it.tree)
 					km_panic("Cannot compare iterators from different trees");
 				return node == it.node;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const iterator &&rhs) const {
-				const iterator it = rhs;
+			PBOS_FORCEINLINE bool operator==(const Iterator &&rhs) const {
+				const Iterator it = rhs;
 				return *this == it;
 			}
 
@@ -612,118 +610,118 @@ namespace kfxx {
 				return node != node;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const iterator &it) const {
+			PBOS_FORCEINLINE bool operator!=(const Iterator &it) const {
 				if (tree != it.tree)
 					km_panic("Cannot compare iterators from different trees");
 				return node != it.node;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(iterator &&rhs) const {
-				iterator it = rhs;
+			PBOS_FORCEINLINE bool operator!=(Iterator &&rhs) const {
+				Iterator it = rhs;
 				return *this != it;
 			}
 
 			PBOS_FORCEINLINE T &operator*() {
 				if (!node)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return node->rb_value;
 			}
 
 			PBOS_FORCEINLINE T &operator*() const {
 				if (!node)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return node->rb_value;
 			}
 
 			PBOS_FORCEINLINE T *operator->() {
 				if (!node)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return &node->rb_value;
 			}
 
 			PBOS_FORCEINLINE T *operator->() const {
 				if (!node)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return &node->rb_value;
 			}
 		};
 
-		PBOS_FORCEINLINE iterator begin() {
-			return iterator((node_t *)_get_min_node(_root), this, iterator_direction::Forward);
+		PBOS_FORCEINLINE Iterator begin() {
+			return Iterator((node_t *)_get_min_node(_root), this, IteratorDirection::Forward);
 		}
-		PBOS_FORCEINLINE iterator end() {
-			return iterator(nullptr, this, iterator_direction::Forward);
+		PBOS_FORCEINLINE Iterator end() {
+			return Iterator(nullptr, this, IteratorDirection::Forward);
 		}
-		PBOS_FORCEINLINE iterator begin_reversed() {
-			return iterator((node_t *)_cached_max_node, this, iterator_direction::Reversed);
+		PBOS_FORCEINLINE Iterator begin_reversed() {
+			return Iterator((node_t *)_cached_max_node, this, IteratorDirection::Reversed);
 		}
-		PBOS_FORCEINLINE iterator end_reversed() {
-			return iterator(nullptr, this, iterator_direction::Reversed);
+		PBOS_FORCEINLINE Iterator end_reversed() {
+			return Iterator(nullptr, this, IteratorDirection::Reversed);
 		}
 
-		struct const_iterator {
-			iterator _iterator;
+		struct ConstIterator {
+			Iterator _iterator;
 
-			PBOS_FORCEINLINE const_iterator(
-				iterator &&iterator)
-				: _iterator(iterator) {}
+			PBOS_FORCEINLINE ConstIterator(
+				Iterator &&Iterator)
+				: _iterator(Iterator) {}
 
-			const_iterator(const const_iterator &it) = default;
-			PBOS_FORCEINLINE const_iterator(const_iterator &&it) : _iterator(std::move(it._iterator)) {
+			ConstIterator(const ConstIterator &it) = default;
+			PBOS_FORCEINLINE ConstIterator(ConstIterator &&it) : _iterator(std::move(it._iterator)) {
 			}
-			PBOS_FORCEINLINE const_iterator &operator=(const const_iterator &rhs) noexcept {
+			PBOS_FORCEINLINE ConstIterator &operator=(const ConstIterator &rhs) noexcept {
 				_iterator = rhs._iterator;
 				return *this;
 			}
-			PBOS_FORCEINLINE const_iterator &operator=(const_iterator &&rhs) noexcept {
+			PBOS_FORCEINLINE ConstIterator &operator=(ConstIterator &&rhs) noexcept {
 				_iterator = std::move(rhs._iterator);
 				return *this;
 			}
 
-			PBOS_FORCEINLINE bool copy(const_iterator &dest) noexcept {
-				construct_at<const_iterator>(&dest, *this);
+			PBOS_FORCEINLINE bool copy(ConstIterator &dest) noexcept {
+				construct_at<ConstIterator>(&dest, *this);
 				return true;
 			}
 
-			PBOS_FORCEINLINE const_iterator &operator++() {
+			PBOS_FORCEINLINE ConstIterator &operator++() {
 				++_iterator;
 				return *this;
 			}
 
-			PBOS_FORCEINLINE const_iterator operator++(int) {
-				const_iterator it = *this;
+			PBOS_FORCEINLINE ConstIterator operator++(int) {
+				ConstIterator it = *this;
 				++(*this);
 				return it;
 			}
 
-			PBOS_FORCEINLINE const_iterator next() {
-				const_iterator iterator = *this;
+			PBOS_FORCEINLINE ConstIterator next() {
+				ConstIterator Iterator = *this;
 
-				return ++iterator;
+				return ++Iterator;
 			}
 
-			PBOS_FORCEINLINE const_iterator &operator--() {
+			PBOS_FORCEINLINE ConstIterator &operator--() {
 				--_iterator;
 				return *this;
 			}
 
-			PBOS_FORCEINLINE const_iterator operator--(int) {
-				const_iterator it = *this;
+			PBOS_FORCEINLINE ConstIterator operator--(int) {
+				ConstIterator it = *this;
 				--(*this);
 				return it;
 			}
 
-			PBOS_FORCEINLINE const_iterator prev() {
-				const_iterator iterator = *this;
+			PBOS_FORCEINLINE ConstIterator prev() {
+				ConstIterator Iterator = *this;
 
-				return --iterator;
+				return --Iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const const_iterator &it) const {
+			PBOS_FORCEINLINE bool operator==(const ConstIterator &it) const {
 				return _iterator == it._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const const_iterator &it) const {
+			PBOS_FORCEINLINE bool operator!=(const ConstIterator &it) const {
 				return _iterator != it._iterator;
 			}
 
@@ -731,8 +729,8 @@ namespace kfxx {
 				return _iterator == node;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const_iterator &&rhs) const {
-				const_iterator it = rhs;
+			PBOS_FORCEINLINE bool operator!=(ConstIterator &&rhs) const {
+				ConstIterator it = rhs;
 				return *this != it;
 			}
 
@@ -753,29 +751,29 @@ namespace kfxx {
 			}
 		};
 
-		PBOS_FORCEINLINE const_iterator begin_const() const noexcept {
-			return const_iterator(const_cast<this_t *>(this)->begin());
+		PBOS_FORCEINLINE ConstIterator begin_const() const noexcept {
+			return ConstIterator(const_cast<ThisType *>(this)->begin());
 		}
-		PBOS_FORCEINLINE const_iterator end_const() const noexcept {
-			return const_iterator(const_cast<this_t *>(this)->end());
+		PBOS_FORCEINLINE ConstIterator end_const() const noexcept {
+			return ConstIterator(const_cast<ThisType *>(this)->end());
 		}
-		PBOS_FORCEINLINE const_iterator begin_const_reversed() const noexcept {
-			return const_iterator(const_cast<this_t *>(this)->begin_reversed());
+		PBOS_FORCEINLINE ConstIterator begin_const_reversed() const noexcept {
+			return ConstIterator(const_cast<ThisType *>(this)->begin_reversed());
 		}
-		PBOS_FORCEINLINE const_iterator end_const_reversed() const noexcept {
-			return const_iterator(const_cast<this_t *>(this)->end_reversed());
+		PBOS_FORCEINLINE ConstIterator end_const_reversed() const noexcept {
+			return ConstIterator(const_cast<ThisType *>(this)->end_reversed());
 		}
 
-		PBOS_FORCEINLINE void remove(const iterator &iterator) {
-			kd_assert(("Cannot remove the end iterator", iterator.node));
-			remove(iterator.node);
+		PBOS_FORCEINLINE void remove(const Iterator &Iterator) {
+			kd_assert(("Cannot remove the end Iterator", Iterator.node));
+			remove(Iterator.node);
 		}
 	};
 
-	template <typename T, typename Comparator = cmp<T>, bool IsThreeway = true>
-	using rbtree_t = _rbtree_impl<T, Comparator, false, IsThreeway>;
-	template <typename T, typename Comparator = fallible_cmp<T>, bool IsThreeway = true>
-	using fallible_rbtree_t = _rbtree_impl<T, Comparator, true, IsThreeway>;
+	template <typename T, typename Comparator = Cmp<T>, bool IsThreeway = true>
+	using RBTree = RBTreeImpl<T, Comparator, false, IsThreeway>;
+	template <typename T, typename Comparator = FallibleCmp<T>, bool IsThreeway = true>
+	using FallibleRBTree = RBTreeImpl<T, Comparator, true, IsThreeway>;
 }
 
 #endif

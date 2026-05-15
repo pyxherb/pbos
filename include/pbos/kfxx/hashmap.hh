@@ -8,20 +8,20 @@
 namespace kfxx {
 	template <typename K, typename V, typename Eq, typename Hasher, bool Fallible>
 	// PBOS_REQUIRES_CONCEPT(std::invocable<Eq, const K &, const K &>)
-	class hash_map_impl_t final {
+	class HashMapImpl final {
 	private:
 		static_assert(std::is_move_constructible_v<K>, "The key must be move-constructible");
 		static_assert(std::is_move_constructible_v<V>, "The value must be move-constructible");
-		struct pair_t {
-			uninit_t<K> key;
-			uninit_t<V> value;
+		struct Pair {
+			Uninit<K> key;
+			Uninit<V> value;
 			bool key_constructed;
 			bool value_constructed;
 			bool is_for_query;
 
-			PBOS_FORCEINLINE pair_t() : key_constructed(false), value_constructed(false), is_for_query(true) {}
-			PBOS_FORCEINLINE pair_t(K &&key, V &&value, bool is_for_query) : key(std::move(key)), value(std::move(value)), is_for_query(is_for_query), key_constructed(true), value_constructed(true) {}
-			PBOS_FORCEINLINE pair_t(pair_t &&rhs) noexcept: is_for_query(false) {
+			PBOS_FORCEINLINE Pair() : key_constructed(false), value_constructed(false), is_for_query(true) {}
+			PBOS_FORCEINLINE Pair(K &&key, V &&value, bool is_for_query) : key(std::move(key)), value(std::move(value)), is_for_query(is_for_query), key_constructed(true), value_constructed(true) {}
+			PBOS_FORCEINLINE Pair(Pair &&rhs) noexcept: is_for_query(false) {
 				if (rhs.key_constructed) {
 					key = std::move(rhs.key.get());
 					rhs.key_constructed = false;
@@ -34,7 +34,7 @@ namespace kfxx {
 				}
 			}
 
-			PBOS_FORCEINLINE ~pair_t() {
+			PBOS_FORCEINLINE ~Pair() {
 				if (key_constructed)
 					key.destroy();
 				if (value_constructed)
@@ -42,50 +42,50 @@ namespace kfxx {
 			}
 		};
 
-		struct query_pair_t : public pair_t {
+		struct QueryPair : public Pair {
 			const K *query_key;
 
-			PBOS_FORCEINLINE query_pair_t(const K *query_key): pair_t(), query_key(query_key) {}
+			PBOS_FORCEINLINE QueryPair(const K *query_key): Pair(), query_key(query_key) {}
 		};
 
-		struct pair_comparator_t {
+		struct PairCmp {
 			Eq eq_comparator;
 
-			PBOS_FORCEINLINE decltype(std::declval<Eq>()(std::declval<K>(), std::declval<K>())) operator()(const pair_t &lhs, const pair_t &rhs) const {
-				const K &l = lhs.is_for_query ? *((const query_pair_t &)lhs).query_key : lhs.key.get(),
-						&r = rhs.is_for_query ? *((const query_pair_t &)rhs).query_key : rhs.key.get();
+			PBOS_FORCEINLINE decltype(std::declval<Eq>()(std::declval<K>(), std::declval<K>())) operator()(const Pair &lhs, const Pair &rhs) const {
+				const K &l = lhs.is_for_query ? *((const QueryPair &)lhs).query_key : lhs.key.get(),
+						&r = rhs.is_for_query ? *((const QueryPair &)rhs).query_key : rhs.key.get();
 				return eq_comparator(l, r);
 			}
 		};
 
-		struct pair_hasher_t {
+		struct PairHasher {
 			Hasher hasher;
 
-			PBOS_FORCEINLINE decltype(std::declval<Hasher>()(std::declval<K>())) operator()(const pair_t &pair) const {
-				const K &k = pair.is_for_query ? *((const query_pair_t &)pair).query_key : pair.key.get();
+			PBOS_FORCEINLINE decltype(std::declval<Hasher>()(std::declval<K>())) operator()(const Pair &pair) const {
+				const K &k = pair.is_for_query ? *((const QueryPair &)pair).query_key : pair.key.get();
 				return hasher(k);
 			}
 		};
 
-		pair_comparator_t comparator;
+		PairCmp comparator;
 
-		using set_type_t = std::conditional_t<Fallible, fallible_hash_set_t<pair_t, pair_comparator_t, pair_hasher_t>, hash_set_t<pair_t, pair_comparator_t, pair_hasher_t>>;
+		using SetType = std::conditional_t<Fallible, FallibleHashSet<Pair, PairCmp, PairHasher>, HashSet<Pair, PairCmp, PairHasher>>;
 
-		set_type_t _set;
+		SetType _set;
 
-		using this_type_t = hash_map_impl_t<K, V, Eq, Hasher, Fallible>;
+		using ThisType = HashMapImpl<K, V, Eq, Hasher, Fallible>;
 
 	public:
-		using remove_result_t = typename set_type_t::remove_result_t;
-		using element_query_result_type_t = typename std::conditional_t<Fallible, option_t<V &>, V &>;
-		using const_element_query_result_type_t = typename std::conditional_t<Fallible, option_t<const V &>, const V &>;
-		using contains_result_t = typename set_type_t::contains_result_t;
+		using RemoveResultType = typename SetType::RemoveResultType;
+		using ElementQueryResultType = typename std::conditional_t<Fallible, Option<V &>, V &>;
+		using ConstElementQueryResultType = typename std::conditional_t<Fallible, Option<const V &>, const V &>;
+		using ContainsResultType = typename SetType::ContainsResultType;
 
-		PBOS_FORCEINLINE hash_map_impl_t(allocator_t *allocator) : _set(allocator) {}
-		PBOS_FORCEINLINE hash_map_impl_t(this_type_t &&rhs) : comparator(std::move(rhs.comparator)), _set(std::move(rhs._set)) {
+		PBOS_FORCEINLINE HashMapImpl(Allocator *allocator) : _set(allocator) {}
+		PBOS_FORCEINLINE HashMapImpl(ThisType &&rhs) : comparator(std::move(rhs.comparator)), _set(std::move(rhs._set)) {
 		}
 
-		PBOS_FORCEINLINE this_type_t &operator=(this_type_t &&rhs) noexcept {
+		PBOS_FORCEINLINE ThisType &operator=(ThisType &&rhs) noexcept {
 			clear_and_shrink();
 
 			comparator = std::move(rhs.comparator);
@@ -95,68 +95,68 @@ namespace kfxx {
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool insert_without_resize_buckets(K &&key, V &&value) {
-			pair_t pair = pair_t(std::move(key), std::move(value), false);
+			Pair pair = Pair(std::move(key), std::move(value), false);
 			return _set.insert_without_resize_buckets(std::move(pair));
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool insert(K &&key, V &&value) {
-			pair_t pair = pair_t(std::move(key), std::move(value), false);
+			Pair pair = Pair(std::move(key), std::move(value), false);
 			return _set.insert(std::move(pair));
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool insert_and_fetch_key_without_resize_buckets(K &&key, V &&value) {
-			pair_t pair = pair_t(std::move(key), std::move(value), false);
+			Pair pair = Pair(std::move(key), std::move(value), false);
 			return _set.insert_without_resize_buckets(std::move(pair));
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool insert_and_fetch_key(K &&key, V &&value) {
-			pair_t pair = pair_t(std::move(key), std::move(value), false);
+			Pair pair = Pair(std::move(key), std::move(value), false);
 			return _set.insert(std::move(pair));
 		}
 
-		[[nodiscard]] PBOS_FORCEINLINE remove_result_t remove(const K &key) {
+		[[nodiscard]] PBOS_FORCEINLINE RemoveResultType remove(const K &key) {
 			if constexpr (Fallible) {
-				return _set.remove(query_pair_t(&key));
+				return _set.remove(QueryPair(&key));
 			} else {
-				_set.remove(query_pair_t(&key));
+				_set.remove(QueryPair(&key));
 			}
 		}
 
-		PBOS_FORCEINLINE contains_result_t contains(const K &key) const {
-			return _set.contains(query_pair_t(&key));
+		PBOS_FORCEINLINE ContainsResultType contains(const K &key) const {
+			return _set.contains(QueryPair(&key));
 		}
 
-		PBOS_FORCEINLINE element_query_result_type_t at(const K &key) {
+		PBOS_FORCEINLINE ElementQueryResultType at(const K &key) {
 			if constexpr (Fallible) {
-				auto maybe_pair = _set.at(query_pair_t(&key));
+				auto maybe_pair = _set.at(QueryPair(&key));
 
 				if (!maybe_pair.has_value())
 					return NULL_OPTION;
 
 				return maybe_pair.value().value.get();
 			} else {
-				return _set.at(query_pair_t(&key)).value.get();
+				return _set.at(QueryPair(&key)).value.get();
 			}
 		}
 
-		PBOS_FORCEINLINE const_element_query_result_type_t at(const K &key) const {
+		PBOS_FORCEINLINE ConstElementQueryResultType at(const K &key) const {
 			if constexpr (Fallible) {
-				auto maybe_pair = _set.at(query_pair_t(&key));
+				auto maybe_pair = _set.at(QueryPair(&key));
 
 				if (!maybe_pair.has_value())
 					return NULL_OPTION;
 
 				return maybe_pair.value().value.get();
 			} else {
-				return _set.at(query_pair_t(&key)).value.get();
+				return _set.at(QueryPair(&key)).value.get();
 			}
 		}
 
-		PBOS_FORCEINLINE allocator_t *allocator() const {
+		PBOS_FORCEINLINE Allocator *allocator() const {
 			return _set.allocator();
 		}
 
-		PBOS_FORCEINLINE void replace_allocator(allocator_t *rhs) noexcept {
+		PBOS_FORCEINLINE void replace_allocator(Allocator *rhs) noexcept {
 			_set.replace_allocator(rhs);
 		}
 
@@ -168,38 +168,38 @@ namespace kfxx {
 			_set.clear_and_shrink();
 		}
 
-		struct iterator {
-			typename set_type_t::iterator _iterator;
-			PBOS_FORCEINLINE iterator(typename set_type_t::iterator &&iterator_in) : _iterator(iterator_in) {
+		struct Iterator {
+			typename SetType::Iterator _iterator;
+			PBOS_FORCEINLINE Iterator(typename SetType::Iterator &&iterator_in) : _iterator(iterator_in) {
 			}
-			iterator(const iterator &rhs) = default;
-			iterator(iterator &&rhs) = default;
-			iterator &operator=(const iterator &rhs) = default;
-			iterator &operator=(iterator &&rhs) = default;
+			Iterator(const Iterator &rhs) = default;
+			Iterator(Iterator &&rhs) = default;
+			Iterator &operator=(const Iterator &rhs) = default;
+			Iterator &operator=(Iterator &&rhs) = default;
 
-			PBOS_FORCEINLINE bool operator==(const iterator &rhs) const {
+			PBOS_FORCEINLINE bool operator==(const Iterator &rhs) const {
 				return _iterator == rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator==(iterator &&rhs) const {
+			PBOS_FORCEINLINE bool operator==(Iterator &&rhs) const {
 				return _iterator == rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const iterator &rhs) const {
+			PBOS_FORCEINLINE bool operator!=(const Iterator &rhs) const {
 				return _iterator != rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(iterator &&rhs) const {
+			PBOS_FORCEINLINE bool operator!=(Iterator &&rhs) const {
 				return _iterator != rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE iterator &operator++() {
+			PBOS_FORCEINLINE Iterator &operator++() {
 				++_iterator;
 				return *this;
 			}
 
-			PBOS_FORCEINLINE iterator operator++(int) {
-				iterator it = *this;
+			PBOS_FORCEINLINE Iterator operator++(int) {
+				Iterator it = *this;
 				++*this;
 				return it;
 			}
@@ -217,45 +217,45 @@ namespace kfxx {
 			}
 		};
 
-		iterator begin() {
-			return iterator(_set.begin());
+		Iterator begin() {
+			return Iterator(_set.begin());
 		}
-		iterator end() {
-			return iterator(_set.end());
+		Iterator end() {
+			return Iterator(_set.end());
 		}
-		iterator begin_reversed() {
-			return iterator(_set.begin_reversed());
+		Iterator begin_reversed() {
+			return Iterator(_set.begin_reversed());
 		}
-		iterator end_reversed() {
-			return iterator(_set.end_reversed());
+		Iterator end_reversed() {
+			return Iterator(_set.end_reversed());
 		}
 
-		struct const_iterator {
-			iterator _iterator;
-			PBOS_FORCEINLINE const_iterator(iterator &&iterator_in) : _iterator(iterator_in) {
+		struct ConstIterator {
+			Iterator _iterator;
+			PBOS_FORCEINLINE ConstIterator(Iterator &&iterator_in) : _iterator(iterator_in) {
 			}
-			const_iterator(const const_iterator &rhs) = default;
-			const_iterator(const_iterator &&rhs) = default;
-			const_iterator &operator=(const const_iterator &rhs) = default;
-			const_iterator &operator=(const_iterator &&rhs) = default;
+			ConstIterator(const ConstIterator &rhs) = default;
+			ConstIterator(ConstIterator &&rhs) = default;
+			ConstIterator &operator=(const ConstIterator &rhs) = default;
+			ConstIterator &operator=(ConstIterator &&rhs) = default;
 
-			PBOS_FORCEINLINE bool operator==(const const_iterator &rhs) const {
+			PBOS_FORCEINLINE bool operator==(const ConstIterator &rhs) const {
 				return _iterator == rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const_iterator &&rhs) const {
+			PBOS_FORCEINLINE bool operator==(ConstIterator &&rhs) const {
 				return _iterator == rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const const_iterator &rhs) const {
+			PBOS_FORCEINLINE bool operator!=(const ConstIterator &rhs) const {
 				return _iterator != rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const_iterator &&rhs) const {
+			PBOS_FORCEINLINE bool operator!=(ConstIterator &&rhs) const {
 				return _iterator != rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE const_iterator &operator++() {
+			PBOS_FORCEINLINE ConstIterator &operator++() {
 				++_iterator;
 				return *this;
 			}
@@ -273,37 +273,37 @@ namespace kfxx {
 			}
 		};
 
-		PBOS_FORCEINLINE const_iterator begin_const() const noexcept {
-			return const_iterator(const_cast<this_type_t *>(this)->begin());
+		PBOS_FORCEINLINE ConstIterator begin_const() const noexcept {
+			return ConstIterator(const_cast<ThisType *>(this)->begin());
 		}
-		PBOS_FORCEINLINE const_iterator end_const() const noexcept {
-			return const_iterator(const_cast<this_type_t *>(this)->end());
+		PBOS_FORCEINLINE ConstIterator end_const() const noexcept {
+			return ConstIterator(const_cast<ThisType *>(this)->end());
 		}
-		PBOS_FORCEINLINE const_iterator begin_const_reversed() const noexcept {
-			return const_iterator(const_cast<this_type_t *>(this)->begin_reversed());
+		PBOS_FORCEINLINE ConstIterator begin_const_reversed() const noexcept {
+			return ConstIterator(const_cast<ThisType *>(this)->begin_reversed());
 		}
-		PBOS_FORCEINLINE const_iterator end_const_reversed() const noexcept {
-			return const_iterator(const_cast<this_type_t *>(this)->end_reversed());
+		PBOS_FORCEINLINE ConstIterator end_const_reversed() const noexcept {
+			return ConstIterator(const_cast<ThisType *>(this)->end_reversed());
 		}
-		PBOS_FORCEINLINE const_iterator begin() const {
+		PBOS_FORCEINLINE ConstIterator begin() const {
 			return begin_const();
 		}
-		PBOS_FORCEINLINE const_iterator end() const {
+		PBOS_FORCEINLINE ConstIterator end() const {
 			return end_const();
 		}
-		PBOS_FORCEINLINE const_iterator begin_reversed() const {
+		PBOS_FORCEINLINE ConstIterator begin_reversed() const {
 			return begin_const_reversed();
 		}
-		PBOS_FORCEINLINE const_iterator end_reversed() const {
+		PBOS_FORCEINLINE ConstIterator end_reversed() const {
 			return end_const_reversed();
 		}
 
-		PBOS_FORCEINLINE const_iterator find(const K &key) const {
-			return const_iterator(const_cast<this_type_t *>(this)->find(key));
+		PBOS_FORCEINLINE ConstIterator find(const K &key) const {
+			return ConstIterator(const_cast<ThisType *>(this)->find(key));
 		}
 
-		PBOS_FORCEINLINE iterator find(const K &key) {
-			return iterator(_set.find(query_pair_t(&key)));
+		PBOS_FORCEINLINE Iterator find(const K &key) {
+			return Iterator(_set.find(QueryPair(&key)));
 		}
 
 		PBOS_FORCEINLINE size_t size() const {
@@ -319,10 +319,10 @@ namespace kfxx {
 		}
 	};
 
-	template <typename K, typename V, typename Eq = std::equal_to<K>, typename Hasher = hash<K>>
-	using hash_map_t = hash_map_impl_t<K, V, Eq, Hasher, false>;
-	template <typename K, typename V, typename Eq = fallible_equal_to<K>, typename Hasher = hash<K>>
-	using fallible_hash_map_t = hash_map_impl_t<K, V, Eq, Hasher, true>;
+	template <typename K, typename V, typename Eq = std::equal_to<K>, typename Hasher = kfxx::Hash<K>>
+	using HashMap = HashMapImpl<K, V, Eq, Hasher, false>;
+	template <typename K, typename V, typename Eq = FallibleEq<K>, typename Hasher = kfxx::Hash<K>>
+	using FallibleHashMap = HashMapImpl<K, V, Eq, Hasher, true>;
 }
 
 #endif

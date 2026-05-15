@@ -111,7 +111,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 				pgaccess |= MM_PAGE_EXEC;
 
 			{
-				kfxx::scope_guard unmap_tmp_pgvaddr_guard([cur_context, tmp_pgvaddr]() noexcept {
+				kfxx::ScopeGuard unmap_tmp_pgvaddr_guard([cur_context, tmp_pgvaddr]() noexcept {
 					mm_vmfree(cur_context, tmp_pgvaddr, PAGESIZE);
 				});
 

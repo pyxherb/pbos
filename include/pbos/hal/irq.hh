@@ -6,12 +6,12 @@
 #include "irq.h"
 
 namespace io {
-	class irq_disable_lock final {
+	class LocalIrqLock final {
 	private:
 		bool _int_disabled : 1;
 
 	public:
-		PBOS_FORCEINLINE irq_disable_lock() noexcept {
+		PBOS_FORCEINLINE LocalIrqLock() noexcept {
 			if (!(irq_is_disabled())) {
 				irq_disable();
 				_int_disabled = true;
@@ -19,7 +19,7 @@ namespace io {
 				_int_disabled = false;
 		}
 
-		PBOS_FORCEINLINE ~irq_disable_lock() {
+		PBOS_FORCEINLINE ~LocalIrqLock() {
 			if (_int_disabled)
 				irq_enable();
 		}

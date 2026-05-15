@@ -54,19 +54,19 @@ km_result_t ki_dm_alloc_device(dm_bus_t *bus, dm_device_class_t *device_class, d
 
 	device->ops.destroy = nullptr;
 
-	kfxx::scope_guard release_device_guard([device]() noexcept {
+	kfxx::ScopeGuard release_device_guard([device]() noexcept {
 		ki_dm_destroy_device(device);
 	});
 
 	if (!bus->owned_devices.insert(+device))
 		return KM_RESULT_NO_MEM;
-	kfxx::scope_guard remove_device_from_bus_guard([bus, device]() noexcept {
+	kfxx::ScopeGuard remove_device_from_bus_guard([bus, device]() noexcept {
 		bus->owned_devices.remove(device);
 	});
 
 	if (!device_class->owned_devices.insert(+device))
 		return KM_RESULT_NO_MEM;
-	kfxx::scope_guard remove_device_from_class_guard([device_class, device]() noexcept {
+	kfxx::ScopeGuard remove_device_from_class_guard([device_class, device]() noexcept {
 		device_class->owned_devices.remove(device);
 	});
 
@@ -100,7 +100,7 @@ PBOS_API void dm_unref_device(dm_device_t *device) {
 }
 
 PBOS_API km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device) {
-	ps::rec_mutex_guard gp(parent->device_mutex.c_mutex()),
+	ps::RecMutexGuard gp(parent->device_mutex.c_mutex()),
 		gd(device->device_mutex.c_mutex());
 
 	// The device must be already registered to a bus.
@@ -126,7 +126,7 @@ PBOS_API km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device) {
 }
 
 PBOS_API void dm_unlink_device(dm_device_t *device) {
-	ps::rec_mutex_guard gp(device->parent_device->device_mutex.c_mutex()),
+	ps::RecMutexGuard gp(device->parent_device->device_mutex.c_mutex()),
 		gd(device->device_mutex.c_mutex());
 
 	if (!device->parent_device)

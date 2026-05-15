@@ -59,7 +59,7 @@ void ki_destroy_proc(ps_pcb_t *pcb) {
 void ps_create_proc(
 	ps_pcb_t *pcb,
 	ps_proc_id_t parent) {
-	io::irq_disable_lock irq_disable_lock;
+	io::LocalIrqLock LocalIrqLock;
 	if (ps_global_proc_set.find(pcb->rb_value))
 		km_panic("Trying to create a new process with PCB with PID that is already used by a process");
 
@@ -74,7 +74,7 @@ ps_pcb_t *ps_alloc_pcb() {
 	if (!proc)
 		return nullptr;
 
-	kfxx::scope_guard release_proc_guard([proc]() noexcept {
+	kfxx::ScopeGuard release_proc_guard([proc]() noexcept {
 		ki_destroy_proc(proc);
 	});
 
@@ -114,7 +114,7 @@ ps_proc_id_t ps_pid_of(ps_pcb_t *pcb) {
 }
 
 void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
-	io::irq_disable_lock irq_disable_lock;
+	io::LocalIrqLock LocalIrqLock;
 	// stub: do some checks with the new thread id, such as checking if a thread with the id exists.
 	thread->rb_value = ++proc->last_thread_id;
 	kd_dbgcheck(proc->thread_set.insert(thread), "Error adding thread with PID=%u, TID=%u", proc->rb_value, thread->rb_value);

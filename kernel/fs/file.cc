@@ -147,7 +147,7 @@ _fs_fnode_t::~_fs_fnode_t() {
 
 _fs_file_t::_fs_file_t() : _fs_fnode_t(FS_FILETYPE_FILE) {}
 
-_fs_dir_t::_fs_dir_t(kfxx::allocator_t *allocator) : _fs_fnode_t(FS_FILETYPE_DIR), subnodes(allocator) {}
+_fs_dir_t::_fs_dir_t(kfxx::Allocator *allocator) : _fs_fnode_t(FS_FILETYPE_DIR), subnodes(allocator) {}
 
 PBOS_API void fs_set_fcb_exdata(fs_fcb_t *fcb, void *exdata) {
 	fcb->exdata = exdata;
@@ -292,11 +292,11 @@ PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
 	KM_RETURN_IF_FAILED(fs->ops.premount(parent, file));
 
 	{
-		kfxx::scope_guard mount_fail_guard([fs, parent, file]() noexcept {
+		kfxx::ScopeGuard mount_fail_guard([fs, parent, file]() noexcept {
 			fs->ops.mount_fail(parent, file);
 		});
 
-		if (!f->subnodes.insert(kfxx::string_view(file->filename, file->filename_len), +file))
+		if (!f->subnodes.insert(kfxx::StringView(file->filename, file->filename_len), +file))
 			return KM_RESULT_NO_MEM;
 
 		mount_fail_guard.release();
@@ -311,7 +311,7 @@ PBOS_API km_result_t fs_unmount_file(fs_fnode_t *file) {
 
 	fs_dir_t *parent = static_cast<fs_dir_t *>(file->parent);
 
-	parent->subnodes.remove(kfxx::string_view(file->filename, file->filename_len));
+	parent->subnodes.remove(kfxx::StringView(file->filename, file->filename_len));
 
 	return KM_RESULT_OK;
 }
@@ -321,10 +321,10 @@ PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
 		return KM_RESULT_UNSUPPORTED_OPERATION;
 	fs_dir_t *p = (fs_dir_t *)parent;
 
-	if (p->subnodes.contains(kfxx::string_view(file->filename, file->filename_len)))
+	if (p->subnodes.contains(kfxx::StringView(file->filename, file->filename_len)))
 		return KM_RESULT_EXISTED;
 
-	if (!p->subnodes.insert(kfxx::string_view(file->filename, file->filename_len), +file))
+	if (!p->subnodes.insert(kfxx::StringView(file->filename, file->filename_len), +file))
 		return KM_RESULT_NO_MEM;
 
 	return KM_RESULT_OK;
@@ -336,8 +336,8 @@ PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t 
 	switch (file->file_type) {
 		case FS_FILETYPE_DIR: {
 			fs_dir_t *f = static_cast<fs_dir_t *>(file);
-			if (auto it = f->subnodes.find(kfxx::string_view(filename, filename_len)); it != f->subnodes.end()) {
-				fs::fnode_ptr_t node = it.value();
+			if (auto it = f->subnodes.find(kfxx::StringView(filename, filename_len)); it != f->subnodes.end()) {
+				fs::FNodePtr node = it.value();
 				*file_out = node.get();
 				fs_ref_fnode(node.get());
 			} else
@@ -355,11 +355,11 @@ PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t 
 }
 
 PBOS_API km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out) {
-	fs::fnode_ptr_t file = cur_dir;
+	fs::FNodePtr file = cur_dir;
 	km_result_t result;
 
 	const char *i = path, *last_divider = path;
-	fs::fnode_ptr_t new_file;
+	fs::FNodePtr new_file;
 
 	while (i - path < path_len) {
 		switch (*i) {
@@ -402,7 +402,7 @@ end:;
 }
 
 PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out) {
-	fs::fnode_ptr_t file;
+	fs::FNodePtr file;
 	km_result_t result;
 
 	if (KM_FAILED(result = fs_resolve_path(base_dir, path, path_len, file.get_addr_without_release())))

@@ -6,7 +6,7 @@
 
 mm_context_t **mm_cur_contexts = nullptr;
 
-ps::mutex_t ki_kernel_mmap_mutex;
+ps::Mutex ki_kernel_mmap_mutex;
 
 PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 	void *vaddr,
@@ -41,7 +41,7 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 		return KM_RESULT_INVALID_ARGS;
 	}
 
-	kfxx::scope_guard remove_vmr_guard([ctxt, aligned_vaddr]() noexcept {
+	kfxx::ScopeGuard remove_vmr_guard([ctxt, aligned_vaddr]() noexcept {
 		if (auto node = ctxt->vmr_tree.find(aligned_vaddr))
 			ctxt->vmr_tree.remove(node);
 	});
@@ -49,7 +49,7 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 	if (!(flags & MMAP_IGNORE_VMR)) {
 		if (is_user_space) {
 			ki_mm_lock_vmr(ctxt);
-			kfxx::deferred lock_release([ctxt]() noexcept {
+			kfxx::Deferred lock_release([ctxt]() noexcept {
 				ki_mm_unlock_vmr(ctxt);
 			});
 
@@ -81,7 +81,7 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 	} else
 		remove_vmr_guard.release();
 
-	kfxx::scope_guard release_kernel_mmap_mutex_guard([]() noexcept {
+	kfxx::ScopeGuard release_kernel_mmap_mutex_guard([]() noexcept {
 		ki_kernel_mmap_mutex.unlock();
 	});
 
@@ -123,7 +123,7 @@ PBOS_API km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 	if (!(flags & MMAP_IGNORE_VMR)) {
 		if (is_user_space) {
 			ki_mm_lock_vmr(ctxt);
-			kfxx::deferred lock_release([ctxt]() noexcept {
+			kfxx::Deferred lock_release([ctxt]() noexcept {
 				ki_mm_unlock_vmr(ctxt);
 			});
 
@@ -145,7 +145,7 @@ PBOS_API km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 		}
 	}
 
-	kfxx::scope_guard release_kernel_mmap_mutex_guard([]() noexcept {
+	kfxx::ScopeGuard release_kernel_mmap_mutex_guard([]() noexcept {
 		ki_kernel_mmap_mutex.unlock();
 	});
 
@@ -166,7 +166,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_merge_mapped_area(
 		return KM_RESULT_INVALID_ARGS;
 
 	ki_mm_lock_vmr(context);
-	kfxx::deferred lock_release([context]() noexcept {
+	kfxx::Deferred lock_release([context]() noexcept {
 		ki_mm_unlock_vmr(context);
 	});
 
@@ -208,7 +208,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
 	}
 
 	ki_mm_lock_vmr(context);
-	kfxx::deferred lock_release([context]() noexcept {
+	kfxx::Deferred lock_release([context]() noexcept {
 		ki_mm_unlock_vmr(context);
 	});
 
@@ -263,7 +263,7 @@ PBOS_API km_result_t mm_set_page_access(
 
 	if (is_user_space) {
 		ki_mm_lock_vmr(context);
-		kfxx::deferred lock_release([context]() noexcept {
+		kfxx::Deferred lock_release([context]() noexcept {
 			ki_mm_unlock_vmr(context);
 		});
 
@@ -303,10 +303,10 @@ PBOS_API void *mm_vmalloc(mm_context_t *context,
 		return nullptr;
 	}
 
-	kfxx::scope_guard release_user_mmap_mutex_guard([context]() noexcept {
+	kfxx::ScopeGuard release_user_mmap_mutex_guard([context]() noexcept {
 		context->vmr_mutex.unlock();
 	});
-	kfxx::scope_guard release_kernel_mmap_mutex_guard([]() noexcept {
+	kfxx::ScopeGuard release_kernel_mmap_mutex_guard([]() noexcept {
 		ki_kernel_mmap_mutex.unlock();
 	});
 
@@ -349,7 +349,7 @@ void ki_mm_unlock_area(mm_context_t *mm_context, mm_vmr_t *vmr) {
 }
 
 PBOS_API km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t required_access) {
-	// io::irq_disable_lock irq_lock;
+	// io::LocalIrqLock irq_lock;
 	char *p = (char *)PGFLOOR((uintptr_t)ptr);
 
 	// Overflow is an error.
@@ -387,7 +387,7 @@ PBOS_API km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr
 		}
 	} else {
 		ki_mm_lock_vmr(mm_context);
-		kfxx::deferred lock_release([mm_context]() noexcept {
+		kfxx::Deferred lock_release([mm_context]() noexcept {
 			ki_mm_unlock_vmr(mm_context);
 		});
 
@@ -400,7 +400,7 @@ PBOS_API km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr
 
 		kd_assert(vmr_end);
 
-		kfxx::scope_guard restore_guard([mm_context, initial_vmr, &vmr]() noexcept {
+		kfxx::ScopeGuard restore_guard([mm_context, initial_vmr, &vmr]() noexcept {
 			mm_vmr_t *i = vmr;
 
 			while (i) {
@@ -469,7 +469,7 @@ PBOS_API km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t
 		}
 	} else {
 		ki_mm_lock_vmr(mm_context);
-		kfxx::deferred lock_release([mm_context]() noexcept {
+		kfxx::Deferred lock_release([mm_context]() noexcept {
 			ki_mm_unlock_vmr(mm_context);
 		});
 

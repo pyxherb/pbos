@@ -4,7 +4,7 @@
 #include "bus.h"
 #include <pbos/dm/device.h>
 
-class ki_dm_device_allocator_t : public kfxx::allocator_t {
+class ki_dm_device_allocator_t : public kfxx::Allocator {
 public:
 	PBOS_PRIVATE ki_dm_device_allocator_t();
 	PBOS_PRIVATE virtual ~ki_dm_device_allocator_t();
@@ -24,9 +24,9 @@ typedef struct _dm_device_class_t {
 	char *name;
 	size_t name_len;
 
-	kfxx::set_t<dm_device_t *> owned_devices;
+	kfxx::Set<dm_device_t *> owned_devices;
 
-	ps::mutex_t bus_mutex;
+	ps::Mutex bus_mutex;
 } dm_device_class_t;
 
 typedef struct _dm_device_t {
@@ -42,7 +42,7 @@ typedef struct _dm_device_t {
 
 	dm_device_ops_t ops;
 
-	ps::rec_mutex_t device_mutex;
+	ps::RecMutex device_mutex;
 
 	void *exdata = nullptr;
 

@@ -8,29 +8,29 @@
 
 namespace kfxx {
 	template <typename T>
-	struct fallible_less {
-		option_t<bool> operator()(const T &lhs, const T &rhs) const {
+	struct FallibleLt {
+		Option<bool> operator()(const T &lhs, const T &rhs) const {
 			return lhs < rhs;
 		}
 	};
 
 	template <typename T>
-	struct fallible_greater {
-		option_t<bool> operator()(const T &lhs, const T &rhs) const {
+	struct FallibleGt {
+		Option<bool> operator()(const T &lhs, const T &rhs) const {
 			return lhs > rhs;
 		}
 	};
 
 	template <typename T>
-	struct fallible_equal_to {
-		option_t<bool> operator()(const T &lhs, const T &rhs) const {
+	struct FallibleEq {
+		Option<bool> operator()(const T &lhs, const T &rhs) const {
 			return lhs == rhs;
 		}
 	};
 
 	template <typename T>
-	struct fallible_cmp {
-		option_t<int> operator()(const T &lhs, const T &rhs) const {
+	struct FallibleCmp {
+		Option<int> operator()(const T &lhs, const T &rhs) const {
 #if __cplusplus >= 202002L
 			return lhs <=> rhs;
 #else

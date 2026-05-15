@@ -25,7 +25,7 @@ bool mm_is_user_space(const void *ptr) {
 }
 
 bool mm_probe_user_space(mm_context_t *mm_context, const void *ptr, size_t size) {
-	io::irq_disable_lock irq_lock;
+	io::LocalIrqLock irq_lock;
 
 	const char *p = (const char *)PGFLOOR((uintptr_t)ptr), *limit = p + PGCEIL(size);
 	mm_pgaccess_t pgaccess;

@@ -8,7 +8,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-kfxx::hash_map_t<kfxx::string_view, fs_file_system_t *> ki_registered_fs(kfxx::kernel_allocator());
+kfxx::HashMap<kfxx::StringView, fs_file_system_t *> ki_registered_fs(kfxx::kernel_allocator());
 fs_fnode_t *fs_abs_root_dir;
 fs_file_system_t *fs_rootfs;
 
@@ -29,7 +29,7 @@ PBOS_API fs_file_system_t *fs_register_file_system(
 	if (!fs)
 		return nullptr;
 
-	kfxx::scope_guard release_fs_guard([fs]() noexcept {
+	kfxx::ScopeGuard release_fs_guard([fs]() noexcept {
 		kfxx::destroy_and_release<fs_file_system_t>(kfxx::kernel_allocator(), fs);
 	});
 
@@ -38,7 +38,7 @@ PBOS_API fs_file_system_t *fs_register_file_system(
 	fs->name_len = name_len;
 	memcpy(&fs->ops, ops, sizeof(fs_file_system_ops_t));
 
-	if (!ki_registered_fs.insert(kfxx::string_view(fs->name, name_len), +fs))
+	if (!ki_registered_fs.insert(kfxx::StringView(fs->name, name_len), +fs))
 		return nullptr;
 
 	release_fs_guard.release();

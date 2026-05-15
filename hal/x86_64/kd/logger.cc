@@ -345,7 +345,7 @@ int do_vprintf(kd_logger_t *logger, const char *s, va_list args) {
 }
 
 void klog_vprintf(const char *str, va_list args) {
-	// io::irq_disable_lock irq_lock;
+	// io::LocalIrqLock irq_lock;
 	hal_lock_spinlock(&hn_logger_spinlock);
 	do_vprintf(hn_active_logger, str, args);
 	hal_unlock_spinlock(&hn_logger_spinlock);

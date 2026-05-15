@@ -11,7 +11,7 @@ static uintptr_t hn_pt_rounddowner(uintptr_t addr) {
 	return (uintptr_t)VADDR(PDX(addr), PTX(addr), 0);
 }
 
-static kfxx::rbtree_t<void *> hn_kspace_vpm_query_tree[HN_VPM_LEVEL_MAX + 1];
+static kfxx::RBTree<void *> hn_kspace_vpm_query_tree[HN_VPM_LEVEL_MAX + 1];
 
 const ki_paging_config_t KN_PAGING_CONFIG_32BIT = {
 	.pgtab_level = HN_VPM_LEVEL_MAX + 1,
@@ -23,7 +23,7 @@ const ki_paging_config_t KN_PAGING_CONFIG_32BIT = {
 	.kspace_vpm_query_tree = hn_kspace_vpm_query_tree
 };
 
-kfxx::rbtree_t<void *> *ki_mm_get_vpm_lookup_tree(mm_context_t *context, const void *addr, int level) {
+kfxx::RBTree<void *> *ki_mm_get_vpm_lookup_tree(mm_context_t *context, const void *addr, int level) {
 	if (!mm_probe_user_space(context, addr, 0))
 		return &context->uspace_vpm_query_tree[level];
 	if ((addr >= (void *)KALLPGTAB_VBASE) &&

@@ -2,7 +2,7 @@
 #include <pbos/ki/mm/kima.hh>
 
 kima_ublk_t *kima_lookup_ublk(kima_pool_t *pool, void *ptr) {
-	kfxx::rbtree_t<void *>::node_t *node = pool->ublk_query_tree.find(ptr);
+	kfxx::RBTree<void *>::node_t *node = pool->ublk_query_tree.find(ptr);
 
 	if (!node)
 		return nullptr;
@@ -11,7 +11,7 @@ kima_ublk_t *kima_lookup_ublk(kima_pool_t *pool, void *ptr) {
 }
 
 kima_ublk_t *kima_lookup_nearest_ublk(kima_pool_t *pool, void *ptr) {
-	kfxx::rbtree_t<void *>::node_t *node = pool->ublk_query_tree.find_max_lteq(ptr);
+	kfxx::RBTree<void *>::node_t *node = pool->ublk_query_tree.find_max_lteq(ptr);
 
 	if (!node)
 		return nullptr;

@@ -30,7 +30,7 @@ klog_logger_t klog_get_default_logger() {
 }
 
 void klog_vprintf(const char *str, va_list args) {
-	io::irq_disable_lock irq_lock;
+	io::LocalIrqLock irq_lock;
 	hal_spinlock_lock(&hn_logger_spinlock);
 	hn_active_logger(KLOG_MODE_PRINTFMT, str, args);
 	hal_spinlock_unlock(&hn_logger_spinlock);

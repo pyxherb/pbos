@@ -6,10 +6,10 @@
 
 #ifdef __cplusplus
 namespace kfxx {
-	class allocator_t {
+	class Allocator {
 	public:
-		PBOS_API allocator_t();
-		PBOS_API virtual ~allocator_t() = 0;
+		PBOS_API Allocator();
+		PBOS_API virtual ~Allocator() = 0;
 
 		virtual size_t inc_ref() noexcept = 0;
 		virtual size_t dec_ref() noexcept = 0;
@@ -22,10 +22,10 @@ namespace kfxx {
 		virtual void *type_identity() const noexcept = 0;
 	};
 
-	class kernel_allocator_t : public kfxx::allocator_t {
+	class KernelAllocator : public kfxx::Allocator {
 	public:
-		PBOS_API kernel_allocator_t();
-		PBOS_API virtual ~kernel_allocator_t();
+		PBOS_API KernelAllocator();
+		PBOS_API virtual ~KernelAllocator();
 
 		PBOS_API virtual size_t inc_ref() noexcept override;
 		PBOS_API virtual size_t dec_ref() noexcept override;
@@ -38,18 +38,18 @@ namespace kfxx {
 		PBOS_API virtual void *type_identity() const noexcept override;
 	};
 
-	PBOS_API extern kernel_allocator_t g_kernel_allocator;
+	PBOS_API extern KernelAllocator g_kernel_allocator;
 
 	///
 	/// @brief Get the global kernel allocator.
 	///
 	/// @return Pointer to the global kernel allocaotr.
 	///
-	PBOS_FORCEINLINE kernel_allocator_t *kernel_allocator() noexcept {
+	PBOS_FORCEINLINE KernelAllocator *kernel_allocator() noexcept {
 		return &g_kernel_allocator;
 	}
 
-	PBOS_FORCEINLINE void verify_allocator(const allocator_t *x, const allocator_t *y) {
+	PBOS_FORCEINLINE void verify_allocator(const Allocator *x, const Allocator *y) {
 		if (x && y) {
 			// Check if the allocators have the same type.
 			kd_dbgcheck(x->type_identity() == y->type_identity(), "Incompatible allocators");
@@ -58,7 +58,7 @@ namespace kfxx {
 
 	template <typename T, typename... Args>
 	// PBOS_REQUIRES_CONCEPT(std::constructible_from<T, Args...>)
-	PBOS_FORCEINLINE T *alloc_and_construct(allocator_t *alloc, Args &&...args) {
+	PBOS_FORCEINLINE T *alloc_and_construct(Allocator *alloc, Args &&...args) {
 		static_assert(std::is_constructible_v<T, Args...>, "Cannot construct from provided arguments!");
 		char *p = (char *)alloc->alloc(sizeof(T), alignof(T));
 		if (!p)
@@ -68,7 +68,7 @@ namespace kfxx {
 	}
 
 	template <typename T>
-	PBOS_FORCEINLINE void destroy_and_release(allocator_t *alloc, T *const ptr) {
+	PBOS_FORCEINLINE void destroy_and_release(Allocator *alloc, T *const ptr) {
 		kfxx::destroy_at<T>(ptr);
 		alloc->release(ptr, sizeof(T), alignof(T));
 	}

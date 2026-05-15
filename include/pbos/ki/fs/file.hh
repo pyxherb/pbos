@@ -9,7 +9,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-class ki_fs_filename_allocator_t : public kfxx::allocator_t {
+class ki_fs_filename_allocator_t : public kfxx::Allocator {
 public:
 	PBOS_PRIVATE ki_fs_filename_allocator_t();
 	PBOS_PRIVATE virtual ~ki_fs_filename_allocator_t();
@@ -25,7 +25,7 @@ public:
 	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
 };
 
-class ki_fs_fnode_allocator_t : public kfxx::allocator_t {
+class ki_fs_fnode_allocator_t : public kfxx::Allocator {
 public:
 	PBOS_PRIVATE ki_fs_fnode_allocator_t();
 	PBOS_PRIVATE virtual ~ki_fs_fnode_allocator_t();
@@ -41,7 +41,7 @@ public:
 	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
 };
 
-class ki_fs_fcb_allocator_t : public kfxx::allocator_t {
+class ki_fs_fcb_allocator_t : public kfxx::Allocator {
 public:
 	PBOS_PRIVATE ki_fs_fcb_allocator_t();
 	PBOS_PRIVATE virtual ~ki_fs_fcb_allocator_t();
@@ -60,8 +60,8 @@ public:
 extern ki_fs_filename_allocator_t ki_fs_filename_allocator;
 extern ki_fs_fnode_allocator_t ki_fs_fnode_allocator;
 
-typedef struct _fs_fcb_t : public kfxx::rbtree_t<fs_fhandle_t>::node_t {
-	fs::fnode_ptr_t fnode;
+typedef struct _fs_fcb_t : public kfxx::RBTree<fs_fhandle_t>::node_t {
+	fs::FNodePtr fnode;
 	void *exdata = nullptr;
 
 	_fs_fcb_t(fs_fnode_t *fnode);
@@ -90,9 +90,9 @@ typedef struct _fs_file_t : public fs_fnode_t {
 } fs_file_t;
 
 typedef struct _fs_dir_t : public fs_fnode_t {
-	kfxx::hash_map_t<kfxx::string_view, fs::fnode_ptr_t> subnodes;
+	kfxx::HashMap<kfxx::StringView, fs::FNodePtr> subnodes;
 
-	_fs_dir_t(kfxx::allocator_t *allocator);
+	_fs_dir_t(kfxx::Allocator *allocator);
 } fs_dir_t;
 
 PBOS_NODISCARD km_result_t ki_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t **fcb_out);

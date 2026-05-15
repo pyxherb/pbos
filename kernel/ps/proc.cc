@@ -5,7 +5,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-kfxx::rbtree_t<ps_proc_id_t> ps_global_proc_set;
+kfxx::RBTree<ps_proc_id_t> ps_global_proc_set;
 ps_sched_t *ps_cur_sched = NULL;
 
 PBOS_API ps_pcb_t *ps_get_cur_proc() {

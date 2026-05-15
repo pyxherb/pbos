@@ -7,7 +7,7 @@
 #include <pbos/kfxx/hashmap.hh>
 #include <pbos/kfxx/string_view.hh>
 
-class ki_dm_bus_allocator_t : public kfxx::allocator_t {
+class ki_dm_bus_allocator_t : public kfxx::Allocator {
 public:
 	PBOS_PRIVATE ki_dm_bus_allocator_t();
 	PBOS_PRIVATE virtual ~ki_dm_bus_allocator_t();
@@ -28,14 +28,14 @@ typedef struct _dm_bus_t {
 	size_t name_len;
 
 	dm_bus_ops_t ops;
-	kfxx::set_t<dm_device_t *> owned_devices;
-	ps::rec_mutex_t bus_mutex;
+	kfxx::Set<dm_device_t *> owned_devices;
+	ps::RecMutex bus_mutex;
 	void *exdata;
 
 	_dm_bus_t();
 } dm_bus_t;
 
-extern kfxx::hash_map_t<kfxx::string_view, dm_bus_t *> ki_dm_registered_buses;
+extern kfxx::HashMap<kfxx::StringView, dm_bus_t *> ki_dm_registered_buses;
 
 km_result_t ki_dm_alloc_bus(const char *name, size_t name_len, const dm_bus_ops_t *ops, dm_bus_t **bus_out);
 void ki_dm_destroy_bus(dm_bus_t *bus);

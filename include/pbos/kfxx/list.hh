@@ -9,7 +9,7 @@
 
 namespace kfxx {
 	template <typename T>
-	class list_t {
+	class List {
 	public:
 		struct node_t {
 			node_t *prev = nullptr, *next = nullptr;
@@ -19,29 +19,29 @@ namespace kfxx {
 			}
 		};
 
-		using node_handle_t = node_t *;
+		using NodeHandle = node_t *;
 
-		static PBOS_FORCEINLINE node_handle_t null_node_handle() {
+		static PBOS_FORCEINLINE NodeHandle null_node_handle() {
 			return nullptr;
 		}
 
 	private:
-		using this_type_t = list_t<T>;
+		using ThisType = List<T>;
 
 		node_t *_first = nullptr, *_last = nullptr;
 		size_t _length = 0;
-		rc_object_ptr_t<allocator_t> _allocator;
+		RcObjectPtr<Allocator> _allocator;
 
 		[[nodiscard]] PBOS_FORCEINLINE node_t *_alloc_node(T &&data) {
 			node_t *node = (node_t *)_allocator->alloc(sizeof(node_t), alignof(node_t));
 			if (!node)
 				return nullptr;
 
-			scope_guard scope_guard([this, node]() noexcept {
+			ScopeGuard ScopeGuard([this, node]() noexcept {
 				_allocator->release(node, sizeof(node_t), alignof(node_t));
 			});
 			construct_at<node_t>(node, std::move(data));
-			scope_guard.release();
+			ScopeGuard.release();
 
 			return node;
 		}
@@ -109,20 +109,20 @@ namespace kfxx {
 		}
 
 	public:
-		PBOS_FORCEINLINE list_t(allocator_t *allocator) : _allocator(allocator) {}
-		list_t(const this_type_t &other) = delete;
-		PBOS_FORCEINLINE list_t(this_type_t &&other) : _first(other._first), _last(other._last), _length(other._length), _allocator(std::move(other._allocator)) {
+		PBOS_FORCEINLINE List(Allocator *allocator) : _allocator(allocator) {}
+		List(const ThisType &other) = delete;
+		PBOS_FORCEINLINE List(ThisType &&other) : _first(other._first), _last(other._last), _length(other._length), _allocator(std::move(other._allocator)) {
 			other._first = nullptr;
 			other._last = nullptr;
 			other._length = 0;
 		}
-		PBOS_FORCEINLINE this_type_t &operator=(this_type_t &&other) {
+		PBOS_FORCEINLINE ThisType &operator=(ThisType &&other) {
 			clear();
-			construct_at<list_t>(this, std::move(other));
+			construct_at<List>(this, std::move(other));
 			return *this;
 		}
-		PBOS_FORCEINLINE this_type_t &operator=(const this_type_t &other) = delete;
-		PBOS_FORCEINLINE ~list_t() {
+		PBOS_FORCEINLINE ThisType &operator=(const ThisType &other) = delete;
+		PBOS_FORCEINLINE ~List() {
 			for (node_t *i = _first; i != nullptr;) {
 				node_t *next = i->next;
 
@@ -132,7 +132,7 @@ namespace kfxx {
 			}
 		}
 
-		[[nodiscard]] PBOS_FORCEINLINE node_handle_t insert_front(node_handle_t node, node_handle_t new_node) {
+		[[nodiscard]] PBOS_FORCEINLINE NodeHandle insert_front(NodeHandle node, NodeHandle new_node) {
 			kd_assert(node);
 
 			_prepend(node, new_node);
@@ -140,7 +140,7 @@ namespace kfxx {
 			return new_node;
 		}
 
-		[[nodiscard]] PBOS_FORCEINLINE node_handle_t insert_back(node_handle_t node, node_handle_t new_node) {
+		[[nodiscard]] PBOS_FORCEINLINE NodeHandle insert_back(NodeHandle node, NodeHandle new_node) {
 			kd_assert(node);
 
 			_append(node, new_node);
@@ -148,11 +148,11 @@ namespace kfxx {
 			return new_node;
 		}
 
-		PBOS_FORCEINLINE void push_front(node_handle_t node) noexcept {
+		PBOS_FORCEINLINE void push_front(NodeHandle node) noexcept {
 			_prepend(_first, node);
 		}
 
-		[[nodiscard]] PBOS_FORCEINLINE node_handle_t push_front(T &&data) {
+		[[nodiscard]] PBOS_FORCEINLINE NodeHandle push_front(T &&data) {
 			node_t *new_node = _alloc_node(std::move(data));
 			if (!new_node)
 				return nullptr;
@@ -160,11 +160,11 @@ namespace kfxx {
 			return new_node;
 		}
 
-		PBOS_FORCEINLINE void push_back(node_handle_t node) noexcept {
+		PBOS_FORCEINLINE void push_back(NodeHandle node) noexcept {
 			_append(_last, node);
 		}
 
-		[[nodiscard]] PBOS_FORCEINLINE node_handle_t push_back(T &&data) {
+		[[nodiscard]] PBOS_FORCEINLINE NodeHandle push_back(T &&data) {
 			node_t *new_node = _alloc_node(std::move(data));
 			if (!new_node)
 				return nullptr;
@@ -180,16 +180,16 @@ namespace kfxx {
 			remove(_last);
 		}
 
-		PBOS_FORCEINLINE void remove(node_handle_t node) {
+		PBOS_FORCEINLINE void remove(NodeHandle node) {
 			_remove(node);
 			_delete_node(node);
 		}
 
-		PBOS_FORCEINLINE void detach(node_handle_t node) {
+		PBOS_FORCEINLINE void detach(NodeHandle node) {
 			_remove(node);
 		}
 
-		PBOS_FORCEINLINE static node_t *next(node_handle_t cur_node, size_t index) {
+		PBOS_FORCEINLINE static node_t *next(NodeHandle cur_node, size_t index) {
 			while (index) {
 				kd_assert(cur_node);
 				cur_node = cur_node->next;
@@ -199,7 +199,7 @@ namespace kfxx {
 			return cur_node;
 		}
 
-		PBOS_FORCEINLINE static node_t *prev(node_handle_t cur_node, size_t index) {
+		PBOS_FORCEINLINE static node_t *prev(NodeHandle cur_node, size_t index) {
 			while (index) {
 				kd_assert(cur_node);
 				cur_node = cur_node->prev;
@@ -209,23 +209,23 @@ namespace kfxx {
 			return cur_node;
 		}
 
-		PBOS_FORCEINLINE void delete_node(node_handle_t node) {
+		PBOS_FORCEINLINE void delete_node(NodeHandle node) {
 			_delete_node(node);
 		}
 
-		PBOS_FORCEINLINE node_handle_t first_node() {
+		PBOS_FORCEINLINE NodeHandle first_node() {
 			return _first;
 		}
 
-		PBOS_FORCEINLINE const node_handle_t first_node() const {
+		PBOS_FORCEINLINE const NodeHandle first_node() const {
 			return _first;
 		}
 
-		PBOS_FORCEINLINE node_handle_t last_node() {
+		PBOS_FORCEINLINE NodeHandle last_node() {
 			return _last;
 		}
 
-		PBOS_FORCEINLINE const node_handle_t last_node() const {
+		PBOS_FORCEINLINE const NodeHandle last_node() const {
 			return _last;
 		}
 
@@ -262,54 +262,54 @@ namespace kfxx {
 			return _length;
 		}
 
-		struct iterator {
+		struct Iterator {
 			node_t *node;
-			this_type_t *list;
-			iterator_direction direction;
+			ThisType *list;
+			IteratorDirection direction;
 
-			PBOS_FORCEINLINE iterator(
+			PBOS_FORCEINLINE Iterator(
 				node_t *node,
-				this_type_t *list,
-				iterator_direction direction)
+				ThisType *list,
+				IteratorDirection direction)
 				: node(node),
 				  list(list),
 				  direction(direction) {}
 
-			iterator(const iterator &it) = default;
-			PBOS_FORCEINLINE iterator(iterator &&it) {
+			Iterator(const Iterator &it) = default;
+			PBOS_FORCEINLINE Iterator(Iterator &&it) {
 				node = it.node;
 				list = it.list;
 				direction = it.direction;
 
 				it.node = nullptr;
 				it.list = nullptr;
-				it.direction = iterator_direction::Invalid;
+				it.direction = IteratorDirection::Invalid;
 			}
-			PBOS_FORCEINLINE iterator &operator=(const iterator &rhs) noexcept {
+			PBOS_FORCEINLINE Iterator &operator=(const Iterator &rhs) noexcept {
 				if (direction != rhs.direction)
-					km_panic("Incompatible iterator direction");
+					km_panic("Incompatible Iterator direction");
 				node = rhs.node;
 				list = rhs.list;
 				return *this;
 			}
-			PBOS_FORCEINLINE iterator &operator=(const iterator &&rhs) noexcept {
+			PBOS_FORCEINLINE Iterator &operator=(const Iterator &&rhs) noexcept {
 				if (direction != rhs.direction)
-					km_panic("Incompatible iterator direction");
+					km_panic("Incompatible Iterator direction");
 				node = rhs.node;
 				list = rhs.list;
 				return *this;
 			}
 
-			PBOS_FORCEINLINE bool copy(iterator &dest) noexcept {
+			PBOS_FORCEINLINE bool copy(Iterator &dest) noexcept {
 				dest = *this;
 				return true;
 			}
 
-			PBOS_FORCEINLINE iterator &operator++() {
+			PBOS_FORCEINLINE Iterator &operator++() {
 				if (!node)
-					km_panic("Increasing the end iterator");
+					km_panic("Increasing the end Iterator");
 
-				if (direction == iterator_direction::Forward) {
+				if (direction == IteratorDirection::Forward) {
 					node = node->next;
 				} else {
 					node = node->prev;
@@ -318,26 +318,26 @@ namespace kfxx {
 				return *this;
 			}
 
-			PBOS_FORCEINLINE iterator operator++(int) {
-				iterator it = *this;
+			PBOS_FORCEINLINE Iterator operator++(int) {
+				Iterator it = *this;
 				++(*this);
 				return it;
 			}
 
-			PBOS_FORCEINLINE iterator &operator--() {
-				if (direction == iterator_direction::Forward) {
+			PBOS_FORCEINLINE Iterator &operator--() {
+				if (direction == IteratorDirection::Forward) {
 					if (!(node = node->prev))
-						km_panic("Dereasing the begin iterator");
+						km_panic("Dereasing the begin Iterator");
 				} else {
 					if (!(node = node->next))
-						km_panic("Dereasing the begin iterator");
+						km_panic("Dereasing the begin Iterator");
 				}
 
 				return *this;
 			}
 
-			PBOS_FORCEINLINE iterator operator--(int) {
-				iterator it = *this;
+			PBOS_FORCEINLINE Iterator operator--(int) {
+				Iterator it = *this;
 				--(*this);
 				return it;
 			}
@@ -346,14 +346,14 @@ namespace kfxx {
 				return node == node;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const iterator &it) const {
+			PBOS_FORCEINLINE bool operator==(const Iterator &it) const {
 				if (list != it.list)
 					km_panic("Cannot compare iterators from different lists");
 				return node == it.node;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const iterator &&rhs) const {
-				const iterator it = rhs;
+			PBOS_FORCEINLINE bool operator==(const Iterator &&rhs) const {
+				const Iterator it = rhs;
 				return *this == it;
 			}
 
@@ -361,122 +361,122 @@ namespace kfxx {
 				return node != node;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const iterator &it) const {
+			PBOS_FORCEINLINE bool operator!=(const Iterator &it) const {
 				if (list != it.list)
 					km_panic("Cannot compare iterators from different lists");
 				return node != it.node;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(iterator &&rhs) const {
-				iterator it = rhs;
+			PBOS_FORCEINLINE bool operator!=(Iterator &&rhs) const {
+				Iterator it = rhs;
 				return *this != it;
 			}
 
 			PBOS_FORCEINLINE T &operator*() {
 				if (!node)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return node->data;
 			}
 
 			PBOS_FORCEINLINE T &operator*() const {
 				if (!node)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return node->data;
 			}
 
 			PBOS_FORCEINLINE T *operator->() {
 				if (!node)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return &node->data;
 			}
 
 			PBOS_FORCEINLINE T *operator->() const {
 				if (!node)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return &node->data;
 			}
 		};
 
-		PBOS_FORCEINLINE iterator begin() {
-			return iterator(_first, this, iterator_direction::Forward);
+		PBOS_FORCEINLINE Iterator begin() {
+			return Iterator(_first, this, IteratorDirection::Forward);
 		}
-		PBOS_FORCEINLINE iterator end() {
-			return iterator(nullptr, this, iterator_direction::Forward);
+		PBOS_FORCEINLINE Iterator end() {
+			return Iterator(nullptr, this, IteratorDirection::Forward);
 		}
-		PBOS_FORCEINLINE iterator begin_reversed() {
-			return iterator(_last, this, iterator_direction::Reversed);
+		PBOS_FORCEINLINE Iterator begin_reversed() {
+			return Iterator(_last, this, IteratorDirection::Reversed);
 		}
-		PBOS_FORCEINLINE iterator end_reversed() {
-			return iterator(nullptr, this, iterator_direction::Reversed);
+		PBOS_FORCEINLINE Iterator end_reversed() {
+			return Iterator(nullptr, this, IteratorDirection::Reversed);
 		}
 
-		struct const_iterator {
+		struct ConstIterator {
 			const node_t *node;
-			const list_t<T> *list;
-			iterator_direction direction;
+			const List<T> *list;
+			IteratorDirection direction;
 
-			PBOS_FORCEINLINE const_iterator(
+			PBOS_FORCEINLINE ConstIterator(
 				const node_t *node,
-				const list_t<T> *list,
-				iterator_direction direction)
+				const List<T> *list,
+				IteratorDirection direction)
 				: node(node),
 				  list(list),
 				  direction(direction) {}
 
-			const_iterator(const const_iterator &it) = default;
-			PBOS_FORCEINLINE const_iterator(const_iterator &&it) {
+			ConstIterator(const ConstIterator &it) = default;
+			PBOS_FORCEINLINE ConstIterator(ConstIterator &&it) {
 				node = it.node;
 				list = it.list;
 				direction = it.direction;
 
 				it.node = nullptr;
 				it.list = nullptr;
-				it.direction = iterator_direction::Invalid;
+				it.direction = IteratorDirection::Invalid;
 			}
-			PBOS_FORCEINLINE const_iterator &operator=(const const_iterator &rhs) noexcept {
+			PBOS_FORCEINLINE ConstIterator &operator=(const ConstIterator &rhs) noexcept {
 				if (direction != rhs.direction)
-					km_panic("Incompatible iterator direction");
-				construct_at<const_iterator>(this, rhs);
+					km_panic("Incompatible Iterator direction");
+				construct_at<ConstIterator>(this, rhs);
 				return *this;
 			}
-			PBOS_FORCEINLINE const_iterator &operator=(const_iterator &&rhs) noexcept {
+			PBOS_FORCEINLINE ConstIterator &operator=(ConstIterator &&rhs) noexcept {
 				if (direction != rhs.direction)
-					km_panic("Incompatible iterator direction");
-				construct_at<const_iterator>(this, std::move(rhs));
+					km_panic("Incompatible Iterator direction");
+				construct_at<ConstIterator>(this, std::move(rhs));
 				return *this;
 			}
 
-			PBOS_FORCEINLINE const_iterator(const iterator &it) {
+			PBOS_FORCEINLINE ConstIterator(const Iterator &it) {
 				(*this) = it;
 			}
-			PBOS_FORCEINLINE const_iterator(iterator &&it) {
+			PBOS_FORCEINLINE ConstIterator(Iterator &&it) {
 				(*this) = it;
 			}
-			PBOS_FORCEINLINE const_iterator &operator=(const iterator &rhs) noexcept {
+			PBOS_FORCEINLINE ConstIterator &operator=(const Iterator &rhs) noexcept {
 				if (direction != rhs.direction)
-					km_panic("Incompatible iterator direction");
+					km_panic("Incompatible Iterator direction");
 				node = rhs.node;
 				list = rhs.list;
 				return *this;
 			}
-			PBOS_FORCEINLINE const_iterator &operator=(iterator &&rhs) noexcept {
+			PBOS_FORCEINLINE ConstIterator &operator=(Iterator &&rhs) noexcept {
 				if (direction != rhs.direction)
-					km_panic("Incompatible iterator direction");
+					km_panic("Incompatible Iterator direction");
 				node = rhs.node;
 				list = rhs.list;
 				return *this;
 			}
 
-			PBOS_FORCEINLINE bool copy(const_iterator &dest) noexcept {
+			PBOS_FORCEINLINE bool copy(ConstIterator &dest) noexcept {
 				dest = *this;
 				return true;
 			}
 
-			PBOS_FORCEINLINE const_iterator &operator++() {
+			PBOS_FORCEINLINE ConstIterator &operator++() {
 				if (!node)
-					km_panic("Increasing the end iterator");
+					km_panic("Increasing the end Iterator");
 
-				if (direction == iterator_direction::Forward) {
+				if (direction == IteratorDirection::Forward) {
 					node = node->next;
 				} else {
 					node = node->prev;
@@ -485,26 +485,26 @@ namespace kfxx {
 				return *this;
 			}
 
-			PBOS_FORCEINLINE const_iterator operator++(int) {
-				const_iterator it = *this;
+			PBOS_FORCEINLINE ConstIterator operator++(int) {
+				ConstIterator it = *this;
 				++(*this);
 				return it;
 			}
 
-			PBOS_FORCEINLINE const_iterator &operator--() {
-				if (direction == iterator_direction::Forward) {
+			PBOS_FORCEINLINE ConstIterator &operator--() {
+				if (direction == IteratorDirection::Forward) {
 					if (!(node = node->prev))
-						km_panic("Dereasing the begin iterator");
+						km_panic("Dereasing the begin Iterator");
 				} else {
 					if (!(node = node->next))
-						km_panic("Dereasing the begin iterator");
+						km_panic("Dereasing the begin Iterator");
 				}
 
 				return *this;
 			}
 
-			PBOS_FORCEINLINE const_iterator operator--(int) {
-				const_iterator it = *this;
+			PBOS_FORCEINLINE ConstIterator operator--(int) {
+				ConstIterator it = *this;
 				--(*this);
 				return it;
 			}
@@ -513,14 +513,14 @@ namespace kfxx {
 				return node == node;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const const_iterator &it) const {
+			PBOS_FORCEINLINE bool operator==(const ConstIterator &it) const {
 				if (list != it.list)
 					km_panic("Cannot compare iterators from different lists");
 				return node == it.node;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const_iterator &&rhs) const {
-				const const_iterator it = rhs;
+			PBOS_FORCEINLINE bool operator==(ConstIterator &&rhs) const {
+				const ConstIterator it = rhs;
 				return *this == it;
 			}
 
@@ -528,63 +528,63 @@ namespace kfxx {
 				return node != node;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const const_iterator &it) const {
+			PBOS_FORCEINLINE bool operator!=(const ConstIterator &it) const {
 				if (list != it.list)
 					km_panic("Cannot compare iterators from different lists");
 				return node != it.node;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const_iterator &&rhs) const {
-				const_iterator it = rhs;
+			PBOS_FORCEINLINE bool operator!=(ConstIterator &&rhs) const {
+				ConstIterator it = rhs;
 				return *this != it;
 			}
 
 			PBOS_FORCEINLINE const T &operator*() {
 				if (!node)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return node->data;
 			}
 
 			PBOS_FORCEINLINE const T &operator*() const {
 				if (!node)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return node->data;
 			}
 
 			PBOS_FORCEINLINE const T *operator->() {
 				if (!node)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return &node->data;
 			}
 
 			PBOS_FORCEINLINE const T *operator->() const {
 				if (!node)
-					km_panic("Deferencing the end iterator");
+					km_panic("Deferencing the end Iterator");
 				return &node->data;
 			}
 		};
 
-		PBOS_FORCEINLINE const_iterator begin_const() const noexcept {
-			return const_iterator((node_t *)_first, this, iterator_direction::Forward);
+		PBOS_FORCEINLINE ConstIterator begin_const() const noexcept {
+			return ConstIterator((node_t *)_first, this, IteratorDirection::Forward);
 		}
-		PBOS_FORCEINLINE const_iterator end_const() const noexcept {
-			return const_iterator(nullptr, this, iterator_direction::Forward);
+		PBOS_FORCEINLINE ConstIterator end_const() const noexcept {
+			return ConstIterator(nullptr, this, IteratorDirection::Forward);
 		}
-		PBOS_FORCEINLINE const_iterator begin_const_reversed() const noexcept {
-			return const_iterator((node_t *)_last, this, iterator_direction::Reversed);
+		PBOS_FORCEINLINE ConstIterator begin_const_reversed() const noexcept {
+			return ConstIterator((node_t *)_last, this, IteratorDirection::Reversed);
 		}
-		PBOS_FORCEINLINE const_iterator end_const_reversed() const noexcept {
-			return const_iterator(nullptr, this, iterator_direction::Reversed);
+		PBOS_FORCEINLINE ConstIterator end_const_reversed() const noexcept {
+			return ConstIterator(nullptr, this, IteratorDirection::Reversed);
 		}
 
-		PBOS_FORCEINLINE const_iterator begin() const noexcept {
+		PBOS_FORCEINLINE ConstIterator begin() const noexcept {
 			return begin_const();
 		}
-		PBOS_FORCEINLINE const_iterator end() const noexcept {
+		PBOS_FORCEINLINE ConstIterator end() const noexcept {
 			return end_const();
 		}
 
-		PBOS_FORCEINLINE allocator_t *allocator() const {
+		PBOS_FORCEINLINE Allocator *allocator() const {
 			return _allocator.get();
 		}
 	};

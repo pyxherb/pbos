@@ -2,7 +2,7 @@
 
 using namespace kfxx;
 
-PBOS_API _rbtree_base::node_base* _rbtree_base::_get_min_node(node_base* node) noexcept {
+PBOS_API _RBTreeBase::NodeBase* _RBTreeBase::_get_min_node(NodeBase* node) noexcept {
 	if (!node)
 		return nullptr;
 
@@ -11,7 +11,7 @@ PBOS_API _rbtree_base::node_base* _rbtree_base::_get_min_node(node_base* node) n
 	return node;
 }
 
-PBOS_API _rbtree_base::node_base* _rbtree_base::_get_max_node(node_base* node) noexcept {
+PBOS_API _RBTreeBase::NodeBase* _RBTreeBase::_get_max_node(NodeBase* node) noexcept {
 	if (!node)
 		return nullptr;
 
@@ -20,8 +20,8 @@ PBOS_API _rbtree_base::node_base* _rbtree_base::_get_max_node(node_base* node) n
 	return node;
 }
 
-PBOS_API void _rbtree_base::_lrot(node_base* x) noexcept {
-	node_base* y = x->r;
+PBOS_API void _RBTreeBase::_lrot(NodeBase* x) noexcept {
+	NodeBase* y = x->r;
 	kd_assert(y);
 
 	x->r = y->l;
@@ -41,8 +41,8 @@ PBOS_API void _rbtree_base::_lrot(node_base* x) noexcept {
 	x->p = y;
 }
 
-PBOS_API void _rbtree_base::_rrot(node_base* x) noexcept {
-	node_base* y = x->l;
+PBOS_API void _RBTreeBase::_rrot(NodeBase* x) noexcept {
+	NodeBase* y = x->l;
 	kd_assert(y);
 
 	x->l = y->r;
@@ -61,8 +61,8 @@ PBOS_API void _rbtree_base::_rrot(node_base* x) noexcept {
 	x->p = y;
 }
 
-PBOS_API void _rbtree_base::_insert_fixup(node_base* node) noexcept {
-	node_base* p, * gp = node, * u;  // Parent, grandparent and uncle
+PBOS_API void _RBTreeBase::_insert_fixup(NodeBase* node) noexcept {
+	NodeBase* p, * gp = node, * u;  // Parent, grandparent and uncle
 
 	while ((p = gp->p) && _is_red(p)) {
 		gp = p->p;
@@ -71,9 +71,9 @@ PBOS_API void _rbtree_base::_insert_fixup(node_base* node) noexcept {
 			u = gp->r;
 
 			if (_is_red(u)) {
-				p->color = rbcolor_t::BLACK;
-				u->color = rbcolor_t::BLACK;
-				gp->color = rbcolor_t::RED;
+				p->color = RBColor::BLACK;
+				u->color = RBColor::BLACK;
+				gp->color = RBColor::RED;
 				node = gp;
 				continue;
 			}
@@ -83,17 +83,17 @@ PBOS_API void _rbtree_base::_insert_fixup(node_base* node) noexcept {
 					std::swap(node, p);
 				}
 				_rrot(gp);
-				p->color = rbcolor_t::BLACK;
-				gp->color = rbcolor_t::RED;
+				p->color = RBColor::BLACK;
+				gp->color = RBColor::RED;
 			}
 		}
 		else {
 			u = gp->l;
 
 			if (_is_red(u)) {
-				p->color = rbcolor_t::BLACK;
-				u->color = rbcolor_t::BLACK;
-				gp->color = rbcolor_t::RED;
+				p->color = RBColor::BLACK;
+				u->color = RBColor::BLACK;
+				gp->color = RBColor::RED;
 				node = gp;
 				continue;
 			}
@@ -103,18 +103,18 @@ PBOS_API void _rbtree_base::_insert_fixup(node_base* node) noexcept {
 					std::swap(node, p);
 				}
 				_lrot(gp);
-				p->color = rbcolor_t::BLACK;
-				gp->color = rbcolor_t::RED;
+				p->color = RBColor::BLACK;
+				gp->color = RBColor::RED;
 			}
 		}
 	}
 
-	_root->color = rbcolor_t::BLACK;
+	_root->color = RBColor::BLACK;
 }
 
-PBOS_API _rbtree_base::node_base* _rbtree_base::_remove_fixup(node_base* node) noexcept {
+PBOS_API _RBTreeBase::NodeBase* _RBTreeBase::_remove_fixup(NodeBase* node) noexcept {
 	// Adopted from SGI STL's stl_tree, with some minor improvements.
-	node_base* y = node, * x, * p;
+	NodeBase* y = node, * x, * p;
 
 	if (!y->l)
 		// The node has right child only.
@@ -174,29 +174,29 @@ PBOS_API _rbtree_base::node_base* _rbtree_base::_remove_fixup(node_base* node) n
 				auto w = p->r;
 
 				if (_is_red(w)) {
-					w->color = rbcolor_t::BLACK;
-					p->color = rbcolor_t::RED;
+					w->color = RBColor::BLACK;
+					p->color = RBColor::RED;
 					_lrot(p);
 					w = p->r;
 				}
 
 				if (_is_black(w->l) && _is_black(w->r)) {
-					w->color = rbcolor_t::RED;
+					w->color = RBColor::RED;
 					x = p;
 					p = p->p;
 				}
 				else {
 					if (_is_black(w->r)) {
 						if (w->l)
-							w->l->color = rbcolor_t::BLACK;
-						w->color = rbcolor_t::RED;
+							w->l->color = RBColor::BLACK;
+						w->color = RBColor::RED;
 						_rrot(w);
 						w = p->r;
 					}
 					w->color = p->color;
-					p->color = rbcolor_t::BLACK;
+					p->color = RBColor::BLACK;
 					if (w->r)
-						w->r->color = rbcolor_t::BLACK;
+						w->r->color = RBColor::BLACK;
 					_lrot(p);
 					break;
 				}
@@ -205,42 +205,42 @@ PBOS_API _rbtree_base::node_base* _rbtree_base::_remove_fixup(node_base* node) n
 				auto w = p->l;
 
 				if (_is_red(w)) {
-					w->color = rbcolor_t::BLACK;
-					p->color = rbcolor_t::RED;
+					w->color = RBColor::BLACK;
+					p->color = RBColor::RED;
 					_rrot(p);
 					w = p->l;
 				}
 
 				if (_is_black(w->r) && _is_black(w->l)) {
-					w->color = rbcolor_t::RED;
+					w->color = RBColor::RED;
 					x = p;
 					p = p->p;
 				}
 				else {
 					if (_is_black(w->l)) {
 						if (w->r)
-							w->r->color = rbcolor_t::BLACK;
-						w->color = rbcolor_t::RED;
+							w->r->color = RBColor::BLACK;
+						w->color = RBColor::RED;
 						_lrot(w);
 						w = p->l;
 					}
 					w->color = p->color;
-					p->color = rbcolor_t::BLACK;
+					p->color = RBColor::BLACK;
 					if (w->l)
-						w->l->color = rbcolor_t::BLACK;
+						w->l->color = RBColor::BLACK;
 					_rrot(p);
 					break;
 				}
 			}
 		}
 		if (x)
-			x->color = rbcolor_t::BLACK;
+			x->color = RBColor::BLACK;
 	}
 
 	return y;
 }
 
-PBOS_API _rbtree_base::node_base* _rbtree_base::_get_next(const node_base* node, const node_base* last_node) noexcept {
+PBOS_API _RBTreeBase::NodeBase* _RBTreeBase::_get_next(const NodeBase* node, const NodeBase* last_node) noexcept {
 	kd_assert(node);
 
 	if (node != last_node) {
@@ -257,7 +257,7 @@ PBOS_API _rbtree_base::node_base* _rbtree_base::_get_next(const node_base* node,
 	return nullptr;
 }
 
-PBOS_API _rbtree_base::node_base* _rbtree_base::_get_prev(const node_base* node, const node_base* first_node) noexcept {
+PBOS_API _RBTreeBase::NodeBase* _RBTreeBase::_get_prev(const NodeBase* node, const NodeBase* first_node) noexcept {
 	kd_assert(node);
 
 	if (node != first_node) {
@@ -274,9 +274,9 @@ PBOS_API _rbtree_base::node_base* _rbtree_base::_get_prev(const node_base* node,
 	return nullptr;
 }
 
-PBOS_API _rbtree_base::_rbtree_base() noexcept {
+PBOS_API _RBTreeBase::_RBTreeBase() noexcept {
 }
 
-PBOS_API _rbtree_base::~_rbtree_base() {
+PBOS_API _RBTreeBase::~_RBTreeBase() {
 	kd_assert(!_root);
 }

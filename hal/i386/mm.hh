@@ -9,7 +9,7 @@ PBOS_EXTERN_C_BEGIN
 typedef struct _mm_context_t {
 	arch_pde_t *pdt;
 	ki_mm_vpm_poolpg_t *uspace_vpm_poolpg_list = nullptr;
-	kfxx::rbtree_t<void *> *uspace_vpm_query_tree = nullptr;
+	kfxx::RBTree<void *> *uspace_vpm_query_tree = nullptr;
 } mm_context_t;
 
 ///

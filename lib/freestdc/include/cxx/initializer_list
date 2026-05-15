@@ -18,8 +18,8 @@ namespace std {
 		using const_reference = const T&;
 		using size_type = size_t;
 
-		using iterator = const T*;
-		using const_iterator = const T*;
+		using Iterator = const T*;
+		using ConstIterator = const T*;
 
 		constexpr initializer_list() noexcept : _p(nullptr), _size(0) {}
 

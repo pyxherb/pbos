@@ -31,7 +31,7 @@ void kh_initcar_close(fs_fcb_t *fcb) {
 
 km_result_t kh_initcar_read(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out) {
 	km_result_t result;
-	fs::fnode_ptr_t file = fs_file_of_fcb(fcb);
+	fs::FNodePtr file = fs_file_of_fcb(fcb);
 
 	auto exdata = (hn_initcar_file_exdata *)fs_get_fnode_exdata(file.get());
 
@@ -53,7 +53,7 @@ km_result_t kh_initcar_write(fs_fcb_t *fcb, const void *src, size_t size, size_t
 
 km_result_t kh_initcar_size(fs_fcb_t *fcb, size_t *size_out) {
 	km_result_t result;
-	fs::fnode_ptr_t file = fs_file_of_fcb(fcb);
+	fs::FNodePtr file = fs_file_of_fcb(fcb);
 
 	auto exdata = (hn_initcar_file_exdata *)fs_get_fnode_exdata(file.get());
 

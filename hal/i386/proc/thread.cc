@@ -106,7 +106,7 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 	{
 		size_t i = 0;
 
-		kfxx::scope_guard release_pages_guard([pcb, size, &i, ptr]() noexcept {
+		kfxx::ScopeGuard release_pages_guard([pcb, size, &i, ptr]() noexcept {
 			klog_printf("Freeing stack page: %p-%p", ptr, ptr + (i - PAGESIZE));
 			mm_vmfree(pcb->mm_context, ptr, (i - PAGESIZE));
 		});
@@ -149,7 +149,7 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 	{
 		size_t i = 0;
 
-		kfxx::scope_guard release_pages_guard([pcb, size, &i, ptr]() noexcept {
+		kfxx::ScopeGuard release_pages_guard([pcb, size, &i, ptr]() noexcept {
 			for (size_t j = 0; j < i; j += PAGESIZE) {
 				klog_printf("Freeing kernel stack page: %p", ptr + j);
 				mm_vmfree(pcb->mm_context, ptr + j, PAGESIZE);

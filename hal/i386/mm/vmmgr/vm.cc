@@ -135,7 +135,7 @@ PBOS_NODISCARD km_result_t hn_mm_mmap_early(
 	while (i < end) {
 		arch_pte_t *pte;
 
-		kfxx::scope_guard sg([&pte]() noexcept {
+		kfxx::ScopeGuard sg([&pte]() noexcept {
 			mm_unmmap(mm_get_cur_context(), (void *)PGFLOOR(pte), PAGESIZE, 0);
 		});
 
@@ -202,7 +202,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 	size_t size,
 	mm_pgaccess_t access,
 	mmap_flags_t flags) {
-	io::irq_disable_lock irq_lock;
+	io::LocalIrqLock irq_lock;
 
 	if (!ctxt)
 		km_panic("Cannot call mm_mmap with null context");
@@ -219,7 +219,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 
 	const void *vaddr_limit = ((const char *)vaddr) + (size - 1);
 
-	kfxx::scope_guard unmap_guard([ctxt, vaddr, size, flags]() noexcept {
+	kfxx::ScopeGuard unmap_guard([ctxt, vaddr, size, flags]() noexcept {
 		mm_unmmap(ctxt, vaddr, size, flags);
 	});
 
@@ -287,7 +287,7 @@ km_result_t mm_mmap(mm_context_t *ctxt,
 void mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
 	kd_assert(ctxt);
 
-	io::irq_disable_lock irq_lock;
+	io::LocalIrqLock irq_lock;
 
 	bool is_cur_pgtab = (ctxt == mm_get_cur_context());
 
@@ -356,7 +356,7 @@ void mm_set_page_access(
 	const void *vaddr,
 	size_t size,
 	mm_pgaccess_t access) {
-	io::irq_disable_lock irq_lock;
+	io::LocalIrqLock irq_lock;
 
 	uint16_t mask = hn_pgaccess_to_pgmask(access);
 	pgsize_t pg_num = PGROUNDUP(size);
@@ -395,7 +395,7 @@ void *mm_vmalloc(mm_context_t *ctxt,
 	mm_vmalloc_flags_t flags) {
 	kd_assert(ctxt);
 	kd_assert(size);
-	io::irq_disable_lock irq_lock;
+	io::LocalIrqLock irq_lock;
 	pgaddr_t pgminaddr = PGROUNDDOWN(minaddr), pgmaxaddr = PGROUNDUP(maxaddr),
 			 pgsize = PGROUNDUP(size);
 
@@ -428,7 +428,7 @@ void *mm_vmalloc(mm_context_t *ctxt,
 				continue;
 		}
 
-		io::irq_disable_lock irq_lock;
+		io::LocalIrqLock irq_lock;
 		pgaddr_t tmapaddr = hn_tmpmap(
 			pdt[i].address,
 			PGROUNDUP(sizeof(arch_pte_t) * (PTX_MAX + 1)),
@@ -495,7 +495,7 @@ void *hn_getmap(const arch_pde_t *pgdir, const void *vaddr, uint16_t *mask_out) 
 }
 
 void *mm_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
-	io::irq_disable_lock irq_lock;
+	io::LocalIrqLock irq_lock;
 
 	kd_assert(ctxt);
 	uint16_t mask;

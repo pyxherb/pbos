@@ -15,7 +15,7 @@ PBOS_EXTERN_C_BEGIN
 ///
 /// @brief Memory Allocation Descriptor (MAD), manages a single page.
 ///
-typedef struct _hn_mad_t : public kfxx::rbtree_t<void *>::node_t {
+typedef struct _hn_mad_t : public kfxx::RBTree<void *>::node_t {
 	struct _hn_mad_t *next_free, *prev_free;
 
 	hal_spinlock_t spinlock;
@@ -48,7 +48,7 @@ struct hn_pmad_t {
 	size_t direct_map_size;
 	// MAD pages are all preallocated at initializing stage.
 	hn_mad_t *free_list = nullptr;
-	kfxx::rbtree_t<void *> query_tree;
+	kfxx::RBTree<void *> query_tree;
 };
 
 extern hn_pmad_t hn_pmad_list[ARCH_MMAP_MAX + 1];
