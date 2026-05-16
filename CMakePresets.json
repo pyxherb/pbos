@@ -1,0 +1,12 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "x86_64",
+            "displayName": "x86-64 PbOS",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/",
+            "toolchainFile": "${sourceDir}/cmake/Platform/x86_64-pc-pbkim.cmake"
+        }
+    ]
+}

@@ -72,7 +72,7 @@ namespace kfxx {
 			}
 		};
 
-		using Set = std::conditional_t<Fallible, FallibleSet<Pair, pair_cmp_t, IsThreeway>, Set<Pair, pair_cmp_t, IsThreeway>>;
+		using Set = std::conditional_t<Fallible, FallibleSet<Pair, pair_cmp_t, IsThreeway>, kfxx::Set<Pair, pair_cmp_t, IsThreeway>>;
 
 		Set _set;
 

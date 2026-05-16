@@ -16,11 +16,11 @@ namespace std {
 		T,
 		U> : true_type {};
 
-	template <typename T, typename... Args>
-	struct is_assignable : _is_assignable_impl<void_t<>, T, Args...> {};
+	template <typename T, typename U>
+	struct is_assignable : _is_assignable_impl<void_t<>, T, U> {};
 
-	template <typename T, typename... Args>
-	struct is_trivially_assignable : integral_constant<bool, __is_trivially_assignable(T, Args...)> {};
+	template <typename T, typename U>
+	struct is_trivially_assignable : integral_constant<bool, __is_trivially_assignable(T, U)> {};
 
 	template <typename, typename T, typename U>
 	struct _is_nothrow_assignable_impl : false_type {};

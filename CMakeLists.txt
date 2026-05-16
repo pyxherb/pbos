@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 
 # Setup project
-project(PbOS VERSION 0.0.1)
+project(PbOS VERSION 0.0.1 LANGUAGES C CXX ASM)
 
 set(PBOS_ENABLE_ASLR FALSE CACHE BOOL "Enable ASLR for the kernel")
 
@@ -28,8 +28,6 @@ endif()
 set(PBOS_ARCH ${_GUESSED_ARCH} CACHE STRING "Identifier of target architecture")
 
 # Setup build environments
-enable_language(ASM)
-
 if((PBOS_ARCH STREQUAL "i386") OR (PBOS_ARCH STREQUAL "x86_64"))
     enable_language(ASM_NASM)
 endif()
@@ -57,5 +55,3 @@ add_subdirectory("test")
 add_subdirectory("init")
 
 add_subdirectory("include")
-
-message(${CMAKE_INCLUDE_SYSTEM_FLAG_ASM})
