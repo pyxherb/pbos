@@ -7,19 +7,19 @@ PBOS_EXTERN_C_BEGIN
 typedef void (*_ctor_t)();
 typedef void (*_dtor_t)();
 
-alignas(_ctor_t) _ctor_t KI_CTORS_BEGIN[0] = {};
-alignas(_ctor_t) _ctor_t KI_CTORS_END[0] = {};
+alignas(_ctor_t) _ctor_t KXI_CTORS_BEGIN[0] = {};
+alignas(_ctor_t) _ctor_t KXI_CTORS_END[0] = {};
 
-alignas(_dtor_t) _dtor_t KI_DTORS_BEGIN[0] = {};
-alignas(_dtor_t) _dtor_t KI_DTORS_END[0] = {};
+alignas(_dtor_t) _dtor_t KXI_DTORS_BEGIN[0] = {};
+alignas(_dtor_t) _dtor_t KXI_DTORS_END[0] = {};
 
 extern "C" void __cxa_pure_virtual() {
 }
 
 void _call_ctors() {
-	const size_t n_ctors = KI_CTORS_END - KI_CTORS_BEGIN;
+	const size_t n_ctors = KXI_CTORS_END - KXI_CTORS_BEGIN;
 	for (size_t i = 0; i < n_ctors; ++i) {
-		KI_CTORS_BEGIN[i]();
+		KXI_CTORS_BEGIN[i]();
 	}
 }
 

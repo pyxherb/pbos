@@ -111,7 +111,7 @@ namespace kfxx {
 			kd_assert(length > _length);
 
 			if constexpr (construct) {
-				static_kd_assert(std::is_constructible_v<T>, "The type is not defaultly constructible");
+				static_assert(std::is_constructible_v<T>, "The type is not defaultly constructible");
 				if constexpr (!std::is_trivially_constructible_v<T>) {
 					// Because construction of new objects may throw exceptions,
 					// we choose to construct the new objects first.

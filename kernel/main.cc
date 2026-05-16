@@ -21,13 +21,13 @@ extern const char KI_EXPORTED_SYMBOL_NAMES_BEGIN[], KI_EXPORTED_SYMBOL_NAMES_END
 typedef void (*ki_ctor_t)();
 typedef void (*ki_dtor_t)();
 
-extern ki_ctor_t KI_CTORS_BEGIN[] = {};
-extern ki_ctor_t KI_CTORS_END[] = {};
+extern ki_ctor_t KI_CTORS_BEGIN[];
+extern ki_ctor_t KI_CTORS_END[];
 
-extern ki_dtor_t KI_DTORS_BEGIN[] = {};
-extern ki_dtor_t KI_DTORS_END[] = {};
+extern ki_dtor_t KI_DTORS_BEGIN[];
+extern ki_dtor_t KI_DTORS_END[];
 
-extern "C" void __cxa_pure_virtual() {
+PBOS_API void __cxa_pure_virtual() {
 	km_panic("Attempting to call a pure virtual function!");
 }
 

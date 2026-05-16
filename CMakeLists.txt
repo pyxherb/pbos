@@ -34,7 +34,7 @@ if((PBOS_ARCH STREQUAL "i386") OR (PBOS_ARCH STREQUAL "x86_64"))
     enable_language(ASM_NASM)
 endif()
 
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/")
 set(CMAKE_FIND_ROOT_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(CMAKE_INCLUDE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
@@ -57,3 +57,5 @@ add_subdirectory("test")
 add_subdirectory("init")
 
 add_subdirectory("include")
+
+message(${CMAKE_INCLUDE_SYSTEM_FLAG_ASM})

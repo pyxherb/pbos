@@ -248,7 +248,7 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 			max_size = seg_max_addr;
 	}
 
-	char *vaddr_base = (char *)mm_kvmalloc(mm_context, max_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_EXEC, 0),
+	char *vaddr_base = (char *)mm_kvmalloc(mm_context, max_size, MM_PAGE_MAPPED, 0),
 		 *vaddr_limit = vaddr_base + (max_size - 1);
 	if (!vaddr_base)
 		return KM_RESULT_NO_MEM;
@@ -272,12 +272,33 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 			if (!mm_split_mapped_area(mm_context, last_vaddr, vaddr_base + phdr.p_vaddr)) {
 				return KM_RESULT_NO_MEM;
 			}
+
+			size_t area_size;
+			if (mapped_phdr_idx + 1 >= loaded_phdrs.size()) {
+				area_size = vaddr_limit - (vaddr_base + phdr.p_vaddr) + 1;
+			} else {
+				area_size = (vaddr_base + phdr.p_vaddr) - last_vaddr;
+			}
+
+			mm_pgaccess_t pgaccess = MM_PAGE_MAPPED;
+
+			if (phdr.p_flags & PF_R)
+				pgaccess |= MM_PAGE_READ;
+			if (phdr.p_flags & PF_W)
+				pgaccess |= MM_PAGE_WRITE;
+			if (phdr.p_flags & PF_X)
+				pgaccess |= MM_PAGE_EXEC;
+
+			km_unwrap_result(mm_set_page_access(mm_context, vaddr_base + phdr.p_vaddr, area_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE));
+
 			last_vaddr = vaddr_base + phdr.p_vaddr;
 			++mapped_phdr_idx;
 			memset(last_vaddr, 0, phdr.p_memsz);
 			if (KM_FAILED(result = fs_read(file_fp, last_vaddr, phdr.p_filesz, phdr.p_offset, &bytes_read))) {
 				return result;
 			}
+
+			km_unwrap_result(mm_set_page_access(mm_context, vaddr_base + phdr.p_vaddr, area_size, pgaccess));
 		}
 	}
 
@@ -348,6 +369,11 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 			if (!check_if_addr_is_inside_valid_region(loc))
 				return KM_RESULT_MALFORMED;
 
+			KM_RETURN_IF_FAILED(mm_probe_and_lock_pages(mm_context, loc, page_size, MM_PAGE_WRITE));
+			kfxx::Deferred release_loc_page([mm_context, loc, page_size]() noexcept {
+				mm_unlock_pages(mm_context, loc, page_size);
+			});
+
 			Elf64_Xword type = ELF64_R_TYPE(rela[i].r_info);
 			Elf64_Xword sym_idx = ELF64_R_SYM(rela[i].r_info);
 
@@ -381,6 +407,11 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 
 			if (!check_if_addr_is_inside_valid_region(loc))
 				return KM_RESULT_MALFORMED;
+
+			KM_RETURN_IF_FAILED(mm_probe_and_lock_pages(mm_context, loc, page_size, MM_PAGE_WRITE));
+			kfxx::Deferred release_loc_page([mm_context, loc, page_size]() noexcept {
+				mm_unlock_pages(mm_context, loc, page_size);
+			});
 
 			Elf64_Xword type = ELF64_R_TYPE(jmprel[i].r_info);
 			Elf64_Xword sym_idx = ELF64_R_SYM(jmprel[i].r_info);

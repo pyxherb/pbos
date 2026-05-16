@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <string.h>
-#include <emmintrin.h>
 
 FREESTDC_WEAK void *memset(void *dest, int c, size_t n) {
 	c &= 0xff;

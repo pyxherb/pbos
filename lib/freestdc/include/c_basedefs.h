@@ -19,7 +19,7 @@
 
 #ifndef FREESTDC_WEAK
 	#if defined(__GNUC__) || defined(__clang__)
-		#define FREESTDC_WEAK __attribute__((__always_weak__))
+		#define FREESTDC_WEAK __attribute__((__weak__))
 	#else
 		#warning "FREESTDC_WEAK is not available, you may not override the library functions"
 	#endif
