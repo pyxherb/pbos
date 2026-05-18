@@ -12,17 +12,17 @@
 #define PML4E_CD (1ULL << 4)  // Cache Disabled
 #define PML4E_A (1ULL << 5)	  // Accessed
 
-#include <pbos/packed.h>
+#define ARCH_PML4TE_MASK(e) ((e) & (0b111111111111))
+#define ARCH_PML4TE_ADDR(e) (((e) >> 12) & (0xffffffffff))
+#define ARCH_PML4TE_PK(e) (((e) >> 59) & (0b1111))
+#define ARCH_PML4TE_XD(e) ((e) >> 63)
 
-typedef struct PBOS_PACKED _arch_pml4te_t {
-	uint16_t mask : 12;
-	pgaddr_t address : 40;
-	uint8_t _reserved1 : 7;
-	uint8_t pk : 4;
-	bool xd : 1;
-} arch_pml4te_t;
+#define ARCH_PML4TE_WITH_MASKS(e, masks) (((e) & ~(0b111111111111)) | ((uint64_t)masks))
+#define ARCH_PML4TE_WITH_ADDR(e, addr) (((e) & ~((0xffffffffff) << 12)) | (((uint64_t)addr) << 12))
+#define ARCH_PML4TE_WITH_PK(e, pk) (((e) & ~((0b1111) << 59)) | (((uint64_t)pk) << 59))
+#define ARCH_PML4TE_WITH_XD(e, xd) (((e) & ~(1 << 63)) | (((uint64_t)xd) << 63))
 
-#include <pbos/packed_end.h>
+typedef uint64_t arch_pml4te_t;
 
 #define PDPTE_P (1ULL << 0)	   // Present
 #define PDPTE_RW (1ULL << 1)   // Read/Write
@@ -35,26 +35,17 @@ typedef struct PBOS_PACKED _arch_pml4te_t {
 #define PDPTE_G (1ULL << 8)	   // Global
 #define PDPTE_AT (1ULL << 12)  // Page Attribute
 
-#include <pbos/packed.h>
+#define ARCH_PDPTE_MASK(e) ((e) & (0b111111111111))
+#define ARCH_PDPTE_ADDR(e) (((e) >> 12) & (0xffffffffff))
+#define ARCH_PDPTE_PK(e) (((e) >> 59) & (0b1111))
+#define ARCH_PDPTE_XD(e) ((e) >> 63)
 
-typedef struct PBOS_PACKED _arch_pdpte_t {
-	uint16_t mask : 12;
-	pgaddr_t address : 40;
-	uint8_t _reserved1 : 7;
-	uint8_t pk : 4;
-	bool xd : 1;
-} arch_pdpte_t;
+#define ARCH_PDPTE_WITH_MASKS(e, masks) (((e) & ~(0b111111111111)) | ((uint64_t)masks))
+#define ARCH_PDPTE_WITH_ADDR(e, addr) (((e) & ~((0xffffffffff) << 12)) | (((uint64_t)addr) << 12))
+#define ARCH_PDPTE_WITH_PK(e, pk) (((e) & ~((0b1111) << 59)) | (((uint64_t)pk) << 59))
+#define ARCH_PDPTE_WITH_XD(e, xd) (((e) & ~(1 << 63)) | (((uint64_t)xd) << 63))
 
-typedef struct PBOS_PACKED _arch_hugepg_pdpte_t {
-	uint16_t mask : 13;
-	uint32_t _reserved0 : 17;
-	pgaddr_t address : 22;
-	uint8_t _reserved1 : 7;
-	uint8_t pk : 4;
-	bool xd : 1;
-} arch_hugepg_pdpte_t;
-
-#include <pbos/packed_end.h>
+typedef uint64_t arch_pdpte_t;
 
 #define PDE_P (1ULL << 0)	 // Present
 #define PDE_RW (1ULL << 1)	 // Read/Write
@@ -67,26 +58,17 @@ typedef struct PBOS_PACKED _arch_hugepg_pdpte_t {
 #define PDE_G (1ULL << 8)	 // Global
 #define PDE_AT (1ULL << 12)	 // Page Attribute
 
-#include <pbos/packed.h>
+#define ARCH_PDE_MASK(e) ((e) & (0b111111111111))
+#define ARCH_PDE_ADDR(e) (((e) >> 12) & (0xffffffffff))
+#define ARCH_PDE_PK(e) (((e) >> 59) & (0b1111))
+#define ARCH_PDE_XD(e) ((e) >> 63)
 
-typedef struct PBOS_PACKED _arch_pde_t {
-	uint16_t mask : 12;
-	pgaddr_t address : 40;
-	uint8_t _reserved1 : 7;
-	uint8_t pk : 4;
-	bool xd : 1;
-} arch_pde_t;
+#define ARCH_PDE_WITH_MASKS(e, masks) (((e) & ~(0b111111111111)) | ((uint64_t)masks))
+#define ARCH_PDE_WITH_ADDR(e, addr) (((e) & ~((0xffffffffff) << 12)) | (((uint64_t)addr) << 12))
+#define ARCH_PDE_WITH_PK(e, pk) (((e) & ~((0b1111) << 59)) | (((uint64_t)pk) << 59))
+#define ARCH_PDE_WITH_XD(e, xd) (((e) & ~(1 << 63)) | (((uint64_t)xd) << 63))
 
-typedef struct PBOS_PACKED _arch_hugepg_pde_t {
-	uint16_t mask : 13;
-	uint8_t _reserved0 : 8;
-	pgaddr_t address : 31;
-	uint8_t _reserved1 : 7;
-	uint8_t pk : 4;
-	bool xd : 1;
-} arch_hugepg_pde_t;
-
-#include <pbos/packed_end.h>
+typedef uint64_t arch_pde_t;
 
 #define PTE_P 0x0001   // Present
 #define PTE_RW 0x0002  // Read/Write
@@ -98,17 +80,17 @@ typedef struct PBOS_PACKED _arch_hugepg_pde_t {
 #define PTE_AT 0x0080  // Page Attribute Table
 #define PTE_G 0x0080   // Global
 
-#include <pbos/packed.h>
+#define ARCH_PTE_MASK(e) ((e) & (0b111111111111))
+#define ARCH_PTE_ADDR(e) (((e) >> 12) & (0xffffffffff))
+#define ARCH_PTE_PK(e) (((e) >> 59) & (0b1111))
+#define ARCH_PTE_XD(e) ((e) >> 63)
 
-typedef struct PBOS_PACKED _arch_pte_t {
-	uint16_t mask : 12;
-	pgaddr_t address : 40;
-	uint8_t _reserved1 : 7;
-	uint8_t pk : 4;
-	bool xd : 1;
-} arch_pte_t;
+#define ARCH_PTE_WITH_MASKS(e, masks) (((e) & ~(0b111111111111)) | ((uint64_t)masks))
+#define ARCH_PTE_WITH_ADDR(e, addr) (((e) & ~((0xffffffffff) << 12)) | (((uint64_t)addr) << 12))
+#define ARCH_PTE_WITH_PK(e, pk) (((e) & ~((0b1111) << 59)) | (((uint64_t)pk) << 59))
+#define ARCH_PTE_WITH_XD(e, xd) (((e) & ~(1 << 63)) | (((uint64_t)xd) << 63))
 
-#include <pbos/packed_end.h>
+typedef uint64_t arch_pte_t;
 
 PBOS_FORCEINLINE void arch_invlpg(void *addr) {
 	__asm__ __volatile__("invlpg (%0)" ::"b"((uint64_t)(addr))

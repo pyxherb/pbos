@@ -7,11 +7,11 @@ PBOS_EXTERN_C_BEGIN
 typedef void (*_ctor_t)();
 typedef void (*_dtor_t)();
 
-alignas(_ctor_t) _ctor_t KXI_CTORS_BEGIN[0] = {};
-alignas(_ctor_t) _ctor_t KXI_CTORS_END[0] = {};
+alignas(_ctor_t) _ctor_t KXI_CTORS_BEGIN[0];
+alignas(_ctor_t) _ctor_t KXI_CTORS_END[0];
 
-alignas(_dtor_t) _dtor_t KXI_DTORS_BEGIN[0] = {};
-alignas(_dtor_t) _dtor_t KXI_DTORS_END[0] = {};
+alignas(_dtor_t) _dtor_t KXI_DTORS_BEGIN[0];
+alignas(_dtor_t) _dtor_t KXI_DTORS_END[0];
 
 extern "C" void __cxa_pure_virtual() {
 }

@@ -49,10 +49,10 @@ endif()
 # C setup
 #
 set(C_STANDARD 99)
-find_program(CMAKE_C_COMPILER NAMES gcc clang REQUIRED)
+find_program(CMAKE_C_COMPILER NAMES clang REQUIRED)
 set(CMAKE_C_COMPILER_TARGET x86_64-elf)
 
-set(CMAKE_C_FLAGS "-fvisibility=hidden -m64 -nostdlib -fno-stack-protector -mno-stack-arg-probe -mno-red-zone -fno-builtin -ffreestanding -fPIE")
+set(CMAKE_C_FLAGS "-fvisibility=hidden -m64 -nostdlib -fno-stack-protector -mno-stack-arg-probe -mno-red-zone -mno-mmx -mno-sse -fno-builtin -ffreestanding -fPIE")
 set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_C_FLAGS_RELWITHDBGINFO "-O2 -g")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
@@ -72,7 +72,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_program(CMAKE_CXX_COMPILER NAMES g++ clang++ REQUIRED)
 set(CMAKE_CXX_COMPILER_TARGET x86_64-elf)
 
-set(CMAKE_CXX_FLAGS "-fvisibility=hidden -m64 -nostdlib -fno-stack-protector -fno-exceptions -fno-rtti -fno-use-cxa-atexit -mno-stack-arg-probe -mno-red-zone -fno-builtin -ffreestanding -fPIE")
+set(CMAKE_CXX_FLAGS "-fvisibility=hidden -m64 -nostdlib -fno-stack-protector -fno-exceptions -fno-rtti -fno-use-cxa-atexit -mno-stack-arg-probe -mno-red-zone -mno-mmx -mno-sse -fno-builtin -ffreestanding -fPIE")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELWITHDBGINFO "-O2 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")

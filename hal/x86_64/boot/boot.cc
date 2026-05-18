@@ -46,8 +46,19 @@ PBOS_USED PBOS_IN_SECTION(".limine_request_end") volatile uint64_t hn_limine_req
 PBOS_NORETURN void kernel_main();
 
 void kmain() {
+	// Setup SSE.
+	uint64_t cr0 = arch_rcr0();
+	cr0 &= ~CR0_EM;
+	cr0 |= ~CR0_MP;
+	arch_wcr0(cr0);
+
+	uint64_t cr4 = arch_rcr4();
+	cr4 |= CR4_OSXMMEXCPT;
+	arch_wcr4(cr4);
+
 	asm volatile("xorq %rbp,%rbp");
 	asm volatile("movq %0, %%rsp" :: "r"(mm_kernel_initial_stack + PBOS_ARRAYSIZE(mm_kernel_initial_stack)): "memory");
+
 	kernel_main();
 }
 

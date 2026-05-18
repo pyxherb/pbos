@@ -28,10 +28,6 @@ endif()
 set(PBOS_ARCH ${_GUESSED_ARCH} CACHE STRING "Identifier of target architecture")
 
 # Setup build environments
-if((PBOS_ARCH STREQUAL "i386") OR (PBOS_ARCH STREQUAL "x86_64"))
-    enable_language(ASM_NASM)
-endif()
-
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/")
 set(CMAKE_FIND_ROOT_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(CMAKE_INCLUDE_PATH "${PROJECT_SOURCE_DIR}/cmake")
