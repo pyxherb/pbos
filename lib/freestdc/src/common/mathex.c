@@ -1,4 +1,4 @@
-#include <common/mathex.h>
+#include <fstdc-utils/mathex.h>
 #include <math.h>
 #include <stdint.h>
 

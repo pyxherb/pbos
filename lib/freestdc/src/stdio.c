@@ -1,5 +1,5 @@
-#include <common/format.h>
-#include <common/mathex.h>
+#include <fstdc-utils/format.h>
+#include <fstdc-utils/mathex.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>

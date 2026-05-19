@@ -1,8 +1,8 @@
 #include "vga.h"
 
 #include <arch/x86_64/io.h>
-#include <common/format.h>
-#include <common/mathex.h>
+#include <fstdc-utils/format.h>
+#include <fstdc-utils/mathex.h>
 #include <stdint.h>
 #include <string.h>
 #include <hal/x86_64/mm.hh>

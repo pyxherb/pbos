@@ -583,14 +583,155 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 }
 
 void kh_set_page_access(
-	mm_context_t *context,
+	mm_context_t *ctxt,
 	const void *vaddr,
 	size_t size,
 	mm_pgaccess_t access) {
 	// io::LocalIrqLock irq_lock;
 
-	uint16_t mask = hn_pgaccess_to_pgmask(access);
-	// TODO: Implement it.
+#ifndef NDEBUG
+	if (!ctxt)
+		km_panic("Cannot call mmap with null context");
+	if (!size)
+		km_panic("Cannot call mmap with size == 0");
+#endif
+
+	void *const addr_limit = (char *)vaddr + size;
+	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
+	arch_pml4te_t *pml4t = (arch_pml4te_t *)ctxt->page_table;
+	bool is_cur_pgtab = ctxt == mm_get_cur_context();
+
+#ifndef NDEBUG
+	bool is_user_space = mm_is_user_space(vaddr);
+
+	if (is_user_space !=
+		mm_is_user_space((void *)(((uintptr_t)vaddr) + (size - 1))))
+		km_panic("Cannot map across user and kernel spaces");
+#endif
+
+	uint8_t mask = hn_pgaccess_to_pgmask(access);
+
+	mask |= PTE_P;
+
+	// Walk each PML4E.
+	for (uint16_t pml4x = PML4X(vaddr); pml4x < PML4X(addr_limit) + 1; ++pml4x) {
+		arch_pml4te_t *pml4te = &pml4t[pml4x];
+
+		bool is_pml4te_allocated = false;
+		if (!(ARCH_PML4TE_MASK(*pml4te) & PML4E_P))
+			km_panic("Missing PML4 table entry in %s, please report this bug.", __func__);
+
+		arch_pdpte_t *pdpt;
+		void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
+		kfxx::ScopeGuard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
+			hn_tmpunmap_post((void *)pdpt, PAGESIZE);
+		});
+		if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
+			pdpt = (arch_pdpte_t *)
+				hn_tmpmap_post(
+					pdpt_paddr,
+					sizeof(arch_pdpte_t) * (PTX_MAX + 1),
+					PTE_P | PTE_RW);
+		} else
+			release_tmpmap_pdpt_guard.release();
+
+		if (is_pml4te_allocated)
+			memset(pdpt, 0, PAGESIZE);
+
+		// Walk each PDPTE.
+		for (uint16_t pdptx = (pml4x == PML4X(vaddr) ? PDPTX(vaddr) : 0);
+			pdptx < PDPTX_MAX + 1;
+			++pdptx) {
+			char *const pdpt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, 0, 0, 0));
+
+			if (pdpt_vaddr >= (void *)addr_limit)
+				break;
+
+			bool is_pdpte_allocated = false;
+			if (!(ARCH_PDPTE_MASK(pdpt[pdptx]) & PDPTE_P))
+				km_panic("Missing PDP table entry with %s, please report this bug.", __func__);
+
+			arch_pde_t *pdt;
+			void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
+			kfxx::ScopeGuard release_tmpmap_pdt_guard([&pdt]() noexcept {
+				hn_tmpunmap_post((void *)pdt, PAGESIZE);
+			});
+			if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
+				pdt = (arch_pde_t *)
+					hn_tmpmap_post(
+						pdt_paddr,
+						sizeof(arch_pde_t) * (PTX_MAX + 1),
+						PTE_P | PTE_RW);
+			} else
+				release_tmpmap_pdt_guard.release();
+
+			if (is_pdpte_allocated)
+				memset(pdt, 0, PAGESIZE);
+
+			// Walk each PDE.
+			for (uint16_t pdx =
+					 (pml4x == PML4X(vaddr) &&
+								 pdptx == PDPTX(vaddr)
+							 ? PDX(vaddr)
+							 : 0);
+				pdx < PDX_MAX + 1;
+				++pdx) {
+				char *const pdt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, 0, 0));
+
+				if (pdt_vaddr >= (void *)addr_limit)
+					break;
+
+				bool is_pde_allocated = false;
+				if (!(ARCH_PDE_MASK(pdt[pdx]) & PDE_P))
+					km_panic("Missing page directory table entry with %s, please report this bug.", __func__);
+
+				arch_pte_t *ptt;
+				void *ptt_paddr = UNPGADDR(ARCH_PDE_ADDR(pdt[pdx]));
+				kfxx::ScopeGuard release_tmpmap_ptt_guard([&ptt]() noexcept {
+					hn_tmpunmap_post((void *)ptt, PAGESIZE);
+				});
+				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(ptt_paddr))) {
+					ptt = (arch_pte_t *)
+						hn_tmpmap_post(
+							ptt_paddr,
+							sizeof(arch_pte_t) * (PTX_MAX + 1),
+							PTE_P | PTE_RW);
+				} else
+					release_tmpmap_ptt_guard.release();
+
+				if (is_pde_allocated)
+					memset(ptt, 0, PAGESIZE);
+
+				// Walk each PTE.
+				for (uint16_t ptx =
+						 (pml4x == PML4X(vaddr) &&
+									 pdptx == PDPTX(vaddr) &&
+									 pdx == PDX(vaddr)
+								 ? PTX(vaddr)
+								 : 0);
+					ptx < PTX_MAX + 1;
+					++ptx) {
+					char *const ptt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, ptx, 0));
+
+					if (ptt_vaddr >= (void *)addr_limit)
+						break;
+
+					arch_pte_t *pte = &ptt[ptx];
+
+					if (!(ARCH_PTE_MASK(*pte) & PTE_P))
+						km_panic("%s with page which does not present", __func__);
+
+					*pte =
+						ARCH_PML4TE_WITH_XD(
+							ARCH_PML4TE_WITH_MASKS(*pte, mask),
+							!(access & MM_PAGE_EXEC));
+
+					if (is_cur_pgtab)
+						arch_invlpg(ptt_vaddr);
+				}
+			}
+		}
+	}
 }
 
 void *kh_vmalloc(mm_context_t *context,

@@ -261,26 +261,17 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 	};
 
 	size_t mapped_phdr_idx = 0;
-	kfxx::ScopeGuard unmap_guard([mm_context, vaddr_base, &loaded_phdrs, &mapped_phdr_idx]() noexcept {
-		for (size_t j = 0; j < mapped_phdr_idx; ++mapped_phdr_idx) {
-			km_unwrap_result(mm_unmmap(mm_context, vaddr_base + loaded_phdrs.at(j).p_vaddr, 0, 0));
-		}
+	kfxx::ScopeGuard unmap_guard([mm_context, vaddr_base, max_size, &mapped_phdr_idx]() noexcept {
+		km_unwrap_result(mm_unmmap(mm_context, vaddr_base, max_size, 0));
 	});
 	char *last_vaddr = vaddr_base;
 	while (mapped_phdr_idx < loaded_phdrs.size()) {
 		auto &phdr = loaded_phdrs.at(mapped_phdr_idx);
 		if (phdr.p_type == PT_LOAD) {
 			char *split_point = vaddr_base + phdr.p_vaddr;
-			if (!mm_split_mapped_area(mm_context, last_vaddr, split_point)) {
-				return KM_RESULT_NO_MEM;
-			}
 
 			size_t area_size;
-			if (mapped_phdr_idx + 1 >= loaded_phdrs.size()) {
-				area_size = vaddr_limit - split_point + 1;
-			} else {
-				area_size = split_point - last_vaddr;
-			}
+			area_size = phdr.p_memsz;
 
 			mm_pgaccess_t pgaccess = MM_PAGE_MAPPED;
 
@@ -294,7 +285,6 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 			km_unwrap_result(mm_set_page_access(mm_context, split_point, area_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE));
 
 			last_vaddr = split_point;
-			++mapped_phdr_idx;
 			memset(last_vaddr, 0, phdr.p_memsz);
 			if (KM_FAILED(result = fs_read(file_fp, last_vaddr, phdr.p_filesz, phdr.p_offset, &bytes_read))) {
 				return result;
@@ -302,6 +292,7 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 
 			km_unwrap_result(mm_set_page_access(mm_context, split_point, area_size, pgaccess));
 		}
+		++mapped_phdr_idx;
 	}
 
 	Elf64_Sym *symtab = nullptr;
@@ -348,19 +339,19 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 	if (!strtab)
 		return KM_RESULT_MALFORMED;
 
-	if (!check_if_addr_is_inside_valid_region(symtab))
+	if (symtab && !check_if_addr_is_inside_valid_region(symtab))
 		return KM_RESULT_MALFORMED;
-	if (!check_if_addr_is_inside_valid_region(strtab))
+	if (strtab && !check_if_addr_is_inside_valid_region(strtab))
 		return KM_RESULT_MALFORMED;
-	if (!check_if_addr_is_inside_valid_region(rela))
+	if (rela && !check_if_addr_is_inside_valid_region(rela))
 		return KM_RESULT_MALFORMED;
-	if (!check_if_addr_is_inside_valid_region(((char *)rela) + rela_size))
+	if (rela && !check_if_addr_is_inside_valid_region(((char *)rela) + rela_size))
 		return KM_RESULT_MALFORMED;
-	if (!check_if_addr_is_inside_valid_region(((char *)jmprel) + jmprel_size))
+	if (jmprel && !check_if_addr_is_inside_valid_region(((char *)jmprel) + jmprel_size))
 		return KM_RESULT_MALFORMED;
-	if (!check_if_addr_is_inside_valid_region(init))
+	if (init && !check_if_addr_is_inside_valid_region(init))
 		return KM_RESULT_MALFORMED;
-	if (!check_if_addr_is_inside_valid_region(fini))
+	if (fini && !check_if_addr_is_inside_valid_region(fini))
 		return KM_RESULT_MALFORMED;
 
 	if (rela && rela_size) {
@@ -373,7 +364,7 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 
 			KM_RETURN_IF_FAILED(mm_probe_and_lock_pages(mm_context, loc, page_size, MM_PAGE_WRITE));
 			kfxx::Deferred release_loc_page([mm_context, loc, page_size]() noexcept {
-				mm_unlock_pages(mm_context, loc, page_size);
+				km_unwrap_result(mm_unlock_pages(mm_context, loc, page_size));
 			});
 
 			Elf64_Xword type = ELF64_R_TYPE(rela[i].r_info);
@@ -412,7 +403,7 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 
 			KM_RETURN_IF_FAILED(mm_probe_and_lock_pages(mm_context, loc, page_size, MM_PAGE_WRITE));
 			kfxx::Deferred release_loc_page([mm_context, loc, page_size]() noexcept {
-				mm_unlock_pages(mm_context, loc, page_size);
+				km_unwrap_result(mm_unlock_pages(mm_context, loc, page_size));
 			});
 
 			Elf64_Xword type = ELF64_R_TYPE(jmprel[i].r_info);
@@ -436,6 +427,8 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 	// TODO: Do we need to call init and fini?
 	if (init)
 		((void (*)())init)();
+
+	unmap_guard.release();
 
 	/*kfxx::DynArray<Elf64_Shdr> loaded_shdrs(kfxx::kernel_allocator());
 

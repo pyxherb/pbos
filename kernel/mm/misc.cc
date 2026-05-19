@@ -1,8 +1,8 @@
 #include <pbos/kd/logger.h>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/kh/mm/misc.hh>
-#include <pbos/ki/ps/proc.hh>
 #include <pbos/ki/km/symbol.hh>
+#include <pbos/ki/ps/proc.hh>
 
 mm_context_t **mm_cur_contexts = nullptr;
 const ki_paging_config_t *ki_cur_paging_config;
@@ -110,8 +110,6 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 PBOS_API km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
 	if (!ctxt)
 		return KM_RESULT_INVALID_ARGS;
-	if (!size)
-		return KM_RESULT_INVALID_ARGS;
 
 	void *aligned_vaddr = (void *)PGFLOOR(vaddr);
 	size_t aligned_size = PGCEIL(size);
@@ -153,6 +151,9 @@ PBOS_API km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 			kfxx::destroy_at<mm_vmr_t>(vmr);
 			kima_free(&ctxt->kima_vmr_pool, vmr);
 		}
+	} else {
+		if (!size)
+			return KM_RESULT_INVALID_ARGS;
 	}
 
 	kfxx::ScopeGuard release_kernel_mmap_mutex_guard([]() noexcept {
@@ -213,7 +214,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
 	void *area_vaddr,
 	void *split_point) {
 	if (area_vaddr >= split_point) {
-		kd_println(__func__, "Trying to split a mapped area with split point >= area address");
+		kd_println(__func__, "Trying to split a mapped area with area address >= split point");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
@@ -377,7 +378,7 @@ PBOS_API km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr
 	mm_pgaccess_t pg_access;
 
 	if (!is_user_space) {
-		if (pg_access & MM_PAGE_USER) {
+		if (required_access & MM_PAGE_USER) {
 			return KM_RESULT_ACCESS_VIOLATION;
 		}
 
@@ -471,10 +472,6 @@ PBOS_API km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t
 	mm_pgaccess_t pg_access;
 
 	if (!is_user_space) {
-		if (pg_access & MM_PAGE_USER) {
-			return KM_RESULT_ACCESS_VIOLATION;
-		}
-
 		for (size_t i = 0; i < PGCEIL(size); i += page_size) {
 			mm_getmap(mm_context, p + i, &pg_access);
 			// TODO: Unlock the pages...
