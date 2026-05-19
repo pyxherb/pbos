@@ -1,6 +1,6 @@
 # PbOS Project
 
-An open-source (currently) experimental operating system.
+An open-source experimental (currently) operating system.
 
 PbOS stands for Paging-based Operating System.
 

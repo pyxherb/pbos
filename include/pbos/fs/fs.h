@@ -31,6 +31,9 @@ typedef struct _fs_file_system_ops_t {
 	/// @brief Get size of a file.
 	km_result_t (*size)(fs_fcb_t *fcb, size_t *size_out);
 
+	km_result_t (*enum_first_child_file)(fs_fnode_t *dir, fs_fnode_t **first_file_out);
+	km_result_t (*enum_next_file)(fs_fnode_t *cur_file, fs_fnode_t **next_file_out);
+
 	void (*destroy)(fs_fnode_t *file);
 
 	km_result_t (*premount)(fs_fnode_t *parent, fs_fnode_t *file);

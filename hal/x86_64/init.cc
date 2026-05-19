@@ -4,7 +4,6 @@
 #include <pbos/ps/exec.h>
 #include <pbos/km/panic.h>
 #include <pbos/ki/ps/proc.hh>
-#include "initcar.hh"
 #include "irq.hh"
 #include "logger.hh"
 #include "misc.h"

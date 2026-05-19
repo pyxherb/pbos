@@ -12,7 +12,7 @@ target_include_directories(pbkrnl PRIVATE ${FREESTDC_INCLUDE_DIR_CXX})
 # add_dependencies(pbkrnl bootldr)
 target_link_libraries(pbkrnl PRIVATE pbarch freestdc pbhal)
 target_compile_definitions(pbkrnl PRIVATE PBOS_COMPILING_KERNEL=1)
-target_link_options(pbkrnl PRIVATE "-T${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/kernel.lds" "--export-dynamic")
+target_link_options(pbkrnl PRIVATE "-T${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/kernel.lds")
 
 #add_custom_target(
 #    pbkim
@@ -20,12 +20,27 @@ target_link_options(pbkrnl PRIVATE "-T${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/k
 #    BYPRODUCTS ${PBOS_BINARY_DIR}/pbkim
 #    DEPENDS bootldr pbinit)
 
+set(KERNEL_MODULES_TARGET_FILES "")
+
 get_property(_KERNEL_MODULES GLOBAL PROPERTY KERNEL_MODULES)
+
+foreach(i ${_KERNEL_MODULES})
+    if(_KERNEL_MODULES STREQUAL "")
+        set(KERNEL_MODULES_TARGET_FILES "${KERNEL_MODULES_TARGET_FILES} $<TARGET_FILE:${i}>")
+    else()
+        set(KERNEL_MODULES_TARGET_FILES "$<TARGET_FILE:${i}>")
+    endif()
+endforeach()
+
+foreach(i ${_KERNEL_MODULES})
+    set(KERNEL_MODULES_TARGETS ${KERNEL_MODULES_TARGETS} ${i})
+endforeach()
+
 add_custom_target(
     initcar
-    COMMAND ${CARGEN_EXECUTABLE} -c ${PBOS_BINARY_DIR}/initcar _ $<TARGET_FILE:pbinit>
+    COMMAND ${CARGEN_EXECUTABLE} -c ${PBOS_BINARY_DIR}/initcar _ $<TARGET_FILE:pbinit> ${KERNEL_MODULES_TARGET_FILES}
     BYPRODUCTS ${PBOS_BINARY_DIR}/initcar
-    DEPENDS pbkrnl pbinit ${_KERNEL_MODULES}
+    DEPENDS pbkrnl pbinit ${KERNEL_MODULES_TARGETS}
 )
 
 add_custom_command(
@@ -54,3 +69,4 @@ add_subdirectory("syscall")
 add_subdirectory("acpi")
 add_subdirectory("mp")
 add_subdirectory("dm")
+add_subdirectory("initcar")

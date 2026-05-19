@@ -38,7 +38,7 @@ km_result_t initcar_destructor() {
 		while (handle != OM_INVALID_HANDLE) {
 			if (KM_FAILED(fs_unmount_file(handle)))
 				km_panic("Error unmounting an initcar file");
-			fs_find_next_file(&finddata, &handle);
+			fs_enum_next_file(&finddata, &handle);
 		}
 	}*/
 

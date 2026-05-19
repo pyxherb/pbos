@@ -401,6 +401,14 @@ end:;
 	return KM_RESULT_OK;
 }
 
+PBOS_NODISCARD km_result_t fs_enum_first_child_file(fs_fnode_t *dir, fs_fnode_t **first_file_out) {
+	return dir->fs->ops.enum_first_child_file(dir, first_file_out);
+}
+
+PBOS_NODISCARD km_result_t fs_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **next_file_out) {
+	return cur_file->fs->ops.enum_next_file(cur_file, next_file_out);
+}
+
 PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out) {
 	fs::FNodePtr file;
 	km_result_t result;

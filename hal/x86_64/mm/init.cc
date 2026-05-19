@@ -4,7 +4,7 @@
 #include <pbos/ki/acpi/rsdt.hh>
 #include <pbos/ki/mm/pgalloc.hh>
 #include "../mm.hh"
-#include "hal/x86_64/initcar.hh"
+#include <pbos/kh/initcar.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -47,8 +47,8 @@ void kh_mm_init() {
 	if ((!hn_limine_module_request.response) || (hn_limine_module_request.response->module_count != 1))
 		km_panic("Invalid module count, the module count passing to the kernel should be 1 (the initcar only)");
 	limine_file *initcar_file = hn_limine_module_request.response->modules[0];
-	hn_initcar_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)initcar_file->address) - hn_limine_hhdm_request.response->offset));
-	hn_initcar_size = initcar_file->size;
+	kh_initcar_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)initcar_file->address) - hn_limine_hhdm_request.response->offset));
+	kh_initcar_file_size = initcar_file->size;
 
 	// Collect ACPI RSDP's physical address.
 	ki_acpi_rsdp_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)hn_limine_rsdp_request.response->address) - hn_limine_hhdm_request.response->offset));

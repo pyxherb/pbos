@@ -228,6 +228,7 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 			case PT_LOAD: {
 				if (i.p_filesz > i.p_memsz)
 					return KM_RESULT_MALFORMED;
+				break;
 			}
 			case PT_INTERP:
 				kd_println(__func__, "Trying to load a kernel module with PT_INTERP segments");
@@ -269,15 +270,16 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 	while (mapped_phdr_idx < loaded_phdrs.size()) {
 		auto &phdr = loaded_phdrs.at(mapped_phdr_idx);
 		if (phdr.p_type == PT_LOAD) {
-			if (!mm_split_mapped_area(mm_context, last_vaddr, vaddr_base + phdr.p_vaddr)) {
+			char *split_point = vaddr_base + phdr.p_vaddr;
+			if (!mm_split_mapped_area(mm_context, last_vaddr, split_point)) {
 				return KM_RESULT_NO_MEM;
 			}
 
 			size_t area_size;
 			if (mapped_phdr_idx + 1 >= loaded_phdrs.size()) {
-				area_size = vaddr_limit - (vaddr_base + phdr.p_vaddr) + 1;
+				area_size = vaddr_limit - split_point + 1;
 			} else {
-				area_size = (vaddr_base + phdr.p_vaddr) - last_vaddr;
+				area_size = split_point - last_vaddr;
 			}
 
 			mm_pgaccess_t pgaccess = MM_PAGE_MAPPED;
@@ -289,16 +291,16 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 			if (phdr.p_flags & PF_X)
 				pgaccess |= MM_PAGE_EXEC;
 
-			km_unwrap_result(mm_set_page_access(mm_context, vaddr_base + phdr.p_vaddr, area_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE));
+			km_unwrap_result(mm_set_page_access(mm_context, split_point, area_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE));
 
-			last_vaddr = vaddr_base + phdr.p_vaddr;
+			last_vaddr = split_point;
 			++mapped_phdr_idx;
 			memset(last_vaddr, 0, phdr.p_memsz);
 			if (KM_FAILED(result = fs_read(file_fp, last_vaddr, phdr.p_filesz, phdr.p_offset, &bytes_read))) {
 				return result;
 			}
 
-			km_unwrap_result(mm_set_page_access(mm_context, vaddr_base + phdr.p_vaddr, area_size, pgaccess));
+			km_unwrap_result(mm_set_page_access(mm_context, split_point, area_size, pgaccess));
 		}
 	}
 
@@ -432,6 +434,8 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 	}
 
 	// TODO: Do we need to call init and fini?
+	if (init)
+		((void (*)())init)();
 
 	/*kfxx::DynArray<Elf64_Shdr> loaded_shdrs(kfxx::kernel_allocator());
 

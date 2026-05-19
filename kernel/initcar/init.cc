@@ -1,6 +1,6 @@
 #include <pbos/kd/logger.h>
-#include <hal/x86_64/initcar.hh>
 #include <pbos/kh/mm/misc.hh>
+#include <pbos/kh/initcar.hh>
 #include <pbos/ki/fs/file.hh>
 #include <pbos/ki/fs/fs.hh>
 
@@ -8,10 +8,11 @@ PBOS_EXTERN_C_BEGIN
 
 constexpr kfxx::StringView INITCAR_DIR_FILENAME = kfxx::StringView("initcar");
 
-void *hn_initcar_ptr = NULL;
-void *hn_initcar_paddr = NULL;
-size_t hn_initcar_size = 0;
-bool hn_is_initcar_direct_mapped = true;
+void *kh_initcar_ptr = NULL;
+void *kh_initcar_paddr = NULL;
+size_t kh_initcar_file_size = 0;
+bool kh_is_initcar_direct_mapped = true;
+fs_fnode_t *kh_initcar_first_file = nullptr, *kh_initcar_last_file = nullptr;
 
 fs_file_system_t *kh_initcar_fs = NULL;
 fs_fnode_t *kh_initcar_dir;
@@ -26,6 +27,8 @@ fs_file_system_ops_t kh_initcar_ops = {
 	.read = kh_initcar_read,
 	.write = kh_initcar_write,
 	.size = kh_initcar_size,
+	.enum_first_child_file = kh_initcar_enum_first_child_file,
+	.enum_next_file = kh_initcar_enum_next_file,
 	.destroy = kh_initcar_destroy,
 	.premount = kh_initcar_premount,
 	.mount_fail = kh_initcar_mount_fail,
@@ -34,31 +37,20 @@ fs_file_system_ops_t kh_initcar_ops = {
 };
 
 void kh_initcar_destroy(fs_fnode_t *file) {
-	auto exdata = (hn_initcar_file_exdata *)fs_get_fnode_exdata(file);
+	auto exdata = (kh_initcar_file_exdata *)fs_get_fnode_exdata(file);
 	if (exdata)
-		kfxx::destroy_and_release<hn_initcar_file_exdata>(kfxx::kernel_allocator(), exdata);
+		kfxx::destroy_and_release<kh_initcar_file_exdata>(kfxx::kernel_allocator(), exdata);
 }
 
 km_result_t kh_initcar_destructor() {
-	/*
-	// Unmount all files.
-	{
-		fs_finddata_t finddata;
-		fs_fnode_t *handle;
-		fs_find_file(initcar_dir, &finddata, &handle);
-		while (handle != OM_INVALID_HANDLE) {
-			if (KM_FAILED(fs_unmount_file(handle)))
-				km_panic("Error unmounting an initcar file");
-			fs_find_next_file(&finddata, &handle);
-		}
-	}*/
-
 	// Because the root directory has taken the ownership,
 	// we just need to unmount the directory and then it will be released automatically.
 	if (KM_FAILED(fs_unmount_file(kh_initcar_dir)))
 		km_panic("Error unounting the initcar directory");
 
-	mm_vmfree(mm_get_cur_context(), hn_initcar_ptr, hn_initcar_size);
+	// TODO: Release the subnodes.
+
+	mm_vmfree(mm_get_cur_context(), kh_initcar_ptr, kh_initcar_file_size);
 
 	return KM_RESULT_OK;
 }
@@ -86,19 +78,19 @@ void kh_initcar_init() {
 		km_panic("Error registering initcar file system");
 
 	dbg_printf("INITCAR range: %p-%p\n",
-		hn_initcar_paddr,
-		((const char *)hn_initcar_paddr) + hn_initcar_size);
+		kh_initcar_paddr,
+		((const char *)kh_initcar_paddr) + kh_initcar_file_size);
 
-	if ((!(hn_initcar_ptr = kh_get_direct_mmap(hn_initcar_paddr))) || (!kh_get_direct_mmap(((char *)hn_initcar_paddr) + hn_initcar_size))) {
-		if (!(hn_initcar_ptr = mm_kvmalloc(mm_get_cur_context(), hn_initcar_size, MM_PAGE_READ, 0)))
+	if ((!(kh_initcar_ptr = kh_get_direct_mmap(kh_initcar_paddr))) || (!kh_get_direct_mmap(((char *)kh_initcar_paddr) + kh_initcar_file_size))) {
+		if (!(kh_initcar_ptr = mm_kvmalloc(mm_get_cur_context(), kh_initcar_file_size, MM_PAGE_READ, 0)))
 			km_panic("Error allocating virtual memory space for INITCAR");
-		if (KM_FAILED(result = mm_mmap(mm_get_cur_context(), hn_initcar_ptr, hn_initcar_paddr, hn_initcar_size, MM_PAGE_READ, 0)))
+		if (KM_FAILED(result = mm_mmap(mm_get_cur_context(), kh_initcar_ptr, kh_initcar_paddr, kh_initcar_file_size, MM_PAGE_READ, 0)))
 			km_panic("Error mapping INITCAR area");
 	}
 
-	size_t sz_left = hn_initcar_size;
+	size_t sz_left = kh_initcar_file_size;
 
-	pbcar_metadata_t *md = (pbcar_metadata_t *)hn_initcar_ptr;
+	pbcar_metadata_t *md = (pbcar_metadata_t *)kh_initcar_ptr;
 	if (md->magic[0] != PBCAR_MAGIC_0 ||
 		md->magic[1] != PBCAR_MAGIC_1 ||
 		md->magic[2] != PBCAR_MAGIC_2 ||
@@ -112,11 +104,11 @@ void kh_initcar_init() {
 		km_panic("Incompatible INITCAR byte-order");
 
 	// Create file objects.
-	const char *p_cur = ((const char *)hn_initcar_ptr) + sizeof(pbcar_metadata_t);
-	const uint32_t kh_initcar_size = hn_initcar_size;
+	const char *p_cur = ((const char *)kh_initcar_ptr) + sizeof(pbcar_metadata_t);
+	const uint32_t kh_initcar_size = kh_initcar_file_size;
 
 #define initcar_checksize(size)                                            \
-	if (((p_cur - (const char *)hn_initcar_ptr) + size) > kh_initcar_size) \
+	if (((p_cur - (const char *)kh_initcar_ptr) + size) > kh_initcar_file_size) \
 		km_panic("Prematured end of file\n");
 
 	if (KM_FAILED(result = fs_alloc_dir_fnode(kh_initcar_fs, &kh_initcar_dir)))
@@ -126,9 +118,6 @@ void kh_initcar_init() {
 		km_panic("Error creating initcar directory, error code = %.0x", result);
 
 	{
-		// fs_fnode_t * root_handle;
-		// if (KM_FAILED(fs_open("/", sizeof("/") - 1, &root_handle)))
-		// km_panic("Error opening the root directory, error code = %.0x", result);
 		if (KM_FAILED(result = fs_link_subnode(fs_abs_root_dir, kh_initcar_dir)))
 			km_panic("Error mounting initcar directory, error code = %.0x", result);
 	}
@@ -151,11 +140,20 @@ void kh_initcar_init() {
 		if (KM_FAILED(fs_rename_fnode(file.get(), fe->filename, filename_len)))
 			km_panic("Error creating file object for initcar file: %s\n", fe->filename);
 
-		hn_initcar_file_exdata *exdata = kfxx::alloc_and_construct<hn_initcar_file_exdata>(kfxx::kernel_allocator());
+		kh_initcar_file_exdata *exdata = kfxx::alloc_and_construct<kh_initcar_file_exdata>(kfxx::kernel_allocator());
 		if (!exdata)
 			km_panic("Error allocating extension data for INITCAR file: %s", fe->filename);
 		exdata->ptr = p_cur;
 		exdata->sz_total = fe->size;
+
+		if(!kh_initcar_first_file) {
+			kh_initcar_first_file = file.get();
+		}
+		if(kh_initcar_last_file) {
+			exdata->prev = kh_initcar_last_file;
+			((kh_initcar_file_exdata *)fs_get_fnode_exdata(kh_initcar_last_file))->next = kh_initcar_last_file;
+		}
+		kh_initcar_last_file = file.get();
 
 		fs_set_fnode_exdata(file.get(), exdata);
 

@@ -20,7 +20,7 @@
 #define ARCH_PML4TE_WITH_MASKS(e, masks) (((e) & ~(0b111111111111)) | ((uint64_t)masks))
 #define ARCH_PML4TE_WITH_ADDR(e, addr) (((e) & ~((0xffffffffff) << 12)) | (((uint64_t)addr) << 12))
 #define ARCH_PML4TE_WITH_PK(e, pk) (((e) & ~((0b1111) << 59)) | (((uint64_t)pk) << 59))
-#define ARCH_PML4TE_WITH_XD(e, xd) (((e) & ~(1 << 63)) | (((uint64_t)xd) << 63))
+#define ARCH_PML4TE_WITH_XD(e, xd) (((e) & ~(1ULL << 63)) | (((uint64_t)xd) << 63))
 
 typedef uint64_t arch_pml4te_t;
 
@@ -43,7 +43,7 @@ typedef uint64_t arch_pml4te_t;
 #define ARCH_PDPTE_WITH_MASKS(e, masks) (((e) & ~(0b111111111111)) | ((uint64_t)masks))
 #define ARCH_PDPTE_WITH_ADDR(e, addr) (((e) & ~((0xffffffffff) << 12)) | (((uint64_t)addr) << 12))
 #define ARCH_PDPTE_WITH_PK(e, pk) (((e) & ~((0b1111) << 59)) | (((uint64_t)pk) << 59))
-#define ARCH_PDPTE_WITH_XD(e, xd) (((e) & ~(1 << 63)) | (((uint64_t)xd) << 63))
+#define ARCH_PDPTE_WITH_XD(e, xd) (((e) & ~(1ULL << 63)) | (((uint64_t)xd) << 63))
 
 typedef uint64_t arch_pdpte_t;
 
@@ -66,7 +66,7 @@ typedef uint64_t arch_pdpte_t;
 #define ARCH_PDE_WITH_MASKS(e, masks) (((e) & ~(0b111111111111)) | ((uint64_t)masks))
 #define ARCH_PDE_WITH_ADDR(e, addr) (((e) & ~((0xffffffffff) << 12)) | (((uint64_t)addr) << 12))
 #define ARCH_PDE_WITH_PK(e, pk) (((e) & ~((0b1111) << 59)) | (((uint64_t)pk) << 59))
-#define ARCH_PDE_WITH_XD(e, xd) (((e) & ~(1 << 63)) | (((uint64_t)xd) << 63))
+#define ARCH_PDE_WITH_XD(e, xd) (((e) & ~(1ULL << 63)) | (((uint64_t)xd) << 63))
 
 typedef uint64_t arch_pde_t;
 
@@ -88,7 +88,7 @@ typedef uint64_t arch_pde_t;
 #define ARCH_PTE_WITH_MASKS(e, masks) (((e) & ~(0b111111111111)) | ((uint64_t)masks))
 #define ARCH_PTE_WITH_ADDR(e, addr) (((e) & ~((0xffffffffff) << 12)) | (((uint64_t)addr) << 12))
 #define ARCH_PTE_WITH_PK(e, pk) (((e) & ~((0b1111) << 59)) | (((uint64_t)pk) << 59))
-#define ARCH_PTE_WITH_XD(e, xd) (((e) & ~(1 << 63)) | (((uint64_t)xd) << 63))
+#define ARCH_PTE_WITH_XD(e, xd) (((e) & ~(1ULL << 63)) | (((uint64_t)xd) << 63))
 
 typedef uint64_t arch_pte_t;
 

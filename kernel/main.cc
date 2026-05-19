@@ -8,10 +8,10 @@
 #include <pbos/kh/mm/init.hh>
 #include <pbos/kh/mp/init.hh>
 #include <pbos/ki/fs/fs.hh>
-#include <pbos/ki/ps/proc.hh>
 #include <pbos/ki/km/symbol.hh>
 #include <pbos/ki/ps/exec.hh>
 #include <pbos/ki/ps/kmod.hh>
+#include <pbos/ki/ps/proc.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -108,6 +108,21 @@ PBOS_NORETURN void kernel_main() {
 	kd_println("kernel", "Symbol scanning completed");
 
 	kh_initcar_init();
+
+	auto kmod_close_fail_hook([&result](fs_fcb_t *fcb, km_result_t result_in) noexcept {
+		result = result_in;
+	});
+	{
+		fs::FcbPtr kmod_fp(nullptr, std::move(kmod_close_fail_hook));
+		if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pciroot.kx", sizeof("/initcar/pciroot.kx") - 1, &kmod_fp)))
+			km_panic("Error opening the initial kernel modules");
+
+		ps_kmod_t *kmod = nullptr;
+		if (KM_FAILED(result = ps_load_kmod(kmod_fp.get(), &kmod)))
+			km_panic("Error loading the initial kernel modules");
+	}
+	if (KM_FAILED(result))
+		km_panic("Error closing the kernel module FCB");
 
 	auto init_close_fail_hook([&result](fs_fcb_t *fcb, km_result_t result_in) noexcept {
 		result = result_in;
