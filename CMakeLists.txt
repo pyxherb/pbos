@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.23)
 # Setup project
 project(PbOS VERSION 0.0.1 LANGUAGES C CXX ASM)
 
+include(PbOSKernelModule)
+
 set(PBOS_ENABLE_ASLR FALSE CACHE BOOL "Enable ASLR for the kernel")
 
 set(CMAKE_CXX_STANDARD 20)

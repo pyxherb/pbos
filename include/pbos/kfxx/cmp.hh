@@ -9,7 +9,7 @@
 
 namespace kfxx {
 	template <typename T>
-	struct Cmp {
+	struct cmp {
 		int operator()(const T &lhs, const T &rhs) const {
 #if __cplusplus >= 202002L
 			return lhs <=> rhs;

@@ -10,36 +10,36 @@
 
 namespace kfxx {
 	template <typename T>
-	struct KernelAllocDeleter {
+	struct kernel_allocator_stated_deleter {
 		PBOS_FORCEINLINE void operator()(T *ptr) noexcept {
 			kfxx::destroy_and_release<T>(kfxx::kernel_allocator(), ptr);
 		}
 	};
 
 	template <typename T>
-	struct AllocDeleter {
+	struct allocator_stated_deleter {
 	private:
-		RcObjectPtr<Alloc> _allocator;
+		rc_object_ptr<allocator_t> _allocator;
 
 	public:
-		PBOS_FORCEINLINE AllocDeleter(Alloc *allocator) noexcept : _allocator(allocator) {}
-		PBOS_FORCEINLINE ~AllocDeleter() {}
+		PBOS_FORCEINLINE allocator_stated_deleter(allocator_t *allocator) noexcept : _allocator(allocator) {}
+		PBOS_FORCEINLINE ~allocator_stated_deleter() {}
 		PBOS_FORCEINLINE void operator()(T *ptr) noexcept {
 			kfxx::destroy_and_release<T>(_allocator, ptr);
 		}
-		PBOS_FORCEINLINE void set_allocator(Alloc *ptr) noexcept {
+		PBOS_FORCEINLINE void set_allocator(allocator_t *ptr) noexcept {
 			_allocator = ptr;
 		}
 	};
 
-	template <typename T, typename D = KernelAllocDeleter<T>>
-	struct UniquePtr {
+	template <typename T, typename D = kernel_allocator_stated_deleter<T>>
+	struct unique_ptr {
 	private:
 		static_assert(std::is_invocable_v<D, T *>, "The deleter is not invocable");
 		T *_ptr;
 		[[no_unique_address]] D _deleter;
 
-		using ThisType = kfxx::UniquePtr<T, D>;
+		using ThisType = kfxx::unique_ptr<T, D>;
 
 	public:
 		PBOS_FORCEINLINE void reset() noexcept {
@@ -49,13 +49,13 @@ namespace kfxx {
 			}
 		}
 
-		PBOS_FORCEINLINE UniquePtr(T *ptr, D deleter = {}) noexcept : _ptr(ptr), _deleter(std::move(deleter)) {
+		PBOS_FORCEINLINE unique_ptr(T *ptr, D deleter = {}) noexcept : _ptr(ptr), _deleter(std::move(deleter)) {
 		}
-		UniquePtr(const ThisType &other) noexcept = delete;
-		PBOS_FORCEINLINE UniquePtr(ThisType &&other) noexcept : _ptr(other._ptr), _deleter(other._deleter) {
+		unique_ptr(const ThisType &other) noexcept = delete;
+		PBOS_FORCEINLINE unique_ptr(ThisType &&other) noexcept : _ptr(other._ptr), _deleter(other._deleter) {
 			other._ptr = nullptr;
 		}
-		PBOS_FORCEINLINE ~UniquePtr() {
+		PBOS_FORCEINLINE ~unique_ptr() {
 			reset();
 		}
 

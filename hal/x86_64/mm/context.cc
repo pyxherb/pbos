@@ -39,7 +39,7 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 	if (!(new_context = (mm_context_t *)mm_kalloc(sizeof(mm_context_t), alignof(mm_context_t))))
 		return KM_RESULT_NO_MEM;
 
-	kfxx::ScopeGuard free_new_context_guard([new_context]() noexcept {
+	kfxx::scope_guard free_new_context_guard([new_context]() noexcept {
 		mm_kfree(new_context);
 	});
 
@@ -49,14 +49,14 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 	if (!(pml4t_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))) {
 		return KM_RESULT_NO_MEM;
 	}
-	kfxx::ScopeGuard free_pml4t_paddr_guard([pml4t_paddr]() noexcept {
+	kfxx::scope_guard free_pml4t_paddr_guard([pml4t_paddr]() noexcept {
 		mm_pgfree(pml4t_paddr);
 	});
 
 	if (!(pml4t_vaddr = mm_kvmalloc(mm_get_cur_context(), PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0))) {
 		return KM_RESULT_NO_MEM;
 	}
-	kfxx::ScopeGuard free_pml4t_vaddr_guard([pml4t_vaddr]() noexcept {
+	kfxx::scope_guard free_pml4t_vaddr_guard([pml4t_vaddr]() noexcept {
 		mm_vmfree(mm_get_cur_context(), pml4t_vaddr, PAGESIZE);
 	});
 
@@ -107,7 +107,7 @@ void mm_free_context(mm_context_t *context) {
 
 void mm_switch_context(mm_context_t *context) {
 	kd_assert(context);
-	io::LocalIrqLock irq_lock;
+	io::local_irq_lock irq_lock;
 
 	mm_context_t *prev_context = mm_get_cur_context();
 	mm_cur_contexts[ps_get_cur_cpuid()] = context;

@@ -14,14 +14,14 @@ namespace kfxx {
 	/// @brief The dynamic array type.
 	/// @tparam T Type of the elements.
 	template <typename T>
-	class DynArray {
+	class dynarray_t {
 	public:
-		using Iterator = T *;
-		using ConstIterator = const T *;
+		using iterator = T *;
+		using const_iterator = const T *;
 
 		size_t _length = 0;
 		size_t _capacity = 0;
-		RcObjectPtr<Alloc> _allocator;
+		rc_object_ptr<allocator_t> _allocator;
 		T *_data;
 
 		PBOS_FORCEINLINE static size_t _get_grown_capacity(size_t length, size_t old_capacity) {
@@ -116,7 +116,7 @@ namespace kfxx {
 					// Because construction of new objects may throw exceptions,
 					// we choose to construct the new objects first.
 					size_t idx_last_constructed_object;
-					ScopeGuard ScopeGuard(
+					scope_guard scope_guard(
 						[this, &idx_last_constructed_object, new_data]() noexcept {
 							for (size_t i = _length;
 								i < idx_last_constructed_object;
@@ -132,7 +132,7 @@ namespace kfxx {
 						construct_at<T>(&new_data[i]);
 					}
 
-					ScopeGuard.release();
+					scope_guard.release();
 				}
 			}
 
@@ -184,12 +184,12 @@ namespace kfxx {
 					if constexpr (std::is_nothrow_constructible_v<T>) {
 						_expand_to<construct>(new_data, length);
 					} else {
-						ScopeGuard ScopeGuard(
+						scope_guard scope_guard(
 							[this, new_capacity_total_size, new_data]() noexcept {
 								_allocator->release(new_data, new_capacity_total_size, alignof(T));
 							});
 						_expand_to<construct>(new_data, length);
-						ScopeGuard.release();
+						scope_guard.release();
 					}
 				} else {
 					if constexpr (std::is_nothrow_constructible_v<T>) {
@@ -201,22 +201,22 @@ namespace kfxx {
 						} else {
 							if (!(new_data = (T *)_allocator->alloc(new_capacity_total_size, alignof(T))))
 								return false;
-							ScopeGuard ScopeGuard(
+							scope_guard scope_guard(
 								[this, new_capacity_total_size, new_data]() noexcept {
 									_allocator->release(new_data, new_capacity_total_size, alignof(T));
 								});
 							_expand_to<construct>(new_data, length);
-							ScopeGuard.release();
+							scope_guard.release();
 						}
 					} else {
 						if (!(new_data = (T *)_allocator->alloc(new_capacity_total_size, alignof(T))))
 							return false;
-						ScopeGuard ScopeGuard(
+						scope_guard scope_guard(
 							[this, new_capacity_total_size, new_data]() noexcept {
 								_allocator->release(new_data, new_capacity_total_size, alignof(T));
 							});
 						_expand_to<construct>(new_data, length);
-						ScopeGuard.release();
+						scope_guard.release();
 					}
 				}
 			}
@@ -407,17 +407,17 @@ namespace kfxx {
 			return gap_start;
 		}
 
-		using ThisType = DynArray<T>;
+		using ThisType = dynarray_t<T>;
 
 	public:
-		PBOS_FORCEINLINE DynArray(Alloc *allocator) : _allocator(allocator), _data(nullptr) {
+		PBOS_FORCEINLINE dynarray_t(allocator_t *allocator) : _allocator(allocator), _data(nullptr) {
 		}
-		PBOS_FORCEINLINE DynArray(ThisType &&rhs) noexcept : _allocator(std::move(rhs._allocator)), _data(std::move(rhs._data)), _length(rhs._length), _capacity(rhs._capacity) {
+		PBOS_FORCEINLINE dynarray_t(ThisType &&rhs) noexcept : _allocator(std::move(rhs._allocator)), _data(std::move(rhs._data)), _length(rhs._length), _capacity(rhs._capacity) {
 			rhs._data = nullptr;
 			rhs._length = 0;
 			rhs._capacity = 0;
 		}
-		PBOS_FORCEINLINE ~DynArray() {
+		PBOS_FORCEINLINE ~dynarray_t() {
 			_clear();
 		}
 
@@ -557,7 +557,7 @@ namespace kfxx {
 
 			size_t i = 0;
 
-			ScopeGuard destruct_guard([this, &i]() noexcept {
+			scope_guard destruct_guard([this, &i]() noexcept {
 				if constexpr (!std::is_trivially_destructible_v<T>) {
 					for (size_t j = 0; j < i; ++j) {
 						std::destroy_at<T>(&_data[j]);
@@ -584,7 +584,7 @@ namespace kfxx {
 
 			size_t i = 0;
 
-			ScopeGuard destruct_guard([this, &i]() noexcept {
+			scope_guard destruct_guard([this, &i]() noexcept {
 				if constexpr (!std::is_trivially_destructible_v<T>) {
 					for (size_t j = 0; j < i; ++j) {
 						std::destroy_at<T>(&_data[j]);
@@ -713,7 +713,7 @@ namespace kfxx {
 			kd_assert(result);
 		}
 
-		PBOS_FORCEINLINE Alloc *allocator() const {
+		PBOS_FORCEINLINE allocator_t *allocator() const {
 			return _allocator.get();
 		}
 
@@ -725,27 +725,27 @@ namespace kfxx {
 			return _data;
 		}
 
-		PBOS_FORCEINLINE Iterator begin() {
+		PBOS_FORCEINLINE iterator begin() {
 			return _data;
 		}
 
-		PBOS_FORCEINLINE Iterator end() {
+		PBOS_FORCEINLINE iterator end() {
 			return _data + _length;
 		}
 
-		PBOS_FORCEINLINE ConstIterator begin() const {
+		PBOS_FORCEINLINE const_iterator begin() const {
 			return _data;
 		}
 
-		PBOS_FORCEINLINE ConstIterator end() const {
+		PBOS_FORCEINLINE const_iterator end() const {
 			return _data + _length;
 		}
 
-		PBOS_FORCEINLINE ConstIterator begin_const() const {
+		PBOS_FORCEINLINE const_iterator begin_const() const {
 			return _data;
 		}
 
-		PBOS_FORCEINLINE ConstIterator end_const() const {
+		PBOS_FORCEINLINE const_iterator end_const() const {
 			return _data + _length;
 		}
 	};

@@ -9,7 +9,7 @@
 #include "hash.hh"
 
 namespace kfxx {
-	class StringView {
+	class string_view {
 	private:
 		const char *_ptr;
 		size_t _size;
@@ -17,10 +17,10 @@ namespace kfxx {
 	public:
 		constexpr static size_t NPOS = SIZE_MAX;
 
-		PBOS_FORCEINLINE constexpr StringView() noexcept : _ptr(nullptr), _size(0) {
+		PBOS_FORCEINLINE constexpr string_view() noexcept : _ptr(nullptr), _size(0) {
 		}
 
-		PBOS_FORCEINLINE constexpr StringView(const char *s) noexcept : _ptr(s) {
+		PBOS_FORCEINLINE constexpr string_view(const char *s) noexcept : _ptr(s) {
 			if (std::is_constant_evaluated()) {
 				size_t size = 0;
 				for (const char *i = s; *i; ++i, ++size);
@@ -30,25 +30,25 @@ namespace kfxx {
 			}
 		}
 
-		PBOS_FORCEINLINE constexpr StringView(const char *s, size_t len) noexcept : _ptr(s), _size(len) {
+		PBOS_FORCEINLINE constexpr string_view(const char *s, size_t len) noexcept : _ptr(s), _size(len) {
 		}
 
-		PBOS_FORCEINLINE constexpr StringView(const StringView &other) noexcept : _ptr(other._ptr), _size(other._size) {
+		PBOS_FORCEINLINE constexpr string_view(const string_view &other) noexcept : _ptr(other._ptr), _size(other._size) {
 		}
 
-		PBOS_FORCEINLINE constexpr StringView(StringView &&other) noexcept : _ptr(other._ptr), _size(other._size) {
+		PBOS_FORCEINLINE constexpr string_view(string_view &&other) noexcept : _ptr(other._ptr), _size(other._size) {
 			other._ptr = nullptr;
 			other._size = 0;
 		}
 
-		PBOS_FORCEINLINE constexpr StringView &operator=(const StringView &other) noexcept {
+		PBOS_FORCEINLINE constexpr string_view &operator=(const string_view &other) noexcept {
 			_ptr = other._ptr;
 			_size = other._size;
 
 			return *this;
 		}
 
-		PBOS_FORCEINLINE constexpr StringView &operator=(StringView &&other) noexcept {
+		PBOS_FORCEINLINE constexpr string_view &operator=(string_view &&other) noexcept {
 			_ptr = other._ptr;
 			_size = other._size;
 			other._ptr = nullptr;
@@ -57,10 +57,10 @@ namespace kfxx {
 			return *this;
 		}
 
-		~StringView() = default;
+		~string_view() = default;
 
 		PBOS_FORCEINLINE constexpr const char &at(size_t index) const noexcept {
-			kd_dbgcheck(index < _size, "StringView out of range access error detected");
+			kd_dbgcheck(index < _size, "string_view out of range access error detected");
 
 			return _ptr[index];
 		}
@@ -69,10 +69,10 @@ namespace kfxx {
 			return at(index);
 		}
 
-		PBOS_FORCEINLINE constexpr StringView substr(size_t index, size_t len = SIZE_MAX) const {
-			kd_dbgcheck(index < _size, "StringView out of range substr error detected");
+		PBOS_FORCEINLINE constexpr string_view substr(size_t index, size_t len = SIZE_MAX) const {
+			kd_dbgcheck(index < _size, "string_view out of range substr error detected");
 
-			return StringView(_ptr + index, PBOS_MIN(_size, len));
+			return string_view(_ptr + index, PBOS_MIN(_size, len));
 		}
 
 		PBOS_FORCEINLINE constexpr const char *data() const {
@@ -83,13 +83,13 @@ namespace kfxx {
 			return _size;
 		}
 
-		PBOS_FORCEINLINE bool operator==(const StringView &rhs) const {
+		PBOS_FORCEINLINE bool operator==(const string_view &rhs) const {
 			if (rhs.size() != size())
 				return false;
 			return !memcmp(_ptr, rhs._ptr, _size);
 		}
 
-		PBOS_FORCEINLINE bool operator>(const StringView &rhs) const {
+		PBOS_FORCEINLINE bool operator>(const string_view &rhs) const {
 			if (_size > rhs._size)
 				return true;
 			if (_size < rhs._size)
@@ -97,7 +97,7 @@ namespace kfxx {
 			return memcmp(_ptr, rhs._ptr, _size) > 0;
 		}
 
-		PBOS_FORCEINLINE bool operator<(const StringView &rhs) const {
+		PBOS_FORCEINLINE bool operator<(const string_view &rhs) const {
 			if (_size > rhs._size)
 				return false;
 			if (_size < rhs._size)
@@ -107,8 +107,8 @@ namespace kfxx {
 	};
 
 	template <>
-	struct Hash<StringView> {
-		PBOS_FORCEINLINE size_t operator()(const StringView &x) const {
+	struct hash<string_view> {
+		PBOS_FORCEINLINE size_t operator()(const string_view &x) const {
 			if constexpr (sizeof(size_t) == sizeof(uint32_t)) {
 				return kf_djb_hash32(x.data(), x.size());
 			} else {
@@ -118,11 +118,11 @@ namespace kfxx {
 	};
 
 	namespace literal_suffixes {
-		constexpr kfxx::StringView operator""_sv(const char *s) {
+		constexpr kfxx::string_view operator""_sv(const char *s) {
 			size_t index = 0;
 			while (s[index])
 				++index;
-			return kfxx::StringView(s, index);
+			return kfxx::string_view(s, index);
 		}
 	}
 }

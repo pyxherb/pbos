@@ -5,17 +5,17 @@
 
 namespace kfxx {
 	template <typename T>
-	class Uninit final {
+	class uninit_t final {
 	private:
 		alignas(T) char _buf[sizeof(T)];
 
 	public:
-		Uninit() noexcept = default;
-		PBOS_FORCEINLINE explicit Uninit(T &&data) noexcept {
+		uninit_t() noexcept = default;
+		PBOS_FORCEINLINE explicit uninit_t(T &&data) noexcept {
 			construct_at<T>((T *)_buf, std::move(data));
 		}
-		Uninit(const Uninit<T> &) = delete;
-		PBOS_FORCEINLINE ~Uninit() {
+		uninit_t(const uninit_t<T> &) = delete;
+		PBOS_FORCEINLINE ~uninit_t() {
 		}
 		PBOS_FORCEINLINE T &get() {
 			return *(T *)_buf;
@@ -50,7 +50,7 @@ namespace kfxx {
 		PBOS_FORCEINLINE void moveFrom(T &&src) {
 			construct_at((T *)_buf, std::move(src));
 		}
-		PBOS_FORCEINLINE Uninit<T> &operator=(T &&rhs) noexcept {
+		PBOS_FORCEINLINE uninit_t<T> &operator=(T &&rhs) noexcept {
 			construct_at((T *)_buf, std::move(rhs));
 			return *this;
 		}

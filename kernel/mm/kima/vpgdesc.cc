@@ -2,7 +2,7 @@
 #include <pbos/ki/mm/kima.hh>
 
 kima_vpgdesc_t *kima_lookup_vpgdesc(kima_pool_t *pool, void *ptr) {
-	kfxx::RBTree<void *>::Node *node = pool->vpgdesc_query_tree.find(ptr);
+	kfxx::rbtree_t<void *>::node_t *node = pool->vpgdesc_query_tree.find(ptr);
 
 	if (!node)
 		return nullptr;

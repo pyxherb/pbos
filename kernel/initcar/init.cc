@@ -6,7 +6,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-constexpr kfxx::StringView INITCAR_DIR_FILENAME = kfxx::StringView("initcar");
+constexpr kfxx::string_view INITCAR_DIR_FILENAME = kfxx::string_view("initcar");
 
 void *kh_initcar_ptr = NULL;
 void *kh_initcar_paddr = NULL;
@@ -133,7 +133,7 @@ void kh_initcar_init() {
 		dbg_printf("File: %s\n", fe->filename);
 		dbg_printf("Size: %d\n", (int)fe->size);
 
-		fs::FNodePtr file;
+		fs::fnode_ptr file;
 		size_t filename_len = strlen(fe->filename);
 		if (KM_FAILED(fs_alloc_file_fnode(kh_initcar_fs, &file)))
 			km_panic("Error creating file object for initcar file: %s\n", fe->filename);

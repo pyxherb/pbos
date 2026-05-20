@@ -6,31 +6,31 @@
 #include "file.h"
 
 namespace fs {
-	struct FNodeIncRef {
+	struct fnode_inc_ref {
 		PBOS_FORCEINLINE void operator()(fs_fnode_t *ptr) noexcept {
 			fs_ref_fnode(ptr);
 		}
 	};
 
-	struct FNodeDecRef {
+	struct fnode_dec_ref {
 		PBOS_FORCEINLINE void operator()(fs_fnode_t *ptr) noexcept {
 			fs_unref_fnode(ptr);
 		}
 	};
 
-	using FNodePtr = kfxx::CustomRcPtr<fs_fnode_t, FNodeIncRef, FNodeDecRef>;
+	using fnode_ptr = kfxx::custom_rc_ptr<fs_fnode_t, fnode_inc_ref, fnode_dec_ref>;
 
 	PBOS_FORCEINLINE void fcb_ptr_null_hook(fs_fcb_t *, km_result_t) noexcept {
 	}
 
 	template <typename H>
-	struct FcbPtr {
+	struct fcb_ptr {
 	private:
 		static_assert(std::is_invocable_v<H, fs_fcb_t *, km_result_t>, "The fail hook is not invocable");
 		fs_fcb_t *_ptr;
 		H _fail_hook;
 
-		using ThisType = fs::FcbPtr<H>;
+		using ThisType = fs::fcb_ptr<H>;
 
 	public:
 		PBOS_FORCEINLINE void reset() noexcept {
@@ -42,15 +42,15 @@ namespace fs {
 			}
 		}
 
-		PBOS_FORCEINLINE FcbPtr(H &&fail_hook) noexcept : _ptr(nullptr), _fail_hook(fail_hook) {
+		PBOS_FORCEINLINE fcb_ptr(H &&fail_hook) noexcept : _ptr(nullptr), _fail_hook(fail_hook) {
 		}
-		PBOS_FORCEINLINE FcbPtr(fs_fcb_t *ptr, H &&fail_hook) noexcept : _ptr(ptr), _fail_hook(fail_hook) {
+		PBOS_FORCEINLINE fcb_ptr(fs_fcb_t *ptr, H &&fail_hook) noexcept : _ptr(ptr), _fail_hook(fail_hook) {
 		}
-		FcbPtr(const ThisType &other) noexcept = delete;
-		PBOS_FORCEINLINE FcbPtr(ThisType &&other) noexcept : _ptr(other._ptr), _fail_hook(other._fail_hook) {
+		fcb_ptr(const ThisType &other) noexcept = delete;
+		PBOS_FORCEINLINE fcb_ptr(ThisType &&other) noexcept : _ptr(other._ptr), _fail_hook(other._fail_hook) {
 			other._ptr = nullptr;
 		}
-		PBOS_FORCEINLINE ~FcbPtr() {
+		PBOS_FORCEINLINE ~fcb_ptr() {
 			reset();
 		}
 

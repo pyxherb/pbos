@@ -10,14 +10,14 @@
 
 PBOS_EXTERN_C_BEGIN
 
-typedef struct _ps_ufcb_t : public kfxx::RBTree<ps_ufd_t>::Node {
+typedef struct _ps_ufcb_t : public kfxx::rbtree_t<ps_ufd_t>::node_t {
 	fs_fcb_t *kernel_fcb;
 
 	_ps_ufcb_t() = default;
 	~_ps_ufcb_t() = default;
 } ps_ufcb_t;
 
-typedef struct _ps_tcb_t : public kfxx::RBTree<ps_thread_id_t>::Node {
+typedef struct _ps_tcb_t : public kfxx::rbtree_t<ps_thread_id_t>::node_t {
 	ps_pcb_t *parent = nullptr;
 
 	uint8_t priority, flags;
@@ -37,24 +37,24 @@ typedef struct _ps_tcb_t : public kfxx::RBTree<ps_thread_id_t>::Node {
 	~_ps_tcb_t() = default;
 } ps_tcb_t;
 
-typedef struct _ps_pcb_t : kfxx::RBTree<ps_proc_id_t>::Node {
+typedef struct _ps_pcb_t : kfxx::rbtree_t<ps_proc_id_t>::node_t {
 	ps_thread_id_t last_thread_id;
-	kfxx::RBTree<void *> parp_list;
+	kfxx::rbtree_t<void *> parp_list;
 	mm_context_t *mm_context;
-	kfxx::RBTree<void *> page_association_records;
-	kfxx::RBTree<ps_thread_id_t> thread_set;
+	kfxx::rbtree_t<void *> page_association_records;
+	kfxx::rbtree_t<ps_thread_id_t> thread_set;
 	uint8_t priority, flags;
 
-	fs::FNodePtr cur_dir;
+	fs::fnode_ptr cur_dir;
 
-	kfxx::RBTree<ps_ufd_t> ufcb_set;
+	kfxx::rbtree_t<ps_ufd_t> ufcb_set;
 	ps_ufd_t last_fd;
 
 	_ps_pcb_t() = default;
 	~_ps_pcb_t() = default;
 } ps_pcb_t;
 
-extern kfxx::RBTree<ps_proc_id_t> ps_global_proc_set;
+extern kfxx::rbtree_t<ps_proc_id_t> ps_global_proc_set;
 extern ps_sched_t ps_simploop_sched;
 
 void hal_prepare_ps();

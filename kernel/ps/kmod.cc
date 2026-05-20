@@ -9,14 +9,14 @@
 
 PBOS_EXTERN_C_BEGIN
 
-_ps_kmod_t::_ps_kmod_t(kfxx::Alloc *allocator) : registered_symbols(allocator) {
+_ps_kmod_t::_ps_kmod_t(kfxx::allocator_t *allocator) : registered_symbols(allocator) {
 }
 
 _ps_kmod_t::~_ps_kmod_t() {
 }
 
 ps_kmod_t *ki_ps_kmod_list = nullptr;
-ps::Mutex ki_ps_kmod_list_mutex;
+ps::mutex_t ki_ps_kmod_list_mutex;
 
 PBOS_KERNEL_PUBLIC km_result_t ps_load_kmod(fs_fcb_t *file_fp, ps_kmod_t **kmod_out) {
 	km_result_t result;
@@ -24,7 +24,7 @@ PBOS_KERNEL_PUBLIC km_result_t ps_load_kmod(fs_fcb_t *file_fp, ps_kmod_t **kmod_
 	for (auto it = ki_registered_binldrs.begin(); it != ki_registered_binldrs.end(); ++it) {
 		ps_kmod_t *kmod;
 		KM_FAILED(ps_create_kmod(&kmod));
-		kfxx::ScopeGuard free_kmod_guard([kmod]() noexcept {
+		kfxx::scope_guard free_kmod_guard([kmod]() noexcept {
 			ps_destroy_kmod(kmod);
 		});
 
@@ -47,7 +47,7 @@ PBOS_KERNEL_PUBLIC km_result_t ps_load_kmod(fs_fcb_t *file_fp, ps_kmod_t **kmod_
 
 PBOS_KERNEL_PUBLIC void ps_destroy_kmod(ps_kmod_t *kmod) {
 	{
-		ps::MutexGuard g(ki_ps_kmod_list_mutex.c_mutex());
+		ps::mutex_guard g(ki_ps_kmod_list_mutex.c_mutex());
 
 		if (ki_ps_kmod_list == kmod)
 			ki_ps_kmod_list = kmod->next;
@@ -81,11 +81,11 @@ PBOS_KERNEL_PUBLIC km_result_t ps_create_kmod(ps_kmod_t **kmod_out) {
 	if (!kmod)
 		return KM_RESULT_NO_MEM;
 
-	kfxx::ScopeGuard destroy_kmod_guard([kmod]() noexcept {
+	kfxx::scope_guard destroy_kmod_guard([kmod]() noexcept {
 		ps_destroy_kmod(kmod);
 	});
 
-	ps::MutexGuard g(ki_ps_kmod_list_mutex.c_mutex());
+	ps::mutex_guard g(ki_ps_kmod_list_mutex.c_mutex());
 
 	if (ki_ps_kmod_list) {
 		ki_ps_kmod_list->prev = kmod;
@@ -119,7 +119,7 @@ km_result_t ki_ps_alloc_kmod_section(void *vaddr, size_t size, ps_kmod_t *kmod, 
 	if (!section)
 		return KM_RESULT_NO_MEM;
 
-	kfxx::ScopeGuard destroy_section_guard([section]() noexcept {
+	kfxx::scope_guard destroy_section_guard([section]() noexcept {
 		ki_ps_destroy_kmod_section(section);
 	});
 
@@ -146,8 +146,8 @@ void ki_ps_destroy_kmod_section(ps_kmod_section_t *section) {
 	kfxx::destroy_and_release<ps_kmod_section_t>(kfxx::kernel_allocator(), section);
 }
 
-kfxx::HashMap<kfxx::StringView, ki_kernel_symbol_t *> ki_registered_kernel_symbols(kfxx::kernel_allocator());
-kfxx::RBTree<void *> ki_registered_kernel_symbol_query_tree;
+kfxx::hashmap_t<kfxx::string_view, ki_kernel_symbol_t *> ki_registered_kernel_symbols(kfxx::kernel_allocator());
+kfxx::rbtree_t<void *> ki_registered_kernel_symbol_query_tree;
 
 void ki_destroy_kernel_symbol(ki_kernel_symbol_t *sym) {
 	if (sym->name)
@@ -167,11 +167,11 @@ PBOS_KERNEL_PUBLIC km_result_t ps_register_kernel_symbol(ps_kmod_t *kmod, const 
 	ki_kernel_symbol_t *sym;
 	KM_RETURN_IF_FAILED(ki_do_register_kernel_symbol(name, name_len, addr, len, &sym));
 
-	kfxx::ScopeGuard unregister_symbol_guard([name, name_len]() noexcept {
+	kfxx::scope_guard unregister_symbol_guard([name, name_len]() noexcept {
 		ps_unregister_kernel_symbol(name, name_len);
 	});
 
-	if (!kmod->registered_symbols.insert(kfxx::StringView(sym->name, sym->name_len)))
+	if (!kmod->registered_symbols.insert(kfxx::string_view(sym->name, sym->name_len)))
 		return KM_RESULT_NO_MEM;
 
 	unregister_symbol_guard.release();
@@ -188,7 +188,7 @@ km_result_t ki_do_register_kernel_symbol(const char *name, size_t name_len, void
 	}
 
 	ki_kernel_symbol_t *sym = kfxx::alloc_and_construct<ki_kernel_symbol_t>(kfxx::kernel_allocator());
-	kfxx::ScopeGuard release_sym_guard([sym]() noexcept {
+	kfxx::scope_guard release_sym_guard([sym]() noexcept {
 		ki_destroy_kernel_symbol(sym);
 	});
 
@@ -204,7 +204,7 @@ km_result_t ki_do_register_kernel_symbol(const char *name, size_t name_len, void
 	if (symbol_out)
 		*symbol_out = sym;
 
-	if (!ki_registered_kernel_symbols.insert(kfxx::StringView(sym->name, sym->name_len), +sym))
+	if (!ki_registered_kernel_symbols.insert(kfxx::string_view(sym->name, sym->name_len), +sym))
 		return KM_RESULT_NO_MEM;
 
 	release_sym_guard.release();
@@ -213,7 +213,7 @@ km_result_t ki_do_register_kernel_symbol(const char *name, size_t name_len, void
 }
 
 PBOS_KERNEL_PUBLIC km_result_t ps_unregister_kernel_symbol(const char *name, size_t name_len) {
-	kfxx::StringView name_view = kfxx::StringView(name, name_len);
+	kfxx::string_view name_view = kfxx::string_view(name, name_len);
 	if (auto it = ki_registered_kernel_symbols.find(name_view); it != ki_registered_kernel_symbols.end()) {
 		ki_destroy_kernel_symbol(it.value());
 		ki_registered_kernel_symbols.remove(name_view);
@@ -223,7 +223,7 @@ PBOS_KERNEL_PUBLIC km_result_t ps_unregister_kernel_symbol(const char *name, siz
 }
 
 PBOS_KERNEL_PUBLIC void *ps_get_kernel_symbol(const char *name, size_t name_len) {
-	kfxx::StringView name_view = kfxx::StringView(name, name_len);
+	kfxx::string_view name_view = kfxx::string_view(name, name_len);
 	if (auto it = ki_registered_kernel_symbols.find(name_view); it != ki_registered_kernel_symbols.end()) {
 		return it.value()->rb_value;
 	}

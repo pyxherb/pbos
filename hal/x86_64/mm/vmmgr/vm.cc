@@ -91,7 +91,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 				sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 				PTE_P | PTE_RW);
 
-		kfxx::Deferred release_pdpt_guard([&pdpt]() noexcept {
+		kfxx::deferred release_pdpt_guard([&pdpt]() noexcept {
 			hn_tmpunmap_early((void *)pdpt, PAGESIZE);
 		});
 
@@ -125,7 +125,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 					sizeof(arch_pde_t) * (PTX_MAX + 1),
 					PTE_P | PTE_RW);
 
-			kfxx::Deferred release_pde_guard([&pdt]() noexcept {
+			kfxx::deferred release_pde_guard([&pdt]() noexcept {
 				hn_tmpunmap_early((void *)pdt, PAGESIZE);
 			});
 
@@ -166,7 +166,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 				if (init_ptt)
 					memset(ptt, 0, PAGESIZE);
 
-				kfxx::Deferred release_pte_guard([&ptt]() noexcept {
+				kfxx::deferred release_pte_guard([&ptt]() noexcept {
 					hn_tmpunmap_early((void *)ptt, PAGESIZE);
 				});
 
@@ -238,7 +238,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 	size_t pi_diff = paddr ? PAGESIZE : 0;
 	uint8_t mask = hn_pgaccess_to_pgmask(access);
 
-	kfxx::ScopeGuard unmmap_guard([ctxt, vaddr, size]() noexcept {
+	kfxx::scope_guard unmmap_guard([ctxt, vaddr, size]() noexcept {
 		kh_unmmap(ctxt, vaddr, size, 0);
 	});
 
@@ -262,7 +262,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 
 		arch_pdpte_t *pdpt;
 		void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
-		kfxx::ScopeGuard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
+		kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
 			hn_tmpunmap_post((void *)pdpt, PAGESIZE);
 		});
 		if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
@@ -302,7 +302,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 
 			arch_pde_t *pdt;
 			void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
-			kfxx::ScopeGuard release_tmpmap_pdt_guard([&pdt]() noexcept {
+			kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
 				hn_tmpunmap_post((void *)pdt, PAGESIZE);
 			});
 			if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
@@ -346,7 +346,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 
 				arch_pte_t *ptt;
 				void *ptt_paddr = UNPGADDR(ARCH_PDE_ADDR(pdt[pdx]));
-				kfxx::ScopeGuard release_tmpmap_ptt_guard([&ptt]() noexcept {
+				kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
 					hn_tmpunmap_post((void *)ptt, PAGESIZE);
 				});
 				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(ptt_paddr))) {
@@ -435,7 +435,7 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 
 		arch_pdpte_t *pdpt;
 		void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
-		kfxx::ScopeGuard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
+		kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
 			hn_tmpunmap_post((void *)pdpt, PAGESIZE);
 		});
 		if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
@@ -464,7 +464,7 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 
 			arch_pde_t *pdt;
 			void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
-			kfxx::ScopeGuard release_tmpmap_pdt_guard([&pdt]() noexcept {
+			kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
 				hn_tmpunmap_post((void *)pdt, PAGESIZE);
 			});
 			if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
@@ -495,7 +495,7 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 					continue;
 
 				arch_pte_t *ptt;
-				kfxx::ScopeGuard release_tmpmap_ptt_guard([&ptt]() noexcept {
+				kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
 					hn_tmpunmap_post((void *)ptt, PAGESIZE);
 				});
 				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(pdt_paddr))) {
@@ -627,7 +627,7 @@ void kh_set_page_access(
 
 		arch_pdpte_t *pdpt;
 		void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
-		kfxx::ScopeGuard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
+		kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
 			hn_tmpunmap_post((void *)pdpt, PAGESIZE);
 		});
 		if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
@@ -657,7 +657,7 @@ void kh_set_page_access(
 
 			arch_pde_t *pdt;
 			void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
-			kfxx::ScopeGuard release_tmpmap_pdt_guard([&pdt]() noexcept {
+			kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
 				hn_tmpunmap_post((void *)pdt, PAGESIZE);
 			});
 			if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
@@ -691,7 +691,7 @@ void kh_set_page_access(
 
 				arch_pte_t *ptt;
 				void *ptt_paddr = UNPGADDR(ARCH_PDE_ADDR(pdt[pdx]));
-				kfxx::ScopeGuard release_tmpmap_ptt_guard([&ptt]() noexcept {
+				kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
 					hn_tmpunmap_post((void *)ptt, PAGESIZE);
 				});
 				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(ptt_paddr))) {
@@ -776,7 +776,7 @@ void *kh_vmalloc(mm_context_t *context,
 		// io::LocalIrqLock irq_lock;
 		arch_pdpte_t *pdpt;
 		void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
-		kfxx::ScopeGuard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
+		kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
 			hn_tmpunmap_post((void *)pdpt, PAGESIZE);
 		});
 		if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
@@ -811,7 +811,7 @@ void *kh_vmalloc(mm_context_t *context,
 
 			const arch_pde_t *pdt;
 			void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
-			kfxx::ScopeGuard release_tmpmap_pdt_guard([&pdt]() noexcept {
+			kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
 				hn_tmpunmap_post((void *)pdt, PAGESIZE);
 			});
 			if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
@@ -850,7 +850,7 @@ void *kh_vmalloc(mm_context_t *context,
 
 				const arch_pte_t *ptt;
 				void *ptt_paddr = UNPGADDR(ARCH_PDE_ADDR(pdt[pdx]));
-				kfxx::ScopeGuard release_tmpmap_ptt_guard([&ptt]() noexcept {
+				kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
 					hn_tmpunmap_post((void *)ptt, PAGESIZE);
 				});
 				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(ptt_paddr))) {
@@ -943,7 +943,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 				sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 				PTE_P | PTE_RW);
 
-		kfxx::Deferred release_pdpt_guard([pdpt]() noexcept {
+		kfxx::deferred release_pdpt_guard([pdpt]() noexcept {
 			hn_tmpunmap_early((void *)pdpt, PAGESIZE);
 		});
 
@@ -972,7 +972,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 					sizeof(arch_pde_t) * (PTX_MAX + 1),
 					PTE_P | PTE_RW);
 
-			kfxx::Deferred release_pde_guard([pdt]() noexcept {
+			kfxx::deferred release_pde_guard([pdt]() noexcept {
 				hn_tmpunmap_early((void *)pdt, PAGESIZE);
 			});
 
@@ -1005,7 +1005,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 						sizeof(arch_pte_t) * (PTX_MAX + 1),
 						PTE_P | PTE_RW);
 
-				kfxx::Deferred release_pte_guard([ptt]() noexcept {
+				kfxx::deferred release_pte_guard([ptt]() noexcept {
 					hn_tmpunmap_early((void *)ptt, PAGESIZE);
 				});
 
@@ -1064,7 +1064,7 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 
 	arch_pdpte_t *pdpt;
 	void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
-	kfxx::ScopeGuard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
+	kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
 		hn_tmpunmap_post((void *)pdpt, PAGESIZE);
 	});
 	if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
@@ -1086,7 +1086,7 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 
 	const arch_pde_t *pdt;
 	void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
-	kfxx::ScopeGuard release_tmpmap_pdt_guard([&pdt]() noexcept {
+	kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
 		hn_tmpunmap_post((void *)pdt, PAGESIZE);
 	});
 	if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
@@ -1107,7 +1107,7 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 		return nullptr;
 
 	const arch_pte_t *ptt;
-	kfxx::ScopeGuard release_tmpmap_ptt_guard([&ptt]() noexcept {
+	kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
 		hn_tmpunmap_post((void *)ptt, PAGESIZE);
 	});
 	if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(UNPGADDR(ARCH_PDE_ADDR(pdt[pdx]))))) {
@@ -1474,7 +1474,7 @@ void *hn_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *p
 
 	arch_pdpte_t *pdpt;
 	void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
-	kfxx::ScopeGuard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
+	kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
 		hn_tmpunmap_post((void *)pdpt, PAGESIZE);
 	});
 	if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
@@ -1496,7 +1496,7 @@ void *hn_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *p
 
 	const arch_pde_t *pdt;
 	void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
-	kfxx::ScopeGuard release_tmpmap_pdt_guard([&pdt]() noexcept {
+	kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
 		hn_tmpunmap_post((void *)pdt, PAGESIZE);
 	});
 	if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {

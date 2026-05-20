@@ -1,5 +1,6 @@
 file(GLOB SRC *.c *.cc *.h *.S)
-add_library(pciroot SHARED ${SRC})
+add_pbos_kernel_module(pciroot)
+target_sources(pciroot PRIVATE ${SRC})
 target_link_libraries(pciroot PRIVATE pbarch)
 
 target_link_options(pciroot PRIVATE "-T${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/kmod.lds")

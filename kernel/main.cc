@@ -87,7 +87,7 @@ PBOS_NORETURN void kernel_main() {
 	{
 		for (const Elf64_Sym *i = KI_EXPORTED_SYMBOLS_BEGIN; i != KI_EXPORTED_SYMBOLS_END; ++i) {
 			uint8_t visibility = ELF64_ST_VISIBILITY(i->st_other);
-			kfxx::StringView name = kfxx::StringView(KI_EXPORTED_SYMBOL_NAMES_BEGIN + i->st_name);
+			kfxx::string_view name = kfxx::string_view(KI_EXPORTED_SYMBOL_NAMES_BEGIN + i->st_name);
 
 			if ((visibility == STV_DEFAULT) && i->st_value) {
 				kd_println("kernel", "Found public symbol: %s -> %p", name.data(), (void *)i->st_value);
@@ -113,7 +113,7 @@ PBOS_NORETURN void kernel_main() {
 		result = result_in;
 	});
 	{
-		fs::FcbPtr kmod_fp(nullptr, std::move(kmod_close_fail_hook));
+		fs::fcb_ptr kmod_fp(nullptr, std::move(kmod_close_fail_hook));
 		if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pciroot.kx", sizeof("/initcar/pciroot.kx") - 1, &kmod_fp)))
 			km_panic("Error opening the initial kernel modules");
 
@@ -128,7 +128,7 @@ PBOS_NORETURN void kernel_main() {
 		result = result_in;
 	});
 	{
-		fs::FcbPtr init_fp(nullptr, std::move(init_close_fail_hook));
+		fs::fcb_ptr init_fp(nullptr, std::move(init_close_fail_hook));
 		if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pbinit", sizeof("/initcar/pbinit") - 1, &init_fp)))
 			km_panic("Error opening the init executable");
 

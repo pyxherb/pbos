@@ -10,27 +10,27 @@
 
 namespace kfxx {
 	template <typename T, typename Comparator, bool Fallible, bool IsThreeway>
-	class SetImpl final {
+	class set_impl final {
 	private:
 		static_assert(std::is_move_constructible_v<T>, "The element must be move-constructible");
-		using tree_t = std::conditional_t<Fallible, FallibleRBTree<T, Comparator, IsThreeway>, RBTree<T, Comparator, IsThreeway>>;
-		tree_t _tree;
-		kfxx::RcObjectPtr<kfxx::Alloc> _allocator;
-		using ThisType = kfxx::SetImpl<T, Comparator, Fallible, IsThreeway>;
+		using Tree = std::conditional_t<Fallible, fallible_rbtree_t<T, Comparator, IsThreeway>, rbtree_t<T, Comparator, IsThreeway>>;
+		Tree _tree;
+		kfxx::rc_object_ptr<kfxx::allocator_t> _allocator;
+		using ThisType = kfxx::set_impl<T, Comparator, Fallible, IsThreeway>;
 
 	public:
 		using RemoveResultType = typename std::conditional_t<Fallible, bool, void>;
-		using element_query_result_t = typename std::conditional_t<Fallible, Option<T &>, T &>;
-		using const_element_query_result_t = typename std::conditional_t<Fallible, Option<const T &>, const T &>;
-		using ContainsResultType = typename std::conditional_t<Fallible, Option<bool>, bool>;
+		using ElementQueryResult = typename std::conditional_t<Fallible, option_t<T &>, T &>;
+		using ConstElementQueryResult = typename std::conditional_t<Fallible, option_t<const T &>, const T &>;
+		using ContainsResultType = typename std::conditional_t<Fallible, option_t<bool>, bool>;
 
-		using Node = typename tree_t::Node;
+		using Node = typename Tree::node_t;
 
-		PBOS_FORCEINLINE SetImpl(Alloc *allocator, Comparator &&comparator = {}) noexcept : _allocator(allocator), _tree(std::move(comparator)) {
+		PBOS_FORCEINLINE set_impl(allocator_t *allocator, Comparator &&comparator = {}) noexcept : _allocator(allocator), _tree(std::move(comparator)) {
 		}
-		PBOS_FORCEINLINE SetImpl(ThisType &&rhs) noexcept : _tree(std::move(rhs._tree)) {
+		PBOS_FORCEINLINE set_impl(ThisType &&rhs) noexcept : _tree(std::move(rhs._tree)) {
 		}
-		PBOS_FORCEINLINE ~SetImpl() {
+		PBOS_FORCEINLINE ~set_impl() {
 		}
 
 		PBOS_FORCEINLINE ThisType &operator=(ThisType &&dest) noexcept {
@@ -39,7 +39,7 @@ namespace kfxx {
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool insert(T &&value) {
-			typename tree_t::Node *node = kfxx::alloc_and_construct<Node>(allocator(), std::move(value));
+			typename Tree::node_t *node = kfxx::alloc_and_construct<Node>(allocator(), std::move(value));
 
 			if (!_tree.insert(node)) {
 				kfxx::destroy_and_release(allocator(), node);
@@ -81,11 +81,11 @@ namespace kfxx {
 			return _tree.size();
 		}
 
-		PBOS_FORCEINLINE Alloc *allocator() const {
+		PBOS_FORCEINLINE allocator_t *allocator() const {
 			return _allocator.get();
 		}
 
-		PBOS_FORCEINLINE void replace_allocator(Alloc *rhs) noexcept {
+		PBOS_FORCEINLINE void replace_allocator(allocator_t *rhs) noexcept {
 			_tree.replace_allocator(rhs);
 		}
 
@@ -98,22 +98,22 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE void clear() {
-			_tree.clear([this](tree_t::Node *node) {
+			_tree.clear([this](Tree::node_t *node) {
 				kfxx::destroy_and_release<ThisType::Node>(_allocator.get(), node);
 			});
 		}
 
-		PBOS_FORCEINLINE element_query_result_t at(const T &key) {
+		PBOS_FORCEINLINE ElementQueryResult at(const T &key) {
 			return at_alt<T>(key);
 		}
 
 		template <typename U>
-		PBOS_FORCEINLINE element_query_result_t at_alt(const U &key) {
+		PBOS_FORCEINLINE ElementQueryResult at_alt(const U &key) {
 			if constexpr (Fallible) {
 				auto node = _tree.template find_alt<U>(key);
 
 				if (!node.has_value())
-					return NULL_OPTION;
+					return nullopt;
 
 				kd_assert(node.value());
 
@@ -127,17 +127,17 @@ namespace kfxx {
 			}
 		}
 
-		PBOS_FORCEINLINE const_element_query_result_t at(const T &key) const {
+		PBOS_FORCEINLINE ConstElementQueryResult at(const T &key) const {
 			return at_alt<T>(key);
 		}
 
 		template <typename U>
-		PBOS_FORCEINLINE const_element_query_result_t at_alt(const U &key) const {
+		PBOS_FORCEINLINE ConstElementQueryResult at_alt(const U &key) const {
 			if constexpr (Fallible) {
 				auto node = _tree.template find_alt<U>(key);
 
 				if (!node.has_value())
-					return NULL_OPTION;
+					return nullopt;
 
 				kd_assert(node.value());
 
@@ -151,63 +151,63 @@ namespace kfxx {
 			}
 		}
 
-		struct Iterator {
-			typename tree_t::Iterator _iterator;
-			PBOS_FORCEINLINE Iterator(typename tree_t::Iterator &&iterator_in) : _iterator(iterator_in) {
+		struct iterator {
+			typename Tree::iterator _iterator;
+			PBOS_FORCEINLINE iterator(typename Tree::iterator &&iterator_in) : _iterator(iterator_in) {
 			}
-			Iterator(const Iterator &rhs) = default;
-			Iterator(Iterator &&rhs) = default;
-			Iterator &operator=(const Iterator &rhs) = default;
-			Iterator &operator=(Iterator &&rhs) = default;
+			iterator(const iterator &rhs) = default;
+			iterator(iterator &&rhs) = default;
+			iterator &operator=(const iterator &rhs) = default;
+			iterator &operator=(iterator &&rhs) = default;
 
-			PBOS_FORCEINLINE bool operator==(const Iterator &rhs) const {
+			PBOS_FORCEINLINE bool operator==(const iterator &rhs) const {
 				return _iterator == rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator==(Iterator &&rhs) const {
+			PBOS_FORCEINLINE bool operator==(iterator &&rhs) const {
 				return _iterator == rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const Iterator &rhs) const {
+			PBOS_FORCEINLINE bool operator!=(const iterator &rhs) const {
 				return _iterator != rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(Iterator &&rhs) const {
+			PBOS_FORCEINLINE bool operator!=(iterator &&rhs) const {
 				return _iterator != rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE Iterator &operator++() {
+			PBOS_FORCEINLINE iterator &operator++() {
 				++_iterator;
 				return *this;
 			}
 
-			PBOS_FORCEINLINE Iterator operator++(int) {
-				Iterator it = *this;
+			PBOS_FORCEINLINE iterator operator++(int) {
+				iterator it = *this;
 				++*this;
 				return it;
 			}
 
-			PBOS_FORCEINLINE Iterator next() {
-				Iterator Iterator = *this;
+			PBOS_FORCEINLINE iterator next() {
+				iterator iterator = *this;
 
-				return ++Iterator;
+				return ++iterator;
 			}
 
-			PBOS_FORCEINLINE Iterator &operator--() {
+			PBOS_FORCEINLINE iterator &operator--() {
 				--_iterator;
 				return *this;
 			}
 
-			PBOS_FORCEINLINE Iterator operator--(int) {
-				Iterator it = *this;
+			PBOS_FORCEINLINE iterator operator--(int) {
+				iterator it = *this;
 				--*this;
 				return it;
 			}
 
-			PBOS_FORCEINLINE Iterator prev() {
-				Iterator Iterator = *this;
+			PBOS_FORCEINLINE iterator prev() {
+				iterator iterator = *this;
 
-				return --Iterator;
+				return --iterator;
 			}
 
 			PBOS_FORCEINLINE T &operator*() const {
@@ -219,72 +219,72 @@ namespace kfxx {
 			}
 		};
 
-		PBOS_FORCEINLINE Iterator begin() {
-			return Iterator(_tree.begin());
+		PBOS_FORCEINLINE iterator begin() {
+			return iterator(_tree.begin());
 		}
-		PBOS_FORCEINLINE Iterator end() {
-			return Iterator(_tree.end());
+		PBOS_FORCEINLINE iterator end() {
+			return iterator(_tree.end());
 		}
-		PBOS_FORCEINLINE Iterator begin_reversed() {
-			return Iterator(_tree.begin_reversed());
+		PBOS_FORCEINLINE iterator begin_reversed() {
+			return iterator(_tree.begin_reversed());
 		}
-		PBOS_FORCEINLINE Iterator end_reversed() {
-			return Iterator(_tree.end_reversed());
+		PBOS_FORCEINLINE iterator end_reversed() {
+			return iterator(_tree.end_reversed());
 		}
 
-		struct ConstIterator {
-			Iterator _iterator;
-			PBOS_FORCEINLINE ConstIterator(Iterator &&iterator_in) : _iterator(iterator_in) {
+		struct const_iterator {
+			iterator _iterator;
+			PBOS_FORCEINLINE const_iterator(iterator &&iterator_in) : _iterator(iterator_in) {
 			}
-			ConstIterator(const ConstIterator &rhs) = default;
-			ConstIterator(ConstIterator &&rhs) = default;
-			ConstIterator &operator=(const ConstIterator &rhs) = default;
-			ConstIterator &operator=(ConstIterator &&rhs) = default;
+			const_iterator(const const_iterator &rhs) = default;
+			const_iterator(const_iterator &&rhs) = default;
+			const_iterator &operator=(const const_iterator &rhs) = default;
+			const_iterator &operator=(const_iterator &&rhs) = default;
 
-			PBOS_FORCEINLINE bool operator==(const ConstIterator &rhs) const {
+			PBOS_FORCEINLINE bool operator==(const const_iterator &rhs) const {
 				return _iterator == rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator==(ConstIterator &&rhs) const {
+			PBOS_FORCEINLINE bool operator==(const_iterator &&rhs) const {
 				return _iterator == rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const ConstIterator &rhs) const {
+			PBOS_FORCEINLINE bool operator!=(const const_iterator &rhs) const {
 				return _iterator != rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(ConstIterator &&rhs) const {
+			PBOS_FORCEINLINE bool operator!=(const_iterator &&rhs) const {
 				return _iterator != rhs._iterator;
 			}
 
-			PBOS_FORCEINLINE ConstIterator &operator++() {
+			PBOS_FORCEINLINE const_iterator &operator++() {
 				++_iterator;
 				return *this;
 			}
 
-			PBOS_FORCEINLINE ConstIterator operator++(int) {
+			PBOS_FORCEINLINE const_iterator operator++(int) {
 				return _iterator++;
 			}
 
-			PBOS_FORCEINLINE ConstIterator &operator--() {
+			PBOS_FORCEINLINE const_iterator &operator--() {
 				--_iterator;
 				return *this;
 			}
 
-			PBOS_FORCEINLINE ConstIterator operator--(int) {
+			PBOS_FORCEINLINE const_iterator operator--(int) {
 				return _iterator--;
 			}
 
-			PBOS_FORCEINLINE ConstIterator next() {
-				ConstIterator Iterator = *this;
+			PBOS_FORCEINLINE const_iterator next() {
+				const_iterator iterator = *this;
 
-				return ++Iterator;
+				return ++iterator;
 			}
 
-			PBOS_FORCEINLINE ConstIterator prev() {
-				ConstIterator Iterator = *this;
+			PBOS_FORCEINLINE const_iterator prev() {
+				const_iterator iterator = *this;
 
-				return --Iterator;
+				return --iterator;
 			}
 
 			PBOS_FORCEINLINE const T &operator*() const {
@@ -296,23 +296,23 @@ namespace kfxx {
 			}
 		};
 
-		PBOS_FORCEINLINE ConstIterator begin() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->begin());
+		PBOS_FORCEINLINE const_iterator begin() const noexcept {
+			return const_iterator(const_cast<ThisType *>(this)->begin());
 		}
-		PBOS_FORCEINLINE ConstIterator end() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->end());
+		PBOS_FORCEINLINE const_iterator end() const noexcept {
+			return const_iterator(const_cast<ThisType *>(this)->end());
 		}
-		PBOS_FORCEINLINE ConstIterator begin_const() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->begin());
+		PBOS_FORCEINLINE const_iterator begin_const() const noexcept {
+			return const_iterator(const_cast<ThisType *>(this)->begin());
 		}
-		PBOS_FORCEINLINE ConstIterator end_const() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->end());
+		PBOS_FORCEINLINE const_iterator end_const() const noexcept {
+			return const_iterator(const_cast<ThisType *>(this)->end());
 		}
-		PBOS_FORCEINLINE ConstIterator begin_const_reversed() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->begin_reversed());
+		PBOS_FORCEINLINE const_iterator begin_const_reversed() const noexcept {
+			return const_iterator(const_cast<ThisType *>(this)->begin_reversed());
 		}
-		PBOS_FORCEINLINE ConstIterator end_const_reversed() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->end_reversed());
+		PBOS_FORCEINLINE const_iterator end_const_reversed() const noexcept {
+			return const_iterator(const_cast<ThisType *>(this)->end_reversed());
 		}
 
 		PBOS_FORCEINLINE ContainsResultType contains(const T &key) const {
@@ -325,69 +325,69 @@ namespace kfxx {
 				auto node = _tree.template find_alt<U>(key);
 
 				if (!node.has_value())
-					return NULL_OPTION;
+					return nullopt;
 
 				return node.value();
 			} else {
 				return _tree.template find_alt<U>(key);
 			}
 		}
-		PBOS_FORCEINLINE ConstIterator find(const T &key) const {
+		PBOS_FORCEINLINE const_iterator find(const T &key) const {
 			return const_cast<ThisType *>(this)->find(key);
 		}
 		template <typename U>
-		PBOS_FORCEINLINE ConstIterator find_alt(const U &key) const {
+		PBOS_FORCEINLINE const_iterator find_alt(const U &key) const {
 			return const_cast<ThisType *>(this)->find_alt<U>(key);
 		}
 
-		PBOS_FORCEINLINE Iterator find(const T &key) {
+		PBOS_FORCEINLINE iterator find(const T &key) {
 			return find_alt<T>(key);
 		}
 		template <typename U>
-		PBOS_FORCEINLINE Iterator find_alt(const U &key) {
+		PBOS_FORCEINLINE iterator find_alt(const U &key) {
 			if constexpr (Fallible) {
 				if (auto node = _tree.template find_alt<U>(key); node.has_value()) {
-					return Iterator(typename tree_t::Iterator(node.value(), &_tree, IteratorDirection::Forward));
+					return iterator(typename Tree::iterator(node.value(), &_tree, iteratorDirection::Forward));
 				}
 				return _tree.end();
 			} else {
 				if (auto node = _tree.template find_alt<U>(key); node) {
-					return Iterator(typename tree_t::Iterator(node, &_tree, IteratorDirection::Forward));
+					return iterator(typename Tree::iterator(node, &_tree, iteratorDirection::Forward));
 				}
 				return _tree.end();
 			}
 		}
 
-		PBOS_FORCEINLINE Iterator find_max_lteq(const T &key) {
+		PBOS_FORCEINLINE iterator find_max_lteq(const T &key) {
 			return find_max_lteq_alt<T>(key);
 		}
 
 		template <typename U>
-		PBOS_FORCEINLINE Iterator find_max_lteq_alt(const U &key) {
+		PBOS_FORCEINLINE iterator find_max_lteq_alt(const U &key) {
 			if (auto node = _tree.template find_max_lteq_alt<U>(key); node) {
-				return Iterator(typename tree_t::Iterator(node, &_tree, IteratorDirection::Forward));
+				return iterator(typename Tree::iterator(node, &_tree, iteratorDirection::Forward));
 			}
 			return _tree.end();
 		}
 
-		PBOS_FORCEINLINE ConstIterator find_max_lteq(const T &key) const {
+		PBOS_FORCEINLINE const_iterator find_max_lteq(const T &key) const {
 			return const_cast<ThisType *>(this)->find_max_lteq(key);
 		}
 
 		template <typename U>
-		PBOS_FORCEINLINE ConstIterator find_max_lteq_alt(const U &key) const {
+		PBOS_FORCEINLINE const_iterator find_max_lteq_alt(const U &key) const {
 			return const_cast<ThisType *>(this)->find_max_lteq_alt(key);
 		}
 
-		PBOS_FORCEINLINE void remove(const Iterator &iterator) {
+		PBOS_FORCEINLINE void remove(const iterator &iterator) {
 			_tree.remove(iterator._iterator);
 		}
 	};
 
 	template <typename T, typename Comparator = std::less<T>, bool IsThreeway = false>
-	using Set = SetImpl<T, Comparator, false, IsThreeway>;
-	template <typename T, typename Comparator = FallibleLt<T>, bool IsThreeway = false>
-	using FallibleSet = SetImpl<T, Comparator, true, IsThreeway>;
+	using set_t = set_impl<T, Comparator, false, IsThreeway>;
+	template <typename T, typename Comparator = fallible_less<T>, bool IsThreeway = false>
+	using fallible_set = set_impl<T, Comparator, true, IsThreeway>;
 }
 
 #endif

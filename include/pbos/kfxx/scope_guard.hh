@@ -6,17 +6,17 @@
 
 namespace kfxx {
 	template <typename T>
-	struct ScopeGuard {
+	struct scope_guard {
 		T callback;
 		bool released = false;
 
 		static_assert(std::is_nothrow_invocable_v<T>, "The callback must be noexcept");
 
-		ScopeGuard() = delete;
-		PBOS_FORCEINLINE ScopeGuard(T &&callback)
+		scope_guard() = delete;
+		PBOS_FORCEINLINE scope_guard(T &&callback)
 			: callback(std::move(callback)) {
 		}
-		PBOS_FORCEINLINE ~ScopeGuard() {
+		PBOS_FORCEINLINE ~scope_guard() {
 			if (!released)
 				callback();
 		}
@@ -27,15 +27,15 @@ namespace kfxx {
 	};
 
 	template <typename T>
-	struct Deferred {
+	struct deferred {
 		T callback;
 		static_assert(std::is_nothrow_invocable_v<T>, "The callback must be noexcept");
 
-		Deferred() = delete;
-		PBOS_FORCEINLINE Deferred(T &&callback)
+		deferred() = delete;
+		PBOS_FORCEINLINE deferred(T &&callback)
 			: callback(std::move(callback)) {
 		}
-		PBOS_FORCEINLINE ~Deferred() {
+		PBOS_FORCEINLINE ~deferred() {
 			callback();
 		}
 	};

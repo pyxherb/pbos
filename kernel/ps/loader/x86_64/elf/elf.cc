@@ -114,7 +114,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 				pgaccess |= MM_PAGE_EXEC;
 
 			{
-				kfxx::ScopeGuard unmap_tmp_pgvaddr_guard([cur_context, tmp_pgvaddr, page_size]() noexcept {
+				kfxx::scope_guard unmap_tmp_pgvaddr_guard([cur_context, tmp_pgvaddr, page_size]() noexcept {
 					mm_vmfree(cur_context, tmp_pgvaddr, page_size);
 				});
 
@@ -207,7 +207,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 			return KM_RESULT_MALFORMED;
 	}
 
-	kfxx::DynArray<Elf64_Phdr> loaded_phdrs(kfxx::kernel_allocator());
+	kfxx::dynarray_t<Elf64_Phdr> loaded_phdrs(kfxx::kernel_allocator());
 
 	Elf64_Half phdr_num = ehdr.e_phnum;
 	if (!loaded_phdrs.resize(phdr_num))
@@ -220,7 +220,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 		}
 	}
 
-	kfxx::DynArray<Elf64_Dyn> dyn_entries(kfxx::kernel_allocator());
+	kfxx::dynarray_t<Elf64_Dyn> dyn_entries(kfxx::kernel_allocator());
 	size_t max_size = 0;
 
 	for (auto &i : loaded_phdrs) {
@@ -261,7 +261,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 	};
 
 	size_t mapped_phdr_idx = 0;
-	kfxx::ScopeGuard unmap_guard([mm_context, vaddr_base, max_size]() noexcept {
+	kfxx::scope_guard unmap_guard([mm_context, vaddr_base, max_size]() noexcept {
 		km_unwrap_result(mm_unmmap(mm_context, vaddr_base, max_size, 0));
 	});
 	while (mapped_phdr_idx < loaded_phdrs.size()) {
@@ -274,7 +274,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 
 			for (size_t i = 0; i < area_size; i += PAGESIZE) {
 				void *cur_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
-				kfxx::ScopeGuard free_paddr_guard([cur_paddr]() noexcept {
+				kfxx::scope_guard free_paddr_guard([cur_paddr]() noexcept {
 					mm_pgfree(cur_paddr);
 				});
 				KM_RETURN_IF_FAILED(mm_mmap(mm_context, split_point + i, cur_paddr, page_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, MMAP_NO_INC_RC));
@@ -415,7 +415,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 		}
 	}
 
-	kfxx::DynArray<Elf64_Shdr> loaded_shdrs(kfxx::kernel_allocator());
+	kfxx::dynarray_t<Elf64_Shdr> loaded_shdrs(kfxx::kernel_allocator());
 
 	Elf64_Half shdr_num = ehdr.e_shnum;
 	if (!loaded_shdrs.resize(shdr_num))

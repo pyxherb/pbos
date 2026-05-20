@@ -11,12 +11,12 @@ PBOS_EXTERN_C_BEGIN
 
 typedef uint32_t mp_cpu_flags_t;
 
-typedef struct _mp_cpu_t : public kfxx::RBTree<ps_cpu_id_t>::Node {
+typedef struct _mp_cpu_t : public kfxx::rbtree_t<ps_cpu_id_t>::node_t {
 	mp_cpu_flags_t flags;
 } mp_cpu_t;
 
 extern uint32_t mp_num_total_cpu;
-extern kfxx::RBTree<mp_cpu_t *> mp_total_cpu_set;
+extern kfxx::rbtree_t<mp_cpu_t *> mp_total_cpu_set;
 
 PBOS_EXTERN_C_END
 

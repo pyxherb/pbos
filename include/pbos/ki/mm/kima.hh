@@ -10,13 +10,13 @@ typedef struct _kima_ublk_poolpg_t kima_ublk_poolpg_t;
 typedef struct _kima_vpgdesc_poolpg_t kima_vpgdesc_poolpg_t;
 
 typedef struct _kima_pool_t {
-	ps::Mutex mutex;
+	ps::mutex_t mutex;
 
 	kima_ublk_poolpg_t *ublk_poolpg_list = nullptr;
-	kfxx::RBTree<void *> ublk_query_tree, ublk_free_tree;
+	kfxx::rbtree_t<void *> ublk_query_tree, ublk_free_tree;
 
 	kima_vpgdesc_poolpg_t *vpgdesc_poolpg_list = nullptr;
-	kfxx::RBTree<void *> vpgdesc_query_tree, vpgdesc_free_tree;
+	kfxx::rbtree_t<void *> vpgdesc_query_tree, vpgdesc_free_tree;
 
 	size_t num_allocated_pages = 0;
 
@@ -40,7 +40,7 @@ void ki_init_kima_pool(kima_pool_t *pool);
 // User block definitions.
 //
 
-typedef struct _kima_ublk_t : public kfxx::RBTree<void *>::Node {
+typedef struct _kima_ublk_t : public kfxx::rbtree_t<void *>::node_t {
 	size_t size;
 } kima_ublk_t;
 
@@ -64,7 +64,7 @@ void kima_free_ublk(kima_pool_t *pool, kima_ublk_t *ublk);
 // Virtual page descriptor definitions.
 //
 
-typedef struct _kima_vpgdesc_t : public kfxx::RBTree<void *>::Node {
+typedef struct _kima_vpgdesc_t : public kfxx::rbtree_t<void *>::node_t {
 	size_t ref_count;
 } kima_vpgdesc_t;
 

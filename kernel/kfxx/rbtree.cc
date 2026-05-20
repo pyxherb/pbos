@@ -2,7 +2,7 @@
 
 using namespace kfxx;
 
-PBOS_KERNEL_PUBLIC _RBTreeBase::NodeBase* _RBTreeBase::_get_min_node(NodeBase* node) noexcept {
+PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_get_min_node(node_base* node) noexcept {
 	if (!node)
 		return nullptr;
 
@@ -11,7 +11,7 @@ PBOS_KERNEL_PUBLIC _RBTreeBase::NodeBase* _RBTreeBase::_get_min_node(NodeBase* n
 	return node;
 }
 
-PBOS_KERNEL_PUBLIC _RBTreeBase::NodeBase* _RBTreeBase::_get_max_node(NodeBase* node) noexcept {
+PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_get_max_node(node_base* node) noexcept {
 	if (!node)
 		return nullptr;
 
@@ -20,8 +20,8 @@ PBOS_KERNEL_PUBLIC _RBTreeBase::NodeBase* _RBTreeBase::_get_max_node(NodeBase* n
 	return node;
 }
 
-PBOS_KERNEL_PUBLIC void _RBTreeBase::_lrot(NodeBase* x) noexcept {
-	NodeBase* y = x->r;
+PBOS_KERNEL_PUBLIC void rbtree_base::_lrot(node_base* x) noexcept {
+	node_base* y = x->r;
 	kd_assert(y);
 
 	x->r = y->l;
@@ -41,8 +41,8 @@ PBOS_KERNEL_PUBLIC void _RBTreeBase::_lrot(NodeBase* x) noexcept {
 	x->p = y;
 }
 
-PBOS_KERNEL_PUBLIC void _RBTreeBase::_rrot(NodeBase* x) noexcept {
-	NodeBase* y = x->l;
+PBOS_KERNEL_PUBLIC void rbtree_base::_rrot(node_base* x) noexcept {
+	node_base* y = x->l;
 	kd_assert(y);
 
 	x->l = y->r;
@@ -61,8 +61,8 @@ PBOS_KERNEL_PUBLIC void _RBTreeBase::_rrot(NodeBase* x) noexcept {
 	x->p = y;
 }
 
-PBOS_KERNEL_PUBLIC void _RBTreeBase::_insert_fixup(NodeBase* node) noexcept {
-	NodeBase* p, * gp = node, * u;  // Parent, grandparent and uncle
+PBOS_KERNEL_PUBLIC void rbtree_base::_insert_fixup(node_base* node) noexcept {
+	node_base* p, * gp = node, * u;  // Parent, grandparent and uncle
 
 	while ((p = gp->p) && _is_red(p)) {
 		gp = p->p;
@@ -71,9 +71,9 @@ PBOS_KERNEL_PUBLIC void _RBTreeBase::_insert_fixup(NodeBase* node) noexcept {
 			u = gp->r;
 
 			if (_is_red(u)) {
-				p->color = RBColor::Black;
-				u->color = RBColor::Black;
-				gp->color = RBColor::Red;
+				p->color = rb_color::Black;
+				u->color = rb_color::Black;
+				gp->color = rb_color::Red;
 				node = gp;
 				continue;
 			}
@@ -83,17 +83,17 @@ PBOS_KERNEL_PUBLIC void _RBTreeBase::_insert_fixup(NodeBase* node) noexcept {
 					std::swap(node, p);
 				}
 				_rrot(gp);
-				p->color = RBColor::Black;
-				gp->color = RBColor::Red;
+				p->color = rb_color::Black;
+				gp->color = rb_color::Red;
 			}
 		}
 		else {
 			u = gp->l;
 
 			if (_is_red(u)) {
-				p->color = RBColor::Black;
-				u->color = RBColor::Black;
-				gp->color = RBColor::Red;
+				p->color = rb_color::Black;
+				u->color = rb_color::Black;
+				gp->color = rb_color::Red;
 				node = gp;
 				continue;
 			}
@@ -103,18 +103,18 @@ PBOS_KERNEL_PUBLIC void _RBTreeBase::_insert_fixup(NodeBase* node) noexcept {
 					std::swap(node, p);
 				}
 				_lrot(gp);
-				p->color = RBColor::Black;
-				gp->color = RBColor::Red;
+				p->color = rb_color::Black;
+				gp->color = rb_color::Red;
 			}
 		}
 	}
 
-	_root->color = RBColor::Black;
+	_root->color = rb_color::Black;
 }
 
-PBOS_KERNEL_PUBLIC _RBTreeBase::NodeBase* _RBTreeBase::_remove_fixup(NodeBase* node) noexcept {
+PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_remove_fixup(node_base* node) noexcept {
 	// Adopted from SGI STL's stl_tree, with some minor improvements.
-	NodeBase* y = node, * x, * p;
+	node_base* y = node, * x, * p;
 
 	if (!y->l)
 		// The node has right child only.
@@ -174,29 +174,29 @@ PBOS_KERNEL_PUBLIC _RBTreeBase::NodeBase* _RBTreeBase::_remove_fixup(NodeBase* n
 				auto w = p->r;
 
 				if (_is_red(w)) {
-					w->color = RBColor::Black;
-					p->color = RBColor::Red;
+					w->color = rb_color::Black;
+					p->color = rb_color::Red;
 					_lrot(p);
 					w = p->r;
 				}
 
 				if (_is_black(w->l) && _is_black(w->r)) {
-					w->color = RBColor::Red;
+					w->color = rb_color::Red;
 					x = p;
 					p = p->p;
 				}
 				else {
 					if (_is_black(w->r)) {
 						if (w->l)
-							w->l->color = RBColor::Black;
-						w->color = RBColor::Red;
+							w->l->color = rb_color::Black;
+						w->color = rb_color::Red;
 						_rrot(w);
 						w = p->r;
 					}
 					w->color = p->color;
-					p->color = RBColor::Black;
+					p->color = rb_color::Black;
 					if (w->r)
-						w->r->color = RBColor::Black;
+						w->r->color = rb_color::Black;
 					_lrot(p);
 					break;
 				}
@@ -205,42 +205,42 @@ PBOS_KERNEL_PUBLIC _RBTreeBase::NodeBase* _RBTreeBase::_remove_fixup(NodeBase* n
 				auto w = p->l;
 
 				if (_is_red(w)) {
-					w->color = RBColor::Black;
-					p->color = RBColor::Red;
+					w->color = rb_color::Black;
+					p->color = rb_color::Red;
 					_rrot(p);
 					w = p->l;
 				}
 
 				if (_is_black(w->r) && _is_black(w->l)) {
-					w->color = RBColor::Red;
+					w->color = rb_color::Red;
 					x = p;
 					p = p->p;
 				}
 				else {
 					if (_is_black(w->l)) {
 						if (w->r)
-							w->r->color = RBColor::Black;
-						w->color = RBColor::Red;
+							w->r->color = rb_color::Black;
+						w->color = rb_color::Red;
 						_lrot(w);
 						w = p->l;
 					}
 					w->color = p->color;
-					p->color = RBColor::Black;
+					p->color = rb_color::Black;
 					if (w->l)
-						w->l->color = RBColor::Black;
+						w->l->color = rb_color::Black;
 					_rrot(p);
 					break;
 				}
 			}
 		}
 		if (x)
-			x->color = RBColor::Black;
+			x->color = rb_color::Black;
 	}
 
 	return y;
 }
 
-PBOS_KERNEL_PUBLIC _RBTreeBase::NodeBase* _RBTreeBase::_get_next(const NodeBase* node, const NodeBase* last_node) noexcept {
+PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_get_next(const node_base* node, const node_base* last_node) noexcept {
 	kd_assert(node);
 
 	if (node != last_node) {
@@ -257,7 +257,7 @@ PBOS_KERNEL_PUBLIC _RBTreeBase::NodeBase* _RBTreeBase::_get_next(const NodeBase*
 	return nullptr;
 }
 
-PBOS_KERNEL_PUBLIC _RBTreeBase::NodeBase* _RBTreeBase::_get_prev(const NodeBase* node, const NodeBase* first_node) noexcept {
+PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_get_prev(const node_base* node, const node_base* first_node) noexcept {
 	kd_assert(node);
 
 	if (node != first_node) {
@@ -274,9 +274,9 @@ PBOS_KERNEL_PUBLIC _RBTreeBase::NodeBase* _RBTreeBase::_get_prev(const NodeBase*
 	return nullptr;
 }
 
-PBOS_KERNEL_PUBLIC _RBTreeBase::_RBTreeBase() noexcept {
+PBOS_KERNEL_PUBLIC rbtree_base::rbtree_base() noexcept {
 }
 
-PBOS_KERNEL_PUBLIC _RBTreeBase::~_RBTreeBase() {
+PBOS_KERNEL_PUBLIC rbtree_base::~rbtree_base() {
 	kd_assert(!_root);
 }

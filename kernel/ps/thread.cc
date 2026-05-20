@@ -30,7 +30,7 @@ ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb) {
 	ps_tcb_t *t = (ps_tcb_t *)kfxx::alloc_and_construct<ps_tcb_t>(kfxx::kernel_allocator());
 	if (!t)
 		return nullptr;
-	kfxx::ScopeGuard release_tcb_guard([t]() noexcept {
+	kfxx::scope_guard release_tcb_guard([t]() noexcept {
 		ki_destroy_thread(t);
 	});
 	if (!(t->context = ps_alloc_context())) {

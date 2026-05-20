@@ -7,13 +7,13 @@
 #include <pbos/kd/assert.h>
 
 namespace kfxx {
-	struct NullOption {
+	struct nullopt_t {
 	};
 
-	constexpr static NullOption NULL_OPTION;
+	constexpr static nullopt_t nullopt;
 
 	template <typename T>
-	class Option final {
+	class option_t final {
 	private:
 		alignas(T) char _data[sizeof(T)];
 		bool _has_value = false;
@@ -36,7 +36,7 @@ namespace kfxx {
 			_has_value = true;
 		}
 
-		PBOS_FORCEINLINE void set_value(NullOption) noexcept {
+		PBOS_FORCEINLINE void set_value(nullopt_t) noexcept {
 			reset();
 		}
 
@@ -80,27 +80,27 @@ namespace kfxx {
 			return &value();
 		}
 
-		PBOS_FORCEINLINE Option() noexcept {
+		PBOS_FORCEINLINE option_t() noexcept {
 		}
 
-		PBOS_FORCEINLINE ~Option() {
+		PBOS_FORCEINLINE ~option_t() {
 			reset();
 		}
 
-		PBOS_FORCEINLINE Option(T &&data) noexcept {
+		PBOS_FORCEINLINE option_t(T &&data) noexcept {
 			set_value(std::move(data));
 		}
 
-		PBOS_FORCEINLINE Option(NullOption) noexcept {
+		PBOS_FORCEINLINE option_t(nullopt_t) noexcept {
 		}
 
-		PBOS_FORCEINLINE Option(Option<T> &&rhs) noexcept {
+		PBOS_FORCEINLINE option_t(option_t<T> &&rhs) noexcept {
 			if (rhs.has_value()) {
 				set_value(std::move(*((T *)rhs._data)));
 			}
 		}
 
-		PBOS_FORCEINLINE Option<T> &operator=(Option<T> &&rhs) noexcept {
+		PBOS_FORCEINLINE option_t<T> &operator=(option_t<T> &&rhs) noexcept {
 			reset();
 
 			if (rhs.has_value()) {
@@ -111,7 +111,7 @@ namespace kfxx {
 	};
 
 	template <typename T>
-	class Option<T &> final {
+	class option_t<T &> final {
 	private:
 		T *_data;
 		bool _has_value = false;
@@ -129,7 +129,7 @@ namespace kfxx {
 			_has_value = true;
 		}
 
-		PBOS_FORCEINLINE void set_value(NullOption) noexcept {
+		PBOS_FORCEINLINE void set_value(nullopt_t) noexcept {
 			reset();
 		}
 
@@ -173,27 +173,27 @@ namespace kfxx {
 			return &value();
 		}
 
-		PBOS_FORCEINLINE Option() noexcept {
+		PBOS_FORCEINLINE option_t() noexcept {
 		}
 
-		PBOS_FORCEINLINE ~Option() {
+		PBOS_FORCEINLINE ~option_t() {
 			reset();
 		}
 
-		PBOS_FORCEINLINE Option(T &data) noexcept {
+		PBOS_FORCEINLINE option_t(T &data) noexcept {
 			set_value_ref(data);
 		}
 
-		PBOS_FORCEINLINE Option(NullOption) noexcept {
+		PBOS_FORCEINLINE option_t(nullopt_t) noexcept {
 		}
 
-		PBOS_FORCEINLINE Option(Option<T> &&rhs) noexcept {
+		PBOS_FORCEINLINE option_t(option_t<T> &&rhs) noexcept {
 			if (rhs.has_value()) {
 				set_value_ref(**((std::remove_reference_t<T> **)rhs._data));
 			}
 		}
 
-		PBOS_FORCEINLINE Option<T> &operator=(Option<T> &&rhs) noexcept {
+		PBOS_FORCEINLINE option_t<T> &operator=(option_t<T> &&rhs) noexcept {
 			reset();
 
 			if (rhs.has_value()) {
