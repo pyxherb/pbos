@@ -13,7 +13,7 @@
 
 km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp);
 km_result_t ki_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp);
-km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp);
+km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp);
 
 km_binldr_ops_t ki_binldr_elf = {
 	.load_exec = ki_elf_load_exec,
@@ -173,7 +173,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 
 km_result_t ki_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp) {}
 
-km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
+km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 	mm_context_t *mm_context = mm_get_cur_context();
 	km_result_t result;
 	size_t off = 0, bytes_read;
@@ -272,7 +272,7 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 			size_t area_size;
 			area_size = phdr.p_memsz;
 
-			for(size_t i = 0 ; i < area_size ; i += PAGESIZE) {
+			for (size_t i = 0; i < area_size; i += PAGESIZE) {
 				void *cur_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 				kfxx::ScopeGuard free_paddr_guard([cur_paddr]() noexcept {
 					mm_pgfree(cur_paddr);
@@ -458,15 +458,26 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 	};
 
 	km_result_t (*module_init)();
-	uint64_t module_init_len = 0;
+	void (*module_deinit)();
+	uint64_t module_init_len = 0, module_deinit_len = 0;
 	{
 		auto tmp = find_func(symtab, strtab, num_syms, "module_init");
 		module_init = (km_result_t(*)())tmp.first;
 		module_init_len = tmp.second;
 	}
+	{
+		auto tmp = find_func(symtab, strtab, num_syms, "module_deinit");
+		module_deinit = (void (*)())tmp.first;
+		module_deinit_len = tmp.second;
+	}
 
 	if (!module_init) {
 		kd_println(__func__, "module_init not found in the module, unloading...");
+		return KM_RESULT_MALFORMED;
+	}
+
+	if (!module_deinit) {
+		kd_println(__func__, "module_deinit not found in the module, unloading...");
 		return KM_RESULT_MALFORMED;
 	}
 
@@ -476,8 +487,16 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 	if (!check_if_addr_is_inside_valid_region(((char *)module_init + module_init_len)))
 		return KM_RESULT_MALFORMED;
 
-	if (KM_FAILED(result = module_init()))
-		return result;
+	if (!check_if_addr_is_inside_valid_region((void *)module_deinit))
+		return KM_RESULT_MALFORMED;
+
+	if (!check_if_addr_is_inside_valid_region(((char *)module_deinit + module_init_len)))
+		return KM_RESULT_MALFORMED;
+
+	ps_set_kmod_init_fn(kmod, module_init);
+	ps_set_kmod_deinit_fn(kmod, module_deinit);
+
+	KM_RETURN_IF_FAILED(ps_add_section_to_kmod(kmod, vaddr_base, max_size, nullptr));
 
 	unmap_guard.release();
 

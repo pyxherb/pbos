@@ -43,24 +43,24 @@ typedef struct _ps_rw_mutex_t {
 	char _reserved[40 - sizeof(struct _ps_rw_mutex_data_t)];
 } ps_rw_mutex_t;
 
-PBOS_API void ps_init_mutex(ps_mutex_t *mtx);
-PBOS_API void ps_lock_mutex(ps_mutex_t *mtx);
-PBOS_API bool ps_try_lock_mutex(ps_mutex_t *mtx);
-PBOS_API void ps_unlock_mutex(ps_mutex_t *mtx);
-PBOS_API bool ps_is_mutex_locked(ps_mutex_t *lock);
+PBOS_KERNEL_PUBLIC void ps_init_mutex(ps_mutex_t *mtx);
+PBOS_KERNEL_PUBLIC void ps_lock_mutex(ps_mutex_t *mtx);
+PBOS_KERNEL_PUBLIC bool ps_try_lock_mutex(ps_mutex_t *mtx);
+PBOS_KERNEL_PUBLIC void ps_unlock_mutex(ps_mutex_t *mtx);
+PBOS_KERNEL_PUBLIC bool ps_is_mutex_locked(ps_mutex_t *lock);
 
-PBOS_API void ps_init_rec_mutex(ps_rec_mutex_t *mtx);
-PBOS_API void ps_lock_rec_mutex(ps_rec_mutex_t *mtx);
-PBOS_API bool ps_try_lock_rec_mutex(ps_rec_mutex_t *mtx);
-PBOS_API void ps_unlock_rec_mutex(ps_rec_mutex_t *mtx);
-PBOS_API bool ps_is_rec_mutex_locked(ps_rec_mutex_t *lock);
-PBOS_API size_t ps_get_rec_mutex_lock_times(ps_rec_mutex_t *lock);
+PBOS_KERNEL_PUBLIC void ps_init_rec_mutex(ps_rec_mutex_t *mtx);
+PBOS_KERNEL_PUBLIC void ps_lock_rec_mutex(ps_rec_mutex_t *mtx);
+PBOS_KERNEL_PUBLIC bool ps_try_lock_rec_mutex(ps_rec_mutex_t *mtx);
+PBOS_KERNEL_PUBLIC void ps_unlock_rec_mutex(ps_rec_mutex_t *mtx);
+PBOS_KERNEL_PUBLIC bool ps_is_rec_mutex_locked(ps_rec_mutex_t *lock);
+PBOS_KERNEL_PUBLIC size_t ps_get_rec_mutex_lock_times(ps_rec_mutex_t *lock);
 
-PBOS_API void ps_init_rw_mutex(ps_rw_mutex_t *mtx);
-PBOS_API void ps_read_lock_rw_mutex(ps_rw_mutex_t *mtx);
-PBOS_API void ps_write_lock_rw_mutex(ps_rw_mutex_t *mtx);
-PBOS_API void ps_read_unlock_rw_mutex(ps_rw_mutex_t *mtx);
-PBOS_API void ps_write_unlock_rw_mutex(ps_rw_mutex_t *mtx);
+PBOS_KERNEL_PUBLIC void ps_init_rw_mutex(ps_rw_mutex_t *mtx);
+PBOS_KERNEL_PUBLIC void ps_read_lock_rw_mutex(ps_rw_mutex_t *mtx);
+PBOS_KERNEL_PUBLIC void ps_write_lock_rw_mutex(ps_rw_mutex_t *mtx);
+PBOS_KERNEL_PUBLIC void ps_read_unlock_rw_mutex(ps_rw_mutex_t *mtx);
+PBOS_KERNEL_PUBLIC void ps_write_unlock_rw_mutex(ps_rw_mutex_t *mtx);
 
 PBOS_EXTERN_C_END
 

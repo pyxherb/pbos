@@ -8,8 +8,8 @@
 namespace kfxx {
 	class Alloc {
 	public:
-		PBOS_API Alloc();
-		PBOS_API virtual ~Alloc() = 0;
+		PBOS_KERNEL_PUBLIC Alloc();
+		PBOS_KERNEL_PUBLIC virtual ~Alloc() = 0;
 
 		virtual size_t inc_ref() noexcept = 0;
 		virtual size_t dec_ref() noexcept = 0;
@@ -24,21 +24,21 @@ namespace kfxx {
 
 	class KernelAlloc : public kfxx::Alloc {
 	public:
-		PBOS_API KernelAlloc();
-		PBOS_API virtual ~KernelAlloc();
+		PBOS_KERNEL_PUBLIC KernelAlloc();
+		PBOS_KERNEL_PUBLIC virtual ~KernelAlloc();
 
-		PBOS_API virtual size_t inc_ref() noexcept override;
-		PBOS_API virtual size_t dec_ref() noexcept override;
+		PBOS_KERNEL_PUBLIC virtual size_t inc_ref() noexcept override;
+		PBOS_KERNEL_PUBLIC virtual size_t dec_ref() noexcept override;
 
-		PBOS_API virtual void *alloc(size_t size, size_t alignment) noexcept override;
-		PBOS_API virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-		PBOS_API virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-		PBOS_API virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
+		PBOS_KERNEL_PUBLIC virtual void *alloc(size_t size, size_t alignment) noexcept override;
+		PBOS_KERNEL_PUBLIC virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+		PBOS_KERNEL_PUBLIC virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+		PBOS_KERNEL_PUBLIC virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
 
-		PBOS_API virtual void *type_identity() const noexcept override;
+		PBOS_KERNEL_PUBLIC virtual void *type_identity() const noexcept override;
 	};
 
-	PBOS_API extern KernelAlloc g_kernel_allocator;
+	PBOS_KERNEL_PUBLIC extern KernelAlloc g_kernel_allocator;
 
 	///
 	/// @brief Get the global kernel allocator.

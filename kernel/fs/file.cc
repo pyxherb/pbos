@@ -8,7 +8,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-PBOS_API fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb) {
+PBOS_KERNEL_PUBLIC fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb) {
 	return fcb->fnode.get();
 }
 
@@ -149,15 +149,15 @@ _fs_file_t::_fs_file_t() : _fs_fnode_t(FS_FILETYPE_FILE) {}
 
 _fs_dir_t::_fs_dir_t(kfxx::Alloc *allocator) : _fs_fnode_t(FS_FILETYPE_DIR), subnodes(allocator) {}
 
-PBOS_API void fs_set_fcb_exdata(fs_fcb_t *fcb, void *exdata) {
+PBOS_KERNEL_PUBLIC void fs_set_fcb_exdata(fs_fcb_t *fcb, void *exdata) {
 	fcb->exdata = exdata;
 }
 
-PBOS_NODISCARD PBOS_API void *fs_get_fcb_exdata(fs_fcb_t *fcb) {
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC void *fs_get_fcb_exdata(fs_fcb_t *fcb) {
 	return fcb->exdata;
 }
 
-PBOS_NODISCARD PBOS_API km_result_t fs_alloc_file_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out) {
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC km_result_t fs_alloc_file_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out) {
 	fs_file_t *ptr = kfxx::alloc_and_construct<fs_file_t>(&ki_fs_filename_allocator);
 
 	if (!ptr)
@@ -172,7 +172,7 @@ PBOS_NODISCARD PBOS_API km_result_t fs_alloc_file_fnode(fs_file_system_t *file_s
 	return KM_RESULT_OK;
 }
 
-PBOS_NODISCARD PBOS_API km_result_t fs_alloc_dir_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out) {
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC km_result_t fs_alloc_dir_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out) {
 	fs_dir_t *ptr = kfxx::alloc_and_construct<fs_dir_t>(&ki_fs_filename_allocator, &ki_fs_filename_allocator);
 
 	if (!ptr)
@@ -187,24 +187,24 @@ PBOS_NODISCARD PBOS_API km_result_t fs_alloc_dir_fnode(fs_file_system_t *file_sy
 	return KM_RESULT_OK;
 }
 
-PBOS_API void *fs_get_fnode_exdata(fs_fnode_t *file) {
+PBOS_KERNEL_PUBLIC void *fs_get_fnode_exdata(fs_fnode_t *file) {
 	return file->exdata;
 }
 
-PBOS_API void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata) {
+PBOS_KERNEL_PUBLIC void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata) {
 	file->exdata = exdata;
 }
 
-PBOS_NODISCARD PBOS_API const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out) {
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out) {
 	*len_out = file->filename_len;
 	return file->filename;
 }
 
-PBOS_API void fs_unname_fnode(fs_fnode_t *file) {
+PBOS_KERNEL_PUBLIC void fs_unname_fnode(fs_fnode_t *file) {
 	ki_do_unname_fnode(file);
 }
 
-PBOS_NODISCARD PBOS_API km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len) {
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len) {
 	if (file->parent)
 		km_panic("Only detached file node can be renamed");
 
@@ -252,7 +252,7 @@ km_result_t ki_do_rename_fnode(fs_fnode_t *file, const char *name, size_t name_l
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_create_file(
+PBOS_KERNEL_PUBLIC km_result_t fs_create_file(
 	fs_fnode_t *parent,
 	const char *filename,
 	size_t filename_len,
@@ -260,7 +260,7 @@ PBOS_API km_result_t fs_create_file(
 	return parent->fs->ops.create_file(parent, filename, filename_len, file_out);
 }
 
-PBOS_API km_result_t fs_create_dir(
+PBOS_KERNEL_PUBLIC km_result_t fs_create_dir(
 	fs_fnode_t *parent,
 	const char *filename,
 	size_t filename_len,
@@ -268,12 +268,12 @@ PBOS_API km_result_t fs_create_dir(
 	return parent->fs->ops.create_dir(parent, filename, filename_len, file_out);
 }
 
-PBOS_NODISCARD PBOS_API km_result_t fs_create_fcb(
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC km_result_t fs_create_fcb(
 	fs_fnode_t *file,
 	fs_fcb_t **fcb_out) {
 }
 
-PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
+PBOS_KERNEL_PUBLIC km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
 	// The mount point should be a directory.
 	if (file->file_type != FS_FILETYPE_DIR)
 		return KM_RESULT_UNSUPPORTED_OPERATION;
@@ -304,7 +304,7 @@ PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_unmount_file(fs_fnode_t *file) {
+PBOS_KERNEL_PUBLIC km_result_t fs_unmount_file(fs_fnode_t *file) {
 	KM_RETURN_IF_FAILED(file->parent->fs->ops.unmount_cleanup(file));
 
 	kd_assert(file->parent);
@@ -316,7 +316,7 @@ PBOS_API km_result_t fs_unmount_file(fs_fnode_t *file) {
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
+PBOS_KERNEL_PUBLIC km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
 	if (parent->file_type != FS_FILETYPE_DIR)
 		return KM_RESULT_UNSUPPORTED_OPERATION;
 	fs_dir_t *p = (fs_dir_t *)parent;
@@ -330,7 +330,7 @@ PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_len, fs_fnode_t **file_out) {
+PBOS_KERNEL_PUBLIC km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_len, fs_fnode_t **file_out) {
 	if (!file)
 		return KM_RESULT_NOT_FOUND;
 	switch (file->file_type) {
@@ -354,7 +354,7 @@ PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t 
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out) {
+PBOS_KERNEL_PUBLIC km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out) {
 	fs::FNodePtr file = cur_dir;
 	km_result_t result;
 
@@ -409,7 +409,7 @@ PBOS_NODISCARD km_result_t fs_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **
 	return cur_file->fs->ops.enum_next_file(cur_file, next_file_out);
 }
 
-PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out) {
+PBOS_KERNEL_PUBLIC km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out) {
 	fs::FNodePtr file;
 	km_result_t result;
 
@@ -423,29 +423,29 @@ PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_close(fs_fcb_t *fcb) {
+PBOS_KERNEL_PUBLIC km_result_t fs_close(fs_fcb_t *fcb) {
 	fcb->fnode.reset();
 	ki_destroy_fcb(fcb);
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
+PBOS_KERNEL_PUBLIC km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
 	return fcb->fnode->fs->ops.read(fcb, (char *)dest, size, off, bytes_read_out);
 }
 
-PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out) {
+PBOS_KERNEL_PUBLIC km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out) {
 	return fcb->fnode->fs->ops.write(fcb, src, size, off, bytes_written_out);
 }
 
-PBOS_API km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {
+PBOS_KERNEL_PUBLIC km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {
 	return fcb->fnode->fs->ops.size(fcb, size_out);
 }
 
-PBOS_API void fs_ref_fnode(fs_fnode_t *fnode) {
+PBOS_KERNEL_PUBLIC void fs_ref_fnode(fs_fnode_t *fnode) {
 	kf_atomic_inc_size(&fnode->ref_count);
 }
 
-PBOS_API void fs_unref_fnode(fs_fnode_t *fnode) {
+PBOS_KERNEL_PUBLIC void fs_unref_fnode(fs_fnode_t *fnode) {
 	if (!kf_atomic_dec_size(&fnode->ref_count))
 		ki_destroy_fnode(fnode);
 }

@@ -29,13 +29,13 @@ typedef struct _dm_device_ops_t {
 	void (*destroy)(dm_device_t *device);
 } dm_device_ops_t;
 
-PBOS_API void dm_ref_device(dm_device_t *device);
-PBOS_API void dm_unref_device(dm_device_t *device);
+PBOS_KERNEL_PUBLIC void dm_ref_device(dm_device_t *device);
+PBOS_KERNEL_PUBLIC void dm_unref_device(dm_device_t *device);
 
-PBOS_API km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device);
-PBOS_API void dm_unlink_device(dm_device_t *device);
+PBOS_KERNEL_PUBLIC km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device);
+PBOS_KERNEL_PUBLIC void dm_unlink_device(dm_device_t *device);
 
-PBOS_API void dm_set_device_exdata(dm_device_t *device, void *exdata);
-PBOS_API void *dm_get_device_exdata(dm_device_t *device);
+PBOS_KERNEL_PUBLIC void dm_set_device_exdata(dm_device_t *device, void *exdata);
+PBOS_KERNEL_PUBLIC void *dm_get_device_exdata(dm_device_t *device);
 
 #endif

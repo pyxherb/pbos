@@ -46,18 +46,18 @@ ki_dm_bus_allocator_t ki_dm_bus_allocator;
 
 _dm_bus_t::_dm_bus_t() : owned_devices(&ki_dm_bus_allocator) {}
 
-PBOS_API void dm_set_bus_exdata(dm_bus_t *bus, void *exdata) {
+PBOS_KERNEL_PUBLIC void dm_set_bus_exdata(dm_bus_t *bus, void *exdata) {
 	bus->exdata = exdata;
 }
 
-PBOS_API void *dm_get_bus_exdata(dm_bus_t *bus) {
+PBOS_KERNEL_PUBLIC void *dm_get_bus_exdata(dm_bus_t *bus) {
 	return bus->exdata;
 }
 
 kfxx::HashMap<kfxx::StringView, dm_bus_t *> ki_dm_registered_buses(&ki_dm_bus_allocator);
 ps::Mutex ki_dm_registered_buses_mutex;
 
-PBOS_API km_result_t dm_register_bus(const char *name, size_t name_len, const dm_bus_ops_t *ops) {
+PBOS_KERNEL_PUBLIC km_result_t dm_register_bus(const char *name, size_t name_len, const dm_bus_ops_t *ops) {
 	dm_bus_t *bus;
 
 	KM_RETURN_IF_FAILED(ki_dm_alloc_bus(name, name_len, ops, &bus));
@@ -79,14 +79,14 @@ PBOS_API km_result_t dm_register_bus(const char *name, size_t name_len, const dm
 	return KM_RESULT_OK;
 }
 
-PBOS_API void dm_unregister_bus(dm_bus_t *bus) {
+PBOS_KERNEL_PUBLIC void dm_unregister_bus(dm_bus_t *bus) {
 	ps::MutexGuard g(ki_dm_registered_buses_mutex.c_mutex());
 
 	ki_dm_registered_buses.remove(bus->name);
 	ki_dm_destroy_bus(bus);
 }
 
-PBOS_API km_result_t dm_register_device_to_bus(dm_bus_t *bus, dm_device_t *device) {
+PBOS_KERNEL_PUBLIC km_result_t dm_register_device_to_bus(dm_bus_t *bus, dm_device_t *device) {
 	ps::RecMutexGuard bg(bus->bus_mutex.c_mutex());
 	ps::RecMutexGuard dg(device->device_mutex.c_mutex());
 	if(!bus->owned_devices.insert(+device))
@@ -103,7 +103,7 @@ PBOS_API km_result_t dm_register_device_to_bus(dm_bus_t *bus, dm_device_t *devic
 	return KM_RESULT_OK;
 }
 
-PBOS_API void dm_unregister_device_from_bus(dm_device_t *device) {
+PBOS_KERNEL_PUBLIC void dm_unregister_device_from_bus(dm_device_t *device) {
 	ps::RecMutexGuard bg(device->bus->bus_mutex.c_mutex());
 	ps::RecMutexGuard dg(device->device_mutex.c_mutex());
 	device->bus->ops.unregister_device(device->bus, device);

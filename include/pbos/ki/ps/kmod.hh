@@ -15,8 +15,11 @@ typedef struct _ps_kmod_section_t : public kfxx::RBTree<void *>::Node {
 
 typedef struct _ps_kmod_t {
 	ps_kmod_t *prev = nullptr, *next = nullptr;
+	ps_kmod_init_fn_t init_fn = nullptr;
+	ps_kmod_deinit_fn_t deinit_fn = nullptr;
 	kfxx::RBTree<void *> registered_sections;
 	kfxx::Set<kfxx::StringView> registered_symbols;
+	bool is_inited = false;
 
 	_ps_kmod_t(kfxx::Alloc *allocator);
 	~_ps_kmod_t();

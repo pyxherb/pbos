@@ -14,11 +14,11 @@ _mm_context_t::_mm_context_t() {
 	ki_init_kima_pool(&this->kima_vmr_pool);
 }
 
-PBOS_PURE PBOS_API size_t mm_get_page_size() {
+PBOS_PURE PBOS_KERNEL_PUBLIC size_t mm_get_page_size() {
 	return kh_get_page_size();
 }
 
-PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
+PBOS_KERNEL_PUBLIC km_result_t mm_mmap(mm_context_t *ctxt,
 	void *vaddr,
 	void *paddr,
 	size_t size,
@@ -107,7 +107,7 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
+PBOS_KERNEL_PUBLIC km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
 	if (!ctxt)
 		return KM_RESULT_INVALID_ARGS;
 
@@ -169,7 +169,7 @@ PBOS_API km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 	return KM_RESULT_OK;
 }
 
-PBOS_NODISCARD PBOS_API km_result_t mm_merge_mapped_area(
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC km_result_t mm_merge_mapped_area(
 	mm_context_t *context,
 	void *vaddr_a,
 	void *vaddr_b) {
@@ -209,7 +209,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_merge_mapped_area(
 	return KM_RESULT_OK;
 }
 
-PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC km_result_t mm_split_mapped_area(
 	mm_context_t *context,
 	void *area_vaddr,
 	void *split_point) {
@@ -252,7 +252,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t mm_set_page_access(
+PBOS_KERNEL_PUBLIC km_result_t mm_set_page_access(
 	mm_context_t *context,
 	void *vaddr,
 	size_t size,
@@ -298,7 +298,7 @@ PBOS_API km_result_t mm_set_page_access(
 	return KM_RESULT_OK;
 }
 
-PBOS_API void *mm_vmalloc(mm_context_t *context,
+PBOS_KERNEL_PUBLIC void *mm_vmalloc(mm_context_t *context,
 	const void *minaddr,
 	const void *maxaddr,
 	size_t size,
@@ -332,15 +332,15 @@ PBOS_API void *mm_vmalloc(mm_context_t *context,
 	return kh_vmalloc(context, minaddr, maxaddr, size, access, flags);
 }
 
-PBOS_API void *mm_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags) {
+PBOS_KERNEL_PUBLIC void *mm_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags) {
 	return kh_kvmalloc(ctxt, size, access, flags);
 }
 
-PBOS_API void *mm_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
+PBOS_KERNEL_PUBLIC void *mm_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
 	return kh_getmap(ctxt, vaddr, pgaccess_out);
 }
 
-PBOS_NODISCARD PBOS_API km_result_t mm_alloc_context(mm_context_t *cur_context, mm_context_t **new_context_out) {
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC km_result_t mm_alloc_context(mm_context_t *cur_context, mm_context_t **new_context_out) {
 	return kh_mm_alloc_context(cur_context, new_context_out);
 }
 
@@ -360,7 +360,7 @@ void ki_mm_unlock_area(mm_context_t *mm_context, mm_vmr_t *vmr) {
 	vmr->mutex.unlock();
 }
 
-PBOS_API km_result_t mm_probe_kernel_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t required_access) {
+PBOS_KERNEL_PUBLIC km_result_t mm_probe_kernel_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t required_access) {
 	const size_t page_size = mm_get_page_size();
 	char *p = (char *)PGFLOOR((uintptr_t)ptr);
 
@@ -400,7 +400,7 @@ PBOS_API km_result_t mm_probe_kernel_pages(mm_context_t *mm_context, void *ptr, 
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t mm_probe_and_lock_user_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t required_access) {
+PBOS_KERNEL_PUBLIC km_result_t mm_probe_and_lock_user_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t required_access) {
 	// io::LocalIrqLock irq_lock;
 	const size_t page_size = mm_get_page_size();
 	char *p = (char *)PGFLOOR((uintptr_t)ptr);
@@ -477,7 +477,7 @@ PBOS_API km_result_t mm_probe_and_lock_user_pages(mm_context_t *mm_context, void
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t size) {
+PBOS_KERNEL_PUBLIC km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t size) {
 	const size_t page_size = mm_get_page_size();
 	char *p = (char *)PGFLOOR((uintptr_t)ptr);
 

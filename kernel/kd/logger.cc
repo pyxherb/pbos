@@ -319,7 +319,7 @@ void klog_vprintf(const char *str, va_list args) {
 	hal_unlock_spinlock(&hn_logger_spinlock);
 }
 
-PBOS_API void klog_printf(const char *str, ...) {
+PBOS_KERNEL_PUBLIC void klog_printf(const char *str, ...) {
 	va_list args;
 	va_start(args, str);
 

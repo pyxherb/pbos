@@ -22,24 +22,24 @@ namespace kfxx {
 		NodeBase *_cached_min_node = nullptr, *_cached_max_node = nullptr;
 		size_t _size = 0;
 
-		PBOS_API static NodeBase *_get_min_node(NodeBase *node) noexcept;
-		PBOS_API static NodeBase *_get_max_node(NodeBase *node) noexcept;
+		PBOS_KERNEL_PUBLIC static NodeBase *_get_min_node(NodeBase *node) noexcept;
+		PBOS_KERNEL_PUBLIC static NodeBase *_get_max_node(NodeBase *node) noexcept;
 
 		PBOS_FORCEINLINE static bool _is_red(NodeBase *node) noexcept { return node && node->color == RBColor::Red; }
 		PBOS_FORCEINLINE static bool _is_black(NodeBase *node) noexcept { return (!node) || node->color == RBColor::Black; }
 
-		PBOS_API void _lrot(NodeBase *x) noexcept;
-		PBOS_API void _rrot(NodeBase *x) noexcept;
+		PBOS_KERNEL_PUBLIC void _lrot(NodeBase *x) noexcept;
+		PBOS_KERNEL_PUBLIC void _rrot(NodeBase *x) noexcept;
 
-		PBOS_API void _insert_fixup(NodeBase *node) noexcept;
+		PBOS_KERNEL_PUBLIC void _insert_fixup(NodeBase *node) noexcept;
 
-		PBOS_API NodeBase *_remove_fixup(NodeBase *node) noexcept;
+		PBOS_KERNEL_PUBLIC NodeBase *_remove_fixup(NodeBase *node) noexcept;
 
-		PBOS_API static NodeBase *_get_next(const NodeBase *node, const NodeBase *last_node) noexcept;
-		PBOS_API static NodeBase *_get_prev(const NodeBase *node, const NodeBase *first_node) noexcept;
+		PBOS_KERNEL_PUBLIC static NodeBase *_get_next(const NodeBase *node, const NodeBase *last_node) noexcept;
+		PBOS_KERNEL_PUBLIC static NodeBase *_get_prev(const NodeBase *node, const NodeBase *first_node) noexcept;
 
-		PBOS_API _RBTreeBase() noexcept;
-		PBOS_API ~_RBTreeBase();
+		PBOS_KERNEL_PUBLIC _RBTreeBase() noexcept;
+		PBOS_KERNEL_PUBLIC ~_RBTreeBase();
 	};
 
 	template <typename T,

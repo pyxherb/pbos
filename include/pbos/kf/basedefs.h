@@ -4,10 +4,13 @@
 #include <pbos/common.h>
 
 #if PBOS_COMPILING_KERNEL
-	#define PBOS_API PBOS_EXPORTED
+	#define PBOS_KERNEL_PUBLIC PBOS_EXPORTED
 #else
-	#define PBOS_API
+	#define PBOS_KERNEL_PUBLIC PBOS_IMPORTED
 #endif
-#define PBOS_PRIVATE
+#define PBOS_KERNEL_PRIVATE
+
+#define PBOS_MODULE_PUBLIC PBOS_EXPORTED
+#define PBOS_MODULE_PRIVATE
 
 #endif

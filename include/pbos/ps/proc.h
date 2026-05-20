@@ -42,7 +42,7 @@ typedef struct _ps_tcb_t ps_tcb_t;
 #define PM_PROC_ID_MAX PROC_MAX
 #define PM_THREAD_ID_MAX UINT32_MAX
 
-typedef void (*thread_proc_t)(void *args);
+typedef void (*thread_fn_t)(void *args);
 
 extern ps_pcb_t **ps_cur_proc_per_cpu;
 extern ps_tcb_t **ps_cur_thread_per_cpu;
@@ -78,14 +78,14 @@ void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr);
 ps_cpu_id_t ps_get_cur_cpuid();
 void ki_set_cur_cpuid(ps_cpu_id_t cpuid);
 
-PBOS_API ps_pcb_t *ps_get_cur_proc();
-PBOS_API ps_tcb_t *ps_get_cur_thread();
+PBOS_KERNEL_PUBLIC ps_pcb_t *ps_get_cur_proc();
+PBOS_KERNEL_PUBLIC ps_tcb_t *ps_get_cur_thread();
 
-PBOS_API fs_fnode_t *ps_get_cwd(ps_pcb_t *pcb);
-PBOS_API void ps_set_cwd(ps_pcb_t *pcb, fs_fnode_t *cwd_node);
-PBOS_API void ps_unset_cwd(ps_pcb_t *pcb);
+PBOS_KERNEL_PUBLIC fs_fnode_t *ps_get_cwd(ps_pcb_t *pcb);
+PBOS_KERNEL_PUBLIC void ps_set_cwd(ps_pcb_t *pcb, fs_fnode_t *cwd_node);
+PBOS_KERNEL_PUBLIC void ps_unset_cwd(ps_pcb_t *pcb);
 
-PBOS_API void ps_yield_cur_thread();
+PBOS_KERNEL_PUBLIC void ps_yield_cur_thread();
 
 PBOS_EXTERN_C_END
 

@@ -87,7 +87,7 @@ void mm_refpg(void *ptr);
 /// @param size Size of the memory bloc to be allocated.
 /// @return Virtual address to the memory block, NULL if failed.
 ///
-PBOS_NODISCARD PBOS_API void *mm_kalloc(size_t size, size_t alignment);
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC void *mm_kalloc(size_t size, size_t alignment);
 
 ///
 /// @brief Reallocated an allocated memory block.
@@ -97,7 +97,7 @@ PBOS_NODISCARD PBOS_API void *mm_kalloc(size_t size, size_t alignment);
 /// @param alignment Alignment of the new block./
 /// @return Pointer to newly allocated block, or @c NULL will be returned if failed (the old block will be kept).
 ///
-PBOS_NODISCARD PBOS_API void *mm_krealloc(void *old_ptr, size_t size, size_t alignment);
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC void *mm_krealloc(void *old_ptr, size_t size, size_t alignment);
 
 ///
 /// @brief Reallocated an allocated memory block in place (does not change the address).
@@ -107,14 +107,14 @@ PBOS_NODISCARD PBOS_API void *mm_krealloc(void *old_ptr, size_t size, size_t ali
 /// @param alignment Alignment of the new block./
 /// @return Pointer to the resized block, or @c NULL will be returned if failed (the content will be kept).
 ///
-PBOS_NODISCARD PBOS_API void *mm_krealloc_in_place(void *old_ptr, size_t size, size_t alignment);
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC void *mm_krealloc_in_place(void *old_ptr, size_t size, size_t alignment);
 
 ///
 /// @brief Free a memory block from the default pool.
 ///
 /// @param ptr Virtual address to the block to be freed.
 ///
-void PBOS_API mm_kfree(void *ptr);
+void PBOS_KERNEL_PUBLIC mm_kfree(void *ptr);
 
 typedef struct _ps_pcb_t ps_pcb_t;
 
@@ -185,7 +185,7 @@ typedef uint32_t mmap_flags_t;
 /// @param flags Flags for mapping.
 /// @return The result code for the mapping operation.
 ///
-PBOS_NODISCARD PBOS_API km_result_t mm_mmap(
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC km_result_t mm_mmap(
 	mm_context_t *context,
 	void *vaddr,
 	void *paddr,
@@ -204,12 +204,12 @@ PBOS_NODISCARD PBOS_API km_result_t mm_mmap(
 /// @param flags
 /// @return PBOS_NODISCARD
 ///
-PBOS_NODISCARD PBOS_API km_result_t mm_merge_mapped_area(
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC km_result_t mm_merge_mapped_area(
 	mm_context_t *context,
 	void *vaddr_a,
 	void *vaddr_b);
 
-PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC km_result_t mm_split_mapped_area(
 	mm_context_t *context,
 	void *area_vaddr,
 	void *split_point);
@@ -222,7 +222,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
 /// @param size Size of virtual memory space to be operated.
 /// @param access Page access to be applied to the virtual pages.
 ///
-PBOS_NODISCARD PBOS_API km_result_t mm_set_page_access(
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC km_result_t mm_set_page_access(
 	mm_context_t *context,
 	void *vaddr,
 	size_t size,
@@ -236,7 +236,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_set_page_access(
 /// @param size Size of virtual memory space to be unmapped.
 /// @param flags Flags for unmapping, same as mmap's.
 ///
-PBOS_API km_result_t mm_unmmap(mm_context_t *context, void *vaddr, size_t size, mmap_flags_t flags);
+PBOS_KERNEL_PUBLIC km_result_t mm_unmmap(mm_context_t *context, void *vaddr, size_t size, mmap_flags_t flags);
 
 ///
 /// @brief Get mapping of a virtual page.
@@ -246,7 +246,7 @@ PBOS_API km_result_t mm_unmmap(mm_context_t *context, void *vaddr, size_t size, 
 /// @param pgaccess_out Where to store page access of the page.
 /// @return Corresponding physical address of the mapped virtual page.
 ///
-PBOS_API void *mm_getmap(mm_context_t *context, const void *vaddr, mm_pgaccess_t *pgaccess_out);
+PBOS_KERNEL_PUBLIC void *mm_getmap(mm_context_t *context, const void *vaddr, mm_pgaccess_t *pgaccess_out);
 
 PBOS_NODISCARD km_result_t mm_mmap(
 	mm_context_t *context,
@@ -262,43 +262,43 @@ PBOS_NODISCARD km_result_t mm_mmap(
 /// @param context Pointer to the memory context buffer.
 /// @return The result code for the initialization operation.
 ///
-PBOS_NODISCARD PBOS_API km_result_t mm_alloc_context(mm_context_t *cur_context, mm_context_t **new_context_out);
+PBOS_NODISCARD PBOS_KERNEL_PUBLIC km_result_t mm_alloc_context(mm_context_t *cur_context, mm_context_t **new_context_out);
 ///
 /// @brief Free a memory context and its associated resource.
 ///
 /// @param context Pointer to the memory context to be freed.
 ///
-PBOS_API void mm_free_context(mm_context_t *context);
+PBOS_KERNEL_PUBLIC void mm_free_context(mm_context_t *context);
 ///
 /// @brief Switch current memory context.
 ///
 /// @param context Context to be switched to.
 ///
-PBOS_API void mm_switch_context(mm_context_t *context);
+PBOS_KERNEL_PUBLIC void mm_switch_context(mm_context_t *context);
 
 ///
 /// @brief Invalidate mapping of a page in the TLB.
 ///
 /// @param ptr Pointer to the virtual address to be invalidated.
 ///
-PBOS_API void mm_invl_page(void *ptr);
+PBOS_KERNEL_PUBLIC void mm_invl_page(void *ptr);
 
-PBOS_PURE PBOS_API bool mm_is_user_space(const void *ptr);
+PBOS_PURE PBOS_KERNEL_PUBLIC bool mm_is_user_space(const void *ptr);
 
-PBOS_API mm_vmr_t *mm_lookup_area(mm_context_t *mm_context, void *ptr);
+PBOS_KERNEL_PUBLIC mm_vmr_t *mm_lookup_area(mm_context_t *mm_context, void *ptr);
 
-PBOS_API km_result_t mm_probe_kernel_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t access);
+PBOS_KERNEL_PUBLIC km_result_t mm_probe_kernel_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t access);
 
-PBOS_API km_result_t mm_probe_and_lock_user_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t access);
+PBOS_KERNEL_PUBLIC km_result_t mm_probe_and_lock_user_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t access);
 
-PBOS_API km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t size);
+PBOS_KERNEL_PUBLIC km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t size);
 
 /// @brief The kernel memory context.
 extern mm_context_t *mm_kernel_context;
 
-PBOS_PURE PBOS_API mm_context_t *mm_get_cur_context();
+PBOS_PURE PBOS_KERNEL_PUBLIC mm_context_t *mm_get_cur_context();
 
-PBOS_PURE PBOS_API size_t mm_get_page_size();
+PBOS_PURE PBOS_KERNEL_PUBLIC size_t mm_get_page_size();
 
 PBOS_EXTERN_C_END
 

@@ -46,7 +46,7 @@ typedef struct _fs_file_system_ops_t {
 
 typedef struct _fs_file_system_t fs_file_system_t;
 
-PBOS_API fs_file_system_t *fs_register_file_system(
+PBOS_KERNEL_PUBLIC fs_file_system_t *fs_register_file_system(
 	const char *name,
 	size_t name_len,
 	fs_file_system_ops_t *ops,

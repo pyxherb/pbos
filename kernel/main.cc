@@ -27,7 +27,7 @@ extern ki_ctor_t KI_CTORS_END[];
 extern ki_dtor_t KI_DTORS_BEGIN[];
 extern ki_dtor_t KI_DTORS_END[];
 
-PBOS_API void __cxa_pure_virtual() {
+PBOS_KERNEL_PUBLIC void __cxa_pure_virtual() {
 	km_panic("Attempting to call a pure virtual function!");
 }
 

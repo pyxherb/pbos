@@ -3,14 +3,14 @@
 
 #include <pbos/fs/file.h>
 #include <pbos/se/user.h>
-#include <pbos/ps/proc.h>
+#include "kmod.h"
 
 PBOS_EXTERN_C_BEGIN
 
 typedef struct _km_binldr_ops_t {
 	km_result_t (*load_exec)(ps_pcb_t *proc, fs_fcb_t *file_fp);
 	km_result_t (*load_mod)(ps_pcb_t *proc, fs_fcb_t *file_fp);
-	km_result_t (*load_kmod)(fs_fcb_t *file_fp);
+	km_result_t (*load_kmod)(ps_kmod_t *kmod, fs_fcb_t *file_fp);
 } km_binldr_ops_t;
 
 typedef struct _km_init_binldr_registry_t {

@@ -6,18 +6,18 @@
 
 class ki_dm_device_allocator_t : public kfxx::Alloc {
 public:
-	PBOS_PRIVATE ki_dm_device_allocator_t();
-	PBOS_PRIVATE virtual ~ki_dm_device_allocator_t();
+	PBOS_KERNEL_PRIVATE ki_dm_device_allocator_t();
+	PBOS_KERNEL_PRIVATE virtual ~ki_dm_device_allocator_t();
 
-	PBOS_PRIVATE virtual size_t inc_ref() noexcept override;
-	PBOS_PRIVATE virtual size_t dec_ref() noexcept override;
+	PBOS_KERNEL_PRIVATE virtual size_t inc_ref() noexcept override;
+	PBOS_KERNEL_PRIVATE virtual size_t dec_ref() noexcept override;
 
-	PBOS_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
-	PBOS_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
+	PBOS_KERNEL_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
+	PBOS_KERNEL_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_KERNEL_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_KERNEL_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
 
-	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
+	PBOS_KERNEL_PRIVATE virtual void *type_identity() const noexcept override;
 };
 
 typedef struct _dm_device_class_t {

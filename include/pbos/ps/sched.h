@@ -5,11 +5,11 @@
 
 PBOS_EXTERN_C_BEGIN
 
-PBOS_API ps_pcb_t *ps_global_proc_set_begin();
-PBOS_API ps_pcb_t *ps_global_proc_set_next(ps_pcb_t *cur);
+PBOS_KERNEL_PUBLIC ps_pcb_t *ps_global_proc_set_begin();
+PBOS_KERNEL_PUBLIC ps_pcb_t *ps_global_proc_set_next(ps_pcb_t *cur);
 
-PBOS_API ps_tcb_t *ps_proc_thread_set_begin(ps_pcb_t *pcb);
-PBOS_API ps_tcb_t *ps_proc_thread_set_next(ps_pcb_t *pcb, ps_tcb_t *cur);
+PBOS_KERNEL_PUBLIC ps_tcb_t *ps_proc_thread_set_begin(ps_pcb_t *pcb);
+PBOS_KERNEL_PUBLIC ps_tcb_t *ps_proc_thread_set_next(ps_pcb_t *pcb, ps_tcb_t *cur);
 
 typedef struct _ps_sched_t ps_sched_t;
 
@@ -33,8 +33,8 @@ typedef struct _ps_sched_t {
 
 extern ps_sched_t *ps_cur_sched;
 
-PBOS_API ps_sched_t *ps_get_sched();
-PBOS_API km_result_t ps_set_sched(ps_sched_t *sched);
+PBOS_KERNEL_PUBLIC ps_sched_t *ps_get_sched();
+PBOS_KERNEL_PUBLIC km_result_t ps_set_sched(ps_sched_t *sched);
 
 PBOS_EXTERN_C_END
 

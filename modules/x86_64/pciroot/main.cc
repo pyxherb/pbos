@@ -8,7 +8,7 @@ __attribute__((visibility("default"))) km_result_t module_init() {
 	return KM_RESULT_OK;
 }
 
-void module_deinit() {
+__attribute__((visibility("default"))) void module_deinit() {
 }
 
 PBOS_EXTERN_C_END
