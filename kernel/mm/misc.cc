@@ -292,8 +292,9 @@ PBOS_API km_result_t mm_set_page_access(
 			return KM_RESULT_INVALID_ARGS;
 		}
 		vmr->access = access;
-	}
-	kh_set_page_access(context, vaddr, size, access);
+		kh_set_page_access(context, vaddr, size, access);
+	} else
+		kh_set_page_access(context, vaddr, size, access);
 	return KM_RESULT_OK;
 }
 

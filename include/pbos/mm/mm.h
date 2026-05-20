@@ -167,9 +167,10 @@ void mm_vmfree(mm_context_t *context, void *addr, size_t size);
 
 #define MMAP_ATOMIC 0x00000001
 #define MMAP_NO_REMAP 0x00000002
+/// @brief Do not increase the reference count, usually used for mapping page allocated by @c mm_pgalloc
+#define MMAP_NO_INC_RC 0x00000004
 #define MMAP_IGNORE_VMR 0x40000000
 #define MMAP_NO_PGTAB_ALLOC 0x40000000
-#define MMAP_NO_RC 0x80000000
 
 typedef uint32_t mmap_flags_t;
 

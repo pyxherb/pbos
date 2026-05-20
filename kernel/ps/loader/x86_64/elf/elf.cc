@@ -128,7 +128,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 							return KM_RESULT_NO_MEM;
 					}
 
-					if (KM_FAILED(result = mm_mmap(target_context, vaddr + j, paddr, page_size, pgaccess, 0)))
+					if (KM_FAILED(result = mm_mmap(target_context, vaddr + j, paddr, page_size, pgaccess, MMAP_NO_INC_RC)))
 						return result;
 					if (KM_FAILED(
 							result = mm_mmap(
@@ -272,6 +272,15 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 			size_t area_size;
 			area_size = phdr.p_memsz;
 
+			for(size_t i = 0 ; i < area_size ; i += PAGESIZE) {
+				void *cur_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+				kfxx::ScopeGuard free_paddr_guard([cur_paddr]() noexcept {
+					mm_pgfree(cur_paddr);
+				});
+				KM_RETURN_IF_FAILED(mm_mmap(mm_context, split_point + i, cur_paddr, page_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, MMAP_NO_INC_RC));
+				free_paddr_guard.release();
+			}
+
 			mm_pgaccess_t pgaccess = MM_PAGE_MAPPED;
 
 			if (phdr.p_flags & PF_R)
@@ -281,12 +290,13 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 			if (phdr.p_flags & PF_X)
 				pgaccess |= MM_PAGE_EXEC;
 
-			km_unwrap_result(mm_set_page_access(mm_context, split_point, area_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE));
-
 			memset(split_point, 0, phdr.p_memsz);
 			if (KM_FAILED(result = fs_read(file_fp, split_point, phdr.p_filesz, phdr.p_offset, &bytes_read))) {
 				return result;
 			}
+
+			char &point = *split_point;
+			point = point;
 
 			km_unwrap_result(mm_set_page_access(mm_context, split_point, area_size, pgaccess));
 		}
@@ -463,7 +473,7 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 	if (!check_if_addr_is_inside_valid_region((void *)module_init))
 		return KM_RESULT_MALFORMED;
 
-	if (!check_if_addr_is_inside_valid_region(((char*)module_init + module_init_len)))
+	if (!check_if_addr_is_inside_valid_region(((char *)module_init + module_init_len)))
 		return KM_RESULT_MALFORMED;
 
 	if (KM_FAILED(result = module_init()))

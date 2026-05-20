@@ -81,7 +81,7 @@ void ki_set_page_free(void *addr) {
 	});
 
 	if (!mad->ref_count)
-		return;
+		km_panic("Freeing physical page at %p with reference count == 0", addr);
 	if (!(--mad->ref_count)) {
 		if (area->free_list)
 			area->free_list->prev_free = mad;

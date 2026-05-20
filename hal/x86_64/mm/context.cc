@@ -61,7 +61,7 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 	});
 
 	kfxx::construct_at<mm_context_t>(new_context);
-	if (KM_FAILED(result = mm_mmap(mm_get_cur_context(), pml4t_vaddr, pml4t_paddr, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0))) {
+	if (KM_FAILED(result = mm_mmap(mm_get_cur_context(), pml4t_vaddr, pml4t_paddr, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, MMAP_NO_INC_RC))) {
 		return result;
 	}
 

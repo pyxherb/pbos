@@ -193,6 +193,8 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 								PGROUNDDOWN((char *)paddr + sz_mapped)),
 							!(access & MM_PAGE_EXEC));
 
+					// Note we don't increase the page's reference count because the page will not be multiple-mapped.
+
 					arch_invlpg((char *)vaddr + sz_mapped);
 
 					sz_mapped += PAGESIZE;
@@ -379,10 +381,12 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 						if (flags & MMAP_NO_REMAP)
 							km_panic("Remapping address %p with MMAP_NO_REMAP", ptt_vaddr);
 
-						if (!(flags & MMAP_NO_RC))
-							mm_pgfree(UNPGADDR(ARCH_PTE_ADDR(*pte)));
+						mm_pgfree(UNPGADDR(ARCH_PTE_ADDR(*pte)));
 					} else {
 					}
+
+					if(!(flags & MMAP_NO_INC_RC))
+						mm_refpg(pi);
 
 					*pte =
 						ARCH_PML4TE_WITH_XD(
@@ -526,7 +530,7 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 						if (flags & MMAP_NO_REMAP)
 							km_panic("Remapping address %p with MMAP_NO_REMAP", ptt_vaddr);
 
-						if (!(flags & MMAP_NO_RC))
+						if (!(flags & MMAP_NO_INC_RC))
 							mm_pgfree(UNPGADDR(ARCH_PTE_ADDR(*pte)));
 					}
 
@@ -719,11 +723,11 @@ void kh_set_page_access(
 					arch_pte_t *pte = &ptt[ptx];
 
 					if (!(ARCH_PTE_MASK(*pte) & PTE_P))
-						km_panic("%s with page which does not present", __func__);
+						km_panic("%s with page that is not present", __func__);
 
 					*pte =
-						ARCH_PML4TE_WITH_XD(
-							ARCH_PML4TE_WITH_MASKS(*pte, mask),
+						ARCH_PTE_WITH_XD(
+							ARCH_PTE_WITH_MASKS(*pte, mask),
 							!(access & MM_PAGE_EXEC));
 
 					if (is_cur_pgtab)
