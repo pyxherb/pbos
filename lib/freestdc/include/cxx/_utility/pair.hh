@@ -10,14 +10,14 @@ namespace std {
 		T1 first;
 		T2 second;
 
-		constexpr explicit pair();
-		constexpr explicit pair(const T1 &x, const T2 &y) : first(x), second(y) {}
+		constexpr pair();
+		constexpr pair(const T1 &x, const T2 &y) : first(x), second(y) {}
 		template <typename U1, typename U2>
-		constexpr explicit pair(U1 &&x, U2 &&y) : first(std::forward(x)), second(std::forward(y)) {}
+		constexpr pair(U1 &&x, U2 &&y) : first(std::forward<U1 &&>(x)), second(std::forward<U2 &&>(y)) {}
 		template <typename U1, typename U2>
-		constexpr explicit pair(const pair<U1, U2> &p) : first(p.first), second(p.second) {}
+		constexpr pair(const pair<U1, U2> &p) : first(p.first), second(p.second) {}
 		template <typename U1, typename U2>
-		constexpr explicit pair(pair<U1, U2> &&p) : first(std::forward(p.first)), second(std::forward(p.second)) {}
+		constexpr pair(pair<U1, U2> &&p) : first(std::forward<U1>(p.first)), second(std::forward<U2>(p.second)) {}
 
 		// TODO: Implement the piecewise_construct cosntructor.
 

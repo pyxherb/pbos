@@ -18,12 +18,12 @@ km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint3
 	ps_pcb_t *pcb = ps_get_cur_proc();
 	mm_context_t *mm_context = ps_mm_context_of(pcb);
 
-	KM_RETURN_IF_FAILED(mm_probe_and_lock_pages(mm_context, (void *)path, path_len, MM_PAGE_READ));
+	KM_RETURN_IF_FAILED(mm_probe_and_lock_user_pages(mm_context, (void *)path, path_len, MM_PAGE_READ));
 	kfxx::Deferred unlock_path_guard([mm_context, path, path_len]() noexcept {
 		mm_unlock_pages(mm_context, (void *)path, path_len);
 	});
 
-	KM_RETURN_IF_FAILED(mm_probe_and_lock_pages(mm_context, ufd_out, sizeof(*ufd_out), MM_PAGE_WRITE));
+	KM_RETURN_IF_FAILED(mm_probe_and_lock_user_pages(mm_context, ufd_out, sizeof(*ufd_out), MM_PAGE_WRITE));
 	kfxx::Deferred unlock_ufd_out_guard([mm_context, ufd_out]() noexcept {
 		mm_unlock_pages(mm_context, ufd_out, sizeof(*ufd_out));
 	});
@@ -71,12 +71,12 @@ km_result_t sysent_read(ps_ufd_t ufd, void *buf, uint32_t size, size_t off, size
 
 	// TODO: Unlock the pages.
 
-	KM_RETURN_IF_FAILED(mm_probe_and_lock_pages(mm_context, buf, size, MM_PAGE_READ));
+	KM_RETURN_IF_FAILED(mm_probe_and_lock_user_pages(mm_context, buf, size, MM_PAGE_READ));
 	kfxx::Deferred unlock_buf_guard([mm_context, buf, size]() noexcept {
 		mm_unlock_pages(mm_context, buf, size);
 	});
 
-	KM_RETURN_IF_FAILED(mm_probe_and_lock_pages(mm_context, bytes_read_out, sizeof(size_t), MM_PAGE_WRITE));
+	KM_RETURN_IF_FAILED(mm_probe_and_lock_user_pages(mm_context, bytes_read_out, sizeof(size_t), MM_PAGE_WRITE));
 	kfxx::Deferred unlock_byte_read_out_guard([mm_context, bytes_read_out]() noexcept {
 		mm_unlock_pages(mm_context, bytes_read_out, sizeof(size_t));
 	});
@@ -95,7 +95,7 @@ km_result_t sysent_write(ps_ufd_t ufd, const void *buf, uint32_t size) {
 
 	// TODO: Unlock the pages.
 
-	KM_RETURN_IF_FAILED(mm_probe_and_lock_pages(mm_context, (void *)buf, size, MM_PAGE_READ));
+	KM_RETURN_IF_FAILED(mm_probe_and_lock_user_pages(mm_context, (void *)buf, size, MM_PAGE_READ));
 }
 
 km_result_t sysent_exec_child(
@@ -110,12 +110,12 @@ km_result_t sysent_exec_child(
 
 	// TODO: Unlock the pages.
 
-	KM_RETURN_IF_FAILED(mm_probe_and_lock_pages(mm_context, (void *)args, args_len, MM_PAGE_READ));
+	KM_RETURN_IF_FAILED(mm_probe_and_lock_user_pages(mm_context, (void *)args, args_len, MM_PAGE_READ));
 	kfxx::Deferred unlock_args_guard([mm_context, args, args_len]() noexcept {
 		mm_unlock_pages(mm_context, (void *)args, args_len);
 	});
 
-	KM_RETURN_IF_FAILED(mm_probe_and_lock_pages(mm_context, proc_id_out, sizeof(ps_proc_id_t), MM_PAGE_WRITE));
+	KM_RETURN_IF_FAILED(mm_probe_and_lock_user_pages(mm_context, proc_id_out, sizeof(ps_proc_id_t), MM_PAGE_WRITE));
 	kfxx::Deferred unlock_proc_id_out_guard([mm_context, proc_id_out]() noexcept {
 		mm_unlock_pages(mm_context, proc_id_out, sizeof(ps_proc_id_t));
 	});

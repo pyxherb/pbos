@@ -359,7 +359,47 @@ void ki_mm_unlock_area(mm_context_t *mm_context, mm_vmr_t *vmr) {
 	vmr->mutex.unlock();
 }
 
-PBOS_API km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t required_access) {
+PBOS_API km_result_t mm_probe_kernel_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t required_access) {
+	const size_t page_size = mm_get_page_size();
+	char *p = (char *)PGFLOOR((uintptr_t)ptr);
+
+	// Overflow is an error.
+	if (UINTPTR_MAX - (uintptr_t)p < PGCEIL(size))
+		return KM_RESULT_INVALID_ARGS;
+
+	char *limit = p + (PGCEIL(size) - 1);
+
+	bool is_user_space = mm_is_user_space(p);
+	if (is_user_space &&
+		mm_is_user_space(limit))
+		return KM_RESULT_INVALID_ARGS;
+
+	mm_pgaccess_t pg_access;
+	if (required_access & MM_PAGE_USER) {
+		return KM_RESULT_ACCESS_VIOLATION;
+	}
+
+	// The mutex seems to be unneccessary, because we cannot lock pages under kernel mode.
+	// ps::MutexGuard g(ki_kernel_mmap_mutex.c_mutex());
+
+	for (size_t i = 0; i < PGCEIL(size); i += page_size) {
+		mm_getmap(mm_context, p + i, &pg_access);
+		if ((!(pg_access & MM_PAGE_MAPPED)))
+			return KM_RESULT_ACCESS_VIOLATION;
+		if ((required_access & MM_PAGE_USER) && !(pg_access & MM_PAGE_USER))
+			return KM_RESULT_ACCESS_VIOLATION;
+		if ((required_access & MM_PAGE_READ) && !(pg_access & MM_PAGE_READ))
+			return KM_RESULT_ACCESS_VIOLATION;
+		if ((required_access & MM_PAGE_WRITE) && !(pg_access & MM_PAGE_WRITE))
+			return KM_RESULT_ACCESS_VIOLATION;
+		if ((required_access & MM_PAGE_EXEC) && !(pg_access & MM_PAGE_EXEC))
+			return KM_RESULT_ACCESS_VIOLATION;
+	}
+
+	return KM_RESULT_OK;
+}
+
+PBOS_API km_result_t mm_probe_and_lock_user_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t required_access) {
 	// io::LocalIrqLock irq_lock;
 	const size_t page_size = mm_get_page_size();
 	char *p = (char *)PGFLOOR((uintptr_t)ptr);
@@ -378,25 +418,7 @@ PBOS_API km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr
 	mm_pgaccess_t pg_access;
 
 	if (!is_user_space) {
-		if (required_access & MM_PAGE_USER) {
-			return KM_RESULT_ACCESS_VIOLATION;
-		}
-
-		for (size_t i = 0; i < PGCEIL(size); i += page_size) {
-			mm_getmap(mm_context, p + i, &pg_access);
-			if ((!(pg_access & MM_PAGE_MAPPED)))
-				return KM_RESULT_ACCESS_VIOLATION;
-			if ((required_access & MM_PAGE_USER) && !(pg_access & MM_PAGE_USER))
-				return KM_RESULT_ACCESS_VIOLATION;
-			if ((required_access & MM_PAGE_READ) && !(pg_access & MM_PAGE_READ))
-				return KM_RESULT_ACCESS_VIOLATION;
-			if ((required_access & MM_PAGE_WRITE) && !(pg_access & MM_PAGE_WRITE))
-				return KM_RESULT_ACCESS_VIOLATION;
-			if ((required_access & MM_PAGE_EXEC) && !(pg_access & MM_PAGE_EXEC))
-				return KM_RESULT_ACCESS_VIOLATION;
-
-			// TODO: Lock the pages...
-		}
+		return KM_RESULT_INVALID_ARGS;
 	} else {
 		ki_mm_lock_vmr(mm_context);
 		kfxx::Deferred lock_release([mm_context]() noexcept {

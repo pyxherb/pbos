@@ -261,10 +261,9 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 	};
 
 	size_t mapped_phdr_idx = 0;
-	kfxx::ScopeGuard unmap_guard([mm_context, vaddr_base, max_size, &mapped_phdr_idx]() noexcept {
+	kfxx::ScopeGuard unmap_guard([mm_context, vaddr_base, max_size]() noexcept {
 		km_unwrap_result(mm_unmmap(mm_context, vaddr_base, max_size, 0));
 	});
-	char *last_vaddr = vaddr_base;
 	while (mapped_phdr_idx < loaded_phdrs.size()) {
 		auto &phdr = loaded_phdrs.at(mapped_phdr_idx);
 		if (phdr.p_type == PT_LOAD) {
@@ -284,9 +283,8 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 
 			km_unwrap_result(mm_set_page_access(mm_context, split_point, area_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE));
 
-			last_vaddr = split_point;
-			memset(last_vaddr, 0, phdr.p_memsz);
-			if (KM_FAILED(result = fs_read(file_fp, last_vaddr, phdr.p_filesz, phdr.p_offset, &bytes_read))) {
+			memset(split_point, 0, phdr.p_memsz);
+			if (KM_FAILED(result = fs_read(file_fp, split_point, phdr.p_filesz, phdr.p_offset, &bytes_read))) {
 				return result;
 			}
 
@@ -299,7 +297,6 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 	const char *strtab = nullptr;
 	Elf64_Rela *rela = nullptr, *jmprel = nullptr;
 	uint64_t rela_size = 0, jmprel_size = 0;
-	void *init = 0, *fini = 0;
 
 	for (size_t i = 0; i < dyn_entries.size(); ++i) {
 		auto &entry = dyn_entries.at(i);
@@ -325,12 +322,6 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 			case DT_PLTRELSZ:
 				jmprel_size = entry.d_un.d_val;
 				break;
-			case DT_INIT:
-				init = (vaddr_base + entry.d_un.d_ptr);
-				break;
-			case DT_FINI:
-				fini = (vaddr_base + entry.d_un.d_ptr);
-				break;
 		}
 	}
 
@@ -349,10 +340,6 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 		return KM_RESULT_MALFORMED;
 	if (jmprel && !check_if_addr_is_inside_valid_region(((char *)jmprel) + jmprel_size))
 		return KM_RESULT_MALFORMED;
-	if (init && !check_if_addr_is_inside_valid_region(init))
-		return KM_RESULT_MALFORMED;
-	if (fini && !check_if_addr_is_inside_valid_region(fini))
-		return KM_RESULT_MALFORMED;
 
 	if (rela && rela_size) {
 		size_t count = rela_size / sizeof(Elf64_Rela);
@@ -362,10 +349,7 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 			if (!check_if_addr_is_inside_valid_region(loc))
 				return KM_RESULT_MALFORMED;
 
-			KM_RETURN_IF_FAILED(mm_probe_and_lock_pages(mm_context, loc, page_size, MM_PAGE_WRITE));
-			kfxx::Deferred release_loc_page([mm_context, loc, page_size]() noexcept {
-				km_unwrap_result(mm_unlock_pages(mm_context, loc, page_size));
-			});
+			KM_RETURN_IF_FAILED(mm_probe_kernel_pages(mm_context, loc, page_size, MM_PAGE_WRITE));
 
 			Elf64_Xword type = ELF64_R_TYPE(rela[i].r_info);
 			Elf64_Xword sym_idx = ELF64_R_SYM(rela[i].r_info);
@@ -401,10 +385,7 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 			if (!check_if_addr_is_inside_valid_region(loc))
 				return KM_RESULT_MALFORMED;
 
-			KM_RETURN_IF_FAILED(mm_probe_and_lock_pages(mm_context, loc, page_size, MM_PAGE_WRITE));
-			kfxx::Deferred release_loc_page([mm_context, loc, page_size]() noexcept {
-				km_unwrap_result(mm_unlock_pages(mm_context, loc, page_size));
-			});
+			KM_RETURN_IF_FAILED(mm_probe_kernel_pages(mm_context, loc, page_size, MM_PAGE_WRITE));
 
 			Elf64_Xword type = ELF64_R_TYPE(jmprel[i].r_info);
 			Elf64_Xword sym_idx = ELF64_R_SYM(jmprel[i].r_info);
@@ -424,13 +405,7 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 		}
 	}
 
-	// TODO: Do we need to call init and fini?
-	if (init)
-		((void (*)())init)();
-
-	unmap_guard.release();
-
-	/*kfxx::DynArray<Elf64_Shdr> loaded_shdrs(kfxx::kernel_allocator());
+	kfxx::DynArray<Elf64_Shdr> loaded_shdrs(kfxx::kernel_allocator());
 
 	Elf64_Half shdr_num = ehdr.e_shnum;
 	if (!loaded_shdrs.resize(shdr_num))
@@ -442,31 +417,59 @@ km_result_t ki_elf_load_kmod(fs_fcb_t *file_fp) {
 		}
 	}
 
+	size_t num_syms = 0;
+
 	for (size_t i = 0; i < loaded_shdrs.size(); ++i) {
 		auto &sh = loaded_shdrs.at(i);
 
-		if (sh.sh_addralign % page_size)
-			return KM_RESULT_MALFORMED;
-
-		mm_pgaccess_t pgaccess = MM_PAGE_MAPPED | MM_PAGE_READ;
-
-		if (sh.sh_flags & SHF_WRITE)
-			pgaccess |= MM_PAGE_WRITE;
-		if (sh.sh_flags & SHF_EXECINSTR)
-			pgaccess |= MM_PAGE_EXEC;
-
 		switch (sh.sh_type) {
-			case SHT_PROGBITS: {
+			case SHT_DYNSYM: {
+				if (num_syms)
+					return KM_RESULT_MALFORMED;
+				num_syms = sh.sh_size / sizeof(Elf64_Sym);
 				break;
 			}
-			case SHT_NOBITS: {
+			default:
 				break;
-			}
-			case SHT_REL: {
-				break;
+		}
+	}
+
+	auto find_func = [vaddr_base](
+						 Elf64_Sym *symtab, const char *strtab,
+						 size_t num_syms, const char *name) -> std::pair<void *, uint64_t> {
+		for (unsigned i = 0; i < num_syms; i++) {
+			if (symtab[i].st_name != 0 &&
+				strcmp(strtab + symtab[i].st_name, name) == 0) {
+				if (ELF64_ST_TYPE(symtab[i].st_info) == STT_FUNC)
+					return { (void *)(vaddr_base + symtab[i].st_value), (uint64_t)symtab[i].st_size };
 			}
 		}
-	}*/
+		return { nullptr, 0 };
+	};
+
+	km_result_t (*module_init)();
+	uint64_t module_init_len = 0;
+	{
+		auto tmp = find_func(symtab, strtab, num_syms, "module_init");
+		module_init = (km_result_t(*)())tmp.first;
+		module_init_len = tmp.second;
+	}
+
+	if (!module_init) {
+		kd_println(__func__, "module_init not found in the module, unloading...");
+		return KM_RESULT_MALFORMED;
+	}
+
+	if (!check_if_addr_is_inside_valid_region((void *)module_init))
+		return KM_RESULT_MALFORMED;
+
+	if (!check_if_addr_is_inside_valid_region(((char*)module_init + module_init_len)))
+		return KM_RESULT_MALFORMED;
+
+	if (KM_FAILED(result = module_init()))
+		return result;
+
+	unmap_guard.release();
 
 	return KM_RESULT_OK;
 }

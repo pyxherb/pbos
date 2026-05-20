@@ -286,18 +286,9 @@ PBOS_PURE PBOS_API bool mm_is_user_space(const void *ptr);
 
 PBOS_API mm_vmr_t *mm_lookup_area(mm_context_t *mm_context, void *ptr);
 
-PBOS_API km_result_t mm_lock_page(mm_context_t *mm_context, void *ptr);
+PBOS_API km_result_t mm_probe_kernel_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t access);
 
-///
-/// @brief Check if accessing a space of memory in user mode violates the memory protection.
-///
-/// @param mm_context Memory context for checking.
-/// @param ptr Address of the space to be accessed.
-/// @param size Size of the space to be accessed.
-/// @return true The accessing does not violate the memory protection.
-/// @return false The accessing violates the memory protection.
-///
-PBOS_API km_result_t mm_probe_and_lock_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t access);
+PBOS_API km_result_t mm_probe_and_lock_user_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t access);
 
 PBOS_API km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t size);
 
