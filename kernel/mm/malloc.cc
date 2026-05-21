@@ -9,18 +9,18 @@ void ki_mm_init_global_allocator() {
 	ki_init_kima_pool(&ki_global_pool_storage);
 }
 
-PBOS_NODISCARD PBOS_KERNEL_PUBLIC void *mm_kalloc(size_t size, size_t alignment) {
+PBOS_NODISCARD PBOS_API void *mm_kalloc(size_t size, size_t alignment) {
 	return kima_alloc(mm_global_pool, size, alignment);
 }
 
-PBOS_NODISCARD PBOS_KERNEL_PUBLIC void *mm_krealloc(void *old_ptr, size_t size, size_t alignment) {
+PBOS_NODISCARD PBOS_API void *mm_krealloc(void *old_ptr, size_t size, size_t alignment) {
 	return kima_realloc(mm_global_pool, old_ptr, size, alignment);
 }
 
-PBOS_NODISCARD PBOS_KERNEL_PUBLIC void *mm_krealloc_in_place(void *old_ptr, size_t size, size_t alignment) {
+PBOS_NODISCARD PBOS_API void *mm_krealloc_in_place(void *old_ptr, size_t size, size_t alignment) {
 	return kima_realloc_in_place(mm_global_pool, old_ptr, size, alignment);
 }
 
-PBOS_KERNEL_PUBLIC void mm_kfree(void *ptr) {
+PBOS_API void mm_kfree(void *ptr) {
 	kima_free(mm_global_pool, ptr);
 }

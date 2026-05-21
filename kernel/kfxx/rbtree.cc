@@ -2,7 +2,7 @@
 
 using namespace kfxx;
 
-PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_get_min_node(node_base* node) noexcept {
+PBOS_API rbtree_base::node_base* rbtree_base::_get_min_node(node_base* node) noexcept {
 	if (!node)
 		return nullptr;
 
@@ -11,7 +11,7 @@ PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_get_min_node(node_base*
 	return node;
 }
 
-PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_get_max_node(node_base* node) noexcept {
+PBOS_API rbtree_base::node_base* rbtree_base::_get_max_node(node_base* node) noexcept {
 	if (!node)
 		return nullptr;
 
@@ -20,7 +20,7 @@ PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_get_max_node(node_base*
 	return node;
 }
 
-PBOS_KERNEL_PUBLIC void rbtree_base::_lrot(node_base* x) noexcept {
+PBOS_API void rbtree_base::_lrot(node_base* x) noexcept {
 	node_base* y = x->r;
 	kd_assert(y);
 
@@ -41,7 +41,7 @@ PBOS_KERNEL_PUBLIC void rbtree_base::_lrot(node_base* x) noexcept {
 	x->p = y;
 }
 
-PBOS_KERNEL_PUBLIC void rbtree_base::_rrot(node_base* x) noexcept {
+PBOS_API void rbtree_base::_rrot(node_base* x) noexcept {
 	node_base* y = x->l;
 	kd_assert(y);
 
@@ -61,7 +61,7 @@ PBOS_KERNEL_PUBLIC void rbtree_base::_rrot(node_base* x) noexcept {
 	x->p = y;
 }
 
-PBOS_KERNEL_PUBLIC void rbtree_base::_insert_fixup(node_base* node) noexcept {
+PBOS_API void rbtree_base::_insert_fixup(node_base* node) noexcept {
 	node_base* p, * gp = node, * u;  // Parent, grandparent and uncle
 
 	while ((p = gp->p) && _is_red(p)) {
@@ -112,7 +112,7 @@ PBOS_KERNEL_PUBLIC void rbtree_base::_insert_fixup(node_base* node) noexcept {
 	_root->color = rb_color::Black;
 }
 
-PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_remove_fixup(node_base* node) noexcept {
+PBOS_API rbtree_base::node_base* rbtree_base::_remove_fixup(node_base* node) noexcept {
 	// Adopted from SGI STL's stl_tree, with some minor improvements.
 	node_base* y = node, * x, * p;
 
@@ -240,7 +240,7 @@ PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_remove_fixup(node_base*
 	return y;
 }
 
-PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_get_next(const node_base* node, const node_base* last_node) noexcept {
+PBOS_API rbtree_base::node_base* rbtree_base::_get_next(const node_base* node, const node_base* last_node) noexcept {
 	kd_assert(node);
 
 	if (node != last_node) {
@@ -257,7 +257,7 @@ PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_get_next(const node_bas
 	return nullptr;
 }
 
-PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_get_prev(const node_base* node, const node_base* first_node) noexcept {
+PBOS_API rbtree_base::node_base* rbtree_base::_get_prev(const node_base* node, const node_base* first_node) noexcept {
 	kd_assert(node);
 
 	if (node != first_node) {
@@ -274,9 +274,9 @@ PBOS_KERNEL_PUBLIC rbtree_base::node_base* rbtree_base::_get_prev(const node_bas
 	return nullptr;
 }
 
-PBOS_KERNEL_PUBLIC rbtree_base::rbtree_base() noexcept {
+PBOS_API rbtree_base::rbtree_base() noexcept {
 }
 
-PBOS_KERNEL_PUBLIC rbtree_base::~rbtree_base() {
+PBOS_API rbtree_base::~rbtree_base() {
 	kd_assert(!_root);
 }

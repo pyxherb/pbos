@@ -90,16 +90,16 @@ void ki_dm_destroy_device(dm_device_t *device) {
 	kfxx::destroy_and_release<dm_device_t>(&ki_dm_device_allocator, device);
 }
 
-PBOS_KERNEL_PUBLIC void dm_ref_device(dm_device_t *device) {
+PBOS_API void dm_ref_device(dm_device_t *device) {
 	kf_atomic_inc_size(&device->ref_count);
 }
 
-PBOS_KERNEL_PUBLIC void dm_unref_device(dm_device_t *device) {
+PBOS_API void dm_unref_device(dm_device_t *device) {
 	if (!kf_atomic_dec_size(&device->ref_count))
 		ki_dm_destroy_device(device);
 }
 
-PBOS_KERNEL_PUBLIC km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device) {
+PBOS_API km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device) {
 	ps::rec_mutex_guard gp(parent->device_mutex.c_mutex()),
 		gd(device->device_mutex.c_mutex());
 
@@ -125,7 +125,7 @@ PBOS_KERNEL_PUBLIC km_result_t dm_link_device(dm_device_t *parent, dm_device_t *
 	return KM_RESULT_OK;
 }
 
-PBOS_KERNEL_PUBLIC void dm_unlink_device(dm_device_t *device) {
+PBOS_API void dm_unlink_device(dm_device_t *device) {
 	ps::rec_mutex_guard gp(device->parent_device->device_mutex.c_mutex()),
 		gd(device->device_mutex.c_mutex());
 
@@ -146,10 +146,10 @@ PBOS_KERNEL_PUBLIC void dm_unlink_device(dm_device_t *device) {
 	dm_unref_device(device);
 }
 
-PBOS_KERNEL_PUBLIC void dm_set_device_exdata(dm_device_t *device, void *exdata) {
+PBOS_API void dm_set_device_exdata(dm_device_t *device, void *exdata) {
 	device->exdata = exdata;
 }
 
-PBOS_KERNEL_PUBLIC void *dm_get_device_exdata(dm_device_t *device) {
+PBOS_API void *dm_get_device_exdata(dm_device_t *device) {
 	return device->exdata;
 }

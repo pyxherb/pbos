@@ -64,7 +64,7 @@ typedef struct _klog_color_exarg_t {
 } klog_color_exarg_t;
 
 void klog_vprintf(const char *str, va_list args) PBOS_FMTARG(printf, 1, 0);
-PBOS_KERNEL_PUBLIC void klog_printf(const char *str, ...) PBOS_FMTARG(printf, 1, 2);
+PBOS_API void klog_printf(const char *str, ...) PBOS_FMTARG(printf, 1, 2);
 void klog_putc(char ch);
 void klog_puts(const char *str);
 

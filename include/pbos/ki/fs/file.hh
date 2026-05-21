@@ -11,50 +11,50 @@ PBOS_EXTERN_C_BEGIN
 
 class ki_fs_filename_allocator_t : public kfxx::allocator_t {
 public:
-	PBOS_KERNEL_PRIVATE ki_fs_filename_allocator_t();
-	PBOS_KERNEL_PRIVATE virtual ~ki_fs_filename_allocator_t();
+	PBOS_PRIVATE ki_fs_filename_allocator_t();
+	PBOS_PRIVATE virtual ~ki_fs_filename_allocator_t();
 
-	PBOS_KERNEL_PRIVATE virtual size_t inc_ref() noexcept override;
-	PBOS_KERNEL_PRIVATE virtual size_t dec_ref() noexcept override;
+	PBOS_PRIVATE virtual size_t inc_ref() noexcept override;
+	PBOS_PRIVATE virtual size_t dec_ref() noexcept override;
 
-	PBOS_KERNEL_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
-	PBOS_KERNEL_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_KERNEL_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_KERNEL_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
+	PBOS_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
 
-	PBOS_KERNEL_PRIVATE virtual void *type_identity() const noexcept override;
+	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
 };
 
 class ki_fs_fnode_allocator_t : public kfxx::allocator_t {
 public:
-	PBOS_KERNEL_PRIVATE ki_fs_fnode_allocator_t();
-	PBOS_KERNEL_PRIVATE virtual ~ki_fs_fnode_allocator_t();
+	PBOS_PRIVATE ki_fs_fnode_allocator_t();
+	PBOS_PRIVATE virtual ~ki_fs_fnode_allocator_t();
 
-	PBOS_KERNEL_PRIVATE virtual size_t inc_ref() noexcept override;
-	PBOS_KERNEL_PRIVATE virtual size_t dec_ref() noexcept override;
+	PBOS_PRIVATE virtual size_t inc_ref() noexcept override;
+	PBOS_PRIVATE virtual size_t dec_ref() noexcept override;
 
-	PBOS_KERNEL_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
-	PBOS_KERNEL_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_KERNEL_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_KERNEL_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
+	PBOS_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
 
-	PBOS_KERNEL_PRIVATE virtual void *type_identity() const noexcept override;
+	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
 };
 
 class ki_fs_fcb_allocator_t : public kfxx::allocator_t {
 public:
-	PBOS_KERNEL_PRIVATE ki_fs_fcb_allocator_t();
-	PBOS_KERNEL_PRIVATE virtual ~ki_fs_fcb_allocator_t();
+	PBOS_PRIVATE ki_fs_fcb_allocator_t();
+	PBOS_PRIVATE virtual ~ki_fs_fcb_allocator_t();
 
-	PBOS_KERNEL_PRIVATE virtual size_t inc_ref() noexcept override;
-	PBOS_KERNEL_PRIVATE virtual size_t dec_ref() noexcept override;
+	PBOS_PRIVATE virtual size_t inc_ref() noexcept override;
+	PBOS_PRIVATE virtual size_t dec_ref() noexcept override;
 
-	PBOS_KERNEL_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
-	PBOS_KERNEL_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_KERNEL_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_KERNEL_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
+	PBOS_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
 
-	PBOS_KERNEL_PRIVATE virtual void *type_identity() const noexcept override;
+	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
 };
 
 extern ki_fs_filename_allocator_t ki_fs_filename_allocator;

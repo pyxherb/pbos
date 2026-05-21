@@ -7,7 +7,7 @@
    viewBox="0 0 51.999996 56"
    version="1.1"
    id="svg1"
-   sodipodi:docname="pbos.svg"
+   sodipodi:docname="pbos_logo.svg"
    inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -23,9 +23,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="1.617876"
-     inkscape:cx="101.67652"
-     inkscape:cy="119.91031"
+     inkscape:zoom="1.2401794"
+     inkscape:cx="194.32673"
+     inkscape:cy="181.42537"
      inkscape:window-width="1470"
      inkscape:window-height="891"
      inkscape:window-x="0"
@@ -38,19 +38,29 @@
      inkscape:label="图层 1"
      inkscape:groupmode="layer"
      id="layer1">
-    <rect
-       style="fill:none;stroke:#2b333e;stroke-width:3.02366;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
-       id="rect1-2"
-       width="32.976337"
-       height="44.976341"
-       x="17.511829"
-       y="9.5118303" />
-    <rect
-       style="fill:none;stroke:#bbb5ac;stroke-width:3.02366;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
-       id="rect1"
-       width="32.976337"
-       height="44.976341"
-       x="1.5118315"
-       y="1.5118315" />
+    <g
+       id="g1">
+      <rect
+         style="fill:none;stroke:#93b5cf;stroke-width:3.02366;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         id="rect1-2"
+         width="32.976337"
+         height="44.976341"
+         x="17.511829"
+         y="9.5118303" />
+      <rect
+         style="fill:none;stroke:#22a2c3;stroke-width:3.02366;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         id="rect1-5"
+         width="32.976337"
+         height="44.976341"
+         x="9.5118303"
+         y="5.5118299" />
+      <rect
+         style="fill:none;stroke:#ea8958;stroke-width:3.02366;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         id="rect1"
+         width="32.976337"
+         height="44.976341"
+         x="1.5118315"
+         y="1.5118315" />
+    </g>
   </g>
 </svg>

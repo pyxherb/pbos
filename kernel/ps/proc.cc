@@ -188,35 +188,35 @@ void ki_set_cur_cpuid(ps_cpu_id_t cpuid) {
 	kh_set_cur_cpuid(cpuid);
 }
 
-PBOS_KERNEL_PUBLIC ps_pcb_t *ps_get_cur_proc() {
+PBOS_API ps_pcb_t *ps_get_cur_proc() {
 	if (ps_cur_proc_per_cpu)
 		return ps_cur_proc_per_cpu[ps_get_cur_cpuid()];
 	return nullptr;
 }
 
-PBOS_KERNEL_PUBLIC ps_tcb_t *ps_get_cur_thread() {
+PBOS_API ps_tcb_t *ps_get_cur_thread() {
 	if (ps_cur_thread_per_cpu)
 		return ps_cur_thread_per_cpu[ps_get_cur_cpuid()];
 	return nullptr;
 }
 
-PBOS_KERNEL_PUBLIC mm_context_t *ps_mm_context_of(ps_pcb_t *pcb) {
+PBOS_API mm_context_t *ps_mm_context_of(ps_pcb_t *pcb) {
 	return pcb->mm_context;
 }
 
-PBOS_KERNEL_PUBLIC fs_fnode_t *ps_get_cwd(ps_pcb_t *pcb) {
+PBOS_API fs_fnode_t *ps_get_cwd(ps_pcb_t *pcb) {
 	return pcb->cur_dir.get();
 }
 
-PBOS_KERNEL_PUBLIC void ps_set_cwd(ps_pcb_t *pcb, fs_fnode_t *cwd_node) {
+PBOS_API void ps_set_cwd(ps_pcb_t *pcb, fs_fnode_t *cwd_node) {
 	pcb->cur_dir = cwd_node;
 }
 
-PBOS_KERNEL_PUBLIC void ps_unset_cwd(ps_pcb_t *pcb) {
+PBOS_API void ps_unset_cwd(ps_pcb_t *pcb) {
 	pcb->cur_dir.reset();
 }
 
-PBOS_KERNEL_PUBLIC void ps_yield_cur_thread() {
+PBOS_API void ps_yield_cur_thread() {
 	kh_yield_cur_thread();
 }
 

@@ -4,7 +4,7 @@ void *ki_acpi_rsdp_paddr = nullptr;
 acpi_rsdp_t *ki_acpi_rsdp_vaddr = nullptr;
 acpi_sdt_header_t *ki_acpi_rsdt_vaddr = nullptr, **ki_mapped_acpi_rsdt_entries = nullptr;
 
-bool ki_acpi_verify_checksum(const char *data, size_t size) {
+PBOS_API bool acpi_verify_checksum(const char *data, size_t size) {
 	uint8_t sum = 0;
 	for (size_t i = 0; i < size; ++i) {
 		sum += ((uint8_t *)data)[i];
@@ -12,15 +12,15 @@ bool ki_acpi_verify_checksum(const char *data, size_t size) {
 	return !sum;
 }
 
-uint32_t ki_acpi_rsdt_length() {
+PBOS_API uint32_t acpi_rsdt_length() {
 	kd_assert(ki_acpi_rsdt_vaddr);
 	return (ki_acpi_rsdt_vaddr->length - sizeof(acpi_sdt_header_t)) / sizeof(uint32_t);
 }
 
-void *ki_acpi_rsdt_paddr_at(size_t index) {
+PBOS_API void *acpi_rsdt_paddr_at(size_t index) {
 	kd_assert(ki_acpi_rsdt_vaddr);
 	kd_dbgcheck(
-		index < ki_acpi_rsdt_length(),
+		index < acpi_rsdt_length(),
 		"ACPI RSDT out of range");
 	switch (ki_acpi_rsdp_vaddr->revision) {
 		case 0:
@@ -32,6 +32,6 @@ void *ki_acpi_rsdt_paddr_at(size_t index) {
 	PBOS_UNREACHABLE();
 }
 
-acpi_sdt_header_t *ki_acpi_rsdt_vaddr_at(size_t index) {
+PBOS_API acpi_sdt_header_t *acpi_rsdt_vaddr_at(size_t index) {
 	return ki_mapped_acpi_rsdt_entries[index];
 }

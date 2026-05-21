@@ -78,14 +78,14 @@ void ps_thread_set_entry(ps_tcb_t *tcb, void *ptr);
 ps_cpu_id_t ps_get_cur_cpuid();
 void ki_set_cur_cpuid(ps_cpu_id_t cpuid);
 
-PBOS_KERNEL_PUBLIC ps_pcb_t *ps_get_cur_proc();
-PBOS_KERNEL_PUBLIC ps_tcb_t *ps_get_cur_thread();
+PBOS_API ps_pcb_t *ps_get_cur_proc();
+PBOS_API ps_tcb_t *ps_get_cur_thread();
 
-PBOS_KERNEL_PUBLIC fs_fnode_t *ps_get_cwd(ps_pcb_t *pcb);
-PBOS_KERNEL_PUBLIC void ps_set_cwd(ps_pcb_t *pcb, fs_fnode_t *cwd_node);
-PBOS_KERNEL_PUBLIC void ps_unset_cwd(ps_pcb_t *pcb);
+PBOS_API fs_fnode_t *ps_get_cwd(ps_pcb_t *pcb);
+PBOS_API void ps_set_cwd(ps_pcb_t *pcb, fs_fnode_t *cwd_node);
+PBOS_API void ps_unset_cwd(ps_pcb_t *pcb);
 
-PBOS_KERNEL_PUBLIC void ps_yield_cur_thread();
+PBOS_API void ps_yield_cur_thread();
 
 PBOS_EXTERN_C_END
 

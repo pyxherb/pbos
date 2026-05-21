@@ -1,7 +1,7 @@
 #ifndef _PBOS_KI_ACPI_RSDP_HH_
 #define _PBOS_KI_ACPI_RSDP_HH_
 
-#include <pbos/common.h>
+#include <pbos/kf/basedefs.h>
 
 #include <pbos/packed.h>
 
@@ -46,5 +46,10 @@ typedef struct _acpi_sdt_header_t {
 } PBOS_PACKED acpi_sdt_header_t;
 
 #include <pbos/packed_end.h>
+
+PBOS_NODISCARD PBOS_API bool acpi_verify_checksum(const char *data, size_t size);
+PBOS_API uint32_t acpi_rsdt_length();
+PBOS_API void *acpi_rsdt_paddr_at(size_t index);
+PBOS_API acpi_sdt_header_t *acpi_rsdt_vaddr_at(size_t index);
 
 #endif

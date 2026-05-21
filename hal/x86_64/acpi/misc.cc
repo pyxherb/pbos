@@ -27,7 +27,7 @@ void kh_acpi_init() {
 			km_panic("Error mapping ACPI RSDP");
 	}
 
-	if (!ki_acpi_verify_checksum((char *)ki_acpi_rsdp_vaddr, sizeof(acpi_rsdp_t)))
+	if (!acpi_verify_checksum((char *)ki_acpi_rsdp_vaddr, sizeof(acpi_rsdp_t)))
 		km_panic("ACPI RSDP damaged");
 
 	bool is_acpi_rsdt_direct_mmap = true;
@@ -47,7 +47,7 @@ void kh_acpi_init() {
 				if (KM_FAILED(mm_mmap(mm_get_cur_context(), ki_acpi_rsdp_vaddr, ki_acpi_rsdp_paddr, len, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
 					km_panic("Error mapping ACPI XSDP");
 			}
-			if (!ki_acpi_verify_checksum((char *)ki_acpi_rsdp_vaddr, ((acpi_xsdp_t *)ki_acpi_rsdp_vaddr)->length))
+			if (!acpi_verify_checksum((char *)ki_acpi_rsdp_vaddr, ((acpi_xsdp_t *)ki_acpi_rsdp_vaddr)->length))
 				km_panic("ACPI XSDP damaged");
 			break;
 		}
@@ -78,12 +78,12 @@ void kh_acpi_init() {
 			km_panic("Error remapping ACPI RSDT");
 	}
 
-	if (!ki_acpi_verify_checksum((char *)ki_acpi_rsdt_vaddr, ki_acpi_rsdt_vaddr->length))
+	if (!acpi_verify_checksum((char *)ki_acpi_rsdt_vaddr, ki_acpi_rsdt_vaddr->length))
 		km_panic("ACPI RSDT damaged");
 
 	dbg_printf("Mapping ACPI root tables...\n");
 
-	const size_t rsdt_len = ki_acpi_rsdt_length();
+	const size_t rsdt_len = acpi_rsdt_length();
 
 	if (rsdt_len) {
 		if (!(ki_mapped_acpi_rsdt_entries = (acpi_sdt_header_t **)mm_kalloc(rsdt_len * sizeof(void *), alignof(void *))))
@@ -91,7 +91,7 @@ void kh_acpi_init() {
 
 		for (size_t i = 0; i < rsdt_len; ++i) {
 			bool is_direct_map = true;
-			void *paddr = ki_acpi_rsdt_paddr_at(i);
+			void *paddr = acpi_rsdt_paddr_at(i);
 
 			char *vaddr_base;
 			if (!(vaddr_base = (char *)kh_get_direct_mmap((void *)PGFLOOR(paddr)))) {
