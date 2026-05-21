@@ -18,7 +18,7 @@ namespace fs {
 		}
 	};
 
-	using fnode_ptr = kfxx::custom_rc_ptr<fs_fnode_t, fnode_inc_ref, fnode_dec_ref>;
+	using fnode_ptr = kfxx::custom_rc_object_ptr<fs_fnode_t, fnode_inc_ref, fnode_dec_ref>;
 
 	PBOS_FORCEINLINE void fcb_ptr_null_hook(fs_fcb_t *, km_result_t) noexcept {
 	}

@@ -1,8 +1,6 @@
-#include <pbos/dm/bus.h>
+#include <pbkxrt/init.h>
 #include <pbos/kd/logger.h>
-#include <pbos/pci/mcfg.h>
-#include <string.h>
-#include <pbos/kfxx/rbtree.hh>
+#include "mcfg.h"
 
 PBOS_EXTERN_C_BEGIN
 
@@ -22,34 +20,21 @@ const dm_bus_ops_t pci_bus_ops = {
 	.unregister_device = pci_unregister_device
 };
 
-struct pci_segment_map_entry_t : public kfxx::rbtree_t<uint16_t>::node_t {
-	dm_device_t *device;
-};
+PBOS_KMOD_API km_result_t module_init();
+PBOS_KMOD_API void module_deinit();
 
-kfxx::rbtree_t<uint16_t> pci_segment_map;
+km_result_t module_init() {
+	kxi_call_ctors();
 
-km_result_t scan_acpi_mcfg_table() {
-	mm_context_t *context = mm_get_cur_context();
-	void *mcfg_table_base = nullptr;
-	for(size_t i = 0 ; i < acpi_rsdt_length(); ++i) {
-		acpi_sdt_header_t *header = acpi_rsdt_vaddr_at(i);
+	pciroot_segment_group_id_to_domain_map = kfxx::map_t<uint16_t, pciroot_domain_registry_ptr>(kfxx::kernel_allocator());
 
-		if(!memcmp(&header->signature, "MCFG", sizeof(header->signature))) {
-			for(size_t j = sizeof(acpi_sdt_header_t) + 8; j < header->length; ++j) {
-				pci_mcfg_entry_t entry;
+	KM_RETURN_IF_FAILED(pciroot_scan_acpi_mcfg_table());
 
-				memcpy(&entry, (pci_mcfg_entry_t*)(((char*)header) + j), sizeof(entry));
-			}
-			break;
-		}
-	}
-}
-
-PBOS_KMOD_API km_result_t module_init() {
 	return KM_RESULT_OK;
 }
 
-PBOS_KMOD_API void module_deinit() {
+void module_deinit() {
+	kxi_call_dtors();
 }
 
 PBOS_EXTERN_C_END

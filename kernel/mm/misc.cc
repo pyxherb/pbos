@@ -536,3 +536,7 @@ PBOS_API km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t
 
 	return KM_RESULT_OK;
 }
+
+PBOS_API mm_context_t *mm_get_cur_context() {
+	return mm_cur_contexts ? mm_cur_contexts[ps_get_cur_cpuid()] : mm_kernel_context;
+}

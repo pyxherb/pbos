@@ -70,12 +70,12 @@ namespace kfxx {
 			return value();
 		}
 
-		PBOS_FORCEINLINE std::remove_reference_t<T> *operator->() noexcept {
+		PBOS_FORCEINLINE T *operator->() noexcept {
 			kd_assert(has_value());
 			return &value();
 		}
 
-		PBOS_FORCEINLINE std::remove_reference_t<const T> *operator->() const noexcept {
+		PBOS_FORCEINLINE const T *operator->() const noexcept {
 			kd_assert(has_value());
 			return &value();
 		}

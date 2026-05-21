@@ -55,23 +55,15 @@ void hn_isr_timer_impl(
 		cur_thread->context->r15 = r15;
 		cur_thread->context->rip = (void *)rip;
 		cur_thread->context->rflags = rflags;
-		if (((uintptr_t)rip) < KSPACE_VBASE) {
-			// SS (32-bits?)->ESP->EFLAGS->CS (32-bits)->EIP
-			cur_thread->context->rsp = rsp_top[3];
-			// kd_assert(cur_thread->context->esp0 == (uint32_t)((char*)cur_thread->kernel_stack + cur_thread->kernel_stack_size));
-			// dbg_printf("U!\n");
-
-			cur_thread->context->ds = ds;
-			cur_thread->context->ss = rsp_top[4];
-		} else {
-			// EFLAGS->CS (32-bits)->EIP
-			cur_thread->context->rsp = (uint64_t)(rsp_top[3]);
+		// SS (32-bits?)->ESP->EFLAGS->CS (32-bits)->EIP
+		cur_thread->context->rsp = rsp_top[3];
+		if (!mm_is_user_space((void *)rip))
 			cur_thread->context->rsp0 = cur_thread->context->rsp;
-			// dbg_printf("K!\n");
+		// kd_assert(cur_thread->context->esp0 == (uint32_t)((char*)cur_thread->kernel_stack + cur_thread->kernel_stack_size));
+		// dbg_printf("U!\n");
 
-			cur_thread->context->ds = ds;
-			cur_thread->context->ss = ds;
-		}
+		cur_thread->context->ds = ds;
+		cur_thread->context->ss = rsp_top[4];
 
 		cur_thread->context->cs = cs;
 		cur_thread->context->es = es;

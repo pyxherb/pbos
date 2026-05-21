@@ -1,4 +1,4 @@
-#include <pbos/common.h>
+#include <pbos/km/result.h>
 
 PBOS_EXTERN_C_BEGIN
 

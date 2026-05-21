@@ -1,7 +1,6 @@
 .global hn_isr_timer
 .align 8
 hn_isr_timer:
-	// Kernel mode: RFLAGS -> CS -> RIP
 	// User mode: SS -> RSP -> RFLAGS -> CS -> RIP
 	// xchg %bx, %bx
 

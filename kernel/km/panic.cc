@@ -13,7 +13,7 @@ bool km_is_panicked() {
 	return ki_is_panicked;
 }
 
-PBOS_NORETURN void km_panic(const char *fmt, ...) {
+PBOS_NORETURN PBOS_API void km_panic(const char *fmt, ...) {
 	irq_disable();
 	if (km_is_panicked())
 		goto panicked;

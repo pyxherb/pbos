@@ -20,11 +20,7 @@ isr_syscall:
 
 	cld
 
-	sti
-
 	call hn_pbcore_dispatcher
-
-	cli
 
 	movq %rax, %rdx
 

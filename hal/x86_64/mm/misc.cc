@@ -4,19 +4,15 @@
 
 PBOS_EXTERN_C_BEGIN
 
-PBOS_PURE size_t kh_get_page_size() {
+PBOS_PURE PBOS_API size_t kh_get_page_size() {
 	return PAGESIZE;
 }
 
-mm_context_t *mm_get_cur_context() {
-	return mm_cur_contexts ? mm_cur_contexts[ps_get_cur_cpuid()] : mm_kernel_context;
-}
-
-void mm_invl_page(void *ptr) {
+PBOS_API void mm_invl_page(void *ptr) {
 	arch_invlpg(ptr);
 }
 
-bool mm_is_user_space(const void *ptr) {
+PBOS_API bool mm_is_user_space(const void *ptr) {
 	return ptr < (void *)0x0000800000000000ULL;
 }
 

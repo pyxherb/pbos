@@ -129,9 +129,9 @@ namespace kfxx {
 	};
 
 	template <typename T, typename IncRef, typename DecRef>
-	class custom_rc_ptr {
+	class custom_rc_object_ptr {
 	private:
-		using ThisType = custom_rc_ptr<T, IncRef, DecRef>;
+		using ThisType = custom_rc_object_ptr<T, IncRef, DecRef>;
 
 		T *_ptr = nullptr;
 		[[no_unique_address]] IncRef _inc_ref;
@@ -149,39 +149,39 @@ namespace kfxx {
 			_ptr = nullptr;
 		}
 
-		PBOS_FORCEINLINE custom_rc_ptr() : _ptr(nullptr) {
+		PBOS_FORCEINLINE custom_rc_object_ptr() : _ptr(nullptr) {
 		}
-		PBOS_FORCEINLINE custom_rc_ptr(T *ptr) noexcept : _ptr(nullptr) {
+		PBOS_FORCEINLINE custom_rc_object_ptr(T *ptr) noexcept : _ptr(nullptr) {
 			if (ptr) {
 				_set_and_inc_ref(ptr);
 			}
 		}
-		PBOS_FORCEINLINE custom_rc_ptr(const ThisType &other) noexcept : _ptr(nullptr) {
+		PBOS_FORCEINLINE custom_rc_object_ptr(const ThisType &other) noexcept : _ptr(nullptr) {
 			if (other._ptr) {
 				_set_and_inc_ref(other._ptr);
 			}
 		}
-		PBOS_FORCEINLINE custom_rc_ptr(ThisType &&other) noexcept {
+		PBOS_FORCEINLINE custom_rc_object_ptr(ThisType &&other) noexcept {
 			_ptr = other._ptr;
 			other._ptr = nullptr;
 		}
-		PBOS_FORCEINLINE ~custom_rc_ptr() {
+		PBOS_FORCEINLINE ~custom_rc_object_ptr() {
 			reset();
 		}
 
-		PBOS_FORCEINLINE custom_rc_ptr &operator=(T *_ptr) noexcept {
+		PBOS_FORCEINLINE custom_rc_object_ptr &operator=(T *_ptr) noexcept {
 			reset();
 			if (_ptr) {
 				_set_and_inc_ref(_ptr);
 			}
 			return *this;
 		}
-		PBOS_FORCEINLINE custom_rc_ptr &operator=(const ThisType &other) noexcept {
+		PBOS_FORCEINLINE custom_rc_object_ptr &operator=(const ThisType &other) noexcept {
 			reset();
 			_set_and_inc_ref(other._ptr);
 			return *this;
 		}
-		PBOS_FORCEINLINE custom_rc_ptr &operator=(ThisType &&other) noexcept {
+		PBOS_FORCEINLINE custom_rc_object_ptr &operator=(ThisType &&other) noexcept {
 			reset();
 
 			_ptr = other._ptr;

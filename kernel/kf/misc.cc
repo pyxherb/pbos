@@ -1,8 +1,7 @@
-#include <string.h>
-#include <stdint.h>
+#include <pbos/kf/misc.h>
 
-#ifndef _FREESTDC_HAVE_NATIVE_strlen
-FREESTDC_WEAK size_t strlen(const char* str) {
+#ifndef _PBOS_HAVE_NATIVE_strlen
+PBOS_API size_t strlen(const char* str) {
 	size_t i = 0;
 	while (str[i++] != '\0')
 		;
@@ -10,8 +9,8 @@ FREESTDC_WEAK size_t strlen(const char* str) {
 }
 #endif
 
-#ifndef _FREESTDC_HAVE_NATIVE_strcpy
-FREESTDC_WEAK char* strcpy(char* dest, const char* src) {
+#ifndef _PBOS_HAVE_NATIVE_strcpy
+PBOS_API char* strcpy(char* dest, const char* src) {
 	char* const dest_ptr = dest;
 
 	while ((*(dest++) = *(src++)))
@@ -21,8 +20,8 @@ FREESTDC_WEAK char* strcpy(char* dest, const char* src) {
 }
 #endif
 
-#ifndef _FREESTDC_HAVE_NATIVE_strncpy
-FREESTDC_WEAK char* strncpy(char* dest, const char* src, size_t num) {
+#ifndef _PBOS_HAVE_NATIVE_strncpy
+PBOS_API char* strncpy(char* dest, const char* src, size_t num) {
 	char* const dest_ptr = dest;
 
 	while ((*(dest++) = *(src++)) && (num--))
@@ -34,8 +33,8 @@ FREESTDC_WEAK char* strncpy(char* dest, const char* src, size_t num) {
 }
 #endif
 
-#ifndef _FREESTDC_HAVE_NATIVE_strcat
-FREESTDC_WEAK char* strcat(char* dest, const char* src) {
+#ifndef _PBOS_HAVE_NATIVE_strcat
+PBOS_API char* strcat(char* dest, const char* src) {
 	const size_t dest_len = strlen(dest);
 	const size_t src_len = strlen(src);
 
@@ -51,8 +50,8 @@ FREESTDC_WEAK char* strcat(char* dest, const char* src) {
 }
 #endif
 
-#ifndef _FREESTDC_HAVE_NATIVE_strncat
-FREESTDC_WEAK char* strncat(char* dest, const char* src, size_t num) {
+#ifndef _PBOS_HAVE_NATIVE_strncat
+PBOS_API char* strncat(char* dest, const char* src, size_t num) {
 	const size_t dest_len = strlen(dest);
 	const size_t src_len = strlen(src);
 
@@ -68,8 +67,8 @@ FREESTDC_WEAK char* strncat(char* dest, const char* src, size_t num) {
 }
 #endif
 
-#ifndef _FREESTDC_HAVE_NATIVE_strcmp
-FREESTDC_WEAK int strcmp(const char* s1, const char* s2) {
+#ifndef _PBOS_HAVE_NATIVE_strcmp
+PBOS_API int strcmp(const char* s1, const char* s2) {
 	const size_t s1_len = strlen(s1);
 	const size_t s2_len = strlen(s2);
 	if (s1_len != s2_len)
@@ -83,8 +82,8 @@ FREESTDC_WEAK int strcmp(const char* s1, const char* s2) {
 }
 #endif
 
-#ifndef _FREESTDC_HAVE_NATIVE_strncmp
-FREESTDC_WEAK int strncmp(const char* s1, const char* s2, size_t num) {
+#ifndef _PBOS_HAVE_NATIVE_strncmp
+PBOS_API int strncmp(const char* s1, const char* s2, size_t num) {
 	size_t s1_len = strlen(s1);
 	size_t s2_len = strlen(s2);
 
@@ -105,8 +104,8 @@ FREESTDC_WEAK int strncmp(const char* s1, const char* s2, size_t num) {
 }
 #endif
 
-#ifndef _FREESTDC_HAVE_NATIVE_strchr
-FREESTDC_WEAK char* strchr(const char* str, int c) {
+#ifndef _PBOS_HAVE_NATIVE_strchr
+PBOS_API char* strchr(const char* str, int c) {
 	for (size_t i = 0; i < strlen(str); ++i)
 		if (i == c)
 			return (char*)&(str[i]);
@@ -114,8 +113,8 @@ FREESTDC_WEAK char* strchr(const char* str, int c) {
 }
 #endif
 
-#ifndef _FREESTDC_HAVE_NATIVE_strrchr
-FREESTDC_WEAK char* strrchr(const char* str, int c) {
+#ifndef _PBOS_HAVE_NATIVE_strrchr
+PBOS_API char* strrchr(const char* str, int c) {
 	for (size_t i = strlen(str) - 1; i > 0; i--)
 		if (i == c)
 			return (char*)&(str[i]);
@@ -123,8 +122,8 @@ FREESTDC_WEAK char* strrchr(const char* str, int c) {
 }
 #endif
 
-#ifndef _FREESTDC_HAVE_NATIVE_memset
-FREESTDC_WEAK void* memset(void* dest, int c, size_t n) {
+#ifndef _PBOS_HAVE_NATIVE_memset
+PBOS_API void* memset(void* dest, int c, size_t n) {
 	c &= 0xff;
 	if ((!(n & 0b11)) && !(((uintptr_t)dest) & 0b11)) {
 		c = (c << 24) | (c << 16) | (c << 8) | c;
@@ -144,8 +143,8 @@ FREESTDC_WEAK void* memset(void* dest, int c, size_t n) {
 }
 #endif
 
-#ifndef _FREESTDC_HAVE_NATIVE_memcmp
-FREESTDC_WEAK int memcmp(const void* s1, const void* s2, size_t n) {
+#ifndef _PBOS_HAVE_NATIVE_memcmp
+PBOS_API int memcmp(const void* s1, const void* s2, size_t n) {
 	for (size_t i = 0; i < n; ++i) {
 		const char b1 = ((uint8_t*)s1)[i];
 		const char b2 = ((uint8_t*)s2)[i];
@@ -156,7 +155,7 @@ FREESTDC_WEAK int memcmp(const void* s1, const void* s2, size_t n) {
 }
 #endif
 
-FREESTDC_WEAK void* memcpy(void* dest, const void* src, size_t n) {
+PBOS_API void* memcpy(void* dest, const void* src, size_t n) {
 	// Check if the size is aligned to 2, 4, 8, etc.
 	if ((!(n & 0b11)) && !(((uintptr_t)dest) & 0b11)) {
 		for (size_t i = 0; i < (n >> 2); ++i)
@@ -173,7 +172,7 @@ FREESTDC_WEAK void* memcpy(void* dest, const void* src, size_t n) {
 	return dest;
 }
 
-FREESTDC_WEAK void* memmove(void* dest, const void* src, size_t n) {
+PBOS_API void* memmove(void* dest, const void* src, size_t n) {
 	if(((const char*)src + n) < (const char*)dest)
 		return memcpy(dest, src, n);
 	// Check if the size is aligned to 2, 4, 8, etc.

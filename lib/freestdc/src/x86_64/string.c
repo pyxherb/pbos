@@ -3,7 +3,7 @@
 
 FREESTDC_WEAK void *memset(void *dest, int c, size_t n) {
 	c &= 0xff;
-	if (!(n & 0b111)) {
+	if ((!(n & 0b111)) && !(((uintptr_t)dest) & 0b111)) {
 		uint64_t _c = c;
 		_c = (_c << 56) |
 			 (_c << 48) |
@@ -17,7 +17,7 @@ FREESTDC_WEAK void *memset(void *dest, int c, size_t n) {
 		for (size_t i = 0; i < n; ++i) {
 			((uint64_t *)dest)[i] = (uint64_t)_c;
 		}
-	} else if (!(n & 0b11)) {
+	} else if ((!(n & 0b11) && !(((uintptr_t)dest) & 0b11))) {
 		uint32_t _c = c;
 		_c = (_c << 24) |
 			 (_c << 16) |
@@ -27,7 +27,7 @@ FREESTDC_WEAK void *memset(void *dest, int c, size_t n) {
 		for (size_t i = 0; i < n; ++i) {
 			((uint32_t *)dest)[i] = (uint32_t)c;
 		}
-	} else if (!(n & 0b1)) {
+	} else if ((!(n & 0b1) && !(((uintptr_t)dest) & 0b1))) {
 		uint16_t _c = c;
 		_c = (_c << 8) |
 			 _c;
