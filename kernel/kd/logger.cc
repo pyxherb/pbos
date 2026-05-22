@@ -1,8 +1,8 @@
-#include <pbos/kd/logger.h>
-#include <pbos/hal/spinlock.h>
-#include <string.h>
 #include <fstdc-utils/format.h>
 #include <fstdc-utils/mathex.h>
+#include <pbos/hal/spinlock.h>
+#include <pbos/kd/logger.h>
+#include <string.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -242,46 +242,75 @@ int do_vprintf(kd_logger_t *logger, const char *s, va_list args) {
 					break;
 				}
 				case FMTCTL_SPECIFIER_PTR: {
-					uint64_t arg = va_arg(args, uint64_t);
+					if (sizeof(void *) == sizeof(uint64_t)) {
+						uint64_t arg = va_arg(args, uint64_t);
 
-					int num_digits = llxdigcount(arg);
-					if (info.precision < num_digits)
-						info.precision = num_digits;
-					// Fill with space if the width has not reached.
-					for (int j = 0; j < info.width - 16 - 2; ++j) {
-						logger->putchar(' ');
-						len_printed++;
-					}
+						int num_digits = llxdigcount(arg);
+						if (info.precision < num_digits)
+							info.precision = num_digits;
+						// Fill with space if the width has not reached.
+						for (int j = 0; j < info.width - 16 - 2; ++j) {
+							logger->putchar(' ');
+							len_printed++;
+						}
 
-					logger->print("0x", 2);
+						logger->print("0x", 2);
 
-					for (int j = 0; j < 16 - num_digits; ++j) {
-						logger->putchar('0');
-						len_printed++;
-					}
+						for (int j = 0; j < 16 - num_digits; ++j) {
+							logger->putchar('0');
+							len_printed++;
+						}
 
-					for (int j = num_digits; j > 0; j--) {
-						int digit = getxdigit(arg, j);
-						if (digit > 9)
-							logger->putchar(digit - 10 + 'a');
-						else
-							logger->putchar(digit + '0');
-						len_printed++;
+						for (int j = num_digits; j > 0; j--) {
+							int digit = getllxdigit(arg, j);
+							if (digit > 9)
+								logger->putchar(digit - 10 + 'a');
+							else
+								logger->putchar(digit + '0');
+							len_printed++;
+						}
+					} else {
+						uint32_t arg = va_arg(args, uint32_t);
+
+						int num_digits = llxdigcount(arg);
+						if (info.precision < num_digits)
+							info.precision = num_digits;
+						// Fill with space if the width has not reached.
+						for (int j = 0; j < info.width - 8 - 2; ++j) {
+							logger->putchar(' ');
+							len_printed++;
+						}
+
+						logger->print("0x", 2);
+
+						for (int j = 0; j < 8 - num_digits; ++j) {
+							logger->putchar('0');
+							len_printed++;
+						}
+
+						for (int j = num_digits; j > 0; j--) {
+							int digit = getllxdigit(arg, j);
+							if (digit > 9)
+								logger->putchar(digit - 10 + 'a');
+							else
+								logger->putchar(digit + '0');
+							len_printed++;
+						}
 					}
 					break;
 				}
 				case FMTCTL_SPECIFIER_LLUNSIGNED: {
 					unsigned long long arg = va_arg(args, unsigned int);
 
-					if (info.precision < udigcount(arg))
-						info.precision = udigcount(arg);
+					if (info.precision < lludigcount(arg))
+						info.precision = lludigcount(arg);
 					// Fill with space if the width has not reached.
 					for (int j = 0; j < info.width - info.precision; ++j) {
 						logger->putchar(' ');
 						len_printed++;
 					}
 
-					for (int j = 0; j < info.precision - udigcount(arg); ++j) {
+					for (int j = 0; j < info.precision - lludigcount(arg); ++j) {
 						logger->putchar('0');
 						len_printed++;
 					}

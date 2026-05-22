@@ -130,9 +130,6 @@ void kh_initcar_init() {
 		if (fe->flags & PBCAR_FILE_FLAG_END)
 			break;
 
-		dbg_printf("File: %s\n", fe->filename);
-		dbg_printf("Size: %d\n", (int)fe->size);
-
 		fs::fnode_ptr file;
 		size_t filename_len = strlen(fe->filename);
 		if (KM_FAILED(fs_alloc_file_fnode(kh_initcar_fs, &file)))

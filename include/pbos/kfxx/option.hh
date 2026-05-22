@@ -100,11 +100,19 @@ namespace kfxx {
 			}
 		}
 
+		PBOS_FORCEINLINE option_t<T> &operator=(T &&rhs) noexcept {
+			reset();
+
+			set_value(std::move(rhs));
+			return *this;
+		}
+
 		PBOS_FORCEINLINE option_t<T> &operator=(option_t<T> &&rhs) noexcept {
 			reset();
 
 			if (rhs.has_value()) {
 				set_value(std::move(*((T *)rhs._data)));
+				rhs._has_value = false;
 			}
 			return *this;
 		}

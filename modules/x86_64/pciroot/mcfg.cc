@@ -12,20 +12,26 @@ km_result_t pciroot_scan_acpi_mcfg_table() {
 
 		if (!memcmp(&header->signature, "MCFG", sizeof(header->signature))) {
 			kd_println(PCIROOT_COMPONENT_NAME, "Found ACPI MCFG header at %p", header);
-			for (size_t j = sizeof(acpi_sdt_header_t) + 8; j < header->length; ++j) {
+			for (size_t j = sizeof(acpi_sdt_header_t) + 8; j < header->length; j += sizeof(pci_mcfg_entry_t)) {
 				pci_mcfg_entry_t entry;
 
 				// Note that the entry is not as aligned as the maximum aligned member,
 				// so we have to make it aligned first to avoid unaligned access.
 				memcpy(&entry, (pci_mcfg_entry_t *)(((char *)header) + j), sizeof(entry));
 
+				kd_println(PCIROOT_COMPONENT_NAME, "Found PCI segment: %.4x", entry.pci_segment_group_num);
+
 				if (pciroot_domain_tree.find(entry.pci_segment_group_num))
 					continue;
+
+				kd_println(PCIROOT_COMPONENT_NAME, "a");
 
 				pciroot_domain_registry_ptr registry = pciroot_domain_registry_t::alloc();
 
 				if (!registry)
 					return KM_RESULT_NO_MEM;
+
+				kd_println(PCIROOT_COMPONENT_NAME, "b");
 
 				// Add the registry to the segment group ID map.
 				registry->segment_group_id = entry.pci_segment_group_num;
@@ -33,6 +39,8 @@ km_result_t pciroot_scan_acpi_mcfg_table() {
 				if (!pciroot_segment_group_id_to_domain_map->insert(+entry.pci_segment_group_num, registry.get())) {
 					return KM_RESULT_NO_MEM;
 				}
+
+				kd_println(PCIROOT_COMPONENT_NAME, "c");
 
 				kfxx::scope_guard remove_from_segment_group_guard([registry]() noexcept {
 					pciroot_segment_group_id_to_domain_map->remove(registry->segment_group_id);
@@ -42,9 +50,11 @@ km_result_t pciroot_scan_acpi_mcfg_table() {
 				if (!pciroot_alloc_domain_id_and_insert(registry.get()))
 					return KM_RESULT_NO_SLOT;
 
+				kd_println(PCIROOT_COMPONENT_NAME, "d");
+
 				remove_from_segment_group_guard.release();
 
-				kd_println(PCIROOT_COMPONENT_NAME, "Found PCI segment -> domain: %.4x -> %.4x", entry.pci_segment_group_num, registry->rb_value);
+				kd_println(PCIROOT_COMPONENT_NAME, "Registered PCI segment -> domain registry: %.4x -> %.4x", entry.pci_segment_group_num, registry->rb_value);
 			}
 			break;
 		}
