@@ -1,31 +1,27 @@
 #ifndef _PBOS_FS_FS_H_
 #define _PBOS_FS_FS_H_
 
+#include <pbos/io/dispatch.h>
 #include <pbos/kf/uuid.h>
-#include <pbos/km/result.h>
 
 PBOS_EXTERN_C_BEGIN
 
 typedef struct _fs_fnode_t fs_fnode_t;
 typedef struct _fs_fcb_t fs_fcb_t;
 
-typedef struct _fs_forward_request_t {
-	void *callback;
-} fs_forward_request_t;
-
 typedef km_result_t (*fs_filesys_subnode_op_t)(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
 typedef void (*fs_filesys_offload_op_t)(fs_fnode_t *file);
 
-typedef km_result_t (*fs_filesys_create_file_op_t)(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
-typedef km_result_t (*fs_filesys_create_dir_op_t)(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+typedef km_result_t (*fs_filesys_create_file_op_t)(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+typedef km_result_t (*fs_filesys_create_dir_op_t)(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
 
 typedef km_result_t (*fs_filesys_open_op_t)(fs_fnode_t *file, fs_fcb_t **fcb_out);
 typedef void (*fs_filesys_close_op_t)(fs_fcb_t *fcb);
 
-typedef km_result_t (*fs_filesys_read_op_t)(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
-typedef km_result_t (*fs_filesys_write_op_t)(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
+typedef km_result_t (*fs_filesys_read_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
+typedef km_result_t (*fs_filesys_write_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
 
-typedef km_result_t (*fs_filesys_ioctl_op_t)(fs_fcb_t *fcb, uint32_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args);
+typedef km_result_t (*fs_filesys_ioctl_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, uint32_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args);
 
 typedef km_result_t (*fs_filesys_size_op_t)(fs_fcb_t *fcb, size_t *size_out);
 

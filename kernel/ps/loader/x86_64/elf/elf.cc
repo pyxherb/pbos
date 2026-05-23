@@ -22,6 +22,9 @@ km_binldr_ops_t ki_binldr_elf = {
 };
 
 km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
+	io_dispatch_context_t dispatch_context;
+	io_init_dispatch_context(&dispatch_context);
+
 	km_result_t result;
 	size_t off = 0, bytes_read;
 	const size_t page_size = mm_get_page_size();
@@ -40,7 +43,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 		return result;
 
 	Elf64_Ehdr ehdr;
-	if (KM_FAILED(result = fs_read(file_fp, &ehdr, sizeof(ehdr), off, &bytes_read))) {
+	if (KM_FAILED(result = fs_read(&dispatch_context, file_fp, &ehdr, sizeof(ehdr), off, &bytes_read))) {
 		// TODO: free allocated resources here.
 		return result;
 	}
@@ -73,7 +76,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	for (Elf64_Half i = 0; i < phdr_num; ++i) {
 		// Current program header.
 		Elf64_Phdr ph;
-		if (KM_FAILED(result = fs_read(file_fp, &ph, sizeof(ph), ehdr.e_phoff + ehdr.e_phentsize * i, &bytes_read))) {
+		if (KM_FAILED(result = fs_read(&dispatch_context, file_fp, &ph, sizeof(ph), ehdr.e_phoff + ehdr.e_phentsize * i, &bytes_read))) {
 			// TODO: free allocated resources here.
 			return result;
 		}
@@ -142,6 +145,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 					memset((void *)tmp_pgvaddr, 0, page_size);
 					if (j < ph.p_filesz) {
 						if (KM_FAILED(result = fs_read(
+										  &dispatch_context,
 										  file_fp,
 										  tmp_pgvaddr,
 										  PBOS_MIN(ph.p_filesz - j, page_size),
@@ -174,13 +178,16 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 km_result_t ki_elf_load_mod(ps_pcb_t *proc, fs_fcb_t *file_fp) {}
 
 km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
+	io_dispatch_context_t dispatch_context;
+	io_init_dispatch_context(&dispatch_context);
+
 	mm_context_t *mm_context = mm_get_cur_context();
 	km_result_t result;
 	size_t off = 0, bytes_read;
 	const size_t page_size = mm_get_page_size();
 
 	Elf64_Ehdr ehdr;
-	if (KM_FAILED(result = fs_read(file_fp, &ehdr, sizeof(ehdr), off, &bytes_read))) {
+	if (KM_FAILED(result = fs_read(&dispatch_context, file_fp, &ehdr, sizeof(ehdr), off, &bytes_read))) {
 		// TODO: free allocated resources here.
 		return result;
 	}
@@ -215,7 +222,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 
 	for (Elf64_Half i = 0; i < phdr_num; ++i) {
 		// Current program header.
-		if (KM_FAILED(result = fs_read(file_fp, &loaded_phdrs.at(i), sizeof(Elf64_Phdr), ehdr.e_phoff + ehdr.e_phentsize * i, &bytes_read))) {
+		if (KM_FAILED(result = fs_read(&dispatch_context, file_fp, &loaded_phdrs.at(i), sizeof(Elf64_Phdr), ehdr.e_phoff + ehdr.e_phentsize * i, &bytes_read))) {
 			return result;
 		}
 	}
@@ -237,7 +244,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 				if (!dyn_entries.resize(kfxx::ceil_align_to(i.p_filesz, alignof(Elf64_Dyn)))) {
 					return KM_RESULT_NO_MEM;
 				}
-				if (KM_FAILED(result = fs_read(file_fp, dyn_entries.data(), i.p_filesz, i.p_offset, &bytes_read))) {
+				if (KM_FAILED(result = fs_read(&dispatch_context, file_fp, dyn_entries.data(), i.p_filesz, i.p_offset, &bytes_read))) {
 					return result;
 				}
 				break;
@@ -291,7 +298,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 				pgaccess |= MM_PAGE_EXEC;
 
 			memset(split_point, 0, phdr.p_memsz);
-			if (KM_FAILED(result = fs_read(file_fp, split_point, phdr.p_filesz, phdr.p_offset, &bytes_read))) {
+			if (KM_FAILED(result = fs_read(&dispatch_context, file_fp, split_point, phdr.p_filesz, phdr.p_offset, &bytes_read))) {
 				return result;
 			}
 
@@ -422,7 +429,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 		return KM_RESULT_NO_MEM;
 
 	for (Elf64_Half i = 0; i < shdr_num; ++i) {
-		if (KM_FAILED(result = fs_read(file_fp, &loaded_shdrs.at(i), sizeof(Elf64_Shdr), ehdr.e_shoff + ehdr.e_shentsize * i, &bytes_read))) {
+		if (KM_FAILED(result = fs_read(&dispatch_context, file_fp, &loaded_shdrs.at(i), sizeof(Elf64_Shdr), ehdr.e_shoff + ehdr.e_shentsize * i, &bytes_read))) {
 			return result;
 		}
 	}

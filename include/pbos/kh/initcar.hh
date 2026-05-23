@@ -23,14 +23,14 @@ extern fs_fnode_t *kh_initcar_first_file, *kh_initcar_last_file;
 km_result_t kh_initcar_subnode(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
 void kh_initcar_offload(fs_fnode_t *file);
 
-km_result_t kh_initcar_create_file(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
-km_result_t kh_initcar_create_dir(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+km_result_t kh_initcar_create_file(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+km_result_t kh_initcar_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
 
 km_result_t kh_initcar_open(fs_fnode_t *handle, fs_fcb_t **fcb_out);
 void kh_initcar_close(fs_fcb_t *fcb);
 
-km_result_t kh_initcar_read(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
-km_result_t kh_initcar_write(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
+km_result_t kh_initcar_read(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
+km_result_t kh_initcar_write(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
 
 km_result_t kh_initcar_size(fs_fcb_t *fcb, size_t *size_out);
 
