@@ -1,6 +1,6 @@
-.global hn_load_user_context
+.global hali_load_user_context
 
-hn_load_user_context:
+hali_load_user_context:
 	// Eliminate extraneous return address
 	popq %rax
 
@@ -39,9 +39,9 @@ hn_load_user_context:
 
 	iretq
 
-.global hn_load_kernel_context
+.global hali_load_kernel_context
 
-hn_load_kernel_context:
+hali_load_kernel_context:
 	// Eliminate extraneous return address
 	popq %rax
 

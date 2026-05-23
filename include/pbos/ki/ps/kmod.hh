@@ -15,6 +15,8 @@ typedef struct _ps_kmod_section_t : public kfxx::rbtree_t<void *>::node_t {
 
 typedef struct _ps_kmod_t {
 	ps_kmod_t *prev = nullptr, *next = nullptr;
+	char *name = nullptr;
+	size_t name_len = 0;
 	ps_kmod_init_fn_t init_fn = nullptr;
 	ps_kmod_deinit_fn_t deinit_fn = nullptr;
 	kfxx::rbtree_t<void *> registered_sections;
@@ -27,6 +29,9 @@ typedef struct _ps_kmod_t {
 
 extern ps_kmod_t *ki_ps_kmod_list;
 
+PBOS_NODISCARD PBOS_API km_result_t ki_ps_register_kmod(ps_kmod_t *kmod);
+PBOS_NODISCARD PBOS_API void ki_ps_unregister_kmod(ps_kmod_t *kmod);
+
 km_result_t ki_ps_alloc_kmod_section(void *vaddr, size_t size, ps_kmod_t *kmod, ps_kmod_section_t **section_out);
 void ki_ps_destroy_kmod_section(ps_kmod_section_t *section);
 
@@ -38,7 +43,7 @@ typedef struct _ki_kernel_symbol_t : public kfxx::rbtree_t<void *>::node_t {
 
 extern kfxx::rbtree_t<void*> ki_registered_kernel_symbol_query_tree;
 
-km_result_t ki_do_register_kernel_symbol(const char *name, size_t name_len, void *addr, size_t len, ki_kernel_symbol_t **symbol_out);
+PBOS_NODISCARD km_result_t ki_do_register_kernel_symbol(const char *name, size_t name_len, void *addr, size_t len, ki_kernel_symbol_t **symbol_out);
 void ki_destroy_kernel_symbol(ki_kernel_symbol_t *sym);
 
 PBOS_EXTERN_C_END

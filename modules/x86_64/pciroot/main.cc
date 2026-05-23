@@ -20,10 +20,9 @@ const dm_bus_ops_t pci_bus_ops = {
 	.unregister_device = pci_unregister_device
 };
 
-PBOS_KMOD_API km_result_t module_init();
-PBOS_KMOD_API void module_deinit();
+PBOS_USED PBOS_KMOD_API char PBOS_MODULE_NAME[] = "pciroot";
 
-km_result_t module_init() {
+PBOS_USED PBOS_KMOD_API km_result_t pbos_module_init() {
 	kxi_call_ctors();
 
 	pciroot_segment_group_id_to_domain_map = kfxx::map_t<uint16_t, pciroot_domain_registry_ptr>(kfxx::kernel_allocator());
@@ -33,7 +32,7 @@ km_result_t module_init() {
 	return KM_RESULT_OK;
 }
 
-void module_deinit() {
+PBOS_USED PBOS_KMOD_API void pbos_module_deinit() {
 	kxi_call_dtors();
 }
 

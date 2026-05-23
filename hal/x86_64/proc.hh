@@ -12,6 +12,41 @@
 
 PBOS_EXTERN_C_BEGIN
 
+typedef struct _hali_gdb_context_t {
+	uint64_t rax;
+    uint64_t rbx;
+    uint64_t rcx;
+    uint64_t rdx;
+    uint64_t rsi;
+    uint64_t rdi;
+    uint64_t rbp;
+    uint64_t rsp;
+    uint64_t r8;
+    uint64_t r9;
+    uint64_t r10;
+    uint64_t r11;
+    uint64_t r12;
+    uint64_t r13;
+    uint64_t r14;
+    uint64_t r15;
+    uint64_t rip;
+
+    uint64_t rflags;
+
+    uint32_t cs;
+    uint32_t ss;
+    uint32_t ds;
+    uint32_t es;
+    uint32_t fs;
+    uint32_t gs;
+
+    uint64_t cr0;
+    uint64_t cr2;
+    uint64_t cr3;
+    uint64_t cr4;
+    uint64_t cr8;
+} hali_gdb_registers_t;
+
 typedef struct _kh_user_context_t {
 	uint64_t r15;
 	uint64_t r14;
@@ -36,9 +71,9 @@ typedef struct _kh_user_context_t {
 	uint16_t cs, ds, ss, es, gs;  // Selectors
 } kh_user_context_t;
 
-extern void *hn_lapic_pbase;
-extern uint32_t *hn_lapic_vbase;
-extern uint32_t hn_sched_interval;
+extern void *hali_lapic_pbase;
+extern uint32_t *hali_lapic_vbase;
+extern uint32_t hali_sched_interval;
 
 // #define PS_TCB_SCHEDULED 0x01
 

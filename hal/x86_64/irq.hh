@@ -32,8 +32,8 @@ PBOS_NORETURN void isr_hverr();			// 0x1c Hypervisor Injection Exception
 PBOS_NORETURN void isr_vmmerr();		// 0x1d VMM Communication Exception
 PBOS_NORETURN void isr_securityerr();	// 0x1e Security Exception
 
-PBOS_NORETURN void hn_isr_timer();	 // IRQ0
-void hn_isr_timer_impl(
+PBOS_NORETURN void hali_isr_timer();	 // IRQ0
+void hali_isr_timer_impl(
 	const uint64_t rdi,
 	const uint64_t rsi,
 	const uint64_t rdx,
@@ -59,13 +59,13 @@ void hn_isr_timer_impl(
 
 PBOS_NORETURN void isr_stub();
 
-void hn_set_sched_timer();
+void hali_set_sched_timer();
 
-extern arch_gate_t hn_kidt[512];
+extern arch_gate_t hali_kidt[512];
 
-void hn_calibrate_apic();
+void hali_calibrate_apic();
 
-void hn_set_isr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
+void hali_set_isr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
 
 PBOS_EXTERN_C_END
 

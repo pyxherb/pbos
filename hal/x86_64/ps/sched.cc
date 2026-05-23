@@ -5,7 +5,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-void hn_isr_timer_impl(
+void hali_isr_timer_impl(
 	const uint64_t rdi,
 	const uint64_t rsi,
 	const uint64_t rdx,
@@ -72,7 +72,7 @@ void hn_isr_timer_impl(
 
 	kd_assert(next_thread);
 
-	hn_tss_storage_ptr[cur_cpuid].rsp0 = next_thread->context->rsp0;
+	hali_tss_storage_ptr[cur_cpuid].rsp0 = next_thread->context->rsp0;
 
 	if (next_thread->parent != cur_proc) {
 		ki_switch_to_user_process(next_thread->parent);
@@ -86,9 +86,9 @@ void hn_isr_timer_impl(
 
 	next_thread->scheduled = true;
 
-	hn_set_sched_timer();
+	hali_set_sched_timer();
 
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
+	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
 	if (((uintptr_t)next_thread->context->rip) < KSPACE_VBASE) {
 		/*dbg_printf(

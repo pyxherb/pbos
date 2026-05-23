@@ -8,8 +8,8 @@
 
 PBOS_EXTERN_C_BEGIN
 
-mm_context_t hn_kernel_mm_context;
-mm_context_t *mm_kernel_context = &hn_kernel_mm_context;
+mm_context_t hali_kernel_mm_context;
+mm_context_t *mm_kernel_context = &hali_kernel_mm_context;
 
 void kh_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src) {
 	if (dest == src)

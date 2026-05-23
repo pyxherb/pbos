@@ -24,14 +24,10 @@ km_result_t pciroot_scan_acpi_mcfg_table() {
 				if (pciroot_domain_tree.find(entry.pci_segment_group_num))
 					continue;
 
-				kd_println(PCIROOT_COMPONENT_NAME, "a");
-
 				pciroot_domain_registry_ptr registry = pciroot_domain_registry_t::alloc();
 
 				if (!registry)
 					return KM_RESULT_NO_MEM;
-
-				kd_println(PCIROOT_COMPONENT_NAME, "b");
 
 				// Add the registry to the segment group ID map.
 				registry->segment_group_id = entry.pci_segment_group_num;
@@ -40,8 +36,6 @@ km_result_t pciroot_scan_acpi_mcfg_table() {
 					return KM_RESULT_NO_MEM;
 				}
 
-				kd_println(PCIROOT_COMPONENT_NAME, "c");
-
 				kfxx::scope_guard remove_from_segment_group_guard([registry]() noexcept {
 					pciroot_segment_group_id_to_domain_map->remove(registry->segment_group_id);
 				});
@@ -49,8 +43,6 @@ km_result_t pciroot_scan_acpi_mcfg_table() {
 				// Allocate the domain ID and add it into the domain ID tree.
 				if (!pciroot_alloc_domain_id_and_insert(registry.get()))
 					return KM_RESULT_NO_SLOT;
-
-				kd_println(PCIROOT_COMPONENT_NAME, "d");
 
 				remove_from_segment_group_guard.release();
 

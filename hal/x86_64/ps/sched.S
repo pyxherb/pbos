@@ -1,6 +1,6 @@
-.global hn_isr_timer
+.global hali_isr_timer
 .align 8
-hn_isr_timer:
+hali_isr_timer:
 	// User mode: SS -> RSP -> RFLAGS -> CS -> RIP
 	// xchg %bx, %bx
 
@@ -30,4 +30,4 @@ hn_isr_timer:
 
 	// xchg %bx, %bx
 
-	call hn_isr_timer_impl
+	call hali_isr_timer_impl

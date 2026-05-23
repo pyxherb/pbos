@@ -481,6 +481,10 @@ namespace kfxx {
 			return _size;
 		}
 
+		PBOS_FORCEINLINE size_t empty() const {
+			return !_size;
+		}
+
 		PBOS_FORCEINLINE Comparator &comparator() {
 			return _comparator;
 		}

@@ -456,47 +456,88 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 		}
 		return { nullptr, 0 };
 	};
+	auto find_obj = [vaddr_base](
+						Elf64_Sym *symtab, const char *strtab,
+						size_t num_syms, const char *name) -> std::pair<void *, uint64_t> {
+		for (unsigned i = 0; i < num_syms; i++) {
+			if (symtab[i].st_name != 0 &&
+				strcmp(strtab + symtab[i].st_name, name) == 0) {
+				if (ELF64_ST_TYPE(symtab[i].st_info) == STT_OBJECT)
+					return { (void *)(vaddr_base + symtab[i].st_value), (uint64_t)symtab[i].st_size };
+			}
+		}
+		return { nullptr, 0 };
+	};
 
 	km_result_t (*module_init)();
 	void (*module_deinit)();
-	uint64_t module_init_len = 0, module_deinit_len = 0;
+	const char *module_name;
+	uint64_t module_init_len = 0, module_deinit_len = 0, module_name_len = 0;
 	{
-		auto tmp = find_func(symtab, strtab, num_syms, "module_init");
+		auto tmp = find_func(symtab, strtab, num_syms, "pbos_module_init");
 		module_init = (km_result_t(*)())tmp.first;
 		module_init_len = tmp.second;
 	}
 	{
-		auto tmp = find_func(symtab, strtab, num_syms, "module_deinit");
+		auto tmp = find_func(symtab, strtab, num_syms, "pbos_module_deinit");
 		module_deinit = (void (*)())tmp.first;
 		module_deinit_len = tmp.second;
 	}
+	{
+		auto tmp = find_obj(symtab, strtab, num_syms, "PBOS_MODULE_NAME");
+		module_name = (const char *)tmp.first;
+		module_name_len = tmp.second;
+	}
 
 	if (!module_init) {
-		kd_println(__func__, "module_init not found in the module, unloading...");
+		kd_println(__func__, "pbos_module_init not found in the module, unloading...");
 		return KM_RESULT_MALFORMED;
 	}
 
 	if (!module_deinit) {
-		kd_println(__func__, "module_deinit not found in the module, unloading...");
+		kd_println(__func__, "pbos_module_deinit not found in the module, unloading...");
 		return KM_RESULT_MALFORMED;
 	}
 
-	if (!check_if_addr_is_inside_valid_region((void *)module_init))
+	if (!module_name) {
+		kd_println(__func__, "PBOS_MODULE_NAME not found in the module, unloading...");
+		return KM_RESULT_MALFORMED;
+	}
+
+	for (size_t i = 0; i < module_init_len; i += page_size) {
+		if (!check_if_addr_is_inside_valid_region(((char *)module_init + i)))
+			return KM_RESULT_MALFORMED;
+	}
+
+	for (size_t i = 0; i < module_deinit_len; i += page_size) {
+		if (!check_if_addr_is_inside_valid_region(((char *)module_deinit + i)))
+			return KM_RESULT_MALFORMED;
+	}
+
+	for (size_t i = 0; i < module_name_len; i += page_size) {
+		if (!check_if_addr_is_inside_valid_region((module_name + i)))
+			return KM_RESULT_MALFORMED;
+	}
+
+	if (!module_name_len)
 		return KM_RESULT_MALFORMED;
 
-	if (!check_if_addr_is_inside_valid_region(((char *)module_init + module_init_len)))
-		return KM_RESULT_MALFORMED;
+	if (module_name[module_name_len - 1] == '\0') {
+		if (!(module_name_len = strlen(module_name)))
+			return KM_RESULT_MALFORMED;
+	}
 
-	if (!check_if_addr_is_inside_valid_region((void *)module_deinit))
-		return KM_RESULT_MALFORMED;
-
-	if (!check_if_addr_is_inside_valid_region(((char *)module_deinit + module_init_len)))
-		return KM_RESULT_MALFORMED;
+	KM_RETURN_IF_FAILED(ps_set_kmod_name(kmod, module_name, module_name_len));
 
 	ps_set_kmod_init_fn(kmod, module_init);
 	ps_set_kmod_deinit_fn(kmod, module_deinit);
 
 	KM_RETURN_IF_FAILED(ps_add_section_to_kmod(kmod, vaddr_base, max_size, nullptr));
+
+	{
+		size_t name_len;
+		kd_println(__func__, "Loaded kernel module '%s' at %p-%p", ps_get_kmod_name(kmod, &name_len), vaddr_base, vaddr_limit);
+	}
 
 	unmap_guard.release();
 

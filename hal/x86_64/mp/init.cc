@@ -11,15 +11,15 @@
 
 PBOS_EXTERN_C_BEGIN
 
-uint32_t hn_sched_interval;
+uint32_t hali_sched_interval;
 
-arch_tss_t *hn_tss_storage_ptr;
+arch_tss_t *hali_tss_storage_ptr;
 
-hn_tmpmap_info_t *hn_tmpmap_storage_ptr;
+hali_tmpmap_info_t *hali_tmpmap_storage_ptr;
 
-hn_kgdt_t *hn_gdt_storage_ptr;
+hali_kgdt_t *hali_gdt_storage_ptr;
 
-static void hn_mask_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
+static void hali_mask_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
 	uint8_t pic1_mask = arch_in8(ARCH_PIC1_IO_DATA), pic2_mask = arch_in8(ARCH_PIC2_IO_DATA);
 
 	// Initialize both PICs.
@@ -109,25 +109,25 @@ void kh_mp_init_topology() {
 }
 
 void kh_mp_alloc_platform_resources() {
-	hn_tss_storage_ptr = (arch_tss_t *)mm_kalloc(mp_num_total_cpu * sizeof(arch_tss_t), alignof(std::max_align_t));
-	if (!hn_tss_storage_ptr) {
+	hali_tss_storage_ptr = (arch_tss_t *)mm_kalloc(mp_num_total_cpu * sizeof(arch_tss_t), alignof(std::max_align_t));
+	if (!hali_tss_storage_ptr) {
 		km_panic("Unable to allocate memory for TSS storage for processors");
 	}
-	memset(hn_tss_storage_ptr, 0, mp_num_total_cpu * sizeof(arch_tss_t));
+	memset(hali_tss_storage_ptr, 0, mp_num_total_cpu * sizeof(arch_tss_t));
 
-	hn_gdt_storage_ptr = (hn_kgdt_t *)mm_kalloc(mp_num_total_cpu * sizeof(hn_kgdt_t), alignof(std::max_align_t));
-	if (!hn_gdt_storage_ptr) {
+	hali_gdt_storage_ptr = (hali_kgdt_t *)mm_kalloc(mp_num_total_cpu * sizeof(hali_kgdt_t), alignof(std::max_align_t));
+	if (!hali_gdt_storage_ptr) {
 		km_panic("Unable to allocate memory for TSS storage for processors");
 	}
 	for (size_t i = 0; i < mp_num_total_cpu; ++i) {
-		memcpy(&hn_gdt_storage_ptr[i], &hn_init_kgdt, sizeof(hn_kgdt_t));
-		hn_gdt_storage_ptr[i].tss_desc1 =
-			TSSDESC_LOW(((uint32_t)(uintptr_t)(hn_tss_storage_ptr + i)), sizeof(arch_tss_t), GDT_AB_P | GDT_AB_DPL(0) | GDT_SYSTYPE_TSS32, 0);
-		hn_gdt_storage_ptr[i].tss_desc2 = TSSDESC_HIGH(((uintptr_t)(hn_tss_storage_ptr + i)));
+		memcpy(&hali_gdt_storage_ptr[i], &hali_init_kgdt, sizeof(hali_kgdt_t));
+		hali_gdt_storage_ptr[i].tss_desc1 =
+			TSSDESC_LOW(((uint32_t)(uintptr_t)(hali_tss_storage_ptr + i)), sizeof(arch_tss_t), GDT_AB_P | GDT_AB_DPL(0) | GDT_SYSTYPE_TSS32, 0);
+		hali_gdt_storage_ptr[i].tss_desc2 = TSSDESC_HIGH(((uintptr_t)(hali_tss_storage_ptr + i)));
 	}
 
-	hn_tmpmap_info_t *tmp_hn_tmpmap_storage_ptr = (hn_tmpmap_info_t *)mm_kalloc(mp_num_total_cpu * sizeof(hn_tmpmap_info_t), alignof(std::max_align_t));
-	if (!tmp_hn_tmpmap_storage_ptr) {
+	hali_tmpmap_info_t *tmp_hali_tmpmap_storage_ptr = (hali_tmpmap_info_t *)mm_kalloc(mp_num_total_cpu * sizeof(hali_tmpmap_info_t), alignof(std::max_align_t));
+	if (!tmp_hali_tmpmap_storage_ptr) {
 		km_panic("Unable to allocate memory for TMPMAP information storage for processors");
 	}
 
@@ -137,43 +137,43 @@ void kh_mp_alloc_platform_resources() {
 		if (!vaddr)
 			km_panic("Unable to allocate TMPMAP space for TMPMAP information storage for processors");
 
-		tmp_hn_tmpmap_storage_ptr[i].tmpmap_base = vaddr;
+		tmp_hali_tmpmap_storage_ptr[i].tmpmap_base = vaddr;
 		kd_dbgcheck(
-			(tmp_hn_tmpmap_storage_ptr[i].tmpmap_pgtab_base = (arch_pte_t*)hn_get_pgtab_paddr(mm_get_cur_context(), vaddr, nullptr)),
+			(tmp_hali_tmpmap_storage_ptr[i].tmpmap_pgtab_base = (arch_pte_t*)hali_get_pgtab_paddr(mm_get_cur_context(), vaddr, nullptr)),
 			"The TMPMAP page table address should not be invalid after mapped");
 	}
 
-	hn_tmpmap_storage_ptr = tmp_hn_tmpmap_storage_ptr;
+	hali_tmpmap_storage_ptr = tmp_hali_tmpmap_storage_ptr;
 }
 
-void hn_calibrate_apic() {
+void hali_calibrate_apic() {
 	// Relocate and remap APIC.
-	if (!(hn_lapic_vbase = (uint32_t *)mm_kvmalloc(mm_kernel_context, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
+	if (!(hali_lapic_vbase = (uint32_t *)mm_kvmalloc(mm_kernel_context, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
 		km_panic("Unable to allocate virtual LAPIC page");
 
 	arch_set_apic_base((void*)ARCH_DEFAULT_APIC_PBASE, ARCH_APIC_BASE_MSR_BSP | ARCH_APIC_BASE_MSR_ENABLE);
 
-	if (KM_FAILED(mm_iommap(mm_kernel_context, hn_lapic_vbase, (void*)ARCH_DEFAULT_APIC_PBASE, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_NOCACHE, 0))) {
+	if (KM_FAILED(mm_iommap(mm_kernel_context, hali_lapic_vbase, (void*)ARCH_DEFAULT_APIC_PBASE, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_NOCACHE, 0))) {
 		km_panic("Unable to mapping LAPIC page for the main CPU");
 	}
 
-	uint8_t lapic_intvec = arch_read_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_SPURIOUS_INT_VEC) & 0xff;
+	uint8_t lapic_intvec = arch_read_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_SPURIOUS_INT_VEC) & 0xff;
 
 	arch_cli();
 
 	// Enable LAPIC
 	arch_write_lapic(
-		hn_lapic_vbase,
+		hali_lapic_vbase,
 		ARCH_LAPIC_REG_SPURIOUS_INT_VEC,
 		lapic_intvec | ARCH_LAPIC_SPURIOUS_INT_VEC_REG_ENABLE);
 
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_DIVIDE_CONFIG, ARCH_LAPIC_DIVIDE_CONFIG_16);
+	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_DIVIDE_CONFIG, ARCH_LAPIC_DIVIDE_CONFIG_16);
 
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_LVT_TIMER, ARCH_LAPIC_LVT_TIMER_REG_ONESHOT);
+	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_LVT_TIMER, ARCH_LAPIC_LVT_TIMER_REG_ONESHOT);
 
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
+	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_INITIAL_COUNT, 0xffffffff);
+	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_INITIAL_COUNT, 0xffffffff);
 
 	// Delay for 1000 microseconds to calibrate the APIC.
 	arch_out8(0x43, 0x30);
@@ -191,26 +191,26 @@ void hn_calibrate_apic() {
 			break;
 	}
 
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_LVT_TIMER, ARCH_LAPIC_LVT_TIMER_REG_MASKED);
-	uint32_t cur_timer = arch_read_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_CURRENT_COUNT);
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_INITIAL_COUNT, 0);
-	hn_sched_interval = (0xffffffff - cur_timer) / 10;
-	// hn_sched_interval = 1234;
+	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_LVT_TIMER, ARCH_LAPIC_LVT_TIMER_REG_MASKED);
+	uint32_t cur_timer = arch_read_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_CURRENT_COUNT);
+	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_INITIAL_COUNT, 0);
+	hali_sched_interval = (0xffffffff - cur_timer) / 10;
+	// hali_sched_interval = 1234;
 
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
+	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
 	arch_sti();
 }
 
 void mp_main_cpu_init() {
-	arch_lgdt(&hn_gdt_storage_ptr[0], sizeof(hn_kgdt_t) / sizeof(arch_gdt_desc_t));
+	arch_lgdt(&hali_gdt_storage_ptr[0], sizeof(hali_kgdt_t) / sizeof(arch_gdt_desc_t));
 	arch_ltr(SELECTOR_TSS);
 
 	arch_loades(SELECTOR_KDATA);
 
-	hn_calibrate_apic();
+	hali_calibrate_apic();
 
-	klog_printf("Timer interval ticks: %u\n", hn_sched_interval);
+	klog_printf("Timer interval ticks: %u\n", hali_sched_interval);
 }
 
 PBOS_EXTERN_C_END

@@ -10,17 +10,17 @@
 
 PBOS_EXTERN_C_BEGIN
 
-#define HN_MAX_PGTAB_LEVEL 4
+#define HALI_MAX_PGTAB_LEVEL 4
 
-#define HN_VPM_LEVEL_MAX (HN_MAX_PGTAB_LEVEL - 1)
+#define HALI_VPM_LEVEL_MAX (HALI_MAX_PGTAB_LEVEL - 1)
 
 extern void *mm_kernel_bottom_mapping_base_vaddr;
 extern char mm_kernel_initial_stack[1024 * 48];
 
 typedef struct _mm_context_t mm_context_t;
 
-typedef struct _hn_tmpmap_info_t hn_tmpmap_info_t;
-extern hn_tmpmap_info_t *hn_tmpmap_storage_ptr;
+typedef struct _hali_tmpmap_info_t hali_tmpmap_info_t;
+extern hali_tmpmap_info_t *hali_tmpmap_storage_ptr;
 
 PBOS_NODISCARD void *mm_vmalloc_early(
 	mm_context_t *context,
@@ -41,7 +41,7 @@ PBOS_NODISCARD void *mm_kvmalloc_early(mm_context_t *context, size_t size, mm_pg
 /// @param pte_paddr Reserved page table physical address for mapping if the page table does not exist.
 /// @return Bit mask of reserved pages used state. 0b001 for pte_paddr used, 0b010 for pde_paddr used, 0b100 for pdpte_padr used.
 ///
-PBOS_NODISCARD uint8_t hn_mm_mmap_early(
+PBOS_NODISCARD uint8_t hali_mm_mmap_early(
 	mm_context_t *context,
 	void *vaddr,
 	void *paddr,
@@ -50,10 +50,10 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 	void *pde_paddr,
 	void *pte_paddr);
 
-typedef struct _hn_tmpmap_info_t {
+typedef struct _hali_tmpmap_info_t {
 	void *tmpmap_base;
 	arch_pte_t *tmpmap_pgtab_base;
-} hn_tmpmap_info_t;
+} hali_tmpmap_info_t;
 
 ///
 /// @brief Mapped kernel page table entry table.
@@ -81,7 +81,7 @@ extern char mm_kernel_init_tmpmap_area[KINITTMPMAP_SIZE];
 #define SELECTOR_UDATA SELECTOR(3, 0, 4)
 #define SELECTOR_TSS SELECTOR(0, 0, 5)
 
-typedef struct PBOS_PACKED _hn_kgdt_t {
+typedef struct PBOS_PACKED _hali_kgdt_t {
 	arch_gdt_desc_t null_desc;
 	arch_gdt_desc_t kcode_desc;
 	arch_gdt_desc_t kdata_desc;
@@ -89,12 +89,12 @@ typedef struct PBOS_PACKED _hn_kgdt_t {
 	arch_gdt_desc_t udata_desc;
 	arch_gdt_desc_t tss_desc1;
 	arch_gdt_desc_t tss_desc2;
-} hn_kgdt_t;
+} hali_kgdt_t;
 
-extern hn_kgdt_t hn_init_kgdt;
+extern hali_kgdt_t hali_init_kgdt;
 
-extern arch_tss_t *hn_tss_storage_ptr;
-extern hn_kgdt_t *hn_gdt_storage_ptr;
+extern arch_tss_t *hali_tss_storage_ptr;
+extern hali_kgdt_t *hali_gdt_storage_ptr;
 
 PBOS_EXTERN_C_END
 

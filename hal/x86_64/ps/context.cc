@@ -16,7 +16,7 @@ typedef struct _ki_ctxtsw_tmp_t {
 	uint64_t ss;
 } ki_ctxtsw_tmp_t;
 
-PBOS_NORETURN void hn_load_user_context(
+PBOS_NORETURN void hali_load_user_context(
 	uint64_t rdi,
 	uint64_t rsi,
 	uint64_t padding0,
@@ -48,7 +48,7 @@ PBOS_NORETURN void hn_load_user_context(
 	uint64_t rsp,
 	uint64_t ss);
 
-PBOS_NORETURN void hn_load_kernel_context(
+PBOS_NORETURN void hali_load_kernel_context(
 	uint64_t rdi,
 	uint64_t rsi,
 	uint64_t padding0,
@@ -89,7 +89,7 @@ void ps_destroy_context(kh_user_context_t *context) {
 }
 
 PBOS_NORETURN void ps_load_user_context(const kh_user_context_t *ctxt) {
-	hn_load_user_context(
+	hali_load_user_context(
 		ctxt->rdi,
 		ctxt->rsi,
 		0,
@@ -130,7 +130,7 @@ PBOS_NORETURN void ps_load_kernel_context(const kh_user_context_t *ctxt) {
 
 	kd_assert(ctxt->cs == SELECTOR_KCODE);
 
-	hn_load_kernel_context(
+	hali_load_kernel_context(
 		ctxt->rdi,
 		ctxt->rsi,
 		0,

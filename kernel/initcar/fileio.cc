@@ -23,7 +23,7 @@ km_result_t kh_initcar_create_dir(fs_fnode_t *parent, const char *name, size_t n
 km_result_t kh_initcar_open(fs_fnode_t *file, fs_fcb_t **fcb_out) {
 	km_result_t result;
 
-	return ki_alloc_fcb(file, fcb_out);
+	return fs_create_fcb(file, fcb_out);
 }
 
 void kh_initcar_close(fs_fcb_t *fcb) {

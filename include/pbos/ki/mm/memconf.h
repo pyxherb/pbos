@@ -11,11 +11,11 @@
 
 PBOS_EXTERN_C_BEGIN
 
-typedef uintptr_t (*hn_pglevel_addr_rounddowner_t)(uintptr_t addr);
+typedef uintptr_t (*hali_pglevel_addr_rounddowner_t)(uintptr_t addr);
 
 typedef struct _ki_paging_config_t {
 	size_t pgtab_level;
-	hn_pglevel_addr_rounddowner_t *addr_rounddowners;
+	hali_pglevel_addr_rounddowner_t *addr_rounddowners;
 	size_t *page_level_size;
 } ki_paging_config_t;
 

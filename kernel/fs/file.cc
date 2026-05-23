@@ -1,10 +1,10 @@
+#include <pbos/kf/atomic.h>
 #include <pbos/kf/hash.h>
 #include <pbos/kf/string.h>
 #include <pbos/mm/mm.h>
 #include <pbos/ki/fs/file.hh>
 #include <pbos/ki/fs/fs.hh>
 #include <pbos/ki/km/symbol.hh>
-#include <pbos/kf/atomic.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -195,7 +195,7 @@ PBOS_API void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata) {
 	file->exdata = exdata;
 }
 
-PBOS_NODISCARD PBOS_API const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out) {
+PBOS_NODISCARD PBOS_API const char *fs_get_fnode_name(fs_fnode_t *file, size_t *len_out) {
 	*len_out = file->filename_len;
 	return file->filename;
 }
@@ -226,7 +226,7 @@ PBOS_NODISCARD km_result_t ki_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t **fcb_out)
 
 void ki_do_unname_fnode(fs_fnode_t *file) {
 	if (file->filename) {
-		ki_fs_filename_allocator.release(file->filename, file->filename_len, alignof(char));
+		ki_fs_filename_allocator.release(file->filename, file->filename_len + 1, alignof(char));
 		file->filename = nullptr;
 		file->filename_len = 0;
 	}
@@ -238,15 +238,16 @@ km_result_t ki_do_rename_fnode(fs_fnode_t *file, const char *name, size_t name_l
 	if (file->filename)
 		new_name = (char *)ki_fs_filename_allocator.realloc(
 			file->filename,
-			file->filename_len, alignof(char),
-			name_len, alignof(char));
+			file->filename_len + 1, alignof(char),
+			name_len + 1, alignof(char));
 	else
 		new_name = (char *)ki_fs_filename_allocator.alloc(
-			name_len,
+			name_len + 1,
 			alignof(char));
 	if (!new_name)
 		return KM_RESULT_NO_MEM;
 	memcpy(new_name, name, name_len);
+	new_name[name_len] = '\0';
 	file->filename = new_name;
 	file->filename_len = name_len;
 	return KM_RESULT_OK;
@@ -271,6 +272,7 @@ PBOS_API km_result_t fs_create_dir(
 PBOS_NODISCARD PBOS_API km_result_t fs_create_fcb(
 	fs_fnode_t *file,
 	fs_fcb_t **fcb_out) {
+	return ki_alloc_fcb(file, fcb_out);
 }
 
 PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {

@@ -7,14 +7,14 @@
 
 PBOS_EXTERN_C_BEGIN
 
-PBOS_NODISCARD void *hn_tmpmap_early(void *paddr, size_t size, uint16_t mask);
-void hn_tmpunmap_early(void *vaddr, size_t size);
+PBOS_NODISCARD void *hali_tmpmap_early(void *paddr, size_t size, uint16_t mask);
+void hali_tmpunmap_early(void *vaddr, size_t size);
 
-PBOS_NODISCARD void *hn_tmpmap_post(void *paddr, size_t size, uint16_t mask);
+PBOS_NODISCARD void *hali_tmpmap_post(void *paddr, size_t size, uint16_t mask);
 
-void hn_tmpunmap_post(void *vaddr, size_t size);
+void hali_tmpunmap_post(void *vaddr, size_t size);
 
-void *hn_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out);
+void *hali_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out);
 
 PBOS_EXTERN_C_END
 

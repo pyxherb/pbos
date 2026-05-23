@@ -28,7 +28,7 @@ namespace kfxx {
 
 		PBOS_FORCEINLINE set_impl(allocator_t *allocator, Comparator &&comparator = {}) noexcept : _allocator(allocator), _tree(std::move(comparator)) {
 		}
-		PBOS_FORCEINLINE set_impl(ThisType &&rhs) noexcept : _tree(std::move(rhs._tree)) {
+		PBOS_FORCEINLINE set_impl(ThisType &&rhs) noexcept : _tree(std::move(rhs._tree)), _allocator(std::move(rhs._allocator)) {
 		}
 		PBOS_FORCEINLINE ~set_impl() {
 		}

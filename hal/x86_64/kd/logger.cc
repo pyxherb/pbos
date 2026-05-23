@@ -29,7 +29,7 @@ bool qemu_console_logger_query_cap(uint32_t cap) {
 	return false;
 }
 
-kd_logger_t hn_qemu_logger = {
+kd_logger_t hali_qemu_logger = {
 	.print = qemu_console_logger_print,
 	.putchar = qemu_console_logger_putchar,
 	.deinit = qemu_console_logger_deinit,
@@ -37,7 +37,7 @@ kd_logger_t hn_qemu_logger = {
 };
 
 kd_logger_t *kd_default_logger() {
-	return &hn_qemu_logger;
+	return &hali_qemu_logger;
 }
 
 PBOS_EXTERN_C_END

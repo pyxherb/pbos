@@ -136,7 +136,7 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 
 	// stub
 	if (!ps_global_proc_set.size()) {
-		hn_tss_storage_ptr[ps_get_cur_cpuid()].rsp0 = tcb->context->rsp0;
+		hali_tss_storage_ptr[ps_get_cur_cpuid()].rsp0 = tcb->context->rsp0;
 	}
 
 	return KM_RESULT_OK;

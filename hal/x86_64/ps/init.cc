@@ -27,10 +27,10 @@ PBOS_NORETURN void kh_enter_sched_halt();
 PBOS_NORETURN void kh_enter_sched(ps_cpu_id_t cpuid) {
 	arch_loadfs(cpuid);
 
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_DIVIDE_CONFIG, ARCH_LAPIC_DIVIDE_CONFIG_16);
-	hn_set_sched_timer();
+	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_DIVIDE_CONFIG, ARCH_LAPIC_DIVIDE_CONFIG_16);
+	hali_set_sched_timer();
 
-	arch_write_lapic(hn_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
+	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
 	arch_sti();
 

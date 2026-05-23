@@ -18,7 +18,13 @@ bool pciroot_alloc_domain_id_and_insert(pciroot_domain_registry_t *registry) {
 	ps::mutex_guard g(domain_id_alloc_mutex.c_mutex());
 
 	if (pciroot_domain_tree.size() == UINT16_MAX)
-		return {};
+		return false;
+
+	if (pciroot_domain_tree.empty()) {
+		registry->rb_value = 0;
+		pciroot_domain_tree.insert_unwrap(registry);
+		return true;
+	}
 
 	auto end = pciroot_domain_tree.end_const();
 	auto it = pciroot_domain_tree.begin_const(), last_it = it;
@@ -26,10 +32,14 @@ bool pciroot_alloc_domain_id_and_insert(pciroot_domain_registry_t *registry) {
 		if ((*it) > (*last_it) + 1) {
 			registry->rb_value = (*last_it) + 1;
 			pciroot_domain_tree.insert_unwrap(registry);
+			return true;
 		}
+		last_it = it;
 	}
 
-	return (*last_it) + 1;
+	registry->rb_value = (*last_it) + 1;
+	pciroot_domain_tree.insert_unwrap(registry);
+	return true;
 }
 
 PBOS_EXTERN_C_END

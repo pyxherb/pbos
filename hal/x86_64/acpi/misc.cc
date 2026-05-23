@@ -6,7 +6,7 @@
 #include <pbos/ki/acpi/rsdt.hh>
 
 bool kh_acpi_is_available() {
-	return hn_limine_rsdp_request.response;
+	return hali_limine_rsdp_request.response;
 }
 
 bool kh_acpi_is_required() {

@@ -6,7 +6,7 @@ PBOS_EXTERN_C_BEGIN
 ki_pmad_t ki_initial_pmad_storage[KI_INITIAL_MM_AREA_STORAGE_NUM];
 kfxx::rbtree_t<void *> ki_pmad_tree;
 size_t ki_pmad_number;
-hn_madpool_t *ki_global_mad_pool_list = NULL;
+hali_madpool_t *ki_global_mad_pool_list = NULL;
 
 size_t kh_mad_pool_descs_off, kh_mad_pool_descs_num_per_page;
 
@@ -31,14 +31,14 @@ void mm_refpg(void *ptr) {
 	ki_set_page_used(ptr);
 }
 
-hn_mad_t *kh_get_mad(void *pgaddr) {
+hali_mad_t *kh_get_mad(void *pgaddr) {
 	ki_pmad_t *pmad = ki_get_pmad(pgaddr);
 	if (!pmad)
 		km_panic("No PMAD corresponds to physical address %p", pgaddr);
 
 	kfxx::rbtree_t<void *>::node_t *mad;
 	if ((mad = pmad->query_tree.find(pgaddr))) {
-		return static_cast<hn_mad_t *>(mad);
+		return static_cast<hali_mad_t *>(mad);
 	}
 
 	km_panic("Physical memory block not found: %p", pgaddr);
@@ -52,7 +52,7 @@ hn_mad_t *kh_get_mad(void *pgaddr) {
 ///
 void ki_set_page_used(void *pgaddr) {
 	ki_pmad_t *area = ki_get_pmad(pgaddr);
-	hn_mad_t *mad = kh_get_mad(pgaddr);
+	hali_mad_t *mad = kh_get_mad(pgaddr);
 
 	hal_lock_spinlock(&mad->spinlock);
 	kfxx::deferred unlocker([mad]() noexcept {
@@ -73,7 +73,7 @@ void ki_set_page_used(void *pgaddr) {
 
 void ki_set_page_free(void *addr) {
 	ki_pmad_t *area = ki_get_pmad(addr);
-	hn_mad_t *mad = kh_get_mad(addr);
+	hali_mad_t *mad = kh_get_mad(addr);
 
 	hal_lock_spinlock(&mad->spinlock);
 	kfxx::deferred unlocker([mad]() noexcept {

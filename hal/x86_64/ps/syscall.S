@@ -20,7 +20,7 @@ isr_syscall:
 
 	cld
 
-	call hn_pbcore_dispatcher
+	call hali_pbcore_dispatcher
 
 	movq %rax, %rdx
 

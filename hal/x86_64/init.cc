@@ -12,12 +12,12 @@
 PBOS_EXTERN_C_BEGIN
 
 void hal_init() {
-	if (LIMINE_BASE_REVISION_SUPPORTED(hn_limine_base_revision) == false) {
+	if (LIMINE_BASE_REVISION_SUPPORTED(hali_limine_base_revision) == false) {
 		// TODO: Panic
 		arch_hlt();
 	}
 
-	mm_kernel_bottom_mapping_base_vaddr = (void *)hn_limine_hhdm_request.response->offset;
+	mm_kernel_bottom_mapping_base_vaddr = (void *)hali_limine_hhdm_request.response->offset;
 }
 
 PBOS_EXTERN_C_END

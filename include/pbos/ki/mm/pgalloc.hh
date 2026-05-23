@@ -11,26 +11,26 @@ PBOS_EXTERN_C_BEGIN
 ///
 /// @brief Memory Allocation Descriptor (MAD), manages a single page.
 ///
-typedef struct _hn_mad_t : public kfxx::rbtree_t<void *>::node_t {
-	struct _hn_mad_t *next_free, *prev_free;
+typedef struct _hali_mad_t : public kfxx::rbtree_t<void *>::node_t {
+	struct _hali_mad_t *next_free, *prev_free;
 
 	hal_spinlock_t spinlock;
 
 	size_t ref_count;
-} hn_mad_t;
+} hali_mad_t;
 
-typedef struct _hn_madpool_t hn_madpool_t;
+typedef struct _hali_madpool_t hali_madpool_t;
 
-typedef struct _hn_madpool_header_t {
-	hn_madpool_t *prev, *next;
+typedef struct _hali_madpool_header_t {
+	hali_madpool_t *prev, *next;
 	size_t used_num;
-} hn_madpool_header_t;
+} hali_madpool_header_t;
 
-typedef struct _hn_madpool_t {
-	hn_madpool_header_t header;
-} hn_madpool_t;
+typedef struct _hali_madpool_t {
+	hali_madpool_header_t header;
+} hali_madpool_t;
 
-static_assert(sizeof(hn_madpool_t) <= PAGESIZE);
+static_assert(sizeof(hali_madpool_t) <= PAGESIZE);
 
 ///
 /// @brief Physical Memory Region Descriptor
@@ -45,7 +45,7 @@ struct ki_pmad_t : public kfxx::rbtree_t<void *>::node_t {
 	size_t direct_map_size = 0;
 
 	// MAD pages are all preallocated at initializing stage.
-	hn_mad_t *free_list = nullptr;
+	hali_mad_t *free_list = nullptr;
 
 	kfxx::rbtree_t<void *> query_tree;
 
@@ -56,7 +56,7 @@ extern ki_pmad_t ki_initial_pmad_storage[KI_INITIAL_MM_AREA_STORAGE_NUM];
 extern kfxx::rbtree_t<void *> ki_pmad_tree;
 extern size_t ki_pmad_number;
 
-extern hn_madpool_t *ki_global_mad_pool_list;
+extern hali_madpool_t *ki_global_mad_pool_list;
 
 // Initialized in HAL.
 extern size_t kh_mad_pool_descs_off, kh_mad_pool_descs_num_per_page;
@@ -64,7 +64,7 @@ extern size_t kh_mad_pool_descs_off, kh_mad_pool_descs_num_per_page;
 #define KI_PMAD_FOREACH(i) \
 	for (ki_pmad_t *i = static_cast<ki_pmad_t*>(ki_pmad_tree.begin().node); i; i = static_cast<ki_pmad_t*>(ki_pmad_tree.get_next(i, nullptr)))
 
-hn_mad_t *kh_get_mad(void *pgaddr);
+hali_mad_t *kh_get_mad(void *pgaddr);
 
 ki_pmad_t *ki_get_pmad(void *addr);
 

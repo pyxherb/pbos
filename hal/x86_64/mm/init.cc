@@ -8,7 +8,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-hn_kgdt_t hn_init_kgdt;
+hali_kgdt_t hali_init_kgdt;
 
 void *mm_kernel_bottom_mapping_base_vaddr = nullptr;
 
@@ -29,56 +29,56 @@ void *mm_kernel_initial_pdt_paddr = nullptr;
 void *mm_kernel_initial_pdpt_paddr = nullptr;
 void *mm_kernel_initial_pml4t_paddr = nullptr;
 
-static void hn_push_pmad(ki_pmad_t &&pmad);
-static void hn_init_gdt();
-static void hn_mm_init_paging();
-static void hn_mm_init_pmadlist();
-static void hn_mm_init_areas();
+static void hali_push_pmad(ki_pmad_t &&pmad);
+static void hali_init_gdt();
+static void hali_mm_init_paging();
+static void hali_mm_init_pmadlist();
+static void hali_mm_init_areas();
 
-static hn_tmpmap_info_t hn_kernel_early_tmpmap_info;
+static hali_tmpmap_info_t hali_kernel_early_tmpmap_info;
 
 void kh_mm_init() {
 	mm_kernel_context->page_table = mm_kernel_initial_pml4t;
 
-	hn_init_gdt();
-	hn_mm_init_pmadlist();
+	hali_init_gdt();
+	hali_mm_init_pmadlist();
 
 	// Collect INITCAR's physical address.
-	if ((!hn_limine_module_request.response) || (hn_limine_module_request.response->module_count != 1))
+	if ((!hali_limine_module_request.response) || (hali_limine_module_request.response->module_count != 1))
 		km_panic("Invalid module count, the module count passing to the kernel should be 1 (the initcar only)");
-	limine_file *initcar_file = hn_limine_module_request.response->modules[0];
-	kh_initcar_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)initcar_file->address) - hn_limine_hhdm_request.response->offset));
+	limine_file *initcar_file = hali_limine_module_request.response->modules[0];
+	kh_initcar_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)initcar_file->address) - hali_limine_hhdm_request.response->offset));
 	kh_initcar_file_size = initcar_file->size;
 
 	// Collect ACPI RSDP's physical address.
-	ki_acpi_rsdp_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)hn_limine_rsdp_request.response->address) - hn_limine_hhdm_request.response->offset));
+	ki_acpi_rsdp_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)hali_limine_rsdp_request.response->address) - hali_limine_hhdm_request.response->offset));
 
-	hn_mm_init_paging();
+	hali_mm_init_paging();
 
-	kh_mad_pool_descs_off = kfxx::ceil_align_to((uintptr_t)sizeof(hn_madpool_header_t), alignof(hn_mad_t));
-	kh_mad_pool_descs_num_per_page = (mm_get_page_size() - kh_mad_pool_descs_off) / sizeof(hn_mad_t);
+	kh_mad_pool_descs_off = kfxx::ceil_align_to((uintptr_t)sizeof(hali_madpool_header_t), alignof(hali_mad_t));
+	kh_mad_pool_descs_num_per_page = (mm_get_page_size() - kh_mad_pool_descs_off) / sizeof(hali_mad_t);
 
-	hn_mm_init_areas();
+	hali_mm_init_areas();
 
-	hn_kernel_early_tmpmap_info.tmpmap_base = (void *)KINITTMPMAP_VBASE;
-	hn_kernel_early_tmpmap_info.tmpmap_pgtab_base =
+	hali_kernel_early_tmpmap_info.tmpmap_base = (void *)KINITTMPMAP_VBASE;
+	hali_kernel_early_tmpmap_info.tmpmap_pgtab_base =
 		mm_kernel_initial_ptt +
 		((PML4X(KINITTMPMAP_VBASE) - PML4X(KERNEL_VBASE)) * (512 * 512 * 512) +
 			(PDPTX(KINITTMPMAP_VBASE) - PDPTX(KERNEL_VBASE)) * (512 * 512) +
 			(PDX(KINITTMPMAP_VBASE) - PDX(KERNEL_VBASE)) * 512 +
 			PTX(KINITTMPMAP_VBASE));
 
-	hn_tmpmap_storage_ptr = &hn_kernel_early_tmpmap_info;
+	hali_tmpmap_storage_ptr = &hali_kernel_early_tmpmap_info;
 }
 
-static void hn_mm_init_areas() {
+static void hali_mm_init_areas() {
 	{
 		ki_pmad_t *init_madpool_pmad = nullptr;
 		ki_pmad_t *init_pgtab_pmad = nullptr;
 		size_t cur_madpool_slot_index = 0;
-		hn_madpool_t *last_madpool = NULL;
+		hali_madpool_t *last_madpool = NULL;
 		void *init_madpool_paddr;	 // Physical address of initial MAD pool.
-		uint8_t initial_map_result;	 // Result of initial `hn_mm_mmap_early` call.
+		uint8_t initial_map_result;	 // Result of initial `hali_mm_mmap_early` call.
 		bool insert_result;
 		{
 			void *init_madpool_vaddr = mm_kvmalloc_early(mm_kernel_context, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE);
@@ -119,7 +119,7 @@ static void hn_mm_init_areas() {
 					? (char *)init_pgtab_pmad->rb_value + 3 * PAGESIZE
 					: init_madpool_pmad->rb_value;
 
-			initial_map_result = hn_mm_mmap_early(
+			initial_map_result = hali_mm_mmap_early(
 				mm_kernel_context,
 				init_madpool_vaddr,
 				init_madpool_paddr,
@@ -128,14 +128,14 @@ static void hn_mm_init_areas() {
 				(char *)init_pgtab_pmad->rb_value + 1 * PAGESIZE,
 				(char *)init_pgtab_pmad->rb_value + 2 * PAGESIZE);
 
-			ki_global_mad_pool_list = (hn_madpool_t *)init_madpool_vaddr;
+			ki_global_mad_pool_list = (hali_madpool_t *)init_madpool_vaddr;
 
 			memset(ki_global_mad_pool_list, 0, PAGESIZE);
 
-			hn_mad_t *descs = (hn_mad_t *)(((uintptr_t)ki_global_mad_pool_list) + kh_mad_pool_descs_off);
+			hali_mad_t *descs = (hali_mad_t *)(((uintptr_t)ki_global_mad_pool_list) + kh_mad_pool_descs_off);
 
 			// Mark the initial pages as allocated.
-			kfxx::construct_at<hn_mad_t>(&descs[cur_madpool_slot_index]);
+			kfxx::construct_at<hali_mad_t>(&descs[cur_madpool_slot_index]);
 			descs[cur_madpool_slot_index].next_free = nullptr;
 			descs[cur_madpool_slot_index].prev_free = nullptr;
 			descs[cur_madpool_slot_index].rb_value = init_madpool_paddr;
@@ -144,7 +144,7 @@ static void hn_mm_init_areas() {
 			++cur_madpool_slot_index;
 
 			if (initial_map_result & 0b100) {
-				kfxx::construct_at<hn_mad_t>(&descs[cur_madpool_slot_index]);
+				kfxx::construct_at<hali_mad_t>(&descs[cur_madpool_slot_index]);
 				descs[cur_madpool_slot_index].next_free = nullptr;
 				descs[cur_madpool_slot_index].prev_free = nullptr;
 				descs[cur_madpool_slot_index].rb_value = init_pgtab_pmad->rb_value;
@@ -154,7 +154,7 @@ static void hn_mm_init_areas() {
 			}
 
 			if (initial_map_result & 0b010) {
-				kfxx::construct_at<hn_mad_t>(&descs[cur_madpool_slot_index]);
+				kfxx::construct_at<hali_mad_t>(&descs[cur_madpool_slot_index]);
 				descs[cur_madpool_slot_index].next_free = nullptr;
 				descs[cur_madpool_slot_index].prev_free = nullptr;
 				descs[cur_madpool_slot_index].rb_value = (char *)init_pgtab_pmad->rb_value + PAGESIZE * 1;
@@ -164,7 +164,7 @@ static void hn_mm_init_areas() {
 			}
 
 			if (initial_map_result & 0b001) {
-				kfxx::construct_at<hn_mad_t>(&descs[cur_madpool_slot_index]);
+				kfxx::construct_at<hali_mad_t>(&descs[cur_madpool_slot_index]);
 				descs[cur_madpool_slot_index].next_free = nullptr;
 				descs[cur_madpool_slot_index].prev_free = nullptr;
 				descs[cur_madpool_slot_index].rb_value = (char *)init_pgtab_pmad->rb_value + PAGESIZE * 2;
@@ -182,7 +182,7 @@ static void hn_mm_init_areas() {
 			if (i->type != MM_PHYSICAL_MEMORY_TYPE_AVAILABLE)
 				continue;
 
-			hn_mad_t *prev_free_mad = nullptr;
+			hali_mad_t *prev_free_mad = nullptr;
 			for (char *j = (char *)i->rb_value; j < (char *)i->rb_value + i->len; j += PAGESIZE) {
 				if (j == init_madpool_paddr)
 					continue;
@@ -215,7 +215,7 @@ static void hn_mm_init_areas() {
 					if ((!new_poolpg_ptt_paddr) && (!(new_poolpg_ptt_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 						km_panic("Error allocating PTT for new MAD pool page");
 
-					uint8_t mmap_result = hn_mm_mmap_early(
+					uint8_t mmap_result = hali_mm_mmap_early(
 						mm_kernel_context,
 						new_poolpg_vaddr, new_poolpg_paddr,
 						MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE,
@@ -230,17 +230,17 @@ static void hn_mm_init_areas() {
 
 					cur_madpool_slot_index = 0;
 
-					memset((hn_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
+					memset((hali_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
 
 					last_madpool = ki_global_mad_pool_list;
-					((hn_madpool_t *)new_poolpg_vaddr)->header.next = ki_global_mad_pool_list;
-					ki_global_mad_pool_list->header.prev = ((hn_madpool_t *)new_poolpg_vaddr);
-					ki_global_mad_pool_list = (hn_madpool_t *)new_poolpg_vaddr;
+					((hali_madpool_t *)new_poolpg_vaddr)->header.next = ki_global_mad_pool_list;
+					ki_global_mad_pool_list->header.prev = ((hali_madpool_t *)new_poolpg_vaddr);
+					ki_global_mad_pool_list = (hali_madpool_t *)new_poolpg_vaddr;
 				}
 
-				hn_mad_t *descs = (hn_mad_t *)(((uintptr_t)ki_global_mad_pool_list) + kh_mad_pool_descs_off);
+				hali_mad_t *descs = (hali_mad_t *)(((uintptr_t)ki_global_mad_pool_list) + kh_mad_pool_descs_off);
 
-				kfxx::construct_at<hn_mad_t>(&descs[cur_madpool_slot_index]);
+				kfxx::construct_at<hali_mad_t>(&descs[cur_madpool_slot_index]);
 				if (prev_free_mad) {
 					descs[cur_madpool_slot_index].prev_free = prev_free_mad;
 					prev_free_mad->next_free = &descs[cur_madpool_slot_index];
@@ -288,7 +288,7 @@ static void hn_mm_init_areas() {
 					if ((!new_poolpg_ptt_paddr) && (!(new_poolpg_ptt_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 						km_panic("Error allocating PTT for new MAD pool page");
 
-					uint8_t mmap_result = hn_mm_mmap_early(
+					uint8_t mmap_result = hali_mm_mmap_early(
 						mm_kernel_context,
 						new_poolpg_vaddr, new_poolpg_paddr,
 						MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE,
@@ -303,15 +303,15 @@ static void hn_mm_init_areas() {
 
 					cur_madpool_slot_index = 0;
 
-					memset((hn_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
+					memset((hali_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
 
 					last_madpool = ki_global_mad_pool_list;
-					((hn_madpool_t *)new_poolpg_vaddr)->header.next = ki_global_mad_pool_list;
-					ki_global_mad_pool_list->header.prev = ((hn_madpool_t *)new_poolpg_vaddr);
-					ki_global_mad_pool_list = (hn_madpool_t *)new_poolpg_vaddr;
+					((hali_madpool_t *)new_poolpg_vaddr)->header.next = ki_global_mad_pool_list;
+					ki_global_mad_pool_list->header.prev = ((hali_madpool_t *)new_poolpg_vaddr);
+					ki_global_mad_pool_list = (hali_madpool_t *)new_poolpg_vaddr;
 				}
-				hn_mad_t *descs = (hn_mad_t *)(((uintptr_t)ki_global_mad_pool_list) + kh_mad_pool_descs_off);
-				kfxx::construct_at<hn_mad_t>(&descs[cur_madpool_slot_index]);
+				hali_mad_t *descs = (hali_mad_t *)(((uintptr_t)ki_global_mad_pool_list) + kh_mad_pool_descs_off);
+				kfxx::construct_at<hali_mad_t>(&descs[cur_madpool_slot_index]);
 				if (j != i->rb_value) {
 					descs[cur_madpool_slot_index].prev_free = &descs[cur_madpool_slot_index - 1];
 					descs[cur_madpool_slot_index - 1].next_free = &descs[cur_madpool_slot_index];
@@ -336,7 +336,7 @@ static void hn_mm_init_areas() {
 		if (new_poolpg_ptt_paddr)
 			mm_pgfree(new_poolpg_ptt_paddr);
 
-		/*for (hn_madpool_t *j = hn_global_mad_pool_list; j; j = j->header.next) {
+		/*for (hali_madpool_t *j = hali_global_mad_pool_list; j; j = j->header.next) {
 			km_unwrap_result(ki_mm_insert_vpm(mm_kernel_context, j));
 		}*/
 	}
@@ -373,7 +373,7 @@ static void hn_mm_init_areas() {
 			if ((!new_poolpg_ptt_page) && (!(new_poolpg_ptt_page = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 				km_panic("Error allocating PTT for direct physical memory mapping");
 
-			mmap_result = hn_mm_mmap_early(
+			mmap_result = hali_mm_mmap_early(
 				mm_kernel_context,
 				direct_map_base + j, base + j,
 				MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE,
@@ -403,35 +403,35 @@ static void hn_mm_init_areas() {
 ///
 /// @brief Initialize and load GDT.
 ///
-static void hn_init_gdt() {
+static void hali_init_gdt() {
 	// NULL descriptor.
-	hn_init_kgdt.null_desc = GDTDESC(0, 0, 0, 0);
+	hali_init_kgdt.null_desc = GDTDESC(0, 0, 0, 0);
 
 	// Kernel mode descriptors.
-	hn_init_kgdt.kcode_desc =
+	hali_init_kgdt.kcode_desc =
 		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(0) | GDT_AB_S | GDT_AB_EX | GDT_AB_RW, GDT_FL_L | GDT_FL_GR);
-	hn_init_kgdt.kdata_desc =
+	hali_init_kgdt.kdata_desc =
 		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(0) | GDT_AB_S | GDT_AB_RW, GDT_FL_DB | GDT_FL_GR);
 
 	// User mode descriptors.
-	hn_init_kgdt.ucode_desc =
+	hali_init_kgdt.ucode_desc =
 		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(3) | GDT_AB_S | GDT_AB_EX | GDT_AB_RW, GDT_FL_L | GDT_FL_GR);
-	hn_init_kgdt.udata_desc =
+	hali_init_kgdt.udata_desc =
 		GDTDESC(0, 0xfffff, GDT_AB_P | GDT_AB_DPL(3) | GDT_AB_S | GDT_AB_RW, GDT_FL_DB | GDT_FL_GR);
 
 	// 32-bit user mode descriptors.
-	// hn_init_kgdt.ucode32_desc =
+	// hali_init_kgdt.ucode32_desc =
 	// GDTDESC(0, 0, GDT_AB_P | GDT_AB_DPL(3) | GDT_AB_S | GDT_AB_DC | GDT_AB_EX, GDT_FL_DB | GDT_FL_GR);
-	// hn_init_kgdt.udata32_desc =
+	// hali_init_kgdt.udata32_desc =
 	// GDTDESC(0, 0, GDT_AB_P | GDT_AB_DPL(3) | GDT_AB_S | GDT_AB_RW, GDT_FL_DB | GDT_FL_GR);
 
 	// TSS is a stub, we have to reload the GDT later.
-	hn_init_kgdt.tss_desc1 =
+	hali_init_kgdt.tss_desc1 =
 		GDTDESC(0, 0xfffff, 0, 0);
-	hn_init_kgdt.tss_desc2 =
+	hali_init_kgdt.tss_desc2 =
 		GDTDESC(0, 0xfffff, 0, 0);
 
-	arch_lgdt(&hn_init_kgdt, sizeof(hn_init_kgdt) / sizeof(arch_gdt_desc_t));
+	arch_lgdt(&hali_init_kgdt, sizeof(hali_init_kgdt) / sizeof(arch_gdt_desc_t));
 
 	arch_loadds(SELECTOR_KDATA);
 	arch_loades(SELECTOR_KDATA);
@@ -447,12 +447,12 @@ static void hn_init_gdt() {
 ///
 /// @brief Scan and push PMADs.
 ///
-static void hn_mm_init_pmadlist() {
-	if (hn_limine_memmap_request.response->entry_count > KI_INITIAL_MM_AREA_STORAGE_NUM)
+static void hali_mm_init_pmadlist() {
+	if (hali_limine_memmap_request.response->entry_count > KI_INITIAL_MM_AREA_STORAGE_NUM)
 		km_panic("Too many initial memory maps");
 
-	for (uint16_t i = 0; i < hn_limine_memmap_request.response->entry_count; ++i) {
-		limine_memmap_entry *entry = hn_limine_memmap_request.response->entries[i];
+	for (uint16_t i = 0; i < hali_limine_memmap_request.response->entry_count; ++i) {
+		limine_memmap_entry *entry = hali_limine_memmap_request.response->entries[i];
 
 		ki_pmad_t pmad = {};
 
@@ -467,17 +467,17 @@ static void hn_mm_init_pmadlist() {
 					pmad.rb_value = (void *)0;
 					pmad.len = PAGESIZE;
 					pmad.type = MM_PHYSICAL_MEMORY_TYPE_HARDWARE;
-					hn_push_pmad(std::move(pmad));
+					hali_push_pmad(std::move(pmad));
 					pmad = {};
 					pmad.rb_value = (void *)PAGESIZE;
 					pmad.len = entry->length - PAGESIZE;
 					pmad.type = MM_PHYSICAL_MEMORY_TYPE_AVAILABLE;
-					hn_push_pmad(std::move(pmad));
+					hali_push_pmad(std::move(pmad));
 				} else {
 					pmad.rb_value = (void *)entry->base;
 					pmad.len = entry->length;
 					pmad.type = MM_PHYSICAL_MEMORY_TYPE_AVAILABLE;
-					hn_push_pmad(std::move(pmad));
+					hali_push_pmad(std::move(pmad));
 				}
 				break;
 			case LIMINE_MEMMAP_ACPI_RECLAIMABLE:
@@ -486,31 +486,31 @@ static void hn_mm_init_pmadlist() {
 				pmad.len = entry->length;
 				pmad.type = MM_PHYSICAL_MEMORY_TYPE_ACPI;
 
-				hn_push_pmad(std::move(pmad));
+				hali_push_pmad(std::move(pmad));
 				break;
 			case LIMINE_MEMMAP_FRAMEBUFFER:
 				pmad.rb_value = (void *)entry->base;
 				pmad.len = entry->length;
 				pmad.type = MM_PHYSICAL_MEMORY_TYPE_HARDWARE;
-				hn_push_pmad(std::move(pmad));
+				hali_push_pmad(std::move(pmad));
 				break;
 			case LIMINE_MEMMAP_EXECUTABLE_AND_MODULES:
 				pmad.rb_value = (void *)entry->base;
 				pmad.len = entry->length;
 				pmad.type = MM_PHYSICAL_MEMORY_TYPE_BOOTDATA;
-				hn_push_pmad(std::move(pmad));
+				hali_push_pmad(std::move(pmad));
 				break;
 			case LIMINE_MEMMAP_RESERVED:
 				pmad.rb_value = (void *)entry->base;
 				pmad.len = entry->length;
 				pmad.type = MM_PHYSICAL_MEMORY_TYPE_CRITICAL;
-				hn_push_pmad(std::move(pmad));
+				hali_push_pmad(std::move(pmad));
 				break;
 			case LIMINE_MEMMAP_BAD_MEMORY:
 				pmad.rb_value = (void *)entry->base;
 				pmad.len = entry->length;
 				pmad.type = MM_PHYSICAL_MEMORY_TYPE_BAD;
-				hn_push_pmad(std::move(pmad));
+				hali_push_pmad(std::move(pmad));
 				break;
 			default:
 				km_panic("Unknown memory map type, perhaps a bootloader bug");
@@ -521,16 +521,16 @@ static void hn_mm_init_pmadlist() {
 ///
 /// @brief Initialize paging. This also collects physical address of ACPI RSDP.
 ///
-static void hn_mm_init_paging() {
+static void hali_mm_init_paging() {
 	memset(mm_kernel_initial_ptt, 0, sizeof(mm_kernel_initial_ptt));
 	memset(mm_kernel_initial_pdt, 0, sizeof(mm_kernel_initial_pdt));
 	memset(mm_kernel_initial_pdpt, 0, sizeof(mm_kernel_initial_pdpt));
 	memset(mm_kernel_initial_pml4t, 0, sizeof(mm_kernel_initial_pml4t));
 
-	mm_kernel_initial_ptt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_ptt[0]) - hn_limine_executable_address_request.response->virtual_base) + hn_limine_executable_address_request.response->physical_base);
-	mm_kernel_initial_pdt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_pdt[0]) - hn_limine_executable_address_request.response->virtual_base) + hn_limine_executable_address_request.response->physical_base);
-	mm_kernel_initial_pdpt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_pdpt[0]) - hn_limine_executable_address_request.response->virtual_base) + hn_limine_executable_address_request.response->physical_base);
-	mm_kernel_initial_pml4t_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_pml4t[0]) - hn_limine_executable_address_request.response->virtual_base) + hn_limine_executable_address_request.response->physical_base);
+	mm_kernel_initial_ptt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_ptt[0]) - hali_limine_executable_address_request.response->virtual_base) + hali_limine_executable_address_request.response->physical_base);
+	mm_kernel_initial_pdt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_pdt[0]) - hali_limine_executable_address_request.response->virtual_base) + hali_limine_executable_address_request.response->physical_base);
+	mm_kernel_initial_pdpt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_pdpt[0]) - hali_limine_executable_address_request.response->virtual_base) + hali_limine_executable_address_request.response->physical_base);
+	mm_kernel_initial_pml4t_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_pml4t[0]) - hali_limine_executable_address_request.response->virtual_base) + hali_limine_executable_address_request.response->physical_base);
 
 	// Map the high 2GB kernel space.
 	// Fill the PML4 Table.
@@ -640,7 +640,7 @@ static void hn_mm_init_paging() {
 							ARCH_PTE_WITH_ADDR(
 								ARCH_PTE_WITH_MASKS(0, PTE_P | PTE_RW),
 								PGROUNDDOWN(
-									(((char *)hn_limine_executable_address_request.response->physical_base)) +
+									(((char *)hali_limine_executable_address_request.response->physical_base)) +
 									(((uintptr_t)vaddr_pt) - KERNEL_VBASE))),
 							false);
 				}
@@ -660,7 +660,7 @@ fill_end:
 ///
 /// @param pmad PMAD to push.
 ///
-static void hn_push_pmad(ki_pmad_t &&pmad) {
+static void hali_push_pmad(ki_pmad_t &&pmad) {
 	if (ki_pmad_number + 1 >= PBOS_ARRAYSIZE(ki_initial_pmad_storage))
 		km_panic("Too many memory map entries");
 	if (auto d = ki_pmad_tree.find_max_lteq(pmad.rb_value);

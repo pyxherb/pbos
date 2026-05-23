@@ -51,6 +51,7 @@ add_custom_command(
 target_sources(pbkrnl PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/kernel.lds.ph.cc)
 
 set(PBOS_INITIAL_MM_AREA_STORAGE_NUM 256 CACHE STRING "Number of initial memory area storage")
+set(PBOS_GDB_STUB_MAX_PACKET_SIZE 8192 CACHE STRING "Maximum size of GDB packet the kernel can receive")
 
 configure_file(
     "config.hh.in"

@@ -71,7 +71,7 @@ PBOS_NODISCARD PBOS_API km_result_t fs_alloc_dir_fnode(fs_file_system_t *file_sy
 PBOS_NODISCARD PBOS_API void *fs_get_fnode_exdata(fs_fnode_t *file);
 PBOS_API void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata);
 
-PBOS_NODISCARD PBOS_API const char *fs_name_of_fnode(fs_fnode_t *file, size_t *len_out);
+PBOS_NODISCARD PBOS_API const char *fs_get_fnode_name(fs_fnode_t *file, size_t *len_out);
 PBOS_API void fs_unname_fnode(fs_fnode_t *file);
 PBOS_NODISCARD PBOS_API km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len);
 

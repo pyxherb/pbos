@@ -6,23 +6,23 @@
 
 PBOS_EXTERN_C_BEGIN
 
-#define HN_REQUIRED_LIMINE_REVISION LIMINE_BASE_REVISION(4)
+#define HALI_REQUIRED_LIMINE_REVISION LIMINE_BASE_REVISION(4)
 
-extern volatile uint64_t hn_limine_base_revision[];
-extern volatile uint64_t hn_limine_requests_start_marker[];
-extern volatile struct limine_framebuffer_request hn_limine_framebuffer_request;
-extern volatile struct limine_hhdm_request hn_limine_hhdm_request;
-extern volatile struct limine_executable_address_request hn_limine_executable_address_request;
-extern volatile struct limine_memmap_request hn_limine_memmap_request;
-extern volatile struct limine_rsdp_request hn_limine_rsdp_request;
-extern volatile struct limine_module_request hn_limine_module_request;
-extern volatile uint64_t hn_limine_requests_end_marker[];
+extern volatile uint64_t hali_limine_base_revision[];
+extern volatile uint64_t hali_limine_requests_start_marker[];
+extern volatile struct limine_framebuffer_request hali_limine_framebuffer_request;
+extern volatile struct limine_hhdm_request hali_limine_hhdm_request;
+extern volatile struct limine_executable_address_request hali_limine_executable_address_request;
+extern volatile struct limine_memmap_request hali_limine_memmap_request;
+extern volatile struct limine_rsdp_request hali_limine_rsdp_request;
+extern volatile struct limine_module_request hali_limine_module_request;
+extern volatile uint64_t hali_limine_requests_end_marker[];
 
-typedef void (*hn_ctor_t)();
-typedef void (*hn_dtor_t)();
+typedef void (*hali_ctor_t)();
+typedef void (*hali_dtor_t)();
 
-// extern hn_ctor_t *KI_CTORS_BEGIN, *KI_CTORS_END;
-// extern hn_dtor_t *KI_DTORS_BEGIN, *KI_DTORS_END;
+// extern hali_ctor_t *KI_CTORS_BEGIN, *KI_CTORS_END;
+// extern hali_dtor_t *KI_DTORS_BEGIN, *KI_DTORS_END;
 
 PBOS_EXTERN_C_END
 

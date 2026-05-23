@@ -8,7 +8,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-static uint16_t hn_pgaccess_to_pgmask(mm_pgaccess_t access) {
+static uint16_t hali_pgaccess_to_pgmask(mm_pgaccess_t access) {
 	uint16_t mask = 0;
 
 	if (access & MM_PAGE_MAPPED)
@@ -49,7 +49,7 @@ void mm_vmfree(mm_context_t *ctxt, void *addr, size_t size) {
 	kh_unmmap(ctxt, addr, size, 0);
 }
 
-PBOS_NODISCARD uint8_t hn_mm_mmap_early(
+PBOS_NODISCARD uint8_t hali_mm_mmap_early(
 	mm_context_t *context,
 	void *vaddr,
 	void *paddr,
@@ -58,7 +58,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 	void *pde_paddr,
 	void *pte_paddr) {
 	uint8_t result = 0;
-	const uint8_t pgaccess = hn_pgaccess_to_pgmask(access);
+	const uint8_t pgaccess = hali_pgaccess_to_pgmask(access);
 
 	const size_t size = PAGESIZE;
 
@@ -86,13 +86,13 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 		}
 
 		arch_pdpte_t *pdpt = (arch_pdpte_t *)
-			hn_tmpmap_early(
+			hali_tmpmap_early(
 				UNPGADDR(ARCH_PML4TE_ADDR(*pml4te)),
 				sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 				PTE_P | PTE_RW);
 
 		kfxx::deferred release_pdpt_guard([&pdpt]() noexcept {
-			hn_tmpunmap_early((void *)pdpt, PAGESIZE);
+			hali_tmpunmap_early((void *)pdpt, PAGESIZE);
 		});
 
 		if (init_pdpt)
@@ -120,13 +120,13 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 			}
 
 			arch_pde_t *pdt = (arch_pde_t *)
-				hn_tmpmap_early(
+				hali_tmpmap_early(
 					UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx])),
 					sizeof(arch_pde_t) * (PTX_MAX + 1),
 					PTE_P | PTE_RW);
 
 			kfxx::deferred release_pde_guard([&pdt]() noexcept {
-				hn_tmpunmap_early((void *)pdt, PAGESIZE);
+				hali_tmpunmap_early((void *)pdt, PAGESIZE);
 			});
 
 			if (init_pdt)
@@ -158,7 +158,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 				}
 
 				arch_pte_t *ptt = (arch_pte_t *)
-					hn_tmpmap_early(
+					hali_tmpmap_early(
 						UNPGADDR(ARCH_PDE_ADDR(pdt[pdx])),
 						sizeof(arch_pte_t) * (PTX_MAX + 1),
 						PTE_P | PTE_RW);
@@ -167,7 +167,7 @@ PBOS_NODISCARD uint8_t hn_mm_mmap_early(
 					memset(ptt, 0, PAGESIZE);
 
 				kfxx::deferred release_pte_guard([&ptt]() noexcept {
-					hn_tmpunmap_early((void *)ptt, PAGESIZE);
+					hali_tmpunmap_early((void *)ptt, PAGESIZE);
 				});
 
 				for (uint16_t ptx =
@@ -236,7 +236,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 
 	char *pi = (char *)paddr;
 	size_t pi_diff = paddr ? PAGESIZE : 0;
-	uint8_t mask = hn_pgaccess_to_pgmask(access);
+	uint8_t mask = hali_pgaccess_to_pgmask(access);
 
 	kfxx::scope_guard unmmap_guard([ctxt, vaddr, size]() noexcept {
 		kh_unmmap(ctxt, vaddr, size, 0);
@@ -263,11 +263,11 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 		arch_pdpte_t *pdpt;
 		void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
 		kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
-			hn_tmpunmap_post((void *)pdpt, PAGESIZE);
+			hali_tmpunmap_post((void *)pdpt, PAGESIZE);
 		});
 		if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
 			pdpt = (arch_pdpte_t *)
-				hn_tmpmap_post(
+				hali_tmpmap_post(
 					pdpt_paddr,
 					sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 					PTE_P | PTE_RW);
@@ -303,11 +303,11 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 			arch_pde_t *pdt;
 			void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
 			kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
-				hn_tmpunmap_post((void *)pdt, PAGESIZE);
+				hali_tmpunmap_post((void *)pdt, PAGESIZE);
 			});
 			if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
 				pdt = (arch_pde_t *)
-					hn_tmpmap_post(
+					hali_tmpmap_post(
 						pdt_paddr,
 						sizeof(arch_pde_t) * (PTX_MAX + 1),
 						PTE_P | PTE_RW);
@@ -347,11 +347,11 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 				arch_pte_t *ptt;
 				void *ptt_paddr = UNPGADDR(ARCH_PDE_ADDR(pdt[pdx]));
 				kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
-					hn_tmpunmap_post((void *)ptt, PAGESIZE);
+					hali_tmpunmap_post((void *)ptt, PAGESIZE);
 				});
 				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(ptt_paddr))) {
 					ptt = (arch_pte_t *)
-						hn_tmpmap_post(
+						hali_tmpmap_post(
 							ptt_paddr,
 							sizeof(arch_pte_t) * (PTX_MAX + 1),
 							PTE_P | PTE_RW);
@@ -385,7 +385,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 					} else {
 					}
 
-					if(!(flags & MMAP_NO_INC_RC))
+					if (!(flags & MMAP_NO_INC_RC))
 						mm_refpg(pi);
 
 					*pte =
@@ -436,11 +436,11 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 		arch_pdpte_t *pdpt;
 		void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
 		kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
-			hn_tmpunmap_post((void *)pdpt, PAGESIZE);
+			hali_tmpunmap_post((void *)pdpt, PAGESIZE);
 		});
 		if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
 			pdpt = (arch_pdpte_t *)
-				hn_tmpmap_post(
+				hali_tmpmap_post(
 					UNPGADDR(ARCH_PML4TE_ADDR(*pml4te)),
 					sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 					PTE_P | PTE_RW);
@@ -465,11 +465,11 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 			arch_pde_t *pdt;
 			void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
 			kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
-				hn_tmpunmap_post((void *)pdt, PAGESIZE);
+				hali_tmpunmap_post((void *)pdt, PAGESIZE);
 			});
 			if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
 				pdt = (arch_pde_t *)
-					hn_tmpmap_post(
+					hali_tmpmap_post(
 						UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx])),
 						sizeof(arch_pde_t) * (PTX_MAX + 1),
 						PTE_P | PTE_RW);
@@ -496,11 +496,11 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 
 				arch_pte_t *ptt;
 				kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
-					hn_tmpunmap_post((void *)ptt, PAGESIZE);
+					hali_tmpunmap_post((void *)ptt, PAGESIZE);
 				});
 				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(pdt_paddr))) {
 					ptt = (arch_pte_t *)
-						hn_tmpmap_post(
+						hali_tmpmap_post(
 							UNPGADDR(ARCH_PDPTE_ADDR(pdt[pdx])),
 							sizeof(arch_pte_t) * (PTX_MAX + 1),
 							PTE_P | PTE_RW);
@@ -613,7 +613,7 @@ void kh_set_page_access(
 		km_panic("Cannot map across user and kernel spaces");
 #endif
 
-	uint8_t mask = hn_pgaccess_to_pgmask(access);
+	uint8_t mask = hali_pgaccess_to_pgmask(access);
 
 	mask |= PTE_P;
 
@@ -628,11 +628,11 @@ void kh_set_page_access(
 		arch_pdpte_t *pdpt;
 		void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
 		kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
-			hn_tmpunmap_post((void *)pdpt, PAGESIZE);
+			hali_tmpunmap_post((void *)pdpt, PAGESIZE);
 		});
 		if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
 			pdpt = (arch_pdpte_t *)
-				hn_tmpmap_post(
+				hali_tmpmap_post(
 					pdpt_paddr,
 					sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 					PTE_P | PTE_RW);
@@ -658,11 +658,11 @@ void kh_set_page_access(
 			arch_pde_t *pdt;
 			void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
 			kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
-				hn_tmpunmap_post((void *)pdt, PAGESIZE);
+				hali_tmpunmap_post((void *)pdt, PAGESIZE);
 			});
 			if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
 				pdt = (arch_pde_t *)
-					hn_tmpmap_post(
+					hali_tmpmap_post(
 						pdt_paddr,
 						sizeof(arch_pde_t) * (PTX_MAX + 1),
 						PTE_P | PTE_RW);
@@ -692,11 +692,11 @@ void kh_set_page_access(
 				arch_pte_t *ptt;
 				void *ptt_paddr = UNPGADDR(ARCH_PDE_ADDR(pdt[pdx]));
 				kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
-					hn_tmpunmap_post((void *)ptt, PAGESIZE);
+					hali_tmpunmap_post((void *)ptt, PAGESIZE);
 				});
 				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(ptt_paddr))) {
 					ptt = (arch_pte_t *)
-						hn_tmpmap_post(
+						hali_tmpmap_post(
 							ptt_paddr,
 							sizeof(arch_pte_t) * (PTX_MAX + 1),
 							PTE_P | PTE_RW);
@@ -777,11 +777,11 @@ void *kh_vmalloc(mm_context_t *context,
 		arch_pdpte_t *pdpt;
 		void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
 		kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
-			hn_tmpunmap_post((void *)pdpt, PAGESIZE);
+			hali_tmpunmap_post((void *)pdpt, PAGESIZE);
 		});
 		if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
 			pdpt = (arch_pdpte_t *)
-				hn_tmpmap_post(
+				hali_tmpmap_post(
 					pdpt_paddr,
 					sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 					PTE_P);
@@ -812,11 +812,11 @@ void *kh_vmalloc(mm_context_t *context,
 			const arch_pde_t *pdt;
 			void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
 			kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
-				hn_tmpunmap_post((void *)pdt, PAGESIZE);
+				hali_tmpunmap_post((void *)pdt, PAGESIZE);
 			});
 			if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
 				pdt = (arch_pde_t *)
-					hn_tmpmap_post(
+					hali_tmpmap_post(
 						pdt_paddr,
 						sizeof(arch_pde_t) * (PTX_MAX + 1),
 						PTE_P);
@@ -851,11 +851,11 @@ void *kh_vmalloc(mm_context_t *context,
 				const arch_pte_t *ptt;
 				void *ptt_paddr = UNPGADDR(ARCH_PDE_ADDR(pdt[pdx]));
 				kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
-					hn_tmpunmap_post((void *)ptt, PAGESIZE);
+					hali_tmpunmap_post((void *)ptt, PAGESIZE);
 				});
 				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(ptt_paddr))) {
 					ptt = (arch_pte_t *)
-						hn_tmpmap_post(
+						hali_tmpmap_post(
 							ptt_paddr,
 							sizeof(arch_pte_t) * (PTX_MAX + 1),
 							PTE_P);
@@ -938,13 +938,13 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 
 		// io::LocalIrqLock irq_lock;
 		const arch_pdpte_t *pdpt = (arch_pdpte_t *)
-			hn_tmpmap_early(
+			hali_tmpmap_early(
 				UNPGADDR(ARCH_PML4TE_ADDR(*pml4te)),
 				sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 				PTE_P | PTE_RW);
 
 		kfxx::deferred release_pdpt_guard([pdpt]() noexcept {
-			hn_tmpunmap_early((void *)pdpt, PAGESIZE);
+			hali_tmpunmap_early((void *)pdpt, PAGESIZE);
 		});
 
 		// Walk each PDPTE.
@@ -967,13 +967,13 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 			}
 
 			const arch_pde_t *pdt = (arch_pde_t *)
-				hn_tmpmap_early(
+				hali_tmpmap_early(
 					UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx])),
 					sizeof(arch_pde_t) * (PTX_MAX + 1),
 					PTE_P | PTE_RW);
 
 			kfxx::deferred release_pde_guard([pdt]() noexcept {
-				hn_tmpunmap_early((void *)pdt, PAGESIZE);
+				hali_tmpunmap_early((void *)pdt, PAGESIZE);
 			});
 
 			// Walk each PDE.
@@ -1000,13 +1000,13 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 				}
 
 				const arch_pte_t *ptt = (arch_pte_t *)
-					hn_tmpmap_early(
+					hali_tmpmap_early(
 						UNPGADDR(ARCH_PDE_ADDR(pdt[pdx])),
 						sizeof(arch_pte_t) * (PTX_MAX + 1),
 						PTE_P | PTE_RW);
 
 				kfxx::deferred release_pte_guard([ptt]() noexcept {
-					hn_tmpunmap_early((void *)ptt, PAGESIZE);
+					hali_tmpunmap_early((void *)ptt, PAGESIZE);
 				});
 
 				// Walk each PTE.
@@ -1045,6 +1045,8 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 
 void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
 	// io::LocalIrqLock irq_lock;
+	if (pgaccess_out)
+		*pgaccess_out = 0;
 
 	kd_assert(ctxt);
 
@@ -1065,11 +1067,11 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 	arch_pdpte_t *pdpt;
 	void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
 	kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
-		hn_tmpunmap_post((void *)pdpt, PAGESIZE);
+		hali_tmpunmap_post((void *)pdpt, PAGESIZE);
 	});
 	if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
 		pdpt = (arch_pdpte_t *)
-			hn_tmpmap_post(
+			hali_tmpmap_post(
 				pdpt_paddr,
 				sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 				PTE_P | PTE_RW);
@@ -1087,11 +1089,11 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 	const arch_pde_t *pdt;
 	void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
 	kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
-		hn_tmpunmap_post((void *)pdt, PAGESIZE);
+		hali_tmpunmap_post((void *)pdt, PAGESIZE);
 	});
 	if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
 		pdt = (arch_pde_t *)
-			hn_tmpmap_post(
+			hali_tmpmap_post(
 				UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx])),
 				sizeof(arch_pde_t) * (PTX_MAX + 1),
 				PTE_P | PTE_RW);
@@ -1108,11 +1110,11 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 
 	const arch_pte_t *ptt;
 	kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
-		hn_tmpunmap_post((void *)ptt, PAGESIZE);
+		hali_tmpunmap_post((void *)ptt, PAGESIZE);
 	});
 	if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(UNPGADDR(ARCH_PDE_ADDR(pdt[pdx]))))) {
 		ptt = (arch_pte_t *)
-			hn_tmpmap_post(
+			hali_tmpmap_post(
 				UNPGADDR(ARCH_PDE_ADDR(pdt[pdx])),
 				sizeof(arch_pte_t) * (PTX_MAX + 1),
 				PTE_P | PTE_RW);
@@ -1144,14 +1146,14 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 	return UNPGADDR(ARCH_PTE_ADDR(ptt[ptx]));
 }
 
-PBOS_NODISCARD void *hn_tmpmap_early(void *paddr, size_t size, uint16_t mask) {
-	// kd_dbgcheck(hal_is_irq_disabled(), "hn_tmpmap() requires interrupts disabled");
+PBOS_NODISCARD void *hali_tmpmap_early(void *paddr, size_t size, uint16_t mask) {
+	// kd_dbgcheck(hal_is_irq_disabled(), "hali_tmpmap() requires interrupts disabled");
 	kd_dbgcheck(
 		size <= (KINITTMPMAP_SIZE),
 		"Size of space to map is bigger than the size of KINITTMPMAP area");
-	kd_dbgcheck(!PGOFF(paddr), "Address for hn_tmpmap must be page-aligned");
-	kd_dbgcheck(!PGOFF(size), "Size for hn_tmpmap must be page-aligned");
-	kd_dbgcheck(mask & PTE_P, "PTE_P must be set for hn_tmpmap");
+	kd_dbgcheck(!PGOFF(paddr), "Address for hali_tmpmap must be page-aligned");
+	kd_dbgcheck(!PGOFF(size), "Size for hali_tmpmap must be page-aligned");
+	kd_dbgcheck(mask & PTE_P, "PTE_P must be set for hali_tmpmap");
 
 	char *vaddr = nullptr;
 
@@ -1299,9 +1301,9 @@ alloc_succeeded:
 	return vaddr;
 }
 
-void hn_tmpunmap_early(void *vaddr, size_t size) {
-	// kd_dbgcheck(hal_is_irq_disabled(), "hn_tmpunmap() requires interrupts disabled");
-	kd_dbgcheck(!PGOFF(vaddr), "Address for hn_tmpunmap must be page-aligned");
+void hali_tmpunmap_early(void *vaddr, size_t size) {
+	// kd_dbgcheck(hal_is_irq_disabled(), "hali_tmpunmap() requires interrupts disabled");
+	kd_dbgcheck(!PGOFF(vaddr), "Address for hali_tmpunmap must be page-aligned");
 
 	char *addr_limit = (char *)vaddr + size;
 
@@ -1366,15 +1368,15 @@ void hn_tmpunmap_early(void *vaddr, size_t size) {
 	}
 }
 
-PBOS_NODISCARD void *hn_tmpmap_post(void *paddr, size_t size, uint16_t mask) {
-	hn_tmpmap_info_t *tmpmap_info = &hn_tmpmap_storage_ptr[ps_get_cur_cpuid()];
-	// kd_dbgcheck(hal_is_irq_disabled(), "hn_tmpmap() requires interrupts disabled");
+PBOS_NODISCARD void *hali_tmpmap_post(void *paddr, size_t size, uint16_t mask) {
+	hali_tmpmap_info_t *tmpmap_info = &hali_tmpmap_storage_ptr[ps_get_cur_cpuid()];
+	// kd_dbgcheck(hal_is_irq_disabled(), "hali_tmpmap() requires interrupts disabled");
 	kd_dbgcheck(
 		size <= (KINITTMPMAP_SIZE),
 		"Size of space to map is bigger than the size of KINITTMPMAP area");
-	kd_dbgcheck(!PGOFF(paddr), "Address for hn_tmpmap must be page-aligned");
-	kd_dbgcheck(!PGOFF(size), "Size for hn_tmpmap must be page-aligned");
-	kd_dbgcheck(mask & PTE_P, "PTE_P must be set for hn_tmpmap");
+	kd_dbgcheck(!PGOFF(paddr), "Address for hali_tmpmap must be page-aligned");
+	kd_dbgcheck(!PGOFF(size), "Size for hali_tmpmap must be page-aligned");
+	kd_dbgcheck(mask & PTE_P, "PTE_P must be set for hali_tmpmap");
 
 	char *vaddr = nullptr;
 
@@ -1430,10 +1432,10 @@ alloc_succeeded:
 	return vaddr;
 }
 
-void hn_tmpunmap_post(void *vaddr, size_t size) {
-	hn_tmpmap_info_t *tmpmap_info = &hn_tmpmap_storage_ptr[ps_get_cur_cpuid()];
-	// kd_dbgcheck(hal_is_irq_disabled(), "hn_tmpunmap() requires interrupts disabled");
-	kd_dbgcheck(!PGOFF(vaddr), "Address for hn_tmpunmap must be page-aligned");
+void hali_tmpunmap_post(void *vaddr, size_t size) {
+	hali_tmpmap_info_t *tmpmap_info = &hali_tmpmap_storage_ptr[ps_get_cur_cpuid()];
+	// kd_dbgcheck(hal_is_irq_disabled(), "hali_tmpunmap() requires interrupts disabled");
+	kd_dbgcheck(!PGOFF(vaddr), "Address for hali_tmpunmap must be page-aligned");
 
 	char *addr_limit = (char *)vaddr + size;
 
@@ -1453,7 +1455,7 @@ void hn_tmpunmap_post(void *vaddr, size_t size) {
 	}
 }
 
-void *hn_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
+void *hali_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
 	// io::LocalIrqLock irq_lock;
 
 	kd_assert(ctxt);
@@ -1475,11 +1477,11 @@ void *hn_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *p
 	arch_pdpte_t *pdpt;
 	void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
 	kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
-		hn_tmpunmap_post((void *)pdpt, PAGESIZE);
+		hali_tmpunmap_post((void *)pdpt, PAGESIZE);
 	});
 	if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
 		pdpt = (arch_pdpte_t *)
-			hn_tmpmap_post(
+			hali_tmpmap_post(
 				pdpt_paddr,
 				sizeof(arch_pdpte_t) * (PTX_MAX + 1),
 				PTE_P | PTE_RW);
@@ -1497,11 +1499,11 @@ void *hn_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *p
 	const arch_pde_t *pdt;
 	void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
 	kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
-		hn_tmpunmap_post((void *)pdt, PAGESIZE);
+		hali_tmpunmap_post((void *)pdt, PAGESIZE);
 	});
 	if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
 		pdt = (arch_pde_t *)
-			hn_tmpmap_post(
+			hali_tmpmap_post(
 				UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx])),
 				sizeof(arch_pde_t) * (PTX_MAX + 1),
 				PTE_P | PTE_RW);

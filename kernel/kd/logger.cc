@@ -6,15 +6,15 @@
 
 PBOS_EXTERN_C_BEGIN
 
-kd_logger_t *hn_active_logger;
+kd_logger_t *hali_active_logger;
 
-hal_spinlock_t hn_logger_spinlock = HAL_SPINLOCK_UNLOCKED;
+hal_spinlock_t hali_logger_spinlock = HAL_SPINLOCK_UNLOCKED;
 
 void kd_set_logger(kd_logger_t *logger) {
-	hn_active_logger = logger;
+	hali_active_logger = logger;
 }
 kd_logger_t *kd_get_logger() {
-	return hn_active_logger;
+	return hali_active_logger;
 }
 
 int do_vprintf(kd_logger_t *logger, const char *s, va_list args) {
@@ -343,9 +343,9 @@ int do_vprintf(kd_logger_t *logger, const char *s, va_list args) {
 
 void klog_vprintf(const char *str, va_list args) {
 	// io::LocalIrqLock irq_lock;
-	hal_lock_spinlock(&hn_logger_spinlock);
-	do_vprintf(hn_active_logger, str, args);
-	hal_unlock_spinlock(&hn_logger_spinlock);
+	hal_lock_spinlock(&hali_logger_spinlock);
+	do_vprintf(hali_active_logger, str, args);
+	hal_unlock_spinlock(&hali_logger_spinlock);
 }
 
 PBOS_API void klog_printf(const char *str, ...) {
@@ -358,11 +358,11 @@ PBOS_API void klog_printf(const char *str, ...) {
 }
 
 void klog_putc(char ch) {
-	hn_active_logger->putchar(ch);
+	hali_active_logger->putchar(ch);
 }
 
 void klog_puts(const char *str) {
-	hn_active_logger->print(str, strlen(str));
+	hali_active_logger->print(str, strlen(str));
 	klog_putc('\n');
 }
 
