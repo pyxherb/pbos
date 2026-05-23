@@ -31,11 +31,11 @@ void kh_switch_to_kernel_thread(ps_tcb_t *tcb) {
 	ps_load_kernel_context(tcb->context);
 }
 
-ps_cpu_id_t kh_get_cur_cpuid() {
+ps_cpuid_t kh_get_cur_cpuid() {
 	return arch_storefs();
 }
 
-void kh_set_cur_cpuid(ps_cpu_id_t cpuid) {
+void kh_set_cur_cpuid(ps_cpuid_t cpuid) {
 	arch_loadfs(cpuid);
 }
 

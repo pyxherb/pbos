@@ -8,7 +8,7 @@ void ki_mp_alloc_resources() {
 		km_panic("Unable to allocate memory context for all CPUs");
 	}
 
-	for (ps_cpu_id_t i = 0; i < mp_num_total_cpu; ++i) {
+	for (ps_cpuid_t i = 0; i < mp_num_total_cpu; ++i) {
 		mm_cur_contexts[i] = mm_kernel_context;
 	}
 

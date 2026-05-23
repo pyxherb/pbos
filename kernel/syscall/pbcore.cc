@@ -14,7 +14,7 @@ km_result_t sysent_exit(int exitcode) {
 km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint32_t mode, ps_ufd_t *ufd_out) {
 	km_result_t result;
 
-	ps_cpu_id_t cpuid = ps_get_cur_cpuid();
+	ps_cpuid_t cpuid = ps_get_cur_cpuid();
 	ps_pcb_t *pcb = ps_get_cur_proc();
 	mm_context_t *mm_context = ps_mm_context_of(pcb);
 

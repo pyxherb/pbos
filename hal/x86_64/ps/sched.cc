@@ -28,7 +28,7 @@ void hali_isr_timer_impl(
 	const uint64_t rbp,
 
 	const uint64_t *const rsp_top) {
-	ps_cpu_id_t cur_cpuid = ps_get_cur_cpuid();
+	ps_cpuid_t cur_cpuid = ps_get_cur_cpuid();
 	ps_pcb_t *cur_proc = ps_get_cur_proc();
 	ps_tcb_t *cur_thread = ps_get_cur_thread();
 	ps_tcb_t *next_thread = ps_cur_sched->next_thread(ps_cur_sched, cur_cpuid, cur_proc, cur_thread);

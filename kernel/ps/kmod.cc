@@ -62,6 +62,7 @@ PBOS_API km_result_t ps_load_kmod(fs_fcb_t *file_fp, ps_kmod_t **kmod_out) {
 				return KM_RESULT_MALFORMED;
 			if (!kmod->deinit_fn)
 				return KM_RESULT_MALFORMED;
+			KM_RETURN_IF_FAILED(ki_ps_register_kmod(kmod));
 			kfxx::scope_guard unregister_kmod_guard([kmod]() noexcept {
 				ki_ps_unregister_kmod(kmod);
 			});

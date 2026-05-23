@@ -11,7 +11,7 @@ PBOS_EXTERN_C_BEGIN
 
 typedef uint32_t mp_cpu_flags_t;
 
-typedef struct _mp_cpu_t : public kfxx::rbtree_t<ps_cpu_id_t>::node_t {
+typedef struct _mp_cpu_t : public kfxx::rbtree_t<ps_cpuid_t>::node_t {
 	mp_cpu_flags_t flags;
 } mp_cpu_t;
 

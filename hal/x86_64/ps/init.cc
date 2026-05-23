@@ -24,7 +24,7 @@ void hal_prepare_ps() {
 
 PBOS_NORETURN void kh_enter_sched_halt();
 
-PBOS_NORETURN void kh_enter_sched(ps_cpu_id_t cpuid) {
+PBOS_NORETURN void kh_enter_sched(ps_cpuid_t cpuid) {
 	arch_loadfs(cpuid);
 
 	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_DIVIDE_CONFIG, ARCH_LAPIC_DIVIDE_CONFIG_16);

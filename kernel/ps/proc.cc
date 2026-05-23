@@ -12,11 +12,11 @@ ps::rw_mutex_t ps_global_proc_set_mutex;
 ps_sched_t *ps_cur_sched = NULL;
 ps_proc_id_t ki_min_free_pid = 0, ki_cur_max_pid = 0;
 
-ps_ufd_t ps_alloc_fd(ps_pcb_t *pcb) {
+PBOS_API ps_ufd_t ps_alloc_fd(ps_pcb_t *pcb) {
 	return pcb->last_fd++;
 }
 
-ps_ufcb_t *ps_alloc_ufcb(ps_pcb_t *pcb, fs_fcb_t *kernel_fcb, ps_ufd_t fd) {
+PBOS_API ps_ufcb_t *ps_alloc_ufcb(ps_pcb_t *pcb, fs_fcb_t *kernel_fcb, ps_ufd_t fd) {
 	ps_ufcb_t *p = (ps_ufcb_t *)mm_kalloc(sizeof(ps_ufcb_t), alignof(ps_ufcb_t));
 	kfxx::construct_at<ps_ufcb_t>(p);
 	if (!p)
@@ -27,19 +27,19 @@ ps_ufcb_t *ps_alloc_ufcb(ps_pcb_t *pcb, fs_fcb_t *kernel_fcb, ps_ufd_t fd) {
 	return p;
 }
 
-void ps_add_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
+PBOS_API void ps_add_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
 	kd_dbgcheck(pcb->ufcb_set.insert(ufcb), "Error inserting new UFCB with ID=%d", ufcb->rb_value);
 }
 
-void ps_remove_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
+PBOS_API void ps_remove_ufcb(ps_pcb_t *pcb, ps_ufcb_t *ufcb) {
 	pcb->ufcb_set.remove(ufcb);
 }
 
-ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd) {
+PBOS_API ps_ufcb_t *ps_lookup_ufcb(ps_pcb_t *pcb, ps_ufd_t fd) {
 	return static_cast<ps_ufcb_t *>(pcb->ufcb_set.find(fd));
 }
 
-fs_fcb_t *ps_kfcb_of_ufcb(ps_ufcb_t *ufcb) {
+PBOS_API fs_fcb_t *ps_kfcb_of_ufcb(ps_ufcb_t *ufcb) {
 	return ufcb->kernel_fcb;
 }
 
@@ -75,7 +75,7 @@ void ki_destroy_proc(ps_pcb_t *pcb) {
 	kfxx::destroy_and_release<ps_pcb_t>(kfxx::kernel_allocator(), pcb);
 }
 
-km_result_t ps_create_proc(
+PBOS_API km_result_t ps_create_proc(
 	ps_pcb_t *pcb,
 	ps_proc_id_t parent) {
 	ps::write_rw_mutex_guard g(ps_global_proc_set_mutex.c_mutex());
@@ -114,7 +114,7 @@ km_result_t ps_create_proc(
 	return KM_RESULT_OK;
 }
 
-ps_pcb_t *ps_alloc_pcb() {
+PBOS_API ps_pcb_t *ps_alloc_pcb() {
 	mm_context_t *mm_context = mm_get_cur_context();
 
 	ps_pcb_t *proc = (ps_pcb_t *)kfxx::alloc_and_construct<ps_pcb_t>(kfxx::kernel_allocator());
@@ -153,15 +153,15 @@ ps_pcb_t *ps_alloc_pcb() {
 	return proc;
 }
 
-ps_pcb_t *ps_lookup_pcb(ps_proc_id_t pid) {
+PBOS_API ps_pcb_t *ps_lookup_pcb(ps_proc_id_t pid) {
 	return static_cast<ps_pcb_t *>(ps_global_proc_set.find(pid));
 }
 
-ps_proc_id_t ps_pid_of(ps_pcb_t *pcb) {
+PBOS_API ps_proc_id_t ps_pid_of(ps_pcb_t *pcb) {
 	return pcb->rb_value;
 }
 
-void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
+PBOS_API void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
 	io::local_irq_lock LocalIrqLock;
 	// stub: do some checks with the new thread id, such as checking if a thread with the id exists.
 	thread->rb_value = ++proc->last_thread_id;
@@ -180,11 +180,11 @@ void ki_switch_to_kernel_thread(ps_tcb_t *tcb) {
 	kh_switch_to_kernel_thread(tcb);
 }
 
-ps_cpu_id_t ps_get_cur_cpuid() {
+PBOS_API ps_cpuid_t ps_get_cur_cpuid() {
 	return kh_get_cur_cpuid();
 }
 
-void ki_set_cur_cpuid(ps_cpu_id_t cpuid) {
+void ki_set_cur_cpuid(ps_cpuid_t cpuid) {
 	kh_set_cur_cpuid(cpuid);
 }
 

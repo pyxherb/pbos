@@ -19,7 +19,7 @@ typedef km_result_t (*ps_sched_prepare_proc_t)(ps_sched_t *sched, ps_pcb_t *proc
 typedef km_result_t (*ps_sched_prepare_thread_t)(ps_sched_t *sched, ps_tcb_t *thread);
 typedef void (*ps_sched_drop_proc_t)(ps_sched_t *sched, ps_pcb_t *proc);
 typedef void (*ps_sched_drop_thread_t)(ps_sched_t *sched, ps_tcb_t *thread);
-typedef ps_tcb_t *(*ps_sched_next_thread_t)(ps_sched_t *sched, ps_cpu_id_t cur_cpuid, ps_pcb_t *cur_proc, ps_tcb_t *cur_thread);
+typedef ps_tcb_t *(*ps_sched_next_thread_t)(ps_sched_t *sched, ps_cpuid_t cur_cpuid, ps_pcb_t *cur_proc, ps_tcb_t *cur_thread);
 
 typedef struct _ps_sched_t {
 	ps_sched_init_t init;
