@@ -30,7 +30,7 @@ typedef uint8_t fs_filetype_t;
 #define FS_ACCESS_WRITE_XA 0x0200  // Write extra attributes (XA)
 typedef uint16_t fs_faccess_t;
 
-typedef struct _fs_file_system_t fs_file_system_t;
+typedef struct _fs_filesys_t fs_filesys_t;
 
 ///
 /// @brief The file node structure.
@@ -65,8 +65,8 @@ PBOS_NODISCARD PBOS_API km_result_t fs_create_fcb(
 PBOS_API void fs_set_fcb_exdata(fs_fcb_t *fcb, void *exdata);
 PBOS_NODISCARD PBOS_API void *fs_get_fcb_exdata(fs_fcb_t *fcb);
 
-PBOS_NODISCARD PBOS_API km_result_t fs_alloc_file_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out);
-PBOS_NODISCARD PBOS_API km_result_t fs_alloc_dir_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out);
+PBOS_NODISCARD PBOS_API km_result_t fs_alloc_file_fnode(fs_filesys_t *file_system, fs_fnode_t **file_out);
+PBOS_NODISCARD PBOS_API km_result_t fs_alloc_dir_fnode(fs_filesys_t *file_system, fs_fnode_t **file_out);
 
 PBOS_NODISCARD PBOS_API void *fs_get_fnode_exdata(fs_fnode_t *file);
 PBOS_API void fs_set_fnode_exdata(fs_fnode_t *file, void *exdata);

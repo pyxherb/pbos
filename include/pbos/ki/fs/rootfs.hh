@@ -6,8 +6,8 @@
 
 PBOS_EXTERN_C_BEGIN
 
-extern fs_file_system_ops_t ki_rootfs_ops;
-extern fs_file_system_t *fs_rootfs;
+extern fs_filesys_ops_t ki_rootfs_ops;
+extern fs_filesys_t *fs_rootfs;
 
 km_result_t ki_rootfs_subnode(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
 void ki_rootfs_offload(fs_fnode_t *file);

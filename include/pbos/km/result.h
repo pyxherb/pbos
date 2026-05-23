@@ -7,26 +7,42 @@
 typedef enum _km_results {
 	KM_RESULT_OK = 0,  // Success
 
-	KM_RESULT_FAILED,				  // Failed due to unknown errors
-	KM_RESULT_NO_PERM,				  // No permission
-	KM_RESULT_INVALID_ARGS,			  // Invalid arguments
-	KM_RESULT_NO_MEM,				  // No memory
-	KM_RESULT_IO_ERROR,				  // I/O error
-	KM_RESULT_NOT_FOUND,			  // Not found
-	KM_RESULT_UNAVAILABLE,			  // Unavailable
-	KM_RESULT_EOF,					  // End of file
-	KM_RESULT_MALFORMED,			  // Input is malformed
-	KM_RESULT_INVALID_ADDR,			  // Invalid address
-	KM_RESULT_EXISTED,				  // Existed
-	KM_RESULT_DEPRECATED,			  // Deprecated
-	KM_RESULT_INTERNAL_ERROR,		  // Internal error
-	KM_RESULT_NO_SLOT,				  // No free slot
-	KM_RESULT_UNSUPPORTED_OPERATION,  // Unsupported operation
-	KM_RESULT_UNSUPPORTED_EXECFMT,	  // Unsupport executable format
-	KM_RESULT_ACCESS_VIOLATION,		  // Access violation
-	KM_RESULT_DIR_NOT_EMPTY,		  // Directory is not empty
-	KM_RESULT_UNRESOLVED_SYMBOL,	  // Unresolved symbol
-	KM_RESULT_UNPROCESSABLE,		  // Unprocessable
+	/// @brief The generic failure code indicating a failure.
+	KM_RESULT_FAILED,
+	/// @brief Operation not permitted by current permission.
+	KM_RESULT_NO_PERM,
+	/// @brief Invalid arguments were received.
+	KM_RESULT_INVALID_ARGS,
+	/// @brief No memory.
+	KM_RESULT_NO_MEM,
+	/// @brief The generic I/O error code indicating an I/O error.
+	KM_RESULT_IO_ERROR,
+	/// @brief Requested entity was not found.
+	KM_RESULT_NOT_FOUND,
+	/// @brief Requested function is unavailable right now.
+	KM_RESULT_UNAVAILABLE,
+	/// @brief Prematured end of file detected.
+	KM_RESULT_EOF,
+	/// @brief Input data are malformed.
+	KM_RESULT_MALFORMED,
+	/// @brief Entity requested to create has already existed.
+	KM_RESULT_EXISTED,
+	/// @brief No enough entity slot to perform the operation.
+	KM_RESULT_NO_SLOT,
+	/// @brief Requested operation is not supported.
+	KM_RESULT_UNSUPPORTED_OPERATION,
+	/// @brief Unsupported executable format.
+	KM_RESULT_UNSUPPORTED_EXECFMT,
+	/// @brief Memory access violation.
+	KM_RESULT_ACCESS_VIOLATION,
+	/// @brief The directory to be operated is not empty.
+	KM_RESULT_DIR_NOT_EMPTY,
+	/// @brief Found unresolved symbols.
+	KM_RESULT_UNRESOLVED_SYMBOL,
+	/// @brief Requested entity or operation is not processable.
+	KM_RESULT_UNPROCESSABLE,
+	/// @brief The operation should be continue to process.
+	KM_RESULT_CONTINUE,
 } km_results;
 
 typedef uint32_t km_result_t;

@@ -73,7 +73,7 @@ typedef struct _fs_fnode_t {
 
 	_fs_fnode_t *parent = nullptr;
 
-	fs_file_system_t *fs = nullptr;
+	fs_filesys_t *fs = nullptr;
 	fs_filetype_t file_type;
 
 	size_t filename_len = 0;

@@ -157,7 +157,7 @@ PBOS_NODISCARD PBOS_API void *fs_get_fcb_exdata(fs_fcb_t *fcb) {
 	return fcb->exdata;
 }
 
-PBOS_NODISCARD PBOS_API km_result_t fs_alloc_file_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out) {
+PBOS_NODISCARD PBOS_API km_result_t fs_alloc_file_fnode(fs_filesys_t *file_system, fs_fnode_t **file_out) {
 	fs_file_t *ptr = kfxx::alloc_and_construct<fs_file_t>(&ki_fs_filename_allocator);
 
 	if (!ptr)
@@ -172,7 +172,7 @@ PBOS_NODISCARD PBOS_API km_result_t fs_alloc_file_fnode(fs_file_system_t *file_s
 	return KM_RESULT_OK;
 }
 
-PBOS_NODISCARD PBOS_API km_result_t fs_alloc_dir_fnode(fs_file_system_t *file_system, fs_fnode_t **file_out) {
+PBOS_NODISCARD PBOS_API km_result_t fs_alloc_dir_fnode(fs_filesys_t *file_system, fs_fnode_t **file_out) {
 	fs_dir_t *ptr = kfxx::alloc_and_construct<fs_dir_t>(&ki_fs_filename_allocator, &ki_fs_filename_allocator);
 
 	if (!ptr)
@@ -289,7 +289,7 @@ PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
 	if (!f->subnodes.shrink_buckets())
 		return KM_RESULT_NO_MEM;
 
-	fs_file_system_t *fs = parent->fs;
+	fs_filesys_t *fs = parent->fs;
 
 	KM_RETURN_IF_FAILED(fs->ops.premount(parent, file));
 

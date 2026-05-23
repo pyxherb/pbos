@@ -14,10 +14,10 @@ size_t kh_initcar_file_size = 0;
 bool kh_is_initcar_direct_mapped = true;
 fs_fnode_t *kh_initcar_first_file = nullptr, *kh_initcar_last_file = nullptr;
 
-fs_file_system_t *kh_initcar_fs = NULL;
+fs_filesys_t *kh_initcar_fs = NULL;
 fs_fnode_t *kh_initcar_dir;
 
-fs_file_system_ops_t kh_initcar_ops = {
+fs_filesys_ops_t kh_initcar_ops = {
 	.subnode = kh_initcar_subnode,
 	.offload = kh_initcar_offload,
 	.create_file = kh_initcar_create_file,

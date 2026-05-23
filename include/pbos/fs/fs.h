@@ -9,48 +9,79 @@ PBOS_EXTERN_C_BEGIN
 typedef struct _fs_fnode_t fs_fnode_t;
 typedef struct _fs_fcb_t fs_fcb_t;
 
-typedef struct _fs_file_system_ops_t {
+typedef struct _fs_forward_request_t {
+	void *callback;
+} fs_forward_request_t;
+
+typedef km_result_t (*fs_filesys_subnode_op_t)(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+typedef void (*fs_filesys_offload_op_t)(fs_fnode_t *file);
+
+typedef km_result_t (*fs_filesys_create_file_op_t)(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+typedef km_result_t (*fs_filesys_create_dir_op_t)(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+
+typedef km_result_t (*fs_filesys_open_op_t)(fs_fnode_t *file, fs_fcb_t **fcb_out);
+typedef void (*fs_filesys_close_op_t)(fs_fcb_t *fcb);
+
+typedef km_result_t (*fs_filesys_read_op_t)(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
+typedef km_result_t (*fs_filesys_write_op_t)(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
+
+typedef km_result_t (*fs_filesys_ioctl_op_t)(fs_fcb_t *fcb, uint32_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args);
+
+typedef km_result_t (*fs_filesys_size_op_t)(fs_fcb_t *fcb, size_t *size_out);
+
+typedef km_result_t (*fs_filesys_enum_first_child_file_op_t)(fs_fnode_t *dir, fs_fnode_t **first_file_out);
+typedef km_result_t (*fs_filesys_enum_next_file_op_t)(fs_fnode_t *cur_file, fs_fnode_t **next_file_out);
+
+typedef void (*fs_filesys_destroy_file_op_t)(fs_fnode_t *file);
+
+typedef km_result_t (*fs_filesys_premount_op_t)(fs_fnode_t *parent, fs_fnode_t *file);
+typedef void (*fs_filesys_mount_fail_op_t)(fs_fnode_t *parent, fs_fnode_t *file);
+typedef km_result_t (*fs_filesys_unmount_cleanup_op_t)(fs_fnode_t *file);
+
+/// @brief Destructor of the file system.
+typedef km_result_t (*fs_filesys_filesys_destructor_op_t)();
+
+typedef struct _fs_filesys_ops_t {
 	/// @brief Access subnode.
-	km_result_t (*subnode)(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+	fs_filesys_subnode_op_t subnode;
 	/// @brief Offload a file node from the memory.
-	void (*offload)(fs_fnode_t *file);
+	fs_filesys_offload_op_t offload;
 	/// @brief Create a new file.
-	km_result_t (*create_file)(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+	fs_filesys_create_file_op_t create_file;
 	/// @brief Create a new directory.
-	km_result_t (*create_dir)(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+	fs_filesys_create_dir_op_t create_dir;
 	/// @brief Open a file.
-	km_result_t (*open)(fs_fnode_t *file, fs_fcb_t **fcb_out);
+	fs_filesys_open_op_t open;
 	/// @brief Close a FCB.
-	void (*close)(fs_fcb_t *fcb);
+	fs_filesys_close_op_t close;
 	/// @brief Read data from a file.
-	km_result_t (*read)(fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
+	fs_filesys_read_op_t read;
 	/// @brief Write data into a file.
-	km_result_t (*write)(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
+	fs_filesys_write_op_t write;
 	/// @brief Perform an I/O control operation.
-	km_result_t (*ioctl)(fs_fcb_t *fcb, uint32_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args);
+	fs_filesys_ioctl_op_t ioctl;
 	/// @brief Get size of a file.
-	km_result_t (*size)(fs_fcb_t *fcb, size_t *size_out);
+	fs_filesys_size_op_t size;
 
-	km_result_t (*enum_first_child_file)(fs_fnode_t *dir, fs_fnode_t **first_file_out);
-	km_result_t (*enum_next_file)(fs_fnode_t *cur_file, fs_fnode_t **next_file_out);
+	fs_filesys_enum_first_child_file_op_t enum_first_child_file;
+	fs_filesys_enum_next_file_op_t enum_next_file;
 
-	void (*destroy)(fs_fnode_t *file);
+	fs_filesys_destroy_file_op_t destroy;
 
-	km_result_t (*premount)(fs_fnode_t *parent, fs_fnode_t *file);
-	void (*mount_fail)(fs_fnode_t *parent, fs_fnode_t *file);
-	km_result_t (*unmount_cleanup)(fs_fnode_t *file);
+	fs_filesys_premount_op_t premount;
+	fs_filesys_mount_fail_op_t mount_fail;
+	fs_filesys_unmount_cleanup_op_t unmount_cleanup;
 
-	/// @brief Destructor of the file system.
-	km_result_t (*destructor)();
-} fs_file_system_ops_t;
+	fs_filesys_filesys_destructor_op_t destructor;
+} fs_filesys_ops_t;
 
-typedef struct _fs_file_system_t fs_file_system_t;
+typedef struct _fs_filesys_t fs_filesys_t;
 
-PBOS_API fs_file_system_t *fs_register_file_system(
+PBOS_API fs_filesys_t *fs_register_file_system(
 	const char *name,
 	size_t name_len,
-	fs_file_system_ops_t *ops,
-	fs_file_system_t **fs_out);
+	fs_filesys_ops_t *ops,
+	fs_filesys_t **fs_out);
 
 PBOS_EXTERN_C_END
 

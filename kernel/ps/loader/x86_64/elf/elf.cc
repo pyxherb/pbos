@@ -82,7 +82,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 			continue;
 
 		if ((((uint64_t)ph.p_vaddr) + ph.p_memsz) >= KERNEL_VBASE) {
-			return KM_RESULT_INVALID_ADDR;
+			return KM_RESULT_MALFORMED;
 		}
 
 		if (ph.p_filesz > ph.p_memsz)

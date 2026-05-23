@@ -30,7 +30,7 @@ typedef struct _ps_kmod_t {
 extern ps_kmod_t *ki_ps_kmod_list;
 
 PBOS_NODISCARD PBOS_API km_result_t ki_ps_register_kmod(ps_kmod_t *kmod);
-PBOS_NODISCARD PBOS_API void ki_ps_unregister_kmod(ps_kmod_t *kmod);
+PBOS_API void ki_ps_unregister_kmod(ps_kmod_t *kmod);
 
 km_result_t ki_ps_alloc_kmod_section(void *vaddr, size_t size, ps_kmod_t *kmod, ps_kmod_section_t **section_out);
 void ki_ps_destroy_kmod_section(ps_kmod_section_t *section);

@@ -8,35 +8,35 @@
 
 PBOS_EXTERN_C_BEGIN
 
-kfxx::hashmap_t<kfxx::string_view, fs_file_system_t *> ki_registered_fs(kfxx::kernel_allocator());
+kfxx::hashmap_t<kfxx::string_view, fs_filesys_t *> ki_registered_fs(kfxx::kernel_allocator());
 fs_fnode_t *fs_abs_root_dir;
-fs_file_system_t *fs_rootfs;
+fs_filesys_t *fs_rootfs;
 
-_fs_file_system_t::_fs_file_system_t() {
+_fs_filesys_t::_fs_filesys_t() {
 }
 
-_fs_file_system_t::~_fs_file_system_t() {
+_fs_filesys_t::~_fs_filesys_t() {
 	if (name)
 		kfxx::kernel_allocator()->release(name, name_len, alignof(char));
 }
 
-PBOS_API fs_file_system_t *fs_register_file_system(
+PBOS_API fs_filesys_t *fs_register_file_system(
 	const char *name,
 	size_t name_len,
-	fs_file_system_ops_t *ops,
-	fs_file_system_t **fs_out) {
-	fs_file_system_t *fs = (fs_file_system_t *)kfxx::alloc_and_construct<fs_file_system_t>(kfxx::kernel_allocator());
+	fs_filesys_ops_t *ops,
+	fs_filesys_t **fs_out) {
+	fs_filesys_t *fs = (fs_filesys_t *)kfxx::alloc_and_construct<fs_filesys_t>(kfxx::kernel_allocator());
 	if (!fs)
 		return nullptr;
 
 	kfxx::scope_guard release_fs_guard([fs]() noexcept {
-		kfxx::destroy_and_release<fs_file_system_t>(kfxx::kernel_allocator(), fs);
+		kfxx::destroy_and_release<fs_filesys_t>(kfxx::kernel_allocator(), fs);
 	});
 
 	if (!(fs->name = (char *)kfxx::kernel_allocator()->alloc(name_len, alignof(char))))
 		return nullptr;
 	fs->name_len = name_len;
-	memcpy(&fs->ops, ops, sizeof(fs_file_system_ops_t));
+	memcpy(&fs->ops, ops, sizeof(fs_filesys_ops_t));
 
 	if (!ki_registered_fs.insert(kfxx::string_view(fs->name, name_len), +fs))
 		return nullptr;

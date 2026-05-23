@@ -10,8 +10,8 @@ const ki_paging_config_t *ki_cur_paging_config;
 ps::mutex_t ki_kernel_mmap_mutex;
 
 _mm_context_t::_mm_context_t() {
-	ki_init_kima_pool(&this->kima_common_pool);
-	ki_init_kima_pool(&this->kima_vmr_pool);
+	kima_init_pool(&this->kima_common_pool);
+	kima_init_pool(&this->kima_vmr_pool);
 }
 
 PBOS_PURE PBOS_API size_t mm_get_page_size() {

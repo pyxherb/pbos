@@ -217,7 +217,7 @@ PBOS_NODISCARD PBOS_API km_result_t ki_ps_register_kmod(ps_kmod_t *kmod) {
 	return KM_RESULT_OK;
 }
 
-PBOS_NODISCARD PBOS_API void ki_ps_unregister_kmod(ps_kmod_t *kmod) {
+PBOS_API void ki_ps_unregister_kmod(ps_kmod_t *kmod) {
 	ps::mutex_guard g(ki_ps_kmod_list_mutex.c_mutex());
 
 	ki_ps_kmod_map.remove(kfxx::string_view(kmod->name, kmod->name_len));

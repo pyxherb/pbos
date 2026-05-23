@@ -10,14 +10,14 @@
 
 PBOS_EXTERN_C_BEGIN
 
-typedef struct _fs_file_system_t {
+typedef struct _fs_filesys_t {
 	char *name;
 	size_t name_len;
-	fs_file_system_ops_t ops;
+	fs_filesys_ops_t ops;
 
-	_fs_file_system_t();
-	~_fs_file_system_t();
-} fs_file_system_t;
+	_fs_filesys_t();
+	~_fs_filesys_t();
+} fs_filesys_t;
 
 extern fs_fnode_t *fs_abs_root_dir;
 

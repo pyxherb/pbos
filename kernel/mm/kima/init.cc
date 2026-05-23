@@ -1,7 +1,7 @@
 #include <pbos/kd/logger.h>
 #include <pbos/ki/mm/kima.hh>
 
-void ki_init_kima_pool(kima_pool_t *pool) {
+void kima_init_pool(kima_pool_t *pool) {
 	const size_t page_size = mm_get_page_size();
 
 	pool->vpgdesc_slots_off = kfxx::ceil_align_to((uintptr_t)sizeof(kima_vpgdesc_poolpg_header_t), alignof(kima_vpgdesc_t));

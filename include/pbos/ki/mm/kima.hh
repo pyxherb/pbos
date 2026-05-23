@@ -34,7 +34,7 @@ typedef struct _kima_pool_t {
 
 extern kima_pool_t *mm_global_pool;
 
-void ki_init_kima_pool(kima_pool_t *pool);
+void kima_init_pool(kima_pool_t *pool);
 
 //
 // User block definitions.
