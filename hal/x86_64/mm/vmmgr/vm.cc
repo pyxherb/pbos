@@ -113,8 +113,8 @@ PBOS_NODISCARD uint8_t hali_mm_mmap_early(
 			if (!(ARCH_PDPTE_MASK(pdpt[pdptx]) & PDPTE_P)) {
 				result |= 0b010;
 				pdpt[pdptx] =
-					ARCH_PML4TE_WITH_ADDR(
-						ARCH_PML4TE_WITH_MASKS(pdpt[pdptx], PDPTE_P | PDPTE_RW),
+					ARCH_PDPTE_WITH_ADDR(
+						ARCH_PDPTE_WITH_MASKS(pdpt[pdptx], PDPTE_P | PDPTE_RW),
 						PGROUNDDOWN(pde_paddr));
 				init_pdt = true;
 			}
@@ -151,8 +151,8 @@ PBOS_NODISCARD uint8_t hali_mm_mmap_early(
 				if (!(ARCH_PDE_MASK(pdt[pdx]) & PDE_P)) {
 					result |= 0b001;
 					pdt[pdx] =
-						ARCH_PML4TE_WITH_ADDR(
-							ARCH_PML4TE_WITH_MASKS(pdt[pdx], PDE_P | PDE_RW),
+						ARCH_PDE_WITH_ADDR(
+							ARCH_PDE_WITH_MASKS(pdt[pdx], PDE_P | PDE_RW),
 							PGROUNDDOWN(pte_paddr));
 					init_ptt = true;
 				}
@@ -251,11 +251,12 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 			if (flags & MMAP_NO_PGTAB_ALLOC)
 				km_panic("Missing PML4 table entry with MMAP_NO_PGTAB_ALLOC, please report this bug.");
 			// Allocate page table.
+			void *t = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 			*pml4te =
 				ARCH_PML4TE_WITH_XD(
 					ARCH_PML4TE_WITH_ADDR(
 						ARCH_PML4TE_WITH_MASKS(0, PML4E_P | PML4E_RW | PML4E_U),
-						PGROUNDDOWN(mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))),
+						PGROUNDDOWN(t)),
 					false);
 			is_pml4te_allocated = true;
 		}
@@ -291,11 +292,12 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 				if (flags & MMAP_NO_PGTAB_ALLOC)
 					km_panic("Missing PDP table entry with MMAP_NO_PGTAB_ALLOC, please report this bug.");
 				// Allocate page table.
+				void *t = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 				pdpt[pdptx] =
-					ARCH_PML4TE_WITH_XD(
-						ARCH_PML4TE_WITH_ADDR(
-							ARCH_PML4TE_WITH_MASKS(0, PDPTE_P | PDPTE_RW | PDPTE_U),
-							PGROUNDDOWN(mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))),
+					ARCH_PDPTE_WITH_XD(
+						ARCH_PDPTE_WITH_ADDR(
+							ARCH_PDPTE_WITH_MASKS(0, PDPTE_P | PDPTE_RW | PDPTE_U),
+							PGROUNDDOWN(t)),
 						false);
 				is_pdpte_allocated = true;
 			}
@@ -335,11 +337,12 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 					if (flags & MMAP_NO_PGTAB_ALLOC)
 						km_panic("Missing page directory table entry with MMAP_NO_PGTAB_ALLOC, please report this bug.");
 					// Allocate page table.
+					void *t = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 					pdt[pdx] =
-						ARCH_PML4TE_WITH_XD(
-							ARCH_PML4TE_WITH_ADDR(
-								ARCH_PML4TE_WITH_MASKS(0, PDE_P | PDE_RW | PDE_U),
-								PGROUNDDOWN(mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))),
+						ARCH_PDE_WITH_XD(
+							ARCH_PDE_WITH_ADDR(
+								ARCH_PDE_WITH_MASKS(0, PDE_P | PDE_RW | PDE_U),
+								PGROUNDDOWN(t)),
 							false);
 					is_pde_allocated = true;
 				}
@@ -381,17 +384,25 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 						if (flags & MMAP_NO_REMAP)
 							km_panic("Remapping address %p with MMAP_NO_REMAP", ptt_vaddr);
 
-						mm_pgfree(UNPGADDR(ARCH_PTE_ADDR(*pte)));
+						void *addr = (void *)UNPGADDR(ARCH_PTE_ADDR(*pte));
+						if (addr)
+							mm_unpin_page(addr);
 					} else {
 					}
 
-					if (!(flags & MMAP_NO_INC_RC))
-						mm_refpg(pi);
+					if (!(flags & MMAP_NO_INC_RC)) {
+						if (pi) {
+							if (is_user_space)
+								mm_ref_page(pi);
+							else
+								mm_pin_page(pi);
+						}
+					}
 
 					*pte =
-						ARCH_PML4TE_WITH_XD(
-							ARCH_PML4TE_WITH_ADDR(
-								ARCH_PML4TE_WITH_MASKS(*pte, mask),
+						ARCH_PTE_WITH_XD(
+							ARCH_PTE_WITH_ADDR(
+								ARCH_PTE_WITH_MASKS(*pte, mask),
 								PGROUNDDOWN(pi)),
 							!(access & MM_PAGE_EXEC));
 
@@ -530,8 +541,15 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 						if (flags & MMAP_NO_REMAP)
 							km_panic("Remapping address %p with MMAP_NO_REMAP", ptt_vaddr);
 
-						if (!(flags & MMAP_NO_INC_RC))
-							mm_pgfree(UNPGADDR(ARCH_PTE_ADDR(*pte)));
+						if (!(flags & MMAP_NO_INC_RC)) {
+							void *addr = (void *)UNPGADDR(ARCH_PTE_ADDR(*pte));
+							if (addr) {
+								if (is_user_space)
+									mm_unref_page(addr);
+								else
+									mm_unpin_page(addr);
+							}
+						}
 					}
 
 					*pte = ARCH_PTE_WITH_MASKS(0, 0);
@@ -549,7 +567,7 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 				{
 					pgaddr_t pde_addr = ARCH_PDE_ADDR(pdt[pdx]);
 					pdt[pdx] = ARCH_PDE_WITH_MASKS(0, 0);
-					mm_pgfree(UNPGADDR(pde_addr));
+					mm_unpin_page(UNPGADDR(pde_addr));
 				}
 
 			skip_release_pt:;
@@ -564,7 +582,7 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 			{
 				pgaddr_t pdpte_addr = ARCH_PDE_ADDR(pdpt[pdptx]);
 				pdpt[pdptx] = ARCH_PDE_WITH_MASKS(0, 0);
-				mm_pgfree(UNPGADDR(pdpte_addr));
+				mm_unpin_page(UNPGADDR(pdpte_addr));
 			}
 
 		skip_release_pd:;
@@ -579,10 +597,141 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 		{
 			pgaddr_t pml4te_addr = ARCH_PDE_ADDR(pml4te[pml4x]);
 			pml4te[pml4x] = ARCH_PDE_WITH_MASKS(0, 0);
-			mm_pgfree(UNPGADDR(pml4te_addr));
+			mm_unpin_page(UNPGADDR(pml4te_addr));
 		}
 
 	skip_release_pdp:;
+	}
+}
+
+void kh_walk_pgtab(mm_context_t *ctxt, void *vaddr, size_t size, kh_pgtab_walker walker, void *user_data) {
+#ifndef NDEBUG
+	bool is_user_space = mm_is_user_space(vaddr);
+
+	if (is_user_space !=
+		mm_is_user_space((void *)(((uintptr_t)vaddr) + (size - 1))))
+		km_panic("Cannot walk across user and kernel spaces");
+#endif
+
+	void *const addr_limit = (char *)vaddr + size;
+	const arch_pml4te_t *pml4t = (arch_pml4te_t *)ctxt->page_table;
+	uintptr_t addr_prefix = ADDR_PREFIX(vaddr);
+
+	// Walk each PML4E.
+	for (uint16_t pml4x = PML4X(vaddr); pml4x < PML4X(addr_limit) + 1; ++pml4x) {
+		const arch_pml4te_t *pml4te = &pml4t[pml4x];
+
+		bool is_pml4te_allocated = false;
+		if (!(ARCH_PML4TE_MASK(*pml4te) & PML4E_P)) {
+			continue;
+		}
+
+		const arch_pdpte_t *pdpt;
+		void *pdpt_paddr = UNPGADDR(ARCH_PML4TE_ADDR(*pml4te));
+		kfxx::scope_guard release_tmpmap_pdpt_guard([&pdpt]() noexcept {
+			hali_tmpunmap_post((void *)pdpt, PAGESIZE);
+		});
+		if (!(pdpt = (arch_pdpte_t *)kh_get_direct_mmap(pdpt_paddr))) {
+			pdpt = (arch_pdpte_t *)
+				hali_tmpmap_post(
+					pdpt_paddr,
+					sizeof(arch_pdpte_t) * (PTX_MAX + 1),
+					PTE_P | PTE_RW);
+		} else
+			release_tmpmap_pdpt_guard.release();
+
+		// Walk each PDPTE.
+		for (uint16_t pdptx = (pml4x == PML4X(vaddr) ? PDPTX(vaddr) : 0);
+			pdptx < PDPTX_MAX + 1;
+			++pdptx) {
+			char *const pdpt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, 0, 0, 0));
+
+			if (pdpt_vaddr >= (void *)addr_limit)
+				break;
+
+			bool is_pdpte_allocated = false;
+			if (!(ARCH_PDPTE_MASK(pdpt[pdptx]) & PDPTE_P)) {
+				continue;
+			}
+
+			const arch_pde_t *pdt;
+			void *pdt_paddr = UNPGADDR(ARCH_PDPTE_ADDR(pdpt[pdptx]));
+			kfxx::scope_guard release_tmpmap_pdt_guard([&pdt]() noexcept {
+				hali_tmpunmap_post((void *)pdt, PAGESIZE);
+			});
+			if (!(pdt = (arch_pde_t *)kh_get_direct_mmap(pdt_paddr))) {
+				pdt = (arch_pde_t *)
+					hali_tmpmap_post(
+						pdt_paddr,
+						sizeof(arch_pde_t) * (PTX_MAX + 1),
+						PTE_P | PTE_RW);
+			} else
+				release_tmpmap_pdt_guard.release();
+
+			// Walk each PDE.
+			for (uint16_t pdx =
+					 (pml4x == PML4X(vaddr) &&
+								 pdptx == PDPTX(vaddr)
+							 ? PDX(vaddr)
+							 : 0);
+				pdx < PDX_MAX + 1;
+				++pdx) {
+				char *const pdt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, 0, 0));
+
+				if (pdt_vaddr >= (void *)addr_limit)
+					break;
+
+				bool is_pde_allocated = false;
+				if (!(ARCH_PDE_MASK(pdt[pdx]) & PDE_P)) {
+					continue;
+				}
+
+				const arch_pte_t *ptt;
+				void *ptt_paddr = UNPGADDR(ARCH_PDE_ADDR(pdt[pdx]));
+				kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
+					hali_tmpunmap_post((void *)ptt, PAGESIZE);
+				});
+				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(ptt_paddr))) {
+					ptt = (arch_pte_t *)
+						hali_tmpmap_post(
+							ptt_paddr,
+							sizeof(arch_pte_t) * (PTX_MAX + 1),
+							PTE_P | PTE_RW);
+				} else
+					release_tmpmap_ptt_guard.release();
+
+				// Walk each PTE.
+				for (uint16_t ptx =
+						 (pml4x == PML4X(vaddr) &&
+									 pdptx == PDPTX(vaddr) &&
+									 pdx == PDX(vaddr)
+								 ? PTX(vaddr)
+								 : 0);
+					ptx < PTX_MAX + 1;
+					++ptx) {
+					char *const ptt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, ptx, 0));
+
+					if (ptt_vaddr >= (void *)addr_limit)
+						break;
+
+					const arch_pte_t *pte = &ptt[ptx];
+
+					mm_pgaccess_t pgaccess = MM_PAGE_READ;
+					uint64_t pte_mask = ARCH_PTE_MASK(ptt[ptx]);
+					if (pte_mask & PTE_P)
+						pgaccess |= MM_PAGE_MAPPED;
+					if (pte_mask & PTE_RW)
+						pgaccess |= MM_PAGE_WRITE;
+					if (pte_mask & PTE_U)
+						pgaccess |= MM_PAGE_USER;
+					if (!ARCH_PTE_XD(ptt[ptx]))
+						pgaccess |= MM_PAGE_EXEC;
+
+					if (walker(ptt_vaddr, (void *)UNPGADDR(ARCH_PTE_ADDR(*pte)), pgaccess, user_data) == KF_CONTROL_FLOW_BREAK)
+						return;
+				}
+			}
+		}
 	}
 }
 

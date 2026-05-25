@@ -5,7 +5,7 @@
 #include <pbos/kfxx/scope_guard.hh>
 
 void ps_user_thread_init(ps_tcb_t *tcb) {
-	tcb->context->rflags |= (1 << 9);	 // IF
+	tcb->context->rflags |= (1 << 9);  // IF
 	tcb->context->cs = SELECTOR_UCODE;
 	tcb->context->ds = SELECTOR_UDATA;
 	tcb->context->ss = SELECTOR_UDATA;
@@ -47,7 +47,7 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 			  (void *)USER_VTOP,
 			  size,
 			  MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER,
-			  VMALLOC_ATOMIC))) {
+			  0))) {
 		return KM_RESULT_NO_MEM;
 	}
 
@@ -70,18 +70,17 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 				return KM_RESULT_NO_MEM;
 			}
 
-			kfxx::scope_guard release_pg_guard([pg]() noexcept {
-				mm_pgfree(pg);
+			kfxx::deferred release_pg_guard([pg]() noexcept {
+				mm_unpin_page(pg);
 			});
 
-			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, page_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER, MMAP_NO_INC_RC))) {
+			// User mmap does not increase the kernel reference count.
+			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, page_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER, 0))) {
 				return result;
 			}
 
 			if (i)
 				km_unwrap_result(mm_merge_mapped_area(pcb->mm_context, ptr, ptr + i));
-
-			release_pg_guard.release();
 		}
 
 		release_pages_guard.release();

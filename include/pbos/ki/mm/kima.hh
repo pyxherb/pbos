@@ -2,6 +2,7 @@
 #define _PBOS_KI_KM_KIMA_H_
 
 #include "misc.hh"
+#include <pbos/kfxx/allocator.hh>
 #include <pbos/ps/mutex.hh>
 
 PBOS_EXTERN_C_BEGIN
@@ -98,6 +99,24 @@ void kima_free(kima_pool_t *pool, void *ptr);
 void kima_free_pool(kima_pool_t *pool);
 
 size_t kima_get_allocated_page_num(kima_pool_t *pool);
+
+class kima_allocator_t : public kfxx::allocator_t {
+public:
+	kima_pool_t pool;
+
+	PBOS_PRIVATE kima_allocator_t();
+	PBOS_PRIVATE virtual ~kima_allocator_t();
+
+	PBOS_PRIVATE virtual size_t inc_ref() noexcept override;
+	PBOS_PRIVATE virtual size_t dec_ref() noexcept override;
+
+	PBOS_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
+
+	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
+};
 
 PBOS_EXTERN_C_END
 

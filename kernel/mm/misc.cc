@@ -2,6 +2,7 @@
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/kh/mm/misc.hh>
 #include <pbos/ki/km/symbol.hh>
+#include <pbos/ki/mm/pgalloc.hh>
 #include <pbos/ki/ps/proc.hh>
 
 mm_context_t **mm_cur_contexts = nullptr;
@@ -14,8 +15,47 @@ _mm_context_t::_mm_context_t() {
 	kima_init_pool(&this->kima_vmr_pool);
 }
 
+PBOS_PRIVATE ki_mm_pmgroup_t::ki_mm_pmgroup_t(kfxx::allocator_t *allocator): vmrs(allocator) {
+}
+
+PBOS_PRIVATE ki_mm_pmgroup_t::~ki_mm_pmgroup_t() {
+}
+
 PBOS_PURE PBOS_API size_t mm_get_page_size() {
 	return kh_get_page_size();
+}
+
+PBOS_PRIVATE km_result_t ki_mm_add_vmr_to_pmgroup(ki_mm_pmgroup_t *pmgroup, mm_vmr_t *vmr) {
+	// ps::mutex_guard g(pmgroup->mutex.c_mutex());
+	if (!pmgroup->vmrs.insert_or_keep(+vmr))
+		return KM_RESULT_NO_MEM;
+	return KM_RESULT_OK;
+}
+
+PBOS_PRIVATE bool ki_mm_remove_vmr_from_pmgroup(ki_mm_pmgroup_t *pmgroup, mm_vmr_t *vmr) {
+	ps::mutex_guard g(pmgroup->mutex.c_mutex());
+
+	pmgroup->vmrs.remove(vmr);
+	if (!pmgroup->vmrs.size()) {
+		ki_mm_destroy_pmgroup(pmgroup);
+		return true;
+	}
+	return false;
+}
+
+PBOS_PRIVATE ki_mm_pmgroup_t *ki_mm_alloc_pmgroup() {
+	return kfxx::alloc_and_construct<ki_mm_pmgroup_t>(kfxx::kernel_allocator(), kfxx::kernel_allocator());
+}
+
+PBOS_PRIVATE void ki_mm_destroy_pmgroup(ki_mm_pmgroup_t *pmgroup) {
+	kd_assert(!pmgroup->vmrs.size());
+
+	kfxx::destroy_and_release<ki_mm_pmgroup_t>(kfxx::kernel_allocator(), pmgroup);
+}
+
+PBOS_PRIVATE void ki_mm_destroy_vmr(mm_vmr_t *vmr) {
+	kfxx::destroy_at<mm_vmr_t>(vmr);
+	kima_free(&vmr->mm_context->kima_vmr_pool, vmr);
 }
 
 PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
@@ -33,6 +73,7 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 	size_t aligned_size = PGCEIL(size);
 	char *vaddr_limit = (char *)aligned_vaddr + (size - 1);
 	bool is_user_space = mm_is_user_space(aligned_vaddr);
+	size_t page_size = kh_get_page_size();
 
 	// Overflow is an error.
 	if (UINTPTR_MAX - (uintptr_t)aligned_vaddr < aligned_size) {
@@ -52,8 +93,10 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 	}
 
 	kfxx::scope_guard remove_vmr_guard([ctxt, aligned_vaddr]() noexcept {
-		if (auto node = ctxt->vmr_tree.find(aligned_vaddr))
+		if (auto node = ctxt->vmr_tree.find(aligned_vaddr)) {
 			ctxt->vmr_tree.remove(node);
+			ki_mm_destroy_vmr(static_cast<mm_vmr_t *>(node));
+		}
 	});
 
 	if (!(flags & MMAP_IGNORE_VMR)) {
@@ -85,6 +128,72 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 			new_vmr->size = size;
 			new_vmr->access = access;
 
+			{
+				ki_mm_pmgroup_t *default_group = nullptr;
+
+				if (vmr_begin) {
+					if ((char *)vmr_begin->rb_value + vmr_begin->size == vaddr) {
+						default_group = vmr_begin->default_pmgroup;
+					}
+				}
+
+				if (!default_group) {
+					mm_vmr_t *nearing_vmr;
+					nearing_vmr = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find((char *)vaddr + kfxx::ceil_align_to(size, page_size)));
+					if (nearing_vmr) {
+						default_group = nearing_vmr->default_pmgroup;
+					}
+					if (!default_group) {
+						for (size_t i = 0; i < size; i += page_size) {
+							ki_mad_t *mad = kh_get_mad((char *)paddr + i);
+							if (mad->pmgroup) {
+								default_group = mad->pmgroup;
+								break;
+							}
+						}
+						if (!default_group) {
+							if (!(default_group = ki_mm_alloc_pmgroup()))
+								return KM_RESULT_NO_MEM;
+						}
+					}
+				}
+
+				kfxx::deferred destroy_default_group_guard([&default_group]() noexcept {
+					if (!default_group->vmrs.size())
+						ki_mm_destroy_pmgroup(default_group);
+				});
+
+				if (!default_group->vmrs.insert_or_keep(+new_vmr))
+					return KM_RESULT_NO_MEM;
+
+				size_t i = 0;
+				// Guard which removes VMR from each involved PM groups.
+				kfxx::scope_guard remove_vmr_guard([new_vmr, paddr, &i]() noexcept {
+					for (size_t j = 0; j < i; ++j) {
+						ki_mad_t *mad = kh_get_mad((char *)paddr + i);
+
+						if (mad->pmgroup) {
+							if (ki_mm_remove_vmr_from_pmgroup(mad->pmgroup, new_vmr))
+								mad->pmgroup = nullptr;
+						}
+					}
+				});
+
+				for (; i < size; i += page_size) {
+					ki_mad_t *mad = kh_get_mad((char *)paddr + i);
+					if (mad->pmgroup) {
+						if (!mad->pmgroup->vmrs.insert_or_keep(+new_vmr))
+							return KM_RESULT_NO_MEM;
+					} else {
+						mad->pmgroup = default_group;
+					}
+				}
+
+				remove_vmr_guard.release();
+
+				new_vmr->default_pmgroup = default_group;
+			}
+
 			ctxt->vmr_tree.insert_unwrap(new_vmr);
 		} else
 			remove_vmr_guard.release();
@@ -115,6 +224,7 @@ PBOS_API km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 	size_t aligned_size = PGCEIL(size);
 	char *vaddr_limit = (char *)aligned_vaddr + (size - 1);
 	bool is_user_space = mm_is_user_space(aligned_vaddr);
+	size_t page_size = kh_get_page_size();
 
 	// Overflow is an error.
 	if (UINTPTR_MAX - (uintptr_t)aligned_vaddr < aligned_size) {
@@ -145,11 +255,25 @@ PBOS_API km_result_t mm_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 			if (size)
 				return KM_RESULT_INVALID_ARGS;
 
+			kh_walk_pgtab(
+				ctxt,
+				vaddr,
+				size,
+				[](void *vaddr, void *paddr, mm_pgaccess_t pgaccess, void *user_data) -> kf_control_flow_t {
+					ki_mad_t *mad = kh_get_mad(paddr);
+					mm_vmr_t *vmr = (mm_vmr_t *)user_data;
+
+					if (ki_mm_remove_vmr_from_pmgroup(mad->pmgroup, vmr)) {
+						mad->pmgroup = nullptr;
+					}
+					return KF_CONTROL_FLOW_CONTINUE;
+				},
+				vmr);
+
 			aligned_size = PGCEIL(vmr->size);
 
 			ctxt->vmr_tree.remove(vmr);
-			kfxx::destroy_at<mm_vmr_t>(vmr);
-			kima_free(&ctxt->kima_vmr_pool, vmr);
+			ki_mm_destroy_vmr(vmr);
 		}
 	} else {
 		if (!size)
@@ -200,6 +324,23 @@ PBOS_NODISCARD PBOS_API km_result_t mm_merge_mapped_area(
 		return KM_RESULT_INVALID_ARGS;
 	}
 
+	size_t page_size = kh_get_page_size();
+
+	kh_walk_pgtab(
+		context,
+		vmr_b->rb_value,
+		vmr_b->size,
+		[](void *vaddr, void *paddr, mm_pgaccess_t pgaccess, void *user_data) -> kf_control_flow_t {
+			ki_mad_t *mad = kh_get_mad(paddr);
+			mm_vmr_t *vmr_b = (mm_vmr_t *)user_data;
+
+			if (ki_mm_remove_vmr_from_pmgroup(mad->pmgroup, vmr_b))
+				mad->pmgroup = nullptr;
+
+			return KF_CONTROL_FLOW_CONTINUE;
+		},
+		vmr_b);
+
 	vmr_a->size += vmr_b->size;
 
 	context->vmr_tree.remove(vmr_b);
@@ -241,8 +382,62 @@ PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
 		return KM_RESULT_NO_MEM;
 	kfxx::construct_at<mm_vmr_t>(new_vmr);
 
+	size_t latter_vmr_size = (((char *)vmr->rb_value) + vmr->size) - (char *)split_point;
+	size_t split_point_off = (char *)split_point - (char *)vmr->rb_value;
+	size_t page_size = kh_get_page_size();
+
+	{
+		ki_mm_pmgroup_t *default_group = vmr->default_pmgroup;
+		if (!ki_mm_add_vmr_to_pmgroup(default_group, new_vmr))
+			return KM_RESULT_NO_MEM;
+
+		// Guard which removes VMR from each involved PMGroups.
+		kfxx::scope_guard remove_vmr_guard([context, split_point, latter_vmr_size, split_point_off, new_vmr]() noexcept {
+			kh_walk_pgtab(
+				context,
+				split_point,
+				latter_vmr_size,
+				[](void *vaddr, void *paddr, mm_pgaccess_t pgaccess, void *user_data) -> kf_control_flow_t {
+					ki_mad_t *mad = kh_get_mad(paddr);
+					mm_vmr_t *new_vmr = (mm_vmr_t *)user_data;
+					if (ki_mm_remove_vmr_from_pmgroup(mad->pmgroup, new_vmr))
+						mad->pmgroup = nullptr;
+					return KF_CONTROL_FLOW_CONTINUE;
+				},
+				new_vmr);
+		});
+
+		struct context_struct_t {
+			km_result_t result;
+			mm_vmr_t *new_vmr;
+		};
+
+		context_struct_t cs = {
+			KM_RESULT_OK,
+			new_vmr
+		};
+
+		kh_walk_pgtab(
+			context,
+			split_point,
+			latter_vmr_size,
+			[](void *vaddr, void *paddr, mm_pgaccess_t pgaccess, void *user_data) -> kf_control_flow_t {
+				context_struct_t *cs = (context_struct_t *)user_data;
+				ki_mad_t *mad = kh_get_mad(paddr);
+				if (!mad->pmgroup->vmrs.insert_or_keep(+cs->new_vmr)) {
+					cs->result = KM_RESULT_NO_MEM;
+					return KF_CONTROL_FLOW_BREAK;
+				}
+				return KF_CONTROL_FLOW_CONTINUE;
+			},
+			&cs);
+		KM_RETURN_IF_FAILED(cs.result);
+
+		remove_vmr_guard.release();
+	}
+
 	new_vmr->rb_value = split_point;
-	new_vmr->size = (((char *)vmr->rb_value) + vmr->size) - (char *)split_point;
+	new_vmr->size = latter_vmr_size;
 	new_vmr->access = vmr->access;
 
 	context->vmr_tree.insert_unwrap(new_vmr);

@@ -255,127 +255,36 @@ km_result_t ki_do_rename_fnode(fs_fnode_t *file, const char *name, size_t name_l
 }
 
 PBOS_API km_result_t fs_create_file(
-	io_dispatch_context_t *dc,
 	fs_fnode_t *parent,
 	const char *filename,
 	size_t filename_len,
 	fs_fnode_t **file_out) {
-	io_ctb_t ctb;
-	struct ctb_exdata_t {
-		fs_fnode_t *parent;
-		const char *filename;
-		size_t filename_len;
-		fs_fnode_t **file_out;
-	};
-	ctb_exdata_t ctb_exdata = {
-		parent,
-		filename,
-		filename_len,
-		file_out
-	};
-	km_result_t result;
+	io_dispatch_context_t dispatch_context;
+	io_init_dispatch_context(&dispatch_context);
 
-	if (dc->num_ctbs) {
-		io_ctb_ops_t ops = {
-			.perform = [](io_dispatch_context_t *dc, io_ctb_t *ctb) -> km_result_t {
-				ctb_exdata_t *exdata = (ctb_exdata_t *)io_get_ctb_exdata(ctb);
-				KM_RETURN_IF_FAILED(
-					exdata->parent->fs->ops.create_file(
-						dc,
-						exdata->parent,
-						exdata->filename,
-						exdata->filename_len,
-						exdata->file_out));
-				return KM_RESULT_OK;
-			},
-			.finish = [](io_dispatch_context_t *dc, io_ctb_t *ctb, km_result_t result) -> km_result_t {
-				return result;
-			},
-			.fail = [](io_dispatch_context_t *dc, io_ctb_t *ctb, km_result_t result) {},
-			.destroy = [](io_ctb_t *ctb) {
-				// Allocated on the stack, no need to destroy.
-			}
-		};
+	KM_RETURN_IF_FAILED(
+		parent->fs->ops.create_file(
+			&dispatch_context,
+			parent,
+			filename,
+			filename_len,
+			file_out));
 
-		io_ctb_t *ctb;
-
-		KM_RETURN_IF_FAILED(io_alloc_ctb(&ops, sizeof(ctb_exdata), &ctb));
-		memcpy(io_get_ctb_exdata(ctb), &ctb_exdata, sizeof(ctb_exdata));
-
-		io_push_ctb(dc, ctb);
-
-		return KM_RESULT_OK;
-	} else {
-		KM_RETURN_IF_FAILED(
-			parent->fs->ops.create_file(
-				dc,
-				parent,
-				filename,
-				filename_len,
-				file_out));
-	}
-
-	KM_RETURN_IF_FAILED(ki_poll_ctbs(dc));
+	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
 
 	return KM_RESULT_OK;
 }
 
 PBOS_API km_result_t fs_create_dir(
-	io_dispatch_context_t *dc,
 	fs_fnode_t *parent,
 	const char *filename,
 	size_t filename_len,
 	fs_fnode_t **file_out) {
-	io_ctb_t ctb;
-	struct exdata_t {
-		fs_fnode_t *parent;
-		const char *filename;
-		size_t filename_len;
-		fs_fnode_t **file_out;
-	};
-	exdata_t ctb_exdata = {
-		parent,
-		filename,
-		filename_len,
-		file_out
-	};
-	km_result_t result;
+	io_dispatch_context_t dispatch_context;
+	io_init_dispatch_context(&dispatch_context);
+	KM_RETURN_IF_FAILED(parent->fs->ops.create_dir(&dispatch_context, parent, filename, filename_len, file_out));
 
-	if (dc->num_ctbs) {
-		io_ctb_ops_t ops = {
-			.perform = [](io_dispatch_context_t *dc, io_ctb_t *ctb) -> km_result_t {
-				exdata_t *exdata = (exdata_t *)io_get_ctb_exdata(ctb);
-				KM_RETURN_IF_FAILED(
-					exdata->parent->fs->ops.create_dir(
-						dc,
-						exdata->parent,
-						exdata->filename,
-						exdata->filename_len,
-						exdata->file_out));
-				return KM_RESULT_OK;
-			},
-			.finish = [](io_dispatch_context_t *dc, io_ctb_t *ctb, km_result_t result) -> km_result_t {
-				return result;
-			},
-			.fail = [](io_dispatch_context_t *dc, io_ctb_t *ctb, km_result_t result) {},
-			.destroy = [](io_ctb_t *ctb) {
-				// Allocated on the stack, no need to destroy.
-			}
-		};
-
-		io_ctb_t *ctb;
-
-		KM_RETURN_IF_FAILED(io_alloc_ctb(&ops, sizeof(ctb_exdata), &ctb));
-		memcpy(io_get_ctb_exdata(ctb), &ctb_exdata, sizeof(ctb_exdata));
-
-		io_push_ctb(dc, ctb);
-
-		return KM_RESULT_OK;
-	} else {
-		KM_RETURN_IF_FAILED(parent->fs->ops.create_dir(dc, parent, filename, filename_len, file_out));
-	}
-
-	KM_RETURN_IF_FAILED(ki_poll_ctbs(dc));
+	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
 
 	return KM_RESULT_OK;
 }
@@ -543,106 +452,24 @@ PBOS_API km_result_t fs_close(fs_fcb_t *fcb) {
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_read(io_dispatch_context_t *dc, fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
-	io_ctb_t ctb;
-	struct ctb_exdata_t {
-		fs_fcb_t *fcb;
-		void *dest;
-		size_t size;
-		size_t off;
-		size_t *bytes_read_out;
-	};
-	ctb_exdata_t ctb_exdata = {
-		fcb,
-		dest,
-		size,
-		off,
-		bytes_read_out
-	};
-	km_result_t result;
+PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
+	io_dispatch_context_t dispatch_context;
+	io_init_dispatch_context(&dispatch_context);
 
-	if (dc->num_ctbs) {
-		io_ctb_ops_t ops = {
-			.perform = [](io_dispatch_context_t *dc, io_ctb_t *ctb) -> km_result_t {
-				ctb_exdata_t *exdata = (ctb_exdata_t *)io_get_ctb_exdata(ctb);
-				KM_RETURN_IF_FAILED(
-					exdata->fcb->fnode->fs->ops.read(dc, exdata->fcb, (char *)exdata->dest, exdata->size, exdata->off, exdata->bytes_read_out));
-				return KM_RESULT_OK;
-			},
-			.finish = [](io_dispatch_context_t *dc, io_ctb_t *ctb, km_result_t result) -> km_result_t {
-				return result;
-			},
-			.fail = [](io_dispatch_context_t *dc, io_ctb_t *ctb, km_result_t result) {},
-			.destroy = [](io_ctb_t *ctb) {
-				// Allocated on the stack, no need to destroy.
-			}
-		};
+	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.read(&dispatch_context, fcb, (char *)dest, size, off, bytes_read_out));
 
-		io_ctb_t *ctb;
-
-		KM_RETURN_IF_FAILED(io_alloc_ctb(&ops, sizeof(ctb_exdata), &ctb));
-		memcpy(io_get_ctb_exdata(ctb), &ctb_exdata, sizeof(ctb_exdata));
-
-		io_push_ctb(dc, ctb);
-
-		return KM_RESULT_OK;
-	} else {
-		KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.read(dc, fcb, (char *)dest, size, off, bytes_read_out));
-	}
-
-	KM_RETURN_IF_FAILED(ki_poll_ctbs(dc));
+	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_write(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out) {
-	io_ctb_t ctb;
-	struct ctb_exdata_t {
-		fs_fcb_t *fcb;
-		const void *src;
-		size_t size;
-		size_t off;
-		size_t *bytes_written_out;
-	};
-	ctb_exdata_t ctb_exdata = {
-		fcb,
-		src,
-		size,
-		off,
-		bytes_written_out
-	};
-	km_result_t result;
+PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out) {
+	io_dispatch_context_t dispatch_context;
+	io_init_dispatch_context(&dispatch_context);
 
-	if (dc->num_ctbs) {
-		io_ctb_ops_t ops = {
-			.perform = [](io_dispatch_context_t *dc, io_ctb_t *ctb) -> km_result_t {
-				ctb_exdata_t *exdata = (ctb_exdata_t *)io_get_ctb_exdata(ctb);
-				KM_RETURN_IF_FAILED(
-					exdata->fcb->fnode->fs->ops.read(dc, exdata->fcb, (char *)exdata->src, exdata->size, exdata->off, exdata->bytes_written_out));
-				return KM_RESULT_OK;
-			},
-			.finish = [](io_dispatch_context_t *dc, io_ctb_t *ctb, km_result_t result) -> km_result_t {
-				return result;
-			},
-			.fail = [](io_dispatch_context_t *dc, io_ctb_t *ctb, km_result_t result) {},
-			.destroy = [](io_ctb_t *ctb) {
-				// Allocated on the stack, no need to destroy.
-			}
-		};
+	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.write(&dispatch_context, fcb, (char *)src, size, off, bytes_written_out));
 
-		io_ctb_t *ctb;
-
-		KM_RETURN_IF_FAILED(io_alloc_ctb(&ops, sizeof(ctb_exdata), &ctb));
-		memcpy(io_get_ctb_exdata(ctb), &ctb_exdata, sizeof(ctb_exdata));
-
-		io_push_ctb(dc, ctb);
-
-		return KM_RESULT_OK;
-	} else {
-		KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.read(dc, fcb, (char *)src, size, off, bytes_written_out));
-	}
-
-	KM_RETURN_IF_FAILED(ki_poll_ctbs(dc));
-	return fcb->fnode->fs->ops.write(dc, fcb, src, size, off, bytes_written_out);
+	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	return fcb->fnode->fs->ops.write(&dispatch_context, fcb, src, size, off, bytes_written_out);
 }
 
 PBOS_API km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {

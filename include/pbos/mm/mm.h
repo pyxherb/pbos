@@ -48,19 +48,21 @@ typedef struct _mm_context_t mm_context_t;
 
 ///
 /// @brief Allocate a single physical page.
+/// @note To release the allocated page, call @c mm_unpin_page.
 ///
 /// @param memtype Type of the page to be allocated.
 /// @return Physical address of allocated page, NULL if failed.
 ///
 PBOS_NODISCARD void *mm_pgalloc(uint8_t memtype);
+
 ///
-/// @brief Free a single physical page.
+/// @brief Unreference a single physical page.
 /// @details This function decrease the reference count of specified page, when
 /// the reference count become 0, the page will be marked as free.
 ///
 /// @param ptr Physical address of page to be freed.
 ///
-void mm_pgfree(void *ptr);
+void mm_unref_page(void *ptr);
 
 typedef uint32_t mm_iommap_flags_t;
 
@@ -75,11 +77,25 @@ PBOS_NODISCARD km_result_t mm_iommap(
 void mm_uniommap(mm_context_t *context, void *vaddr, size_t size, mm_iommap_flags_t flags);
 
 ///
-/// @brief Increase reference counter of a physical page.
+/// @brief Increase reference counter of a physical page. This does not prevent the page from swapping out.
 ///
 /// @param ptr Physical address of page to be referenced.
 ///
-void mm_refpg(void *ptr);
+void mm_ref_page(void *ptr);
+
+///
+/// @brief Pin a page to prevent it from being swapped out.
+///
+/// @param ptr Physical address of the page.
+///
+void mm_pin_page(void *ptr);
+
+///
+/// @brief Unpin a page.
+///
+/// @param ptr Physical address of the page.
+///
+void mm_unpin_page(void *ptr);
 
 ///
 /// @brief Allocate a memory block from the default pool.
@@ -176,6 +192,7 @@ typedef uint32_t mmap_flags_t;
 
 ///
 /// @brief Map a continuous physical memory region to a continuous virtual memory region.
+/// @note The mapped pages will be referenced (if is user) or pinned (if is kernel). Use @c MMAP_NO_INC_RC to avoid this.
 ///
 /// @param context Memory context to be operated.
 /// @param vaddr Base of virtual memory space to be mapped.

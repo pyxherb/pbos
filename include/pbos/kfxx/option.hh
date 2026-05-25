@@ -1,10 +1,10 @@
 #ifndef _PBOS_KFXX_OPTIONAL_H_
 #define _PBOS_KFXX_OPTIONAL_H_
 
+#include <pbos/kd/assert.h>
+#include <type_traits>
 #include "basedefs.hh"
 #include "utils.hh"
-#include <type_traits>
-#include <pbos/kd/assert.h>
 
 namespace kfxx {
 	struct nullopt_t {
@@ -24,7 +24,7 @@ namespace kfxx {
 		PBOS_FORCEINLINE void reset() noexcept {
 			if (_has_value) {
 				if (std::is_destructible_v<T>) {
-					destroy_at<T>((T *)_data);
+					kfxx::destroy_at<T>((T *)this->_data);
 				}
 			}
 			_has_value = false;
@@ -32,7 +32,7 @@ namespace kfxx {
 
 		PBOS_FORCEINLINE void set_value(T &&data) noexcept {
 			reset();
-			construct_at<T>(((T *)_data), std::move(data));
+			kfxx::construct_at<T>(((T *)_data), std::move(data));
 			_has_value = true;
 		}
 

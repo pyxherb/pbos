@@ -2,6 +2,7 @@
 #define _PBOS_KH_MM_MISC_H_
 
 #include <pbos/ki/mm/context.hh>
+#include <pbos/kf/misc.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -18,6 +19,9 @@ PBOS_NODISCARD km_result_t kh_mmap(
 	mmap_flags_t flags);
 
 void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags);
+
+typedef kf_control_flow_t (*kh_pgtab_walker)(void *vaddr, void *paddr, mm_pgaccess_t pgaccess, void *user_data);
+void kh_walk_pgtab(mm_context_t *ctxt, void *vaddr, size_t size, kh_pgtab_walker walker, void *user_data);
 
 void kh_set_page_access(
 	mm_context_t *context,

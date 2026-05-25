@@ -20,7 +20,6 @@ void kima_vpgfree(kima_pool_t *pool, void *addr, size_t size) {
 	for (size_t i = 0; i < size; i += pool->page_size) {
 		void *paddr = mm_getmap(mm_get_cur_context(), ((char *)addr) + i, NULL),
 			 *vaddr = ((char *)addr) + i;
-		mm_pgfree(paddr);
 		mm_vmfree(mm_get_cur_context(), vaddr, pool->page_size);
 	}
 }

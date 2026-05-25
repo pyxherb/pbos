@@ -36,6 +36,10 @@ PBOS_API size_t io_ctb_list_size(io_dispatch_context_t *dc) {
 	return dc->num_ctbs;
 }
 
+PBOS_API bool io_is_ctb_list_empty(io_dispatch_context_t *dc) {
+	return !dc->num_ctbs;
+}
+
 PBOS_API km_result_t ki_poll_ctbs(io_dispatch_context_t *dc) {
 	km_result_t result;
 

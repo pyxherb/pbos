@@ -50,6 +50,8 @@ namespace kfxx {
 	PBOS_FORCEINLINE constexpr T ceil_align_to(T data, T alignment) {
 		static_assert(std::is_unsigned_v<T>, "ceil_align_to only applies to unsigned types");
 		kd_assert(alignment);
+		if ((alignment & (alignment - 1)) == 0)
+			return (data + (alignment - 1)) & ~(alignment - 1);
 		return data + ((alignment - data % alignment) % alignment);
 	}
 

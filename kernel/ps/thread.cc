@@ -13,11 +13,7 @@ void ki_destroy_thread(ps_tcb_t *tcb) {
 		ps_cur_sched->drop_thread(ps_cur_sched, tcb);
 		tcb->parent->thread_set.remove(tcb);
 	}
-	while (tcb->stack_size) {
-		mm_pgfree(mm_getmap(tcb->parent->mm_context, tcb->stack, NULL));
-		((char *&)tcb->stack) += page_size;
-		tcb->stack_size -= page_size;
-	}
+	km_unwrap_result(mm_unmmap(tcb->parent->mm_context, tcb->stack, tcb->stack_size, 0));
 
 	if (tcb->context)
 		ps_destroy_context(tcb->context);

@@ -6,7 +6,7 @@ Here is the universal kernel layer of the PbOS.
 
 ### mm_pgalloc reference count
 
-`mm_pgalloc` references the page once, the `mm_mmap` also does, so we have to call `mm_pgfree` after the `mm_mmap` call.
+`mm_pgalloc` references the page once, the `mm_mmap` also does, so we have to call `mm_unref_page` after the `mm_mmap` call.
 
 ## mm_seal
 

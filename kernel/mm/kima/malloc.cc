@@ -6,11 +6,12 @@
 
 void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 	kd_assert(pool->_initialized);
-	// io::LocalIrqLock irq_lock;
 	ps::mutex_guard g(pool->mutex.c_mutex());
 
 	kd_dbgcheck(size, "The size for mm_kalloc must not be 0");
 	char *continuous_area_base = nullptr;
+
+	const size_t aligned_size = kfxx::ceil_align_to(size, pool->page_size);
 
 	for (auto it = pool->vpgdesc_query_tree.begin(); it != pool->vpgdesc_query_tree.end();) {
 		kima_vpgdesc_t *cur_desc = static_cast<kima_vpgdesc_t *>(it.node);
@@ -20,55 +21,68 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 			continue;
 		}
 
-		for (size_t j = 0;
-			j < kfxx::ceil_align_to(size, pool->page_size);
+		for (size_t j = pool->page_size;
+			j < aligned_size;
 			j += pool->page_size) {
-			if (!kima_lookup_vpgdesc(pool, ((char *)cur_desc->rb_value) + j)) {
-				continuous_area_base = ((char *)cur_desc->rb_value) + j;
-				it = kfxx::rbtree_t<void *>::iterator(pool->vpgdesc_query_tree.find_max_lteq(continuous_area_base), &pool->vpgdesc_query_tree, kfxx::iteratorDirection::Forward);
+			auto old_it = it;
+			if (++it == pool->vpgdesc_query_tree.end())
+				goto alloc_new_page;
+			if ((char *)old_it.node->rb_value + pool->page_size < it.node->rb_value) {
+				continuous_area_base = (char *)it.node->rb_value;
+				it = decltype(pool->vpgdesc_query_tree)::iterator(
+					pool->vpgdesc_query_tree.find_max_lteq(continuous_area_base),
+					&pool->vpgdesc_query_tree,
+					kfxx::iteratorDirection::Forward);
 				goto noncontinuous;
 			}
 		}
 
 		{
-			void *const limit = ((char *)cur_desc->rb_value) + (kfxx::ceil_align_to(size, pool->page_size) - size);
+			void *const limit = ((char *)cur_desc->rb_value) + aligned_size;
 
-			for (char *cur_base = (char *)cur_desc->rb_value;
-				cur_base <= limit;) {
-				if (size_t aligned_diff = ((uintptr_t)cur_base) % alignment; aligned_diff) {
-					cur_base += alignment - aligned_diff;
-				}
+			char *cur_base = (char *)kfxx::ceil_align_to((uintptr_t)cur_desc->rb_value, alignment);
+			auto it = decltype(pool->ublk_query_tree)::iterator(
+					 pool->ublk_query_tree.find_max_lteq(((char *)cur_base) + size - 1),
+					 &pool->ublk_query_tree,
+					 kfxx::iteratorDirection::Forward),
+				 last_it = it;
+			while (cur_base + size < limit) {
+				auto node = static_cast<kima_ublk_t *>(it.node);
+				if (it == pool->ublk_query_tree.end())
+					goto alloc_new_page;
+				char *blk_limit = ((char *)node->rb_value + node->size);
+				if (((char *)node->rb_value <= cur_base) &&
+					(blk_limit > cur_base)) {
+					cur_base = blk_limit;
+					++it;
+					last_it = it;
+				} else {
+					auto verify = pool->ublk_query_tree.find_max_lteq(((char *)cur_base) + size - 1);
 
-				kima_ublk_t *nearest_ublk;
-				if ((nearest_ublk = kima_lookup_nearest_ublk(pool, cur_base))) {
-					if (PBOS_ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->rb_value, nearest_ublk->size)) {
-						cur_base = ((char *)nearest_ublk->rb_value) + nearest_ublk->size;
+					if ((char *)verify->rb_value + static_cast<kima_ublk_t *>(verify)->size > cur_base) {
+						it = decltype(pool->ublk_query_tree)::iterator(
+							verify,
+							&pool->ublk_query_tree,
+							kfxx::iteratorDirection::Forward)
+								 .next();
+						cur_base = (char *)verify->rb_value + static_cast<kima_ublk_t *>(verify)->size;
 						continue;
 					}
-				}
-				if ((nearest_ublk = kima_lookup_nearest_ublk(pool, ((char *)cur_base) + size - 1))) {
-					if (PBOS_ISOVERLAPPED((char *)cur_base, size, (char *)nearest_ublk->rb_value, nearest_ublk->size)) {
-						cur_base = ((char *)nearest_ublk->rb_value) + nearest_ublk->size;
-						continue;
+
+					kima_ublk_t *ublk = kima_alloc_ublk(pool, cur_base, size);
+					if (!ublk)
+						return nullptr;
+
+					for (size_t j = 0;
+						j < aligned_size;
+						j += pool->page_size) {
+						kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(pool, ((char *)cur_desc->rb_value) + j);
+
+						++vpgdesc->ref_count;
 					}
+
+					return cur_base;
 				}
-
-				kima_ublk_t *ublk = kima_alloc_ublk(pool, cur_base, size);
-				if (!ublk)
-					return nullptr;
-
-				for (size_t j = 0;
-					j < kfxx::ceil_align_to(size, pool->page_size);
-					j += pool->page_size) {
-					kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(pool, ((char *)cur_desc->rb_value) + j);
-
-					if (!vpgdesc)
-						km_panic("BUG: vpgdesc == nullptr, please report this bug to the developer");
-
-					++vpgdesc->ref_count;
-				}
-
-				return cur_base;
 			}
 		}
 
@@ -76,11 +90,8 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 	noncontinuous:;
 	}
 
+alloc_new_page:
 	char *new_free_pg = (char *)kima_vpgalloc(pool, NULL, kfxx::ceil_align_to(size + alignment, pool->page_size));
-
-	if (size_t aligned_diff = ((uintptr_t)new_free_pg) % alignment; aligned_diff) {
-		new_free_pg += alignment - aligned_diff;
-	}
 
 	if (!new_free_pg)
 		return nullptr;
@@ -110,7 +121,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 
 	release_vpgdesc_sg.release();
 
-	return new_free_pg;
+	return (void *)kfxx::ceil_align_to((uintptr_t)new_free_pg, alignment);
 }
 
 PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size, size_t alignment) {

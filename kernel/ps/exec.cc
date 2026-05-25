@@ -280,7 +280,7 @@ km_result_t ps_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, s
 		for (km_binseg_page_pool_t *p = seg->pages, *next; p;) {
 			next = p->next;
 			for (size_t i = 0; i < p->used_num; ++i) {
-				mm_pgfree(p->descs[i].rb_value);
+				mm_unref_page(p->descs[i].rb_value);
 				seg->page_descs_query_tree.remove(&p->descs[i]);
 			}
 			mm_kfree(p);
@@ -290,7 +290,7 @@ km_result_t ps_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, s
 		km_binseg_page_pool_t *page_pool = (km_binseg_page_pool_t *)mm_kalloc(sizeof(km_binseg_page_pool_t), page_size);
 		kfxx::scope_guard release_cur_page_pool_guard([seg, page_pool]() noexcept {
 			for (size_t i = 0; i < page_pool->used_num; ++i) {
-				mm_pgfree(page_pool->descs[i].rb_value);
+				mm_unref_page(page_pool->descs[i].rb_value);
 				seg->page_descs_query_tree.remove(&page_pool->descs[i]);
 			}
 			mm_kfree(page_pool);

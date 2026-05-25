@@ -30,7 +30,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 	mm_pgaccess_t access);
 PBOS_NODISCARD void *mm_kvmalloc_early(mm_context_t *context, size_t size, mm_pgaccess_t access);
 ///
-/// @brief Map a page-sized region of memory in the early stage.
+/// @brief Map a page-sized region of memory in the early stage. This function does not pin any page.
 ///
 /// @param context Context for mapping.
 /// @param vaddr Virtual address to be mapped.

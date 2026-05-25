@@ -55,8 +55,8 @@ void kh_mm_init() {
 
 	hali_mm_init_paging();
 
-	kh_mad_pool_descs_off = kfxx::ceil_align_to((uintptr_t)sizeof(hali_madpool_header_t), alignof(hali_mad_t));
-	kh_mad_pool_descs_num_per_page = (mm_get_page_size() - kh_mad_pool_descs_off) / sizeof(hali_mad_t);
+	kh_mad_pool_descs_off = kfxx::ceil_align_to((uintptr_t)sizeof(ki_madpool_header_t), alignof(ki_mad_t));
+	kh_mad_pool_descs_num_per_page = (mm_get_page_size() - kh_mad_pool_descs_off) / sizeof(ki_mad_t);
 
 	hali_mm_init_areas();
 
@@ -76,7 +76,7 @@ static void hali_mm_init_areas() {
 		ki_pmad_t *init_madpool_pmad = nullptr;
 		ki_pmad_t *init_pgtab_pmad = nullptr;
 		size_t cur_madpool_slot_index = 0;
-		hali_madpool_t *last_madpool = NULL;
+		ki_madpool_t *last_madpool = NULL;
 		void *init_madpool_paddr;	 // Physical address of initial MAD pool.
 		uint8_t initial_map_result;	 // Result of initial `hali_mm_mmap_early` call.
 		bool insert_result;
@@ -128,46 +128,50 @@ static void hali_mm_init_areas() {
 				(char *)init_pgtab_pmad->rb_value + 1 * PAGESIZE,
 				(char *)init_pgtab_pmad->rb_value + 2 * PAGESIZE);
 
-			ki_global_mad_pool_list = (hali_madpool_t *)init_madpool_vaddr;
+			ki_global_mad_pool_list = (ki_madpool_t *)init_madpool_vaddr;
 
 			memset(ki_global_mad_pool_list, 0, PAGESIZE);
 
-			hali_mad_t *descs = (hali_mad_t *)(((uintptr_t)ki_global_mad_pool_list) + kh_mad_pool_descs_off);
+			ki_mad_t *descs = (ki_mad_t *)(((uintptr_t)ki_global_mad_pool_list) + kh_mad_pool_descs_off);
 
 			// Mark the initial pages as allocated.
-			kfxx::construct_at<hali_mad_t>(&descs[cur_madpool_slot_index]);
+			kfxx::construct_at<ki_mad_t>(&descs[cur_madpool_slot_index]);
 			descs[cur_madpool_slot_index].next_free = nullptr;
 			descs[cur_madpool_slot_index].prev_free = nullptr;
 			descs[cur_madpool_slot_index].rb_value = init_madpool_paddr;
+			++descs[cur_madpool_slot_index].pin_count;
 			++ki_global_mad_pool_list->header.used_num;
 			init_madpool_pmad->query_tree.insert_unwrap(&descs[cur_madpool_slot_index]);
 			++cur_madpool_slot_index;
 
 			if (initial_map_result & 0b100) {
-				kfxx::construct_at<hali_mad_t>(&descs[cur_madpool_slot_index]);
+				kfxx::construct_at<ki_mad_t>(&descs[cur_madpool_slot_index]);
 				descs[cur_madpool_slot_index].next_free = nullptr;
 				descs[cur_madpool_slot_index].prev_free = nullptr;
 				descs[cur_madpool_slot_index].rb_value = init_pgtab_pmad->rb_value;
+				++descs[cur_madpool_slot_index].pin_count;
 				++ki_global_mad_pool_list->header.used_num;
 				init_pgtab_pmad->query_tree.insert_unwrap(&descs[cur_madpool_slot_index]);
 				++cur_madpool_slot_index;
 			}
 
 			if (initial_map_result & 0b010) {
-				kfxx::construct_at<hali_mad_t>(&descs[cur_madpool_slot_index]);
+				kfxx::construct_at<ki_mad_t>(&descs[cur_madpool_slot_index]);
 				descs[cur_madpool_slot_index].next_free = nullptr;
 				descs[cur_madpool_slot_index].prev_free = nullptr;
 				descs[cur_madpool_slot_index].rb_value = (char *)init_pgtab_pmad->rb_value + PAGESIZE * 1;
+				++descs[cur_madpool_slot_index].pin_count;
 				++ki_global_mad_pool_list->header.used_num;
 				init_pgtab_pmad->query_tree.insert_unwrap(&descs[cur_madpool_slot_index]);
 				++cur_madpool_slot_index;
 			}
 
 			if (initial_map_result & 0b001) {
-				kfxx::construct_at<hali_mad_t>(&descs[cur_madpool_slot_index]);
+				kfxx::construct_at<ki_mad_t>(&descs[cur_madpool_slot_index]);
 				descs[cur_madpool_slot_index].next_free = nullptr;
 				descs[cur_madpool_slot_index].prev_free = nullptr;
 				descs[cur_madpool_slot_index].rb_value = (char *)init_pgtab_pmad->rb_value + PAGESIZE * 2;
+				++descs[cur_madpool_slot_index].pin_count;
 				++ki_global_mad_pool_list->header.used_num;
 				init_pgtab_pmad->query_tree.insert_unwrap(&descs[cur_madpool_slot_index]);
 				++cur_madpool_slot_index;
@@ -182,7 +186,7 @@ static void hali_mm_init_areas() {
 			if (i->type != MM_PHYSICAL_MEMORY_TYPE_AVAILABLE)
 				continue;
 
-			hali_mad_t *prev_free_mad = nullptr;
+			ki_mad_t *prev_free_mad = nullptr;
 			for (char *j = (char *)i->rb_value; j < (char *)i->rb_value + i->len; j += PAGESIZE) {
 				if (j == init_madpool_paddr)
 					continue;
@@ -221,26 +225,29 @@ static void hali_mm_init_areas() {
 						MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE,
 						new_poolpg_pdpt_paddr, new_poolpg_pdt_paddr, new_poolpg_ptt_paddr);
 
-					if (mmap_result & 0b100)
+					if (mmap_result & 0b100) {
 						new_poolpg_pdpt_paddr = nullptr;
-					if (mmap_result & 0b010)
+					}
+					if (mmap_result & 0b010) {
 						new_poolpg_pdt_paddr = nullptr;
-					if (mmap_result & 0b001)
+					}
+					if (mmap_result & 0b001) {
 						new_poolpg_ptt_paddr = nullptr;
+					}
 
 					cur_madpool_slot_index = 0;
 
-					memset((hali_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
+					memset((ki_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
 
 					last_madpool = ki_global_mad_pool_list;
-					((hali_madpool_t *)new_poolpg_vaddr)->header.next = ki_global_mad_pool_list;
-					ki_global_mad_pool_list->header.prev = ((hali_madpool_t *)new_poolpg_vaddr);
-					ki_global_mad_pool_list = (hali_madpool_t *)new_poolpg_vaddr;
+					((ki_madpool_t *)new_poolpg_vaddr)->header.next = ki_global_mad_pool_list;
+					ki_global_mad_pool_list->header.prev = ((ki_madpool_t *)new_poolpg_vaddr);
+					ki_global_mad_pool_list = (ki_madpool_t *)new_poolpg_vaddr;
 				}
 
-				hali_mad_t *descs = (hali_mad_t *)(((uintptr_t)ki_global_mad_pool_list) + kh_mad_pool_descs_off);
+				ki_mad_t *descs = (ki_mad_t *)(((uintptr_t)ki_global_mad_pool_list) + kh_mad_pool_descs_off);
 
-				kfxx::construct_at<hali_mad_t>(&descs[cur_madpool_slot_index]);
+				kfxx::construct_at<ki_mad_t>(&descs[cur_madpool_slot_index]);
 				if (prev_free_mad) {
 					descs[cur_madpool_slot_index].prev_free = prev_free_mad;
 					prev_free_mad->next_free = &descs[cur_madpool_slot_index];
@@ -294,24 +301,27 @@ static void hali_mm_init_areas() {
 						MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE,
 						new_poolpg_pdpt_paddr, new_poolpg_pdt_paddr, new_poolpg_ptt_paddr);
 
-					if (mmap_result & 0b100)
+					if (mmap_result & 0b100) {
 						new_poolpg_pdpt_paddr = nullptr;
-					if (mmap_result & 0b010)
+					}
+					if (mmap_result & 0b010) {
 						new_poolpg_pdt_paddr = nullptr;
-					if (mmap_result & 0b001)
+					}
+					if (mmap_result & 0b001) {
 						new_poolpg_ptt_paddr = nullptr;
+					}
 
 					cur_madpool_slot_index = 0;
 
-					memset((hali_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
+					memset((ki_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
 
 					last_madpool = ki_global_mad_pool_list;
-					((hali_madpool_t *)new_poolpg_vaddr)->header.next = ki_global_mad_pool_list;
-					ki_global_mad_pool_list->header.prev = ((hali_madpool_t *)new_poolpg_vaddr);
-					ki_global_mad_pool_list = (hali_madpool_t *)new_poolpg_vaddr;
+					((ki_madpool_t *)new_poolpg_vaddr)->header.next = ki_global_mad_pool_list;
+					ki_global_mad_pool_list->header.prev = ((ki_madpool_t *)new_poolpg_vaddr);
+					ki_global_mad_pool_list = (ki_madpool_t *)new_poolpg_vaddr;
 				}
-				hali_mad_t *descs = (hali_mad_t *)(((uintptr_t)ki_global_mad_pool_list) + kh_mad_pool_descs_off);
-				kfxx::construct_at<hali_mad_t>(&descs[cur_madpool_slot_index]);
+				ki_mad_t *descs = (ki_mad_t *)(((uintptr_t)ki_global_mad_pool_list) + kh_mad_pool_descs_off);
+				kfxx::construct_at<ki_mad_t>(&descs[cur_madpool_slot_index]);
 				if (j != i->rb_value) {
 					descs[cur_madpool_slot_index].prev_free = &descs[cur_madpool_slot_index - 1];
 					descs[cur_madpool_slot_index - 1].next_free = &descs[cur_madpool_slot_index];
@@ -330,20 +340,12 @@ static void hali_mm_init_areas() {
 		}
 
 		if (new_poolpg_pdpt_paddr)
-			mm_pgfree(new_poolpg_pdpt_paddr);
+			mm_unpin_page(new_poolpg_pdpt_paddr);
 		if (new_poolpg_pdt_paddr)
-			mm_pgfree(new_poolpg_pdt_paddr);
+			mm_unpin_page(new_poolpg_pdt_paddr);
 		if (new_poolpg_ptt_paddr)
-			mm_pgfree(new_poolpg_ptt_paddr);
-
-		/*for (hali_madpool_t *j = hali_global_mad_pool_list; j; j = j->header.next) {
-			km_unwrap_result(ki_mm_insert_vpm(mm_kernel_context, j));
-		}*/
+			mm_unpin_page(new_poolpg_ptt_paddr);
 	}
-
-	/*for (uintptr_t i = KBOTTOM_PBASE; i <= KBOTTOM_PTOP; i += PAGESIZE) {
-		mm_refpg((void *)i);
-	}*/
 
 	void *new_poolpg_pdpt_page = nullptr,
 		 *new_poolpg_pdt_page = nullptr,
@@ -393,11 +395,11 @@ static void hali_mm_init_areas() {
 	}
 
 	if (new_poolpg_pdpt_page)
-		mm_pgfree(new_poolpg_pdpt_page);
+		mm_unpin_page(new_poolpg_pdpt_page);
 	if (new_poolpg_pdt_page)
-		mm_pgfree(new_poolpg_pdt_page);
+		mm_unpin_page(new_poolpg_pdt_page);
 	if (new_poolpg_ptt_page)
-		mm_pgfree(new_poolpg_ptt_page);
+		mm_unpin_page(new_poolpg_ptt_page);
 }
 
 ///

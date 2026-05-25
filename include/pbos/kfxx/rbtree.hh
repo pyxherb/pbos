@@ -134,7 +134,7 @@ namespace kfxx {
 			return nullptr;
 		}
 
-		PBOS_FORCEINLINE node_base **_get_slot(const T &key, node_base *&parent_out) {
+		PBOS_FORCEINLINE node_base **_get_slot(const T &key, node_base *&parent_out, bool &is_right_slot) {
 			node_base **i = (node_base **)&_root;
 			parent_out = nullptr;
 
@@ -146,10 +146,14 @@ namespace kfxx {
 						auto &&result = _comparator(static_cast<node_t *>(*i)->rb_value, key);
 
 						if (result) {
-							if (result.value() < 0)
+							if (result.value() < 0) {
+								is_right_slot = true;
 								i = (node_base **)&static_cast<node_t *>(*i)->r;
-							else if (result.value() > 0)
+							}
+							else if (result.value() > 0) {
+								is_right_slot = false;
 								i = (node_base **)&static_cast<node_t *>(*i)->l;
+							}
 							else
 								return nullptr;
 						} else
@@ -162,6 +166,7 @@ namespace kfxx {
 #ifndef NDEBUG
 								if ((result = _comparator(key, static_cast<node_t *>(*i)->rb_value)).has_value()) {
 									kd_assert(!result.value());
+									is_right_slot = true;
 									i = (node_base **)&static_cast<node_t *>(*i)->r;
 								} else {
 									return nullptr;
@@ -171,6 +176,7 @@ namespace kfxx {
 #endif
 							} else if ((result = _comparator(key, static_cast<node_t *>(*i)->rb_value)).has_value()) {
 								if (result.value()) {
+									is_right_slot = false;
 									i = (node_base **)&static_cast<node_t *>(*i)->l;
 								} else
 									return i;
@@ -190,8 +196,10 @@ namespace kfxx {
 						auto &&result = _comparator(static_cast<node_t *>(*i)->rb_value, key);
 
 						if (result < 0) {
+							is_right_slot = true;
 							i = (node_base **)&((*i)->r);
 						} else if (result > 0) {
+							is_right_slot = false;
 							i = (node_base **)&((*i)->l);
 						} else
 							return nullptr;
@@ -202,8 +210,10 @@ namespace kfxx {
 
 						if (_comparator(static_cast<node_t *>(*i)->rb_value, key)) {
 							kd_assert(!_comparator(key, static_cast<node_t *>(*i)->rb_value));
+							is_right_slot = true;
 							i = (node_base **)&((*i)->r);
 						} else if (_comparator(key, static_cast<node_t *>(*i)->rb_value)) {
+							is_right_slot = false;
 							i = (node_base **)&((*i)->l);
 						} else
 							return nullptr;
@@ -422,10 +432,68 @@ namespace kfxx {
 		[[nodiscard]] PBOS_FORCEINLINE bool insert(node_t *node) {
 			// TODO: Use option_t for fallible comparison.
 			node_base *parent = nullptr;
-			node_base **slot = _get_slot(node->rb_value, parent);
+			bool right = false;
+			node_base **slot = _get_slot(node->rb_value, parent, right);
 
 			if (!slot)
 				return false;
+
+			return _insert(static_cast<node_t *>(parent), node);
+		}
+
+		template<typename A, typename F>
+		[[nodiscard]] PBOS_FORCEINLINE bool keep_or_insert_alloc_on_demand(const T &key, A &&allocate_fn, F &&fail_deallocate_fn) {
+			// TODO: Use option_t for fallible comparison.
+			node_base *parent = nullptr;
+			bool right = false;
+			node_base **slot = _get_slot(key, parent, right);
+
+			if (!slot)
+				return true;
+
+			node_t *new_node = allocate_fn();
+			if(!new_node)
+				return false;
+
+			if(!_insert(static_cast<node_t *>(parent), new_node)) {
+				fail_deallocate_fn(new_node);
+				return false;
+			}
+			return true;
+		}
+
+		template<typename F>
+		[[nodiscard]] PBOS_FORCEINLINE bool keep_or_insert(node_t *node, F &&on_keep) {
+			// TODO: Use option_t for fallible comparison.
+			node_base *parent = nullptr;
+			bool right = false;
+			node_base **slot = _get_slot(node->rb_value, parent, right);
+
+			if (!slot) {
+				on_keep(node);
+				return true;
+			}
+
+			return _insert(static_cast<node_t *>(parent), node);
+		}
+
+		template<typename D>
+		[[nodiscard]] PBOS_FORCEINLINE bool replace_or_insert(node_t *node, D &&deleter) {
+			// TODO: Use option_t for fallible comparison.
+			node_base *parent = nullptr;
+			bool right = false;
+			node_base **slot = _get_slot(node->rb_value, parent, right);
+
+			if (!slot) {
+				if (right) {
+					deleter(static_cast<node_t*>(parent->r));
+					parent->r = node;
+				} else {
+					deleter(static_cast<node_t*>(parent->l));
+					parent->l = node;
+				}
+				return true;
+			}
 
 			return _insert(static_cast<node_t *>(parent), node);
 		}

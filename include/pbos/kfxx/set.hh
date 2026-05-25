@@ -39,10 +39,27 @@ namespace kfxx {
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool insert(T &&value) {
-			typename Tree::node_t *node = kfxx::alloc_and_construct<Node>(allocator(), std::move(value));
+			Node *node = kfxx::alloc_and_construct<Node>(allocator(), std::move(value));
 
-			if (!_tree.insert(node)) {
+			if (!_tree.replace_or_insert(node, [this](Node *node) {
+					kfxx::destroy_and_release(allocator(), node);
+				})) {
 				kfxx::destroy_and_release(allocator(), node);
+				return false;
+			}
+
+			return true;
+		}
+
+		[[nodiscard]] PBOS_FORCEINLINE bool insert_or_keep(T &&value) {
+			if (!_tree.keep_or_insert_alloc_on_demand(
+					value,
+					[this, &value]() -> Node * {
+						return kfxx::alloc_and_construct<Node>(allocator(), std::move(value));
+					},
+					[this](Node *node) {
+						kfxx::destroy_and_release<Node>(allocator(), node);
+					})) {
 				return false;
 			}
 

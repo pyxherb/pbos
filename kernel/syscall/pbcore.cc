@@ -86,10 +86,7 @@ km_result_t sysent_read(ps_ufd_t ufd, void *buf, uint32_t size, size_t off, size
 	if (!ufcb)
 		return KM_RESULT_INVALID_ARGS;
 
-	io_dispatch_context_t dispatch_context;
-	io_init_dispatch_context(&dispatch_context);
-
-	return fs_read(&dispatch_context, ps_kfcb_of_ufcb(ufcb), buf, size, off, bytes_read_out);
+	return fs_read(ps_kfcb_of_ufcb(ufcb), buf, size, off, bytes_read_out);
 }
 
 km_result_t sysent_write(ps_ufd_t ufd, const void *buf, uint32_t size) {

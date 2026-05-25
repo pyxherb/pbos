@@ -50,7 +50,7 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 		return KM_RESULT_NO_MEM;
 	}
 	kfxx::scope_guard free_pml4t_paddr_guard([pml4t_paddr]() noexcept {
-		mm_pgfree(pml4t_paddr);
+		mm_unpin_page(pml4t_paddr);
 	});
 
 	if (!(pml4t_vaddr = mm_kvmalloc(mm_get_cur_context(), PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0))) {
@@ -100,7 +100,7 @@ void mm_free_context(mm_context_t *context) {
 	// Free the top-level page table.
 	auto pml4t = mm_getmap(mm_get_cur_context(), context->page_table, nullptr);
 	kd_assert(pml4t);
-	mm_pgfree(pml4t);
+	mm_unpin_page(pml4t);
 
 	kfxx::destroy_and_release<mm_context_t>(kfxx::kernel_allocator(), context);
 }
