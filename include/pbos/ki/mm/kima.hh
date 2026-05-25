@@ -66,7 +66,8 @@ void kima_free_ublk(kima_pool_t *pool, kima_ublk_t *ublk);
 //
 
 typedef struct _kima_vpgdesc_t : public kfxx::rbtree_t<void *>::node_t {
-	size_t ref_count;
+	size_t ref_count = 0;
+	size_t recommended_alloc_off = 0;
 } kima_vpgdesc_t;
 
 typedef struct _kima_vpgdesc_poolpg_t kima_vpgdesc_poolpg_t;

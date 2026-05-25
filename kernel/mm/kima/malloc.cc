@@ -21,6 +21,11 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 			continue;
 		}
 
+		if (cur_desc->recommended_alloc_off >= pool->page_size) {
+			++it;
+			continue;
+		}
+
 		for (size_t j = pool->page_size;
 			j < aligned_size;
 			j += pool->page_size) {
@@ -40,27 +45,27 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 		{
 			void *const limit = ((char *)cur_desc->rb_value) + aligned_size;
 
-			char *cur_base = (char *)kfxx::ceil_align_to((uintptr_t)cur_desc->rb_value, alignment);
-			auto it = decltype(pool->ublk_query_tree)::iterator(
+			char *cur_base = (char *)kfxx::ceil_align_to((uintptr_t)cur_desc->rb_value + cur_desc->recommended_alloc_off, alignment);
+			auto i = decltype(pool->ublk_query_tree)::iterator(
 					 pool->ublk_query_tree.find_max_lteq(((char *)cur_base) + size - 1),
 					 &pool->ublk_query_tree,
 					 kfxx::iteratorDirection::Forward),
-				 last_it = it;
+				 last_i = i;
 			while (cur_base + size < limit) {
-				auto node = static_cast<kima_ublk_t *>(it.node);
-				if (it == pool->ublk_query_tree.end())
+				auto node = static_cast<kima_ublk_t *>(i.node);
+				if (i == pool->ublk_query_tree.end())
 					goto alloc_new_page;
 				char *blk_limit = ((char *)node->rb_value + node->size);
 				if (((char *)node->rb_value <= cur_base) &&
 					(blk_limit > cur_base)) {
 					cur_base = blk_limit;
-					++it;
-					last_it = it;
+					++i;
+					last_i = i;
 				} else {
 					auto verify = pool->ublk_query_tree.find_max_lteq(((char *)cur_base) + size - 1);
 
 					if ((char *)verify->rb_value + static_cast<kima_ublk_t *>(verify)->size > cur_base) {
-						it = decltype(pool->ublk_query_tree)::iterator(
+						i = decltype(pool->ublk_query_tree)::iterator(
 							verify,
 							&pool->ublk_query_tree,
 							kfxx::iteratorDirection::Forward)
@@ -73,10 +78,21 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 					if (!ublk)
 						return nullptr;
 
-					for (size_t j = 0;
-						j < aligned_size;
-						j += pool->page_size) {
-						kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(pool, ((char *)cur_desc->rb_value) + j);
+					bool update_recommended_alloc_off = ((uintptr_t)node->rb_value - (uintptr_t)last_i.node->rb_value) >= (size >> 1);
+
+					uintptr_t bottom = kfxx::floor_align_to((uintptr_t)cur_base, pool->page_size);
+					for (uintptr_t j = bottom, k = 0;
+						j < kfxx::ceil_align_to((uintptr_t)cur_base + size, pool->page_size);
+						j += pool->page_size, k += pool->page_size) {
+						kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(pool, (void *)j);
+
+						if (update_recommended_alloc_off && (!k)) {
+							vpgdesc->recommended_alloc_off = (size_t)last_i.node->rb_value + static_cast<kima_ublk_t *>(last_i.node)->size;
+						} else if (k + pool->page_size >= size) {
+							vpgdesc->recommended_alloc_off = (size_t)cur_base - j;
+						} else {
+							vpgdesc->recommended_alloc_off = pool->page_size;
+						}
 
 						++vpgdesc->ref_count;
 					}
@@ -91,7 +107,8 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 	}
 
 alloc_new_page:
-	char *new_free_pg = (char *)kima_vpgalloc(pool, NULL, kfxx::ceil_align_to(size + alignment, pool->page_size));
+	char *new_free_pg = (char *)kima_vpgalloc(pool, NULL, kfxx::ceil_align_to(size + alignment, pool->page_size)),
+		 *aligned_new_free_pg = (char *)kfxx::ceil_align_to((uintptr_t)new_free_pg, alignment);
 
 	if (!new_free_pg)
 		return nullptr;
@@ -341,15 +358,26 @@ void kima_free(kima_pool_t *pool, void *ptr) {
 
 	kima_ublk_t *ublk = kima_lookup_ublk(pool, ptr);
 	kd_assert(ublk);
-	for (uintptr_t i = kfxx::floor_align_to((uintptr_t)ublk->rb_value, pool->page_size);
+	for (uintptr_t i = kfxx::floor_align_to((uintptr_t)ublk->rb_value, pool->page_size),
+				   j = 0;
 		i < kfxx::ceil_align_to(((uintptr_t)ublk->rb_value) + ublk->size, pool->page_size);
-		i += pool->page_size) {
+		i += pool->page_size, j += pool->page_size) {
 		kima_vpgdesc_t *vpgdesc = kima_lookup_vpgdesc(pool, (void *)i);
 
 		kd_assert(vpgdesc);
 
-		if (!(--vpgdesc->ref_count))
+		if (!i) {
+			vpgdesc->recommended_alloc_off = (uintptr_t)ublk->rb_value - i;
+		} else if (j + pool->page_size >= ublk->size) {
+			vpgdesc->recommended_alloc_off = 0;
+		} else {
+			vpgdesc->recommended_alloc_off = 0;
+		}
+
+		if (!(--vpgdesc->ref_count)) {
 			kima_free_vpgdesc(pool, vpgdesc);
+			--pool->num_allocated_pages;
+		}
 	}
 
 	kima_free_ublk(pool, ublk);
