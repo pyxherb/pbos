@@ -77,6 +77,12 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 
 	*new_context_out = new_context;
 
+	new_context->kima_vmr_pool = kima_pool_t();
+	new_context->kima_common_pool = kima_pool_t();
+
+	kima_init_pool(&*new_context->kima_vmr_pool);
+	kima_init_pool(&*new_context->kima_common_pool);
+
 	// ki_mm_copy_global_mappings(context, mm_kernel_context);
 	return KM_RESULT_OK;
 }
@@ -89,13 +95,13 @@ void mm_free_context(mm_context_t *context) {
 		auto vmr = static_cast<mm_vmr_t *>(context->vmr_tree.begin().node);
 		context->vmr_tree.remove(vmr);
 		kfxx::destroy_at<mm_vmr_t>(vmr);
-		kima_free(&context->kima_vmr_pool, vmr);
+		kima_free(&*context->kima_vmr_pool, vmr);
 	}
 
 	// Free memory blocks allocated by KIMA.
 	// We must free all pages before the top-level page table is unmapped.
-	kima_free_pool(&context->kima_common_pool);
-	kima_free_pool(&context->kima_vmr_pool);
+	kima_free_pool(&*context->kima_common_pool);
+	kima_free_pool(&*context->kima_vmr_pool);
 
 	// Free the top-level page table.
 	auto pml4t = mm_getmap(mm_get_cur_context(), context->page_table, nullptr);

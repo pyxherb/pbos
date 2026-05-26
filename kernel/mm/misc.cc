@@ -11,8 +11,6 @@ const ki_paging_config_t *ki_cur_paging_config;
 ps::mutex_t ki_kernel_mmap_mutex;
 
 _mm_context_t::_mm_context_t() {
-	kima_init_pool(&this->kima_common_pool);
-	kima_init_pool(&this->kima_vmr_pool);
 }
 
 PBOS_PRIVATE ki_mm_pmgroup_t::ki_mm_pmgroup_t(kfxx::allocator_t *allocator): vmrs(allocator) {
@@ -55,7 +53,7 @@ PBOS_PRIVATE void ki_mm_destroy_pmgroup(ki_mm_pmgroup_t *pmgroup) {
 
 PBOS_PRIVATE void ki_mm_destroy_vmr(mm_vmr_t *vmr) {
 	kfxx::destroy_at<mm_vmr_t>(vmr);
-	kima_free(&vmr->mm_context->kima_vmr_pool, vmr);
+	kima_free(&*vmr->mm_context->kima_vmr_pool, vmr);
 }
 
 PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
@@ -119,7 +117,7 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 					return KM_RESULT_INVALID_ARGS;
 			}
 
-			mm_vmr_t *new_vmr = (mm_vmr_t *)kima_alloc(&ctxt->kima_vmr_pool, sizeof(mm_vmr_t), alignof(mm_vmr_t));
+			mm_vmr_t *new_vmr = (mm_vmr_t *)kima_alloc(&*ctxt->kima_vmr_pool, sizeof(mm_vmr_t), alignof(mm_vmr_t));
 			if (!new_vmr)
 				return KM_RESULT_NO_MEM;
 			kfxx::construct_at<mm_vmr_t>(new_vmr);
@@ -345,7 +343,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_merge_mapped_area(
 
 	context->vmr_tree.remove(vmr_b);
 	kfxx::destroy_at<mm_vmr_t>(vmr_b);
-	kima_free(&context->kima_vmr_pool, vmr_b);
+	kima_free(&*context->kima_vmr_pool, vmr_b);
 
 	return KM_RESULT_OK;
 }
@@ -377,7 +375,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
 		return KM_RESULT_INVALID_ARGS;
 	}
 
-	mm_vmr_t *new_vmr = (mm_vmr_t *)kima_alloc(&context->kima_vmr_pool, sizeof(mm_vmr_t), alignof(mm_vmr_t));
+	mm_vmr_t *new_vmr = (mm_vmr_t *)kima_alloc(&*context->kima_vmr_pool, sizeof(mm_vmr_t), alignof(mm_vmr_t));
 	if (!new_vmr)
 		return KM_RESULT_NO_MEM;
 	kfxx::construct_at<mm_vmr_t>(new_vmr);

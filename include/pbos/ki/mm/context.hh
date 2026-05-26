@@ -47,10 +47,10 @@ typedef struct _mm_context_t {
 	void *page_table = nullptr;
 
 	/// @brief KIMA pool for common structures.
-	kima_pool_t kima_common_pool;
+	kfxx::option_t<kima_pool_t> kima_common_pool;
 
 	/// @brief KIMA pool for VMR structures.
-	kima_pool_t kima_vmr_pool;
+	kfxx::option_t<kima_pool_t> kima_vmr_pool;
 	/// @brief The VMR tree.
 	ki_mm_vmr_tree_t vmr_tree;
 
