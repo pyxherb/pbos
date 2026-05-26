@@ -141,7 +141,7 @@ void kima_vpgfree(kima_pool_t *pool, void *addr, size_t size);
 
 PBOS_NODISCARD void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment);
 PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size, size_t alignment);
-PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, size_t size, size_t alignment);
+PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, size_t size);
 void kima_free(kima_pool_t *pool, void *ptr);
 
 void kima_free_pool(kima_pool_t *pool);
@@ -160,7 +160,7 @@ public:
 
 	PBOS_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
 	PBOS_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size) noexcept override;
 	PBOS_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
 
 	PBOS_PRIVATE virtual void *type_identity() const noexcept override;

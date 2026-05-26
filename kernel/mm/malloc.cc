@@ -17,8 +17,8 @@ PBOS_NODISCARD PBOS_API void *mm_krealloc(void *old_ptr, size_t size, size_t ali
 	return kima_realloc(mm_global_pool, old_ptr, size, alignment);
 }
 
-PBOS_NODISCARD PBOS_API void *mm_krealloc_in_place(void *old_ptr, size_t size, size_t alignment) {
-	return kima_realloc_in_place(mm_global_pool, old_ptr, size, alignment);
+PBOS_NODISCARD PBOS_API void *mm_krealloc_in_place(void *old_ptr, size_t size) {
+	return kima_realloc_in_place(mm_global_pool, old_ptr, size);
 }
 
 PBOS_API void mm_kfree(void *ptr) {

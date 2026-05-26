@@ -19,7 +19,7 @@ public:
 
 	PBOS_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
 	PBOS_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size) noexcept override;
 	PBOS_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
 
 	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
@@ -35,7 +35,7 @@ public:
 
 	PBOS_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
 	PBOS_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size) noexcept override;
 	PBOS_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
 
 	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
@@ -51,7 +51,7 @@ public:
 
 	PBOS_PRIVATE virtual void *alloc(size_t size, size_t alignment) noexcept override;
 	PBOS_PRIVATE virtual void *realloc(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
-	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept override;
+	PBOS_PRIVATE virtual void *realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size) noexcept override;
 	PBOS_PRIVATE virtual void release(void *ptr, size_t size, size_t alignment) noexcept override;
 
 	PBOS_PRIVATE virtual void *type_identity() const noexcept override;

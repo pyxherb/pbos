@@ -28,8 +28,8 @@ void *ki_dm_bus_allocator_t::realloc(void *ptr, size_t size, size_t alignment, s
 	return mm_krealloc(ptr, new_size, new_alignment);
 }
 
-void *ki_dm_bus_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
-	return mm_krealloc_in_place(ptr, new_size, new_alignment);
+void *ki_dm_bus_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size) noexcept {
+	return mm_krealloc_in_place(ptr, new_size);
 }
 
 void ki_dm_bus_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {

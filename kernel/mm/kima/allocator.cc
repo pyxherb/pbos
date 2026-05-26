@@ -25,8 +25,8 @@ void *kima_allocator_t::realloc(void *ptr, size_t size, size_t alignment, size_t
 	return kima_realloc(&pool, ptr, new_size, new_alignment);
 }
 
-void *kima_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size, size_t new_alignment) noexcept {
-	return kima_realloc_in_place(&pool, ptr, new_size, new_alignment);
+void *kima_allocator_t::realloc_in_place(void *ptr, size_t size, size_t alignment, size_t new_size) noexcept {
+	return kima_realloc_in_place(&pool, ptr, new_size);
 }
 
 void kima_allocator_t::release(void *ptr, size_t size, size_t alignment) noexcept {

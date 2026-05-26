@@ -100,7 +100,7 @@ void mm_unpin_page(void *ptr);
 ///
 /// @brief Allocate a memory block from the default pool.
 ///
-/// @param size Size of the memory bloc to be allocated.
+/// @param size Size of the memory block to be allocated.
 /// @return Virtual address to the memory block, NULL if failed.
 ///
 PBOS_NODISCARD PBOS_API void *mm_kalloc(size_t size, size_t alignment);
@@ -110,7 +110,7 @@ PBOS_NODISCARD PBOS_API void *mm_kalloc(size_t size, size_t alignment);
 ///
 /// @param old_ptr Pointer to the old block.
 /// @param size Wanted size of the new block.
-/// @param alignment Alignment of the new block./
+/// @param alignment Alignment of the new block.
 /// @return Pointer to newly allocated block, or @c NULL will be returned if failed (the old block will be kept).
 ///
 PBOS_NODISCARD PBOS_API void *mm_krealloc(void *old_ptr, size_t size, size_t alignment);
@@ -120,10 +120,9 @@ PBOS_NODISCARD PBOS_API void *mm_krealloc(void *old_ptr, size_t size, size_t ali
 ///
 /// @param old_ptr Pointer to the old block.
 /// @param size Wanted size of the new block.
-/// @param alignment Alignment of the new block./
 /// @return Pointer to the resized block, or @c NULL will be returned if failed (the content will be kept).
 ///
-PBOS_NODISCARD PBOS_API void *mm_krealloc_in_place(void *old_ptr, size_t size, size_t alignment);
+PBOS_NODISCARD PBOS_API void *mm_krealloc_in_place(void *old_ptr, size_t size);
 
 ///
 /// @brief Free a memory block from the default pool.
