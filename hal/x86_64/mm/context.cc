@@ -61,7 +61,7 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 	});
 
 	kfxx::construct_at<mm_context_t>(new_context);
-	if (KM_FAILED(result = mm_mmap(mm_get_cur_context(), pml4t_vaddr, pml4t_paddr, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, MMAP_NO_INC_RC))) {
+	if (KM_FAILED(result = mm_mmap(mm_get_cur_context(), pml4t_vaddr, pml4t_paddr, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, MM_MMAP_NO_INC_RC))) {
 		return result;
 	}
 
@@ -89,7 +89,7 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 
 void mm_free_context(mm_context_t *context) {
 	// TODO: Free associated pages.
-	km_unwrap_result(mm_unmmap(context, 0, USER_SIZE, MMAP_IGNORE_VMR));
+	km_unwrap_result(mm_munmap(context, 0, USER_SIZE, MM_MMAP_IGNORE_VMR));
 
 	while (context->vmr_tree.size()) {
 		auto vmr = static_cast<mm_vmr_t *>(context->vmr_tree.begin().node);

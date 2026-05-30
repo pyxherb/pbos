@@ -47,6 +47,14 @@ typedef struct _fs_fcb_t fs_fcb_t;
 
 typedef struct _fs_finddata_t fs_finddata_t;
 
+enum {
+	FS_SEEK_SET = 0,
+	FS_SEEK_CUR,
+	FS_SEEK_END
+};
+
+typedef uint8_t fs_seek_mode_t;
+
 PBOS_NODISCARD PBOS_API km_result_t fs_create_file(
 	fs_fnode_t *parent,
 	const char *filename,
@@ -74,7 +82,7 @@ PBOS_NODISCARD PBOS_API const char *fs_get_fnode_name(fs_fnode_t *file, size_t *
 PBOS_API void fs_unname_fnode(fs_fnode_t *file);
 PBOS_NODISCARD PBOS_API km_result_t fs_rename_fnode(fs_fnode_t *file, const char *name, size_t name_len);
 
-PBOS_API fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb);
+PBOS_API fs_fnode_t *fs_get_file_of_fcb(fs_fcb_t *fcb);
 
 /// @brief Mount a file onto a directory.
 /// @param parent Parent directory to mount, the directory must be empty.
@@ -88,8 +96,15 @@ PBOS_NODISCARD PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode
 km_result_t fs_close(fs_fcb_t *fcb);
 
 PBOS_NODISCARD PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out);
-PBOS_NODISCARD PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out);
-PBOS_NODISCARD PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
+
+PBOS_NODISCARD PBOS_API km_result_t fs_seek(fs_fcb_t *fcb, long off, fs_seek_mode_t mode);
+
+PBOS_NODISCARD PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t *bytes_read_out);
+PBOS_NODISCARD PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_t *bytes_written_out);
+
+PBOS_NODISCARD PBOS_API km_result_t fs_pread(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out);
+PBOS_NODISCARD PBOS_API km_result_t fs_pwrite(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
+
 PBOS_NODISCARD PBOS_API km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out);
 
 PBOS_NODISCARD PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_len, fs_fnode_t **file_out);

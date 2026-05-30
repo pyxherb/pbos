@@ -4,8 +4,10 @@
 #include <string.h>
 #include "basedefs.h"
 
-#define KF_CONTROL_FLOW_BREAK false
-#define KF_CONTROL_FLOW_CONTINUE true
+enum {
+	KF_CONTROL_FLOW_BREAK = false,
+	KF_CONTROL_FLOW_CONTINUE = true
+};
 
 typedef bool kf_control_flow_t;
 

@@ -14,7 +14,7 @@ PBOS_NODISCARD void *hali_tmpmap_post(void *paddr, size_t size, uint16_t mask);
 
 void hali_tmpunmap_post(void *vaddr, size_t size);
 
-void *hali_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out);
+void *hali_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_page_access_t *page_access_out);
 
 PBOS_EXTERN_C_END
 

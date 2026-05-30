@@ -37,7 +37,7 @@ typedef struct _mm_vmr_t
 	ki_mm_pmgroup_t *default_pmgroup = nullptr;
 
 	size_t size = 0;
-	mm_pgaccess_t access = 0;
+	mm_page_access_t access = 0;
 } mm_vmr_t;
 
 PBOS_PRIVATE void ki_mm_destroy_vmr(mm_vmr_t *vmr);

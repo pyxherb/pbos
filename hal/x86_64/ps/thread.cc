@@ -123,7 +123,7 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 				return KM_RESULT_NO_MEM;
 			}
 
-			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, page_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, MMAP_NO_INC_RC))) {
+			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, page_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, MM_MMAP_NO_INC_RC))) {
 				return result;
 			}
 		}

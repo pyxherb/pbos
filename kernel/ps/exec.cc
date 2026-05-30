@@ -5,8 +5,8 @@
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/map.hh>
 #include <pbos/kfxx/scope_guard.hh>
-#include <pbos/kfxx/uuid.hh>
 #include <pbos/ki/ps/exec.hh>
+#include <pbos/kd/logger.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -189,16 +189,29 @@ km_result_t ps_register_cached_ro_page(void *paddr, void *allocated_cmp_vpage, v
 	return KM_RESULT_OK;
 }
 
-km_result_t ps_fetch_cached_ro_page(void *vaddr, void *allocated_cmp_vpage, void **paddr_out) {
+km_result_t ps_fetch_cached_ro_page(void *vaddr, void *comparison_tmpmap_vaddr, void **paddr_out) {
+	if(mm_is_user_space(comparison_tmpmap_vaddr)) {
+		kd_printf(__func__, "Temporary mapping area for comparison must be in kernel space, but %p was provided", comparison_tmpmap_vaddr);
+		return KM_RESULT_INVALID_ARGS;
+	}
 	const size_t page_size = mm_get_page_size();
 	uint64_t hash_code = kf_djb_hash64((const char *)vaddr, page_size);
+	km_result_t result;
 
 	ps::read_rw_mutex_guard g(ki_ro_pages_cache_lock.c_mutex());
 
 	if (auto it = ki_cached_ro_pages_hash_map.find(hash_code); it != ki_cached_ro_pages_hash_map.end()) {
-		// TODO: Implement this...
+		for (auto j : it.value()) {
+			KM_RETURN_IF_FAILED(mm_mmap(mm_get_cur_context(), comparison_tmpmap_vaddr, j, page_size, MM_PAGE_MAPPED | MM_PAGE_READ, MM_MMAP_NO_PGTAB_ALLOC));
+
+			if(!memcmp(vaddr, comparison_tmpmap_vaddr, page_size)) {
+				*paddr_out = j;
+				return KM_RESULT_OK;
+			}
+		}
 	}
 
+	*paddr_out = nullptr;
 	return KM_RESULT_OK;
 }
 
@@ -256,7 +269,7 @@ void ps_unregister_binproto(km_binproto_t *proto) {
 	ki_registered_binprotos.remove(proto);
 }
 
-km_result_t ps_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, size_t size, mm_pgaccess_t pgaccess, km_binseg_t **seg_out) {
+km_result_t ps_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, size_t size, mm_page_access_t page_access, km_binseg_t **seg_out) {
 	const size_t page_size = mm_get_page_size();
 
 	if (vaddr_base != (void *)kfxx::floor_align_to((uintptr_t)vaddr_base, page_size))
@@ -271,7 +284,7 @@ km_result_t ps_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, s
 
 	seg->vaddr_base = vaddr_base;
 	seg->size = size;
-	seg->access = pgaccess;
+	seg->access = page_access;
 	seg->cur_offset = 0;
 
 	kfxx::scope_guard release_page_pools_guard([seg]() noexcept {

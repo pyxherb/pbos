@@ -9,7 +9,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-PBOS_API fs_fnode_t *fs_file_of_fcb(fs_fcb_t *fcb) {
+PBOS_API fs_fnode_t *fs_get_file_of_fcb(fs_fcb_t *fcb) {
 	return fcb->fnode.get();
 }
 
@@ -452,28 +452,64 @@ PBOS_API km_result_t fs_close(fs_fcb_t *fcb) {
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
+PBOS_API km_result_t fs_seek(fs_fcb_t *fcb, long off, fs_seek_mode_t mode) {
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
 
-	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.read(&dispatch_context, fcb, (char *)dest, size, off, bytes_read_out));
+	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.seek(&dispatch_context, fcb, off, mode));
 
 	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out) {
+PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t *bytes_read_out) {
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
 
-	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.write(&dispatch_context, fcb, (char *)src, size, off, bytes_written_out));
+	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.read(&dispatch_context, fcb, (char *)dest, size, bytes_read_out));
 
 	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
-	return fcb->fnode->fs->ops.write(&dispatch_context, fcb, src, size, off, bytes_written_out);
+	return KM_RESULT_OK;
+}
+
+PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_t *bytes_written_out) {
+	io_dispatch_context_t dispatch_context;
+	io_init_dispatch_context(&dispatch_context);
+
+	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.write(&dispatch_context, fcb, (char *)src, size, bytes_written_out));
+
+	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	return KM_RESULT_OK;
+}
+
+PBOS_API km_result_t fs_pread(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
+	io_dispatch_context_t dispatch_context;
+	io_init_dispatch_context(&dispatch_context);
+
+	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.pread(&dispatch_context, fcb, (char *)dest, size, off, bytes_read_out));
+
+	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	return KM_RESULT_OK;
+}
+
+PBOS_API km_result_t fs_pwrite(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out) {
+	io_dispatch_context_t dispatch_context;
+	io_init_dispatch_context(&dispatch_context);
+
+	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.pwrite(&dispatch_context, fcb, (char *)src, size, off, bytes_written_out));
+
+	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	return KM_RESULT_OK;
 }
 
 PBOS_API km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {
-	return fcb->fnode->fs->ops.size(fcb, size_out);
+	io_dispatch_context_t dispatch_context;
+	io_init_dispatch_context(&dispatch_context);
+
+	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.size(&dispatch_context, fcb, size_out));
+
+	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	return KM_RESULT_OK;
 }
 
 PBOS_API void fs_ref_fnode(fs_fnode_t *fnode) {

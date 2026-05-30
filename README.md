@@ -27,9 +27,9 @@ Then, run Windows Powershell with Administrator Privileges and run ./configure t
 The typical command to build the project after the project is configured:
 
 ```powershell
-cmake --build build --config Debug --target pbkrnl
+cmake --build build --config Debug --target pboskrnl
 ```
 
 ## License
 
-The PbOS kernel is licensed under GNU General Public License v3.0.
+The PbOS kernel is licensed under GNU General Public License v3.0 (may be changed later).

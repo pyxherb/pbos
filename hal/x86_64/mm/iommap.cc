@@ -10,10 +10,10 @@ km_result_t mm_iommap(
 	void *vaddr,
 	void *paddr,
 	size_t size,
-	mm_pgaccess_t access,
+	mm_page_access_t access,
 	mm_iommap_flags_t flags) {
 	km_result_t result;
-	mmap_flags_t mmap_flags = MMAP_NO_INC_RC;
+	mmap_flags_t mmap_flags = MM_MMAP_NO_INC_RC;
 
 	if ((result = mm_mmap(context, vaddr, paddr, size, access, mmap_flags)))
 		return result;
@@ -23,9 +23,9 @@ km_result_t mm_iommap(
 
 void mm_uniommap(mm_context_t *context, void *vaddr, size_t size, mm_iommap_flags_t flags) {
 	km_result_t result;
-	mmap_flags_t mmap_flags = MMAP_NO_INC_RC;
+	mmap_flags_t mmap_flags = MM_MMAP_NO_INC_RC;
 
-	mm_unmmap(context, vaddr, size, mmap_flags);
+	mm_munmap(context, vaddr, size, mmap_flags);
 }
 
 PBOS_EXTERN_C_END

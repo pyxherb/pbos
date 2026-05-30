@@ -572,12 +572,12 @@ namespace kfxx {
 		struct iterator {
 			node_t *node;
 			ThisType *tree;
-			iteratorDirection direction;
+			iterator_direction direction;
 
 			PBOS_FORCEINLINE iterator(
 				node_t *node,
 				ThisType *tree,
-				iteratorDirection direction)
+				iterator_direction direction)
 				: node(node),
 				  tree(tree),
 				  direction(direction) {}
@@ -588,7 +588,7 @@ namespace kfxx {
 				tree = it.tree;
 				direction = it.direction;
 
-				it.direction = iteratorDirection::Invalid;
+				it.direction = iterator_direction::Invalid;
 			}
 			PBOS_FORCEINLINE iterator &operator=(const iterator &rhs) noexcept {
 				if (direction != rhs.direction)
@@ -613,7 +613,7 @@ namespace kfxx {
 				if (!node)
 					km_panic("Increasing the end iterator");
 
-				if (direction == iteratorDirection::Forward) {
+				if (direction == iterator_direction::Forward) {
 					node = ThisType::get_next(node, nullptr);
 				} else {
 					node = ThisType::get_prev(node, nullptr);
@@ -635,7 +635,7 @@ namespace kfxx {
 			}
 
 			PBOS_FORCEINLINE iterator &operator--() {
-				if (direction == iteratorDirection::Forward) {
+				if (direction == iterator_direction::Forward) {
 					if (node == tree->_cached_min_node)
 						km_panic("Dereasing the begin iterator");
 
@@ -724,16 +724,16 @@ namespace kfxx {
 		};
 
 		PBOS_FORCEINLINE iterator begin() {
-			return iterator((node_t *)_get_min_node(_root), this, iteratorDirection::Forward);
+			return iterator((node_t *)_get_min_node(_root), this, iterator_direction::Forward);
 		}
 		PBOS_FORCEINLINE iterator end() {
-			return iterator(nullptr, this, iteratorDirection::Forward);
+			return iterator(nullptr, this, iterator_direction::Forward);
 		}
 		PBOS_FORCEINLINE iterator begin_reversed() {
-			return iterator((node_t *)_cached_max_node, this, iteratorDirection::Reversed);
+			return iterator((node_t *)_cached_max_node, this, iterator_direction::Reversed);
 		}
 		PBOS_FORCEINLINE iterator end_reversed() {
-			return iterator(nullptr, this, iteratorDirection::Reversed);
+			return iterator(nullptr, this, iterator_direction::Reversed);
 		}
 
 		struct const_iterator {

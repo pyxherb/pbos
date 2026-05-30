@@ -41,8 +41,10 @@ typedef enum _km_results {
 	KM_RESULT_UNRESOLVED_SYMBOL,
 	/// @brief Requested entity or operation is not processable.
 	KM_RESULT_UNPROCESSABLE,
+	/// @brief Corresponding page table has not been allocated yet.
+	KM_RESULT_PGTAB_NOT_ALLOCATED,
 	/// @brief The operation should be continue to process.
-	KM_RESULT_CONTINUE,
+	KM_RESULT_CONTINUE = 0x80000000,
 } km_results;
 
 typedef uint32_t km_result_t;

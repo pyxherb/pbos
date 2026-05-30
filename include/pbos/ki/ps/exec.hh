@@ -64,7 +64,7 @@ typedef struct _km_binseg_t {
 	size_t cur_offset;
 	km_binseg_page_pool_t *pages = nullptr, *cur_page_pool = nullptr;
 	kfxx::rbtree_t<void *> page_descs_query_tree;
-	mm_pgaccess_t access;
+	mm_page_access_t access;
 } km_binseg_t;
 
 typedef struct _km_binproto_t : public kfxx::rbtree_t<fs_fcb_t *>::node_t {

@@ -41,7 +41,7 @@ enum {
 #define MM_PAGE_USER 0x20
 
 /// @brief Type used for representing access mode of a page.
-typedef uint32_t mm_pgaccess_t;
+typedef uint32_t mm_page_access_t;
 
 typedef struct _mm_vmr_t mm_vmr_t;
 typedef struct _mm_context_t mm_context_t;
@@ -71,7 +71,7 @@ PBOS_NODISCARD km_result_t mm_iommap(
 	void *vaddr,
 	void *paddr,
 	size_t size,
-	mm_pgaccess_t access,
+	mm_page_access_t access,
 	mm_iommap_flags_t flags);
 
 void mm_uniommap(mm_context_t *context, void *vaddr, size_t size, mm_iommap_flags_t flags);
@@ -162,7 +162,7 @@ PBOS_NODISCARD void *mm_vmalloc(
 	const void *minaddr,
 	const void *maxaddr,
 	size_t size,
-	mm_pgaccess_t access,
+	mm_page_access_t access,
 	mm_vmalloc_flags_t flags);
 
 /// @brief Allocate a virtual memory space in kernel area.
@@ -171,7 +171,7 @@ PBOS_NODISCARD void *mm_vmalloc(
 /// @param size Size for allocation.
 /// @param access Page access for allocation.
 /// @return Pointer to allocated virtual address, NULL if failed.
-PBOS_NODISCARD void *mm_kvmalloc(mm_context_t *context, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags);
+PBOS_NODISCARD void *mm_kvmalloc(mm_context_t *context, size_t size, mm_page_access_t access, mm_vmalloc_flags_t flags);
 
 /// @brief Free a virtual memory space.
 ///
@@ -180,18 +180,18 @@ PBOS_NODISCARD void *mm_kvmalloc(mm_context_t *context, size_t size, mm_pgaccess
 /// @param size Previous allocated size.
 void mm_vmfree(mm_context_t *context, void *addr, size_t size);
 
-#define MMAP_ATOMIC 0x00000001
-#define MMAP_NO_REMAP 0x00000002
+#define MM_MMAP_ATOMIC 0x00000001
+#define MM_MMAP_NO_REMAP 0x00000002
 /// @brief Do not increase the reference count, usually used for mapping page allocated by @c mm_pgalloc
-#define MMAP_NO_INC_RC 0x00000004
-#define MMAP_IGNORE_VMR 0x40000000
-#define MMAP_NO_PGTAB_ALLOC 0x40000000
+#define MM_MMAP_NO_INC_RC 0x00000004
+#define MM_MMAP_IGNORE_VMR 0x40000000
+#define MM_MMAP_NO_PGTAB_ALLOC 0x40000000
 
 typedef uint32_t mmap_flags_t;
 
 ///
 /// @brief Map a continuous physical memory region to a continuous virtual memory region.
-/// @note The mapped pages will be referenced (if is user) or pinned (if is kernel). Use @c MMAP_NO_INC_RC to avoid this.
+/// @note The mapped pages will be referenced (if is user) or pinned (if is kernel). Use @c MM_MMAP_NO_INC_RC to avoid this.
 ///
 /// @param context Memory context to be operated.
 /// @param vaddr Base of virtual memory space to be mapped.
@@ -206,7 +206,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_mmap(
 	void *vaddr,
 	void *paddr,
 	size_t size,
-	mm_pgaccess_t access,
+	mm_page_access_t access,
 	mmap_flags_t flags);
 
 ///
@@ -242,7 +242,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_set_page_access(
 	mm_context_t *context,
 	void *vaddr,
 	size_t size,
-	mm_pgaccess_t access);
+	mm_page_access_t access);
 
 ///
 /// @brief Unmap a continuous virtual memory region.
@@ -252,24 +252,24 @@ PBOS_NODISCARD PBOS_API km_result_t mm_set_page_access(
 /// @param size Size of virtual memory space to be unmapped.
 /// @param flags Flags for unmapping, same as mmap's.
 ///
-PBOS_API km_result_t mm_unmmap(mm_context_t *context, void *vaddr, size_t size, mmap_flags_t flags);
+PBOS_API km_result_t mm_munmap(mm_context_t *context, void *vaddr, size_t size, mmap_flags_t flags);
 
 ///
 /// @brief Get mapping of a virtual page.
 ///
 /// @param context Memory context to be operated.
 /// @param vaddr Virtual address of the virtual page to be queried.
-/// @param pgaccess_out Where to store page access of the page.
+/// @param page_access_out Where to store page access of the page.
 /// @return Corresponding physical address of the mapped virtual page.
 ///
-PBOS_API void *mm_getmap(mm_context_t *context, const void *vaddr, mm_pgaccess_t *pgaccess_out);
+PBOS_API void *mm_getmap(mm_context_t *context, const void *vaddr, mm_page_access_t *page_access_out);
 
 PBOS_NODISCARD km_result_t mm_mmap(
 	mm_context_t *context,
 	void *vaddr,
 	void *paddr,
 	size_t size,
-	mm_pgaccess_t access,
+	mm_page_access_t access,
 	mmap_flags_t flags);
 
 ///
@@ -303,9 +303,9 @@ PBOS_PURE PBOS_API bool mm_is_user_space(const void *ptr);
 
 PBOS_API mm_vmr_t *mm_lookup_area(mm_context_t *mm_context, void *ptr);
 
-PBOS_API km_result_t mm_probe_kernel_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t access);
+PBOS_API km_result_t mm_probe_kernel_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_page_access_t access);
 
-PBOS_API km_result_t mm_probe_and_lock_user_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_pgaccess_t access);
+PBOS_API km_result_t mm_probe_and_lock_user_pages(mm_context_t *mm_context, void *ptr, size_t size, mm_page_access_t access);
 
 PBOS_API km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t size);
 

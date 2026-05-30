@@ -53,7 +53,7 @@ endif()
 # C setup
 #
 set(C_STANDARD 99)
-find_program(CMAKE_C_COMPILER NAMES clang REQUIRED)
+find_program(CMAKE_C_COMPILER NAMES gcc clang REQUIRED)
 set(CMAKE_C_COMPILER_TARGET x86_64-elf)
 
 set(CMAKE_C_FLAGS "-fvisibility=hidden -m64 -nostdlib -fno-stack-protector -mno-stack-arg-probe -mno-red-zone -mno-mmx -mno-sse -fno-builtin -ffreestanding -fPIE")

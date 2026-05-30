@@ -57,6 +57,11 @@ SECTIONS
 		*(.dynamic)
 		*(.dynamic.*)
 	} :dynsym
+	.rela :
+	{
+		*(.rela)
+		*(.rela.*)
+	} :dynsym
 	.dynsym :
 	{
 		HIDDEN(KI_EXPORTED_SYMBOLS_BEGIN = .);
@@ -64,11 +69,6 @@ SECTIONS
 		*(.dynsym.*)
 		HIDDEN(KI_EXPORTED_SYMBOLS_END = .);
 	} :dynsym :dynsym_rodata
-	.rela :
-	{
-		*(.rela)
-		*(.rela.*)
-	} :dynsym
 	.dynstr :
 	{
 		HIDDEN(KI_EXPORTED_SYMBOL_NAMES_BEGIN = .);

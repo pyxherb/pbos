@@ -64,7 +64,7 @@ function UpdateLimineConfig {
 }
 
 function CopySystemFiles {
-	Copy-Item build\pbkrnl B:\sys\kernel\
+	Copy-Item build\pboskrnl B:\sys\kernel\
 	Copy-Item build\initcar B:\sys\boot\
 }
 

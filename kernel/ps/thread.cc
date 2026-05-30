@@ -13,7 +13,7 @@ void ki_destroy_thread(ps_tcb_t *tcb) {
 		ps_cur_sched->drop_thread(ps_cur_sched, tcb);
 		tcb->parent->thread_set.remove(tcb);
 	}
-	km_unwrap_result(mm_unmmap(tcb->parent->mm_context, tcb->stack, tcb->stack_size, 0));
+	km_unwrap_result(mm_munmap(tcb->parent->mm_context, tcb->stack, tcb->stack_size, 0));
 
 	if (tcb->context)
 		ps_destroy_context(tcb->context);

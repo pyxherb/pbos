@@ -11,3 +11,7 @@ Here is the universal kernel layer of the PbOS.
 ## mm_seal
 
 `mm_seal` permanently seals mapping status of a memory region, which makes read-only memory regions can be safely compressed after the region is sealed.
+
+## Glob Pattern Support
+
+Add glob pattern facilities to support `fs_enum_first_child_file` and `fs_enum_next_file`, etc.

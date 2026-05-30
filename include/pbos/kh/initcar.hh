@@ -29,10 +29,16 @@ km_result_t kh_initcar_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent,
 km_result_t kh_initcar_open(fs_fnode_t *handle, fs_fcb_t **fcb_out);
 void kh_initcar_close(fs_fcb_t *fcb);
 
-km_result_t kh_initcar_read(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
-km_result_t kh_initcar_write(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
+km_result_t kh_initcar_seek(io_dispatch_context_t *dc, fs_fcb_t *fcb, long off, fs_seek_mode_t mode);
+km_result_t kh_initcar_read(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t *bytes_read_out);
+km_result_t kh_initcar_write(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t *bytes_written_out);
 
-km_result_t kh_initcar_size(fs_fcb_t *fcb, size_t *size_out);
+km_result_t kh_initcar_pread(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
+km_result_t kh_initcar_pwrite(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
+
+km_result_t kh_initcar_ioctl(io_dispatch_context_t *dc, fs_fcb_t *fcb, uint32_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args);
+
+km_result_t kh_initcar_size(io_dispatch_context_t *dc, fs_fcb_t *fcb, size_t *size_out);
 
 km_result_t kh_initcar_enum_first_child_file(fs_fnode_t *dir, fs_fnode_t **first_file_out);
 km_result_t kh_initcar_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **next_file_out);

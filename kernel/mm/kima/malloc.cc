@@ -42,7 +42,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 					it = decltype(pool->vpgdesc_query_tree)::iterator(
 						pool->vpgdesc_query_tree.find_max_lteq(continuous_area_base),
 						&pool->vpgdesc_query_tree,
-						kfxx::iteratorDirection::Forward);
+						kfxx::iterator_direction::Forward);
 					goto noncontinuous;
 				}
 			}
@@ -54,7 +54,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 				auto i = decltype(pool->ublk_query_tree)::iterator(
 						 pool->ublk_query_tree.find_max_lteq(((char *)cur_base) + size - 1),
 						 &pool->ublk_query_tree,
-						 kfxx::iteratorDirection::Forward),
+						 kfxx::iterator_direction::Forward),
 					 last_i = i;
 				while (cur_base + size < limit) {
 					auto node = static_cast<kima_ublk_t *>(i.node);
@@ -73,7 +73,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 							i = decltype(pool->ublk_query_tree)::iterator(
 								verify,
 								&pool->ublk_query_tree,
-								kfxx::iteratorDirection::Forward)
+								kfxx::iterator_direction::Forward)
 									.next();
 							cur_base = (char *)verify->rb_value + static_cast<kima_ublk_t *>(verify)->size;
 							continue;
@@ -182,7 +182,7 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 					// Look up for a continuous existing allocated virtual page area for allocation.
 					if (!kima_lookup_vpgdesc(pool, ((char *)cur_desc->rb_value) + j)) {
 						continuous_area_base = ((char *)cur_desc->rb_value) + j;
-						it = kfxx::rbtree_t<void *>::iterator(pool->vpgdesc_query_tree.find_max_lteq(continuous_area_base), &pool->vpgdesc_query_tree, kfxx::iteratorDirection::Forward);
+						it = kfxx::rbtree_t<void *>::iterator(pool->vpgdesc_query_tree.find_max_lteq(continuous_area_base), &pool->vpgdesc_query_tree, kfxx::iterator_direction::Forward);
 						goto noncontinuous;
 					}
 				}

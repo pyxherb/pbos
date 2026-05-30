@@ -8,7 +8,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-static uint16_t hali_pgaccess_to_pgmask(mm_pgaccess_t access) {
+static uint16_t hali_page_access_to_pgmask(mm_page_access_t access) {
 	uint16_t mask = 0;
 
 	if (access & MM_PAGE_MAPPED)
@@ -40,25 +40,25 @@ void *kh_get_direct_mmap(void *paddr) {
 	return p;
 }
 
-void *kh_kvmalloc(mm_context_t *ctxt, size_t size, mm_pgaccess_t access, mm_vmalloc_flags_t flags) {
+void *kh_kvmalloc(mm_context_t *ctxt, size_t size, mm_page_access_t access, mm_vmalloc_flags_t flags) {
 	return kh_vmalloc(ctxt, (void *)(DIRECTPHYMEM_VTOP + 1),
 		(void *)KERNEL_VBASE, size, access, flags);
 }
 
 void mm_vmfree(mm_context_t *ctxt, void *addr, size_t size) {
-	kh_unmmap(ctxt, addr, size, 0);
+	kh_munmap(ctxt, addr, size, 0);
 }
 
 PBOS_NODISCARD uint8_t hali_mm_mmap_early(
 	mm_context_t *context,
 	void *vaddr,
 	void *paddr,
-	mm_pgaccess_t access,
+	mm_page_access_t access,
 	void *pdpte_paddr,
 	void *pde_paddr,
 	void *pte_paddr) {
 	uint8_t result = 0;
-	const uint8_t pgaccess = hali_pgaccess_to_pgmask(access);
+	const uint8_t page_access = hali_page_access_to_pgmask(access);
 
 	const size_t size = PAGESIZE;
 
@@ -189,7 +189,7 @@ PBOS_NODISCARD uint8_t hali_mm_mmap_early(
 					ptt[ptx] =
 						ARCH_PTE_WITH_XD(
 							ARCH_PTE_WITH_ADDR(
-								ARCH_PTE_WITH_MASKS(ptt[ptx], pgaccess),
+								ARCH_PTE_WITH_MASKS(ptt[ptx], page_access),
 								PGROUNDDOWN((char *)paddr + sz_mapped)),
 							!(access & MM_PAGE_EXEC));
 
@@ -210,7 +210,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 	void *vaddr,
 	void *paddr,
 	size_t size,
-	mm_pgaccess_t access,
+	mm_page_access_t access,
 	mmap_flags_t flags) {
 	// io::LocalIrqLock irq_lock;
 
@@ -236,10 +236,10 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 
 	char *pi = (char *)paddr;
 	size_t pi_diff = paddr ? PAGESIZE : 0;
-	uint8_t mask = hali_pgaccess_to_pgmask(access);
+	uint8_t mask = hali_page_access_to_pgmask(access);
 
-	kfxx::scope_guard unmmap_guard([ctxt, vaddr, size]() noexcept {
-		kh_unmmap(ctxt, vaddr, size, 0);
+	kfxx::scope_guard munmap_guard([ctxt, vaddr, size]() noexcept {
+		kh_munmap(ctxt, vaddr, size, 0);
 	});
 
 	// Walk each PML4E.
@@ -248,8 +248,8 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 
 		bool is_pml4te_allocated = false;
 		if (!(ARCH_PML4TE_MASK(*pml4te) & PML4E_P)) {
-			if (flags & MMAP_NO_PGTAB_ALLOC)
-				km_panic("Missing PML4 table entry with MMAP_NO_PGTAB_ALLOC, please report this bug.");
+			if (flags & MM_MMAP_NO_PGTAB_ALLOC)
+				return KM_RESULT_PGTAB_NOT_ALLOCATED;
 			// Allocate page table.
 			void *t = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 			*pml4te =
@@ -289,8 +289,8 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 
 			bool is_pdpte_allocated = false;
 			if (!(ARCH_PDPTE_MASK(pdpt[pdptx]) & PDPTE_P)) {
-				if (flags & MMAP_NO_PGTAB_ALLOC)
-					km_panic("Missing PDP table entry with MMAP_NO_PGTAB_ALLOC, please report this bug.");
+				if (flags & MM_MMAP_NO_PGTAB_ALLOC)
+					return KM_RESULT_PGTAB_NOT_ALLOCATED;
 				// Allocate page table.
 				void *t = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 				pdpt[pdptx] =
@@ -334,8 +334,8 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 
 				bool is_pde_allocated = false;
 				if (!(ARCH_PDE_MASK(pdt[pdx]) & PDE_P)) {
-					if (flags & MMAP_NO_PGTAB_ALLOC)
-						km_panic("Missing page directory table entry with MMAP_NO_PGTAB_ALLOC, please report this bug.");
+					if (flags & MM_MMAP_NO_PGTAB_ALLOC)
+						return KM_RESULT_PGTAB_NOT_ALLOCATED;
 					// Allocate page table.
 					void *t = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 					pdt[pdx] =
@@ -381,8 +381,8 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 					arch_pte_t *pte = &ptt[ptx];
 
 					if (ARCH_PTE_MASK(*pte) & PTE_P) {
-						if (flags & MMAP_NO_REMAP)
-							km_panic("Remapping address %p with MMAP_NO_REMAP", ptt_vaddr);
+						if (flags & MM_MMAP_NO_REMAP)
+							km_panic("Remapping address %p with MM_MMAP_NO_REMAP", ptt_vaddr);
 
 						void *addr = (void *)UNPGADDR(ARCH_PTE_ADDR(*pte));
 						if (addr)
@@ -390,7 +390,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 					} else {
 					}
 
-					if (!(flags & MMAP_NO_INC_RC)) {
+					if (!(flags & MM_MMAP_NO_INC_RC)) {
 						if (pi) {
 							if (is_user_space)
 								mm_ref_page(pi);
@@ -415,12 +415,12 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 		}
 	}
 
-	unmmap_guard.release();
+	munmap_guard.release();
 
 	return KM_RESULT_OK;
 }
 
-void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
+void kh_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
 	kd_assert(ctxt);
 
 #ifndef NDEBUG
@@ -538,10 +538,10 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 					arch_pte_t *pte = &ptt[ptx];
 
 					if (ARCH_PTE_MASK(*pte) & PTE_P) {
-						if (flags & MMAP_NO_REMAP)
-							km_panic("Remapping address %p with MMAP_NO_REMAP", ptt_vaddr);
+						if (flags & MM_MMAP_NO_REMAP)
+							km_panic("Remapping address %p with MM_MMAP_NO_REMAP", ptt_vaddr);
 
-						if (!(flags & MMAP_NO_INC_RC)) {
+						if (!(flags & MM_MMAP_NO_INC_RC)) {
 							void *addr = (void *)UNPGADDR(ARCH_PTE_ADDR(*pte));
 							if (addr) {
 								if (is_user_space)
@@ -604,10 +604,10 @@ void kh_unmmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 	}
 }
 
-void kh_walk_pgtab(mm_context_t *ctxt, void *vaddr, size_t size, kh_pgtab_walker walker, void *user_data) {
-#ifndef NDEBUG
+void kh_walk_pgtab(mm_context_t *ctxt, void *vaddr, size_t size, kh_pgtab_walker walker, void *user_data, kh_walk_pgtab_flags_t flags) {
 	bool is_user_space = mm_is_user_space(vaddr);
 
+#ifndef NDEBUG
 	if (is_user_space !=
 		mm_is_user_space((void *)(((uintptr_t)vaddr) + (size - 1))))
 		km_panic("Cannot walk across user and kernel spaces");
@@ -623,7 +623,21 @@ void kh_walk_pgtab(mm_context_t *ctxt, void *vaddr, size_t size, kh_pgtab_walker
 
 		bool is_pml4te_allocated = false;
 		if (!(ARCH_PML4TE_MASK(*pml4te) & PML4E_P)) {
-			continue;
+			if (!(flags & KH_WALK_PGTAB_SKIP_UNMAPPED))
+				continue;
+			char *limit =
+				is_user_space
+					? (char *)UVADDR(pml4x, PDPTX_MAX, PDX_MAX, PTX_MAX, PGOFF_MAX)
+					: (char *)KVADDR(pml4x, PDPTX_MAX, PDX_MAX, PTX_MAX, PGOFF_MAX);
+			for (char *i =
+					 is_user_space
+						 ? (char *)UVADDR(pml4x, 0, 0, 0, 0)
+						 : (char *)KVADDR(pml4x, 0, 0, 0, 0);
+				i < limit;
+				i += PAGESIZE) {
+				if (walker(i, nullptr, 0, user_data) == KF_CONTROL_FLOW_BREAK)
+					return;
+			}
 		}
 
 		const arch_pdpte_t *pdpt;
@@ -651,7 +665,21 @@ void kh_walk_pgtab(mm_context_t *ctxt, void *vaddr, size_t size, kh_pgtab_walker
 
 			bool is_pdpte_allocated = false;
 			if (!(ARCH_PDPTE_MASK(pdpt[pdptx]) & PDPTE_P)) {
-				continue;
+				if (!(flags & KH_WALK_PGTAB_SKIP_UNMAPPED))
+					continue;
+				char *limit =
+					is_user_space
+						? (char *)UVADDR(pml4x, pdptx, PDX_MAX, PTX_MAX, PGOFF_MAX)
+						: (char *)KVADDR(pml4x, pdptx, PDX_MAX, PTX_MAX, PGOFF_MAX);
+				for (char *i =
+						 is_user_space
+							 ? (char *)UVADDR(pml4x, pdptx, 0, 0, 0)
+							 : (char *)KVADDR(pml4x, pdptx, 0, 0, 0);
+					i < limit;
+					i += PAGESIZE) {
+					if (walker(i, nullptr, 0, user_data) == KF_CONTROL_FLOW_BREAK)
+						return;
+				}
 			}
 
 			const arch_pde_t *pdt;
@@ -683,7 +711,21 @@ void kh_walk_pgtab(mm_context_t *ctxt, void *vaddr, size_t size, kh_pgtab_walker
 
 				bool is_pde_allocated = false;
 				if (!(ARCH_PDE_MASK(pdt[pdx]) & PDE_P)) {
-					continue;
+					if (!(flags & KH_WALK_PGTAB_SKIP_UNMAPPED))
+						continue;
+					char *limit =
+						is_user_space
+							? (char *)UVADDR(pml4x, pdptx, pdx, PTX_MAX, PGOFF_MAX)
+							: (char *)KVADDR(pml4x, pdptx, pdx, PTX_MAX, PGOFF_MAX);
+					for (char *i =
+							 is_user_space
+								 ? (char *)UVADDR(pml4x, pdptx, pdx, 0, 0)
+								 : (char *)KVADDR(pml4x, pdptx, pdx, 0, 0);
+						i < limit;
+						i += PAGESIZE) {
+						if (walker(i, nullptr, 0, user_data) == KF_CONTROL_FLOW_BREAK)
+							return;
+					}
 				}
 
 				const arch_pte_t *ptt;
@@ -716,18 +758,18 @@ void kh_walk_pgtab(mm_context_t *ctxt, void *vaddr, size_t size, kh_pgtab_walker
 
 					const arch_pte_t *pte = &ptt[ptx];
 
-					mm_pgaccess_t pgaccess = MM_PAGE_READ;
+					mm_page_access_t page_access = MM_PAGE_READ;
 					uint64_t pte_mask = ARCH_PTE_MASK(ptt[ptx]);
 					if (pte_mask & PTE_P)
-						pgaccess |= MM_PAGE_MAPPED;
+						page_access |= MM_PAGE_MAPPED;
 					if (pte_mask & PTE_RW)
-						pgaccess |= MM_PAGE_WRITE;
+						page_access |= MM_PAGE_WRITE;
 					if (pte_mask & PTE_U)
-						pgaccess |= MM_PAGE_USER;
+						page_access |= MM_PAGE_USER;
 					if (!ARCH_PTE_XD(ptt[ptx]))
-						pgaccess |= MM_PAGE_EXEC;
+						page_access |= MM_PAGE_EXEC;
 
-					if (walker(ptt_vaddr, (void *)UNPGADDR(ARCH_PTE_ADDR(*pte)), pgaccess, user_data) == KF_CONTROL_FLOW_BREAK)
+					if (walker(ptt_vaddr, (void *)UNPGADDR(ARCH_PTE_ADDR(*pte)), page_access, user_data) == KF_CONTROL_FLOW_BREAK)
 						return;
 				}
 			}
@@ -739,7 +781,7 @@ void kh_set_page_access(
 	mm_context_t *ctxt,
 	const void *vaddr,
 	size_t size,
-	mm_pgaccess_t access) {
+	mm_page_access_t access) {
 	// io::LocalIrqLock irq_lock;
 
 #ifndef NDEBUG
@@ -762,7 +804,7 @@ void kh_set_page_access(
 		km_panic("Cannot map across user and kernel spaces");
 #endif
 
-	uint8_t mask = hali_pgaccess_to_pgmask(access);
+	uint8_t mask = hali_page_access_to_pgmask(access);
 
 	mask |= PTE_P;
 
@@ -891,7 +933,7 @@ void *kh_vmalloc(mm_context_t *context,
 	const void *minaddr,
 	const void *maxaddr,
 	size_t size,
-	mm_pgaccess_t access,
+	mm_page_access_t access,
 	mm_vmalloc_flags_t flags) {
 	// io::LocalIrqLock irq_lock;
 	void *const addr_limit = (void *)(PGCEIL((char *)maxaddr) - PGCEIL(size) - 1);
@@ -1041,14 +1083,14 @@ void *kh_vmalloc(mm_context_t *context,
 
 	if (sz_found >= size) {
 		km_unwrap_result(
-			kh_mmap(context, p_found, nullptr, size, access, flags | MMAP_NO_REMAP));
+			kh_mmap(context, p_found, nullptr, size, access, flags | MM_MMAP_NO_REMAP));
 		return p_found;
 	}
 
 	return nullptr;
 }
 
-PBOS_NODISCARD void *mm_kvmalloc_early(mm_context_t *context, size_t size, mm_pgaccess_t access) {
+PBOS_NODISCARD void *mm_kvmalloc_early(mm_context_t *context, size_t size, mm_page_access_t access) {
 	return mm_vmalloc_early(context, (void *)(DIRECTPHYMEM_VTOP + 1),
 		(void *)KERNEL_VBASE, size, access);
 }
@@ -1058,7 +1100,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 	const void *minaddr,
 	const void *maxaddr,
 	size_t size,
-	mm_pgaccess_t access) {
+	mm_page_access_t access) {
 	void *const addr_limit = (void *)(PGCEIL((char *)maxaddr) - PGCEIL(size) - 1);
 	uintptr_t addr_prefix = ADDR_PREFIX(minaddr);
 	kd_dbgcheck(
@@ -1192,10 +1234,10 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 	return nullptr;
 }
 
-void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
+void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_page_access_t *page_access_out) {
 	// io::LocalIrqLock irq_lock;
-	if (pgaccess_out)
-		*pgaccess_out = 0;
+	if (page_access_out)
+		*page_access_out = 0;
 
 	kd_assert(ctxt);
 
@@ -1279,17 +1321,17 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_o
 		return nullptr;
 	}
 
-	if (pgaccess_out) {
-		*pgaccess_out = MM_PAGE_READ;
+	if (page_access_out) {
+		*page_access_out = MM_PAGE_READ;
 		uint64_t pte_mask = ARCH_PTE_MASK(ptt[ptx]);
 		if (pte_mask & PTE_P)
-			*pgaccess_out |= MM_PAGE_MAPPED;
+			*page_access_out |= MM_PAGE_MAPPED;
 		if (pte_mask & PTE_RW)
-			*pgaccess_out |= MM_PAGE_WRITE;
+			*page_access_out |= MM_PAGE_WRITE;
 		if (pte_mask & PTE_U)
-			*pgaccess_out |= MM_PAGE_USER;
+			*page_access_out |= MM_PAGE_USER;
 		if (!ARCH_PTE_XD(ptt[ptx]))
-			*pgaccess_out |= MM_PAGE_EXEC;
+			*page_access_out |= MM_PAGE_EXEC;
 	}
 
 	return UNPGADDR(ARCH_PTE_ADDR(ptt[ptx]));
@@ -1604,7 +1646,7 @@ void hali_tmpunmap_post(void *vaddr, size_t size) {
 	}
 }
 
-void *hali_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_pgaccess_t *pgaccess_out) {
+void *hali_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_page_access_t *page_access_out) {
 	// io::LocalIrqLock irq_lock;
 
 	kd_assert(ctxt);

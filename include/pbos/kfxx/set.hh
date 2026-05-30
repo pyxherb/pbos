@@ -364,12 +364,12 @@ namespace kfxx {
 		PBOS_FORCEINLINE iterator find_alt(const U &key) {
 			if constexpr (Fallible) {
 				if (auto node = _tree.template find_alt<U>(key); node.has_value()) {
-					return iterator(typename Tree::iterator(node.value(), &_tree, iteratorDirection::Forward));
+					return iterator(typename Tree::iterator(node.value(), &_tree, iterator_direction::Forward));
 				}
 				return _tree.end();
 			} else {
 				if (auto node = _tree.template find_alt<U>(key); node) {
-					return iterator(typename Tree::iterator(node, &_tree, iteratorDirection::Forward));
+					return iterator(typename Tree::iterator(node, &_tree, iterator_direction::Forward));
 				}
 				return _tree.end();
 			}
@@ -382,7 +382,7 @@ namespace kfxx {
 		template <typename U>
 		PBOS_FORCEINLINE iterator find_max_lteq_alt(const U &key) {
 			if (auto node = _tree.template find_max_lteq_alt<U>(key); node) {
-				return iterator(typename Tree::iterator(node, &_tree, iteratorDirection::Forward));
+				return iterator(typename Tree::iterator(node, &_tree, iterator_direction::Forward));
 			}
 			return _tree.end();
 		}

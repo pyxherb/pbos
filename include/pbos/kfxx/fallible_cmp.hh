@@ -31,15 +31,11 @@ namespace kfxx {
 	template <typename T>
 	struct fallible_cmp {
 		option_t<int> operator()(const T &lhs, const T &rhs) const {
-#if __cplusplus >= 202002L
-			return lhs <=> rhs;
-#else
 			if (lhs < rhs)
 				return -1;
-			if (lhs > rhs)
+			if (rhs < lhs)
 				return 1;
 			return 0;
-#endif
 		}
 	};
 }

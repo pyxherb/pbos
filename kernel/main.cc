@@ -79,11 +79,7 @@ PBOS_NORETURN void kernel_main() {
 	ki_fs_init();
 	ki_ps_init();
 
-	/*for (const ki_syment_t *i = KI_EXPORTED_SYMBOLS_BEGIN; i < KI_EXPORTED_SYMBOLS_END; ++i) {
-		dbg_printf("Found image symbol: %s\n", i->name);
-	}*/
-
-	// kd_println("kernel", "Scanning for kernel symbols...");
+	kd_println("kernel", "Scanning for kernel symbols...");
 	{
 		for (const Elf64_Sym *i = KI_EXPORTED_SYMBOLS_BEGIN; i != KI_EXPORTED_SYMBOLS_END; ++i) {
 			uint8_t visibility = ELF64_ST_VISIBILITY(i->st_other);
@@ -101,11 +97,11 @@ PBOS_NORETURN void kernel_main() {
 					}
 				}
 			} else {
-				// kd_println("kernel", "Skipped symbol: %s -> %p", name.data(), (void *)i->st_value);
+				kd_println("kernel", "Skipped symbol: %s -> %p", name.data(), (void *)i->st_value);
 			}
 		}
 	}
-	// kd_println("kernel", "Symbol scanning completed");
+	kd_println("kernel", "Symbol scanning completed");
 
 	kh_initcar_init();
 

@@ -1,7 +1,7 @@
 find_package(sctgen REQUIRED)
 
 file(GLOB SRC *.h *.hh *.c *.cc *.S)
-target_sources(pbkrnl PRIVATE ${SRC} "${PROJECT_SOURCE_DIR}/include/pbos/generated/syscall/pbcore.h")
+target_sources(pboskrnl PRIVATE ${SRC} "${PROJECT_SOURCE_DIR}/include/pbos/generated/syscall/pbcore.h")
 
 add_custom_command(
     OUTPUT

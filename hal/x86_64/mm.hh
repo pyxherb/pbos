@@ -27,8 +27,8 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 	const void *minaddr,
 	const void *maxaddr,
 	size_t size,
-	mm_pgaccess_t access);
-PBOS_NODISCARD void *mm_kvmalloc_early(mm_context_t *context, size_t size, mm_pgaccess_t access);
+	mm_page_access_t access);
+PBOS_NODISCARD void *mm_kvmalloc_early(mm_context_t *context, size_t size, mm_page_access_t access);
 ///
 /// @brief Map a page-sized region of memory in the early stage. This function does not pin any page.
 ///
@@ -45,7 +45,7 @@ PBOS_NODISCARD uint8_t hali_mm_mmap_early(
 	mm_context_t *context,
 	void *vaddr,
 	void *paddr,
-	mm_pgaccess_t access,
+	mm_page_access_t access,
 	void *pdpte_paddr,
 	void *pde_paddr,
 	void *pte_paddr);

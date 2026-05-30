@@ -15,7 +15,7 @@ bool kh_is_initcar_direct_mapped = true;
 fs_fnode_t *kh_initcar_first_file = nullptr, *kh_initcar_last_file = nullptr;
 
 fs_filesys_t *kh_initcar_fs = NULL;
-fs_fnode_t *kh_initcar_dir;
+fs_fnode_t *kh_initcar_dir = nullptr;
 
 fs_filesys_ops_t kh_initcar_ops = {
 	.subnode = kh_initcar_subnode,
@@ -24,8 +24,12 @@ fs_filesys_ops_t kh_initcar_ops = {
 	.create_dir = kh_initcar_create_dir,
 	.open = kh_initcar_open,
 	.close = kh_initcar_close,
+	.seek = kh_initcar_seek,
 	.read = kh_initcar_read,
 	.write = kh_initcar_write,
+	.pread = kh_initcar_pread,
+	.pwrite = kh_initcar_pwrite,
+	.ioctl = kh_initcar_ioctl,
 	.size = kh_initcar_size,
 	.enum_first_child_file = kh_initcar_enum_first_child_file,
 	.enum_next_file = kh_initcar_enum_next_file,

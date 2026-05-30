@@ -42,11 +42,11 @@ km_result_t ps_unregister_cached_ro_page(void *paddr);
 /// @brief Fetch a cached read-only data page.
 ///
 /// @param vaddr Virtual address to the page to be queried.
-/// @param allocated_cmp_vpage An virtual page for comparison which should be provided and freed by the caller.
+/// @param comparison_tmpmap_vaddr An virtual page for comparison which should be provided and freed by the caller.
 /// @param paddr_out Address where the physical address of the page with the same content if there is.
 /// @return @c KM_RESULT_OK if found, @c KM_RESULT_NOT_FOUND if not found.
 ///
-km_result_t ps_fetch_cached_ro_page(void *vaddr, void *allocated_cmp_vpage, void **paddr_out);
+km_result_t ps_fetch_cached_ro_page(void *vaddr, void *comparison_tmpmap_vaddr, void **paddr_out);
 void ps_ref_cached_ro_page(void *paddr);
 void ps_unref_cached_ro_page(void *paddr);
 
@@ -59,10 +59,10 @@ void ps_unregister_binproto(km_binproto_t *proto);
 /// @param proto binproto to be operated.
 /// @param vaddr_base Base virtual address to the segment, must be page-aligned, or @c KM_RESULT_INVALID_ARGS will be returned.
 /// @param size Size of the segment.
-/// @param pgaccess Page access to be applied to the segment.
+/// @param page_access Page access to be applied to the segment.
 /// @return KM_RESULT_INVALID_ARGS If the arguments are invalid.
 ///
-km_result_t ps_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, size_t size, mm_pgaccess_t pgaccess, km_binseg_t **seg_out);
+km_result_t ps_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, size_t size, mm_page_access_t page_access, km_binseg_t **seg_out);
 void *km_ps_paddr_in_binseg(km_binseg_t *seg, void *vaddr);
 
 PBOS_EXTERN_C_END

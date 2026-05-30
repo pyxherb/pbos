@@ -31,17 +31,19 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	if (!tcb)
 		return KM_RESULT_NO_MEM;
 
+	kfxx::scope_guard destroy_tcb_guard([tcb]() noexcept {
+		// TODO: Implement it.
+	});
+
 	// Allocate stack for main thread.
 	if (KM_FAILED(result = ps_thread_alloc_stack(tcb, 0x200000)))
 		return result;
-
-	// TODO: Add cleanup guard.
 
 	if (KM_FAILED(result = ps_thread_alloc_kernel_stack(tcb, 0x2000)))
 		return result;
 
 	Elf64_Ehdr ehdr;
-	if (KM_FAILED(result = fs_read(file_fp, &ehdr, sizeof(ehdr), off, &bytes_read))) {
+	if (KM_FAILED(result = fs_pread(file_fp, &ehdr, sizeof(ehdr), off, &bytes_read))) {
 		// TODO: free allocated resources here.
 		return result;
 	}
@@ -74,7 +76,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	for (Elf64_Half i = 0; i < phdr_num; ++i) {
 		// Current program header.
 		Elf64_Phdr ph;
-		if (KM_FAILED(result = fs_read(file_fp, &ph, sizeof(ph), ehdr.e_phoff + ehdr.e_phentsize * i, &bytes_read))) {
+		if (KM_FAILED(result = fs_pread(file_fp, &ph, sizeof(ph), ehdr.e_phoff + ehdr.e_phentsize * i, &bytes_read))) {
 			// TODO: free allocated resources here.
 			return result;
 		}
@@ -105,51 +107,54 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 			if (!tmp_pgvaddr)
 				return KM_RESULT_NO_MEM;
 
-			mm_pgaccess_t pgaccess = MM_PAGE_MAPPED | MM_PAGE_USER;
+			kfxx::scope_guard unmap_tmp_pgvaddr_guard([cur_context, tmp_pgvaddr, page_size]() noexcept {
+				mm_vmfree(cur_context, tmp_pgvaddr, page_size);
+			});
+
+			void *ro_page_cmp_vaddr = mm_kvmalloc(cur_context, page_size, MM_PAGE_MAPPED, 0);
+
+			kfxx::deferred unmap_ro_page_cmp_vaddr_guard([cur_context, ro_page_cmp_vaddr, page_size]() noexcept {
+				mm_vmfree(cur_context, ro_page_cmp_vaddr, page_size);
+			});
+
+			mm_page_access_t page_access = MM_PAGE_MAPPED | MM_PAGE_USER;
 
 			if (ph.p_flags & PF_R)
-				pgaccess |= MM_PAGE_READ;
+				page_access |= MM_PAGE_READ;
 			if (ph.p_flags & PF_W)
-				pgaccess |= MM_PAGE_WRITE;
+				page_access |= MM_PAGE_WRITE;
 			if (ph.p_flags & PF_X)
-				pgaccess |= MM_PAGE_EXEC;
+				page_access |= MM_PAGE_EXEC;
 
 			{
-				kfxx::scope_guard unmap_tmp_pgvaddr_guard([cur_context, tmp_pgvaddr, page_size]() noexcept {
-					mm_vmfree(cur_context, tmp_pgvaddr, page_size);
-				});
-
 				// Allocate pages for current segment.
 				for (size_t j = 0; j < ph.p_memsz; j += page_size) {
-					void *paddr;
+					void *paddr = nullptr;
+					kfxx::scope_guard unpin_paddr_guard([&paddr]() noexcept {
+						mm_unpin_page(paddr);
+					});
 					if (!(paddr = mm_getmap(target_context, vaddr + j, nullptr))) {
 						paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
-						if (!paddr)
+						if (!paddr) {
+							unpin_paddr_guard.release();
 							return KM_RESULT_NO_MEM;
-					}
+						}
+					} else
+						unpin_paddr_guard.release();
 
-					{
-						kfxx::scope_guard free_paddr_guard([paddr]() noexcept {
-							mm_unpin_page(paddr);
-						});
-
-						if (KM_FAILED(
-								result = mm_mmap(
-									cur_context,
-									tmp_pgvaddr,
-									paddr,
-									page_size,
-									MM_PAGE_WRITE | MM_PAGE_MAPPED,
-									MMAP_NO_INC_RC)))
-							return result;
-						free_paddr_guard.release();
-					}
-
-					if (KM_FAILED(result = mm_mmap(target_context, vaddr + j, paddr, page_size, pgaccess, MMAP_NO_INC_RC)))
+					if (KM_FAILED(
+							result = mm_mmap(
+								cur_context,
+								tmp_pgvaddr,
+								paddr,
+								page_size,
+								MM_PAGE_WRITE | MM_PAGE_MAPPED,
+								0)))
 						return result;
+
 					memset((void *)tmp_pgvaddr, 0, page_size);
 					if (j < ph.p_filesz) {
-						if (KM_FAILED(result = fs_read(
+						if (KM_FAILED(result = fs_pread(
 										  file_fp,
 										  tmp_pgvaddr,
 										  PBOS_MIN(ph.p_filesz - j, page_size),
@@ -160,6 +165,16 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 						}
 						off += bytes_read;
 					}
+
+					{
+						void *cached_ro_page_paddr;
+						KM_RETURN_IF_FAILED(ps_fetch_cached_ro_page(tmp_pgvaddr, ro_page_cmp_vaddr, &cached_ro_page_paddr));
+						if (cached_ro_page_paddr) {
+							paddr = cached_ro_page_paddr;
+						}
+					}
+
+					KM_RETURN_IF_FAILED(mm_mmap(target_context, vaddr + j, paddr, page_size, page_access, 0));
 					if (j)
 						km_unwrap_result(mm_merge_mapped_area(target_context, vaddr, vaddr + j));
 				}
@@ -188,7 +203,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 	const size_t page_size = mm_get_page_size();
 
 	Elf64_Ehdr ehdr;
-	if (KM_FAILED(result = fs_read(file_fp, &ehdr, sizeof(ehdr), off, &bytes_read))) {
+	if (KM_FAILED(result = fs_pread(file_fp, &ehdr, sizeof(ehdr), off, &bytes_read))) {
 		// TODO: free allocated resources here.
 		return result;
 	}
@@ -223,7 +238,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 
 	for (Elf64_Half i = 0; i < phdr_num; ++i) {
 		// Current program header.
-		if (KM_FAILED(result = fs_read(file_fp, &loaded_phdrs.at(i), sizeof(Elf64_Phdr), ehdr.e_phoff + ehdr.e_phentsize * i, &bytes_read))) {
+		if (KM_FAILED(result = fs_pread(file_fp, &loaded_phdrs.at(i), sizeof(Elf64_Phdr), ehdr.e_phoff + ehdr.e_phentsize * i, &bytes_read))) {
 			return result;
 		}
 	}
@@ -245,7 +260,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 				if (!dyn_entries.resize(kfxx::ceil_align_to(i.p_filesz, alignof(Elf64_Dyn)))) {
 					return KM_RESULT_NO_MEM;
 				}
-				if (KM_FAILED(result = fs_read(file_fp, dyn_entries.data(), i.p_filesz, i.p_offset, &bytes_read))) {
+				if (KM_FAILED(result = fs_pread(file_fp, dyn_entries.data(), i.p_filesz, i.p_offset, &bytes_read))) {
 					return result;
 				}
 				break;
@@ -270,7 +285,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 
 	size_t mapped_phdr_idx = 0;
 	kfxx::scope_guard unmap_guard([mm_context, vaddr_base, max_size]() noexcept {
-		km_unwrap_result(mm_unmmap(mm_context, vaddr_base, max_size, 0));
+		km_unwrap_result(mm_munmap(mm_context, vaddr_base, max_size, 0));
 	});
 	while (mapped_phdr_idx < loaded_phdrs.size()) {
 		auto &phdr = loaded_phdrs.at(mapped_phdr_idx);
@@ -285,28 +300,28 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 				kfxx::scope_guard free_paddr_guard([cur_paddr]() noexcept {
 					mm_unpin_page(cur_paddr);
 				});
-				KM_RETURN_IF_FAILED(mm_mmap(mm_context, split_point + i, cur_paddr, page_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, MMAP_NO_INC_RC));
+				KM_RETURN_IF_FAILED(mm_mmap(mm_context, split_point + i, cur_paddr, page_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, MM_MMAP_NO_INC_RC));
 				free_paddr_guard.release();
 			}
 
-			mm_pgaccess_t pgaccess = MM_PAGE_MAPPED;
+			mm_page_access_t page_access = MM_PAGE_MAPPED;
 
 			if (phdr.p_flags & PF_R)
-				pgaccess |= MM_PAGE_READ;
+				page_access |= MM_PAGE_READ;
 			if (phdr.p_flags & PF_W)
-				pgaccess |= MM_PAGE_WRITE;
+				page_access |= MM_PAGE_WRITE;
 			if (phdr.p_flags & PF_X)
-				pgaccess |= MM_PAGE_EXEC;
+				page_access |= MM_PAGE_EXEC;
 
 			memset(split_point, 0, phdr.p_memsz);
-			if (KM_FAILED(result = fs_read(file_fp, split_point, phdr.p_filesz, phdr.p_offset, &bytes_read))) {
+			if (KM_FAILED(result = fs_pread(file_fp, split_point, phdr.p_filesz, phdr.p_offset, &bytes_read))) {
 				return result;
 			}
 
 			char &point = *split_point;
 			point = point;
 
-			km_unwrap_result(mm_set_page_access(mm_context, split_point, area_size, pgaccess));
+			km_unwrap_result(mm_set_page_access(mm_context, split_point, area_size, page_access));
 		}
 		++mapped_phdr_idx;
 	}
@@ -430,7 +445,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 		return KM_RESULT_NO_MEM;
 
 	for (Elf64_Half i = 0; i < shdr_num; ++i) {
-		if (KM_FAILED(result = fs_read(file_fp, &loaded_shdrs.at(i), sizeof(Elf64_Shdr), ehdr.e_shoff + ehdr.e_shentsize * i, &bytes_read))) {
+		if (KM_FAILED(result = fs_pread(file_fp, &loaded_shdrs.at(i), sizeof(Elf64_Shdr), ehdr.e_shoff + ehdr.e_shentsize * i, &bytes_read))) {
 			return result;
 		}
 	}

@@ -1,22 +1,22 @@
 file(GLOB SRC *.c *.cc *.h *.S)
-add_executable(pbkrnl ${SRC})
+add_executable(pboskrnl ${SRC})
 
 #find_package(kimgen REQUIRED)
 find_package(cargen REQUIRED)
 
 get_property(FREESTDC_INCLUDE_DIR GLOBAL PROPERTY FREESTDC_INCLUDE_DIR)
 get_property(FREESTDC_INCLUDE_DIR_CXX GLOBAL PROPERTY FREESTDC_INCLUDE_DIR_CXX)
-target_include_directories(pbkrnl PRIVATE ${FREESTDC_INCLUDE_DIR})
-target_include_directories(pbkrnl PRIVATE ${FREESTDC_INCLUDE_DIR_CXX})
+target_include_directories(pboskrnl PRIVATE ${FREESTDC_INCLUDE_DIR})
+target_include_directories(pboskrnl PRIVATE ${FREESTDC_INCLUDE_DIR_CXX})
 
-# add_dependencies(pbkrnl bootldr)
-target_link_libraries(pbkrnl PRIVATE pbarch freestdc pbhal)
-target_compile_definitions(pbkrnl PRIVATE PBOS_COMPILING_KERNEL=1)
-target_link_options(pbkrnl PRIVATE "-T${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/kernel.lds")
+# add_dependencies(pboskrnl bootldr)
+target_link_libraries(pboskrnl PRIVATE pbarch freestdc pbhal)
+target_compile_definitions(pboskrnl PRIVATE PBOS_COMPILING_KERNEL=1)
+target_link_options(pboskrnl PRIVATE "-T${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/kernel.lds")
 
 #add_custom_target(
 #    pbkim
-#    COMMAND ${KIMGEN_EXECUTABLE} --machine-i386 --bin-file ${PBOS_BINARY_DIR}/bootldr --kimage-file $<TARGET_FILE:pbkrnl> -o ${PBOS_BINARY_DIR}/pbkim
+#    COMMAND ${KIMGEN_EXECUTABLE} --machine-i386 --bin-file ${PBOS_BINARY_DIR}/bootldr --kimage-file $<TARGET_FILE:pboskrnl> -o ${PBOS_BINARY_DIR}/pbkim
 #    BYPRODUCTS ${PBOS_BINARY_DIR}/pbkim
 #    DEPENDS bootldr pbinit)
 
@@ -40,7 +40,7 @@ add_custom_target(
     initcar
     COMMAND ${CARGEN_EXECUTABLE} -c ${PBOS_BINARY_DIR}/initcar _ $<TARGET_FILE:pbinit> ${KERNEL_MODULES_TARGET_FILES}
     BYPRODUCTS ${PBOS_BINARY_DIR}/initcar
-    DEPENDS pbkrnl pbinit ${KERNEL_MODULES_TARGETS}
+    DEPENDS pboskrnl pbinit ${KERNEL_MODULES_TARGETS}
 )
 
 add_custom_command(
@@ -48,7 +48,7 @@ add_custom_command(
     COMMAND cmake -E touch ${CMAKE_CURRENT_BINARY_DIR}/kernel.lds.ph.cc
     DEPENDS "${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/kernel.lds"
 )
-target_sources(pbkrnl PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/kernel.lds.ph.cc)
+target_sources(pboskrnl PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/kernel.lds.ph.cc)
 
 set(PBOS_INITIAL_MM_AREA_STORAGE_NUM 256 CACHE STRING "Number of initial memory area storage")
 set(PBOS_GDB_STUB_MAX_PACKET_SIZE 8192 CACHE STRING "Maximum size of GDB packet the kernel can receive")
