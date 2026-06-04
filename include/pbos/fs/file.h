@@ -7,15 +7,15 @@
 PBOS_EXTERN_C_BEGIN
 
 enum {
-	FS_FILETYPE_FILE = 0,  // Regular file
-	FS_FILETYPE_DIR,	   // Directory Entry
-	FS_FILETYPE_LINK,	   // Link
-	FS_FILETYPE_BLKDEV,	   // Block device
-	FS_FILETYPE_CHARDEV,   // Character device
-	FS_FILETYPE_PIPE,	   // Pipe
-	FS_FILETYPE_SOCKET	   // Socket
+	FS_FNODE_TYPE_FILE = 0,  // Regular file
+	FS_FNODE_TYPE_DIR,	   // Directory Entry
+	FS_FNODE_TYPE_LINK,	   // Link
+	FS_FNODE_TYPE_BLKDEV,	   // Block device
+	FS_FNODE_TYPE_CHARDEV,   // Character device
+	FS_FNODE_TYPE_PIPE,	   // Pipe
+	FS_FNODE_TYPE_SOCKET	   // Socket
 };
-typedef uint8_t fs_filetype_t;
+typedef uint8_t fs_fnode_type_t;
 
 #define FS_ACCESS_READ 0x0001	   // Read the file
 #define FS_ACCESS_WRITE 0x0002	   // Write the file
@@ -123,11 +123,6 @@ PBOS_NODISCARD PBOS_API km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const c
 PBOS_NODISCARD km_result_t fs_enum_first_child_file(fs_fnode_t *dir, fs_fnode_t **first_file_out);
 PBOS_NODISCARD km_result_t fs_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **next_file_out);
 
-PBOS_API void fs_read_lock_fnode(fs_fnode_t *fnode);
-PBOS_API void fs_read_unlock_fnode(fs_fnode_t *fnode);
-PBOS_API void fs_write_lock_fnode(fs_fnode_t *fnode);
-PBOS_API void fs_write_unlock_fnode(fs_fnode_t *fnode);
-
 PBOS_API void fs_read_lock_fcb(fs_fcb_t *fcb);
 PBOS_API void fs_read_unlock_fcb(fs_fcb_t *fcb);
 PBOS_API void fs_write_lock_fcb(fs_fcb_t *fcb);
@@ -135,6 +130,8 @@ PBOS_API void fs_write_unlock_fcb(fs_fcb_t *fcb);
 
 PBOS_API void fs_ref_fnode(fs_fnode_t *fnode);
 PBOS_API void fs_unref_fnode(fs_fnode_t *fnode);
+
+PBOS_API fs_fnode_type_t fs_get_fnode_type(fs_fnode_t *fnode);
 
 PBOS_EXTERN_C_END
 

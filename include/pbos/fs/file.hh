@@ -143,44 +143,6 @@ namespace fs {
 		}
 	};
 
-	class file_read_lock_guard {
-	private:
-		fs_fnode_t *fnode;
-
-	public:
-		PBOS_FORCEINLINE file_read_lock_guard(fs_fnode_t *fnode) : fnode(fnode) {
-			fs_read_lock_fnode(fnode);
-		}
-
-		PBOS_FORCEINLINE ~file_read_lock_guard() {
-			fs_read_unlock_fnode(fnode);
-		}
-
-		file_read_lock_guard(const file_read_lock_guard &) = delete;
-		file_read_lock_guard(file_read_lock_guard &&) = delete;
-		file_read_lock_guard &operator=(const file_read_lock_guard &) = delete;
-		file_read_lock_guard &operator=(file_read_lock_guard &&) = delete;
-	};
-
-	class file_write_lock_guard {
-	private:
-		fs_fnode_t *fnode;
-
-	public:
-		PBOS_FORCEINLINE file_write_lock_guard(fs_fnode_t *fnode) : fnode(fnode) {
-			fs_write_lock_fnode(fnode);
-		}
-
-		PBOS_FORCEINLINE ~file_write_lock_guard() {
-			fs_write_unlock_fnode(fnode);
-		}
-
-		file_write_lock_guard(const file_write_lock_guard &) = delete;
-		file_write_lock_guard(file_write_lock_guard &&) = delete;
-		file_write_lock_guard &operator=(const file_write_lock_guard &) = delete;
-		file_write_lock_guard &operator=(file_write_lock_guard &&) = delete;
-	};
-
 	class fcb_read_lock_guard {
 	private:
 		fs_fcb_t *fcb;

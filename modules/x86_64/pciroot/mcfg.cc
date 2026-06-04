@@ -47,6 +47,16 @@ km_result_t pciroot_scan_acpi_mcfg_table() {
 				remove_from_segment_group_guard.release();
 
 				kd_println(PCIROOT_COMPONENT_NAME, "Registered PCI segment -> domain registry: %.4x -> %.4x", entry.pci_segment_group_num, registry->rb_value);
+
+				// TODO: Implement it.
+				char name[sizeof("0000")] = {};
+
+				name[0] = (registry->rb_value & 0xff) + '0';
+				name[1] = ((registry->rb_value >> 4) & 0xff) + '0';
+				name[2] = ((registry->rb_value >> 8) & 0xff) + '0';
+				name[3] = ((registry->rb_value >> 12) & 0xff) + '0';
+
+				kd_println(PCIROOT_COMPONENT_NAME, "Created directory for PCI segment: %s", name);
 			}
 			break;
 		}

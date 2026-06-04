@@ -66,7 +66,7 @@ PBOS_API km_result_t dm_register_bus(const char *name, size_t name_len, const dm
 		ki_dm_destroy_bus(bus);
 	});
 
-	ps::mutex_guard g(ki_dm_registered_buses_mutex.c_mutex());
+	ps::mutex_guard g(ki_dm_registered_buses_mutex);
 
 	if (!ki_dm_registered_buses.shrink_buckets())
 		return KM_RESULT_NO_MEM;
@@ -80,15 +80,15 @@ PBOS_API km_result_t dm_register_bus(const char *name, size_t name_len, const dm
 }
 
 PBOS_API void dm_unregister_bus(dm_bus_t *bus) {
-	ps::mutex_guard g(ki_dm_registered_buses_mutex.c_mutex());
+	ps::mutex_guard g(ki_dm_registered_buses_mutex);
 
 	ki_dm_registered_buses.remove(bus->name);
 	ki_dm_destroy_bus(bus);
 }
 
 PBOS_API km_result_t dm_register_device_to_bus(dm_bus_t *bus, dm_device_t *device) {
-	ps::rec_mutex_guard bg(bus->bus_mutex.c_mutex());
-	ps::rec_mutex_guard dg(device->device_mutex.c_mutex());
+	ps::rec_mutex_guard bg(bus->bus_mutex);
+	ps::rec_mutex_guard dg(device->device_mutex);
 	if(!bus->owned_devices.insert(+device))
 		return KM_RESULT_NO_MEM;
 
@@ -104,8 +104,8 @@ PBOS_API km_result_t dm_register_device_to_bus(dm_bus_t *bus, dm_device_t *devic
 }
 
 PBOS_API void dm_unregister_device_from_bus(dm_device_t *device) {
-	ps::rec_mutex_guard bg(device->bus->bus_mutex.c_mutex());
-	ps::rec_mutex_guard dg(device->device_mutex.c_mutex());
+	ps::rec_mutex_guard bg(device->bus->bus_mutex);
+	ps::rec_mutex_guard dg(device->device_mutex);
 	device->bus->ops.unregister_device(device->bus, device);
 	device->bus->owned_devices.remove(device);
 }

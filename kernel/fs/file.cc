@@ -138,17 +138,17 @@ _fs_fcb_t::_fs_fcb_t(fs_fnode_t *fnode) : fnode(fnode) {
 _fs_fcb_t::~_fs_fcb_t() {
 }
 
-_fs_fnode_t::_fs_fnode_t(fs_filetype_t file_type)
-	: file_type(file_type) {
+_fs_fnode_t::_fs_fnode_t(fs_fnode_type_t file_type)
+	: fnode_type(file_type) {
 }
 
 _fs_fnode_t::~_fs_fnode_t() {
 	ki_do_unname_fnode(this);
 }
 
-_fs_file_t::_fs_file_t() : _fs_fnode_t(FS_FILETYPE_FILE) {}
+_fs_file_t::_fs_file_t() : _fs_fnode_t(FS_FNODE_TYPE_FILE) {}
 
-_fs_dir_t::_fs_dir_t(kfxx::allocator_t *allocator) : _fs_fnode_t(FS_FILETYPE_DIR), subnodes(allocator) {}
+_fs_dir_t::_fs_dir_t(kfxx::allocator_t *allocator) : _fs_fnode_t(FS_FNODE_TYPE_DIR), subnodes(allocator) {}
 
 PBOS_API void fs_set_fcb_exdata(fs_fcb_t *fcb, void *exdata) {
 	fcb->exdata = exdata;
@@ -297,7 +297,7 @@ PBOS_NODISCARD PBOS_API km_result_t fs_create_fcb(
 
 PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
 	// The mount point should be a directory.
-	if (file->file_type != FS_FILETYPE_DIR)
+	if (file->fnode_type != FS_FNODE_TYPE_DIR)
 		return KM_RESULT_UNSUPPORTED_OPERATION;
 
 	fs_dir_t *f = static_cast<fs_dir_t *>(file);
@@ -339,7 +339,7 @@ PBOS_API km_result_t fs_unmount_file(fs_fnode_t *file) {
 }
 
 PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
-	if (parent->file_type != FS_FILETYPE_DIR)
+	if (parent->fnode_type != FS_FNODE_TYPE_DIR)
 		return KM_RESULT_UNSUPPORTED_OPERATION;
 	fs_dir_t *p = (fs_dir_t *)parent;
 
@@ -355,8 +355,8 @@ PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
 PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_len, fs_fnode_t **file_out) {
 	if (!file)
 		return KM_RESULT_NOT_FOUND;
-	switch (file->file_type) {
-		case FS_FILETYPE_DIR: {
+	switch (file->fnode_type) {
+		case FS_FNODE_TYPE_DIR: {
 			fs_dir_t *f = static_cast<fs_dir_t *>(file);
 			if (auto it = f->subnodes.find(kfxx::string_view(filename, filename_len)); it != f->subnodes.end()) {
 				fs::fnode_ptr node = it.value();
@@ -367,7 +367,7 @@ PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t 
 			}
 			break;
 		}
-		case FS_FILETYPE_LINK:
+		case FS_FNODE_TYPE_LINK:
 			// TODO: Implement it.
 			return KM_RESULT_UNSUPPORTED_OPERATION;
 		default:
@@ -569,12 +569,16 @@ PBOS_API void fs_write_unlock_fcb(fs_fcb_t *fcb) {
 	fcb->rw_semaphore.write_unlock();
 }
 
+PBOS_API fs_fnode_type_t fs_get_fnode_type(fs_fnode_t *fnode) {
+	return fnode->fnode_type;
+}
+
 void ki_destroy_fnode(fs_fnode_t *fnode) {
-	switch (fnode->file_type) {
-		case FS_FILETYPE_FILE:
+	switch (fnode->fnode_type) {
+		case FS_FNODE_TYPE_FILE:
 			fnode->fs->ops.destroy(fnode);
 			kfxx::destroy_and_release<fs_file_t>(&ki_fs_fnode_allocator, static_cast<fs_file_t *>(fnode));
-		case FS_FILETYPE_DIR:
+		case FS_FNODE_TYPE_DIR:
 			fnode->fs->ops.destroy(fnode);
 			kfxx::destroy_and_release<fs_dir_t>(&ki_fs_fnode_allocator, static_cast<fs_dir_t *>(fnode));
 		default:

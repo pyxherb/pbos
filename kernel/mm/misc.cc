@@ -24,14 +24,14 @@ PBOS_PURE PBOS_API size_t mm_get_page_size() {
 }
 
 PBOS_PRIVATE km_result_t ki_mm_add_vmr_to_pmgroup(ki_mm_pmgroup_t *pmgroup, mm_vmr_t *vmr) {
-	// ps::mutex_guard g(pmgroup->mutex.c_mutex());
+	// ps::mutex_guard g(pmgroup->mutex);
 	if (!pmgroup->vmrs.insert_or_keep(+vmr))
 		return KM_RESULT_NO_MEM;
 	return KM_RESULT_OK;
 }
 
 PBOS_PRIVATE bool ki_mm_remove_vmr_from_pmgroup(ki_mm_pmgroup_t *pmgroup, mm_vmr_t *vmr) {
-	ps::mutex_guard g(pmgroup->mutex.c_mutex());
+	ps::mutex_guard g(pmgroup->mutex);
 
 	pmgroup->vmrs.remove(vmr);
 	if (!pmgroup->vmrs.size()) {
@@ -588,7 +588,7 @@ PBOS_API km_result_t mm_probe_kernel_pages(mm_context_t *mm_context, void *ptr, 
 	}
 
 	// The mutex seems to be unneccessary, because we cannot lock pages under kernel mode.
-	// ps::MutexGuard g(ki_kernel_mmap_mutex.c_mutex());
+	// ps::MutexGuard g(ki_kernel_mmap_mutex);
 
 	for (size_t i = 0; i < PGCEIL(size); i += page_size) {
 		mm_getmap(mm_context, p + i, &pg_access);

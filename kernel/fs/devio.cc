@@ -18,6 +18,7 @@ fs_filesys_ops_t ki_devio_ops = {
 	.pwrite = ki_devio_pwrite,
 	.ioctl = ki_devio_ioctl,
 	.size = ki_devio_size,
+	.destroy = ki_devio_destroy,
 	.premount = ki_devio_premount,
 	.mount_fail = ki_devio_mountfail,
 	.unmount_cleanup = ki_devio_unmount_cleanup,
@@ -38,15 +39,11 @@ km_result_t ki_devio_create_file(io_dispatch_context_t *dc, fs_fnode_t *parent, 
 }
 
 km_result_t ki_devio_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
-	fs::file_read_lock_guard g(parent);
-	{
-		fs::fnode_ptr child;
-		KM_RETURN_IF_FAILED(fs_child_of(parent, name, name_len, &child));
+	if(fs_get_fnode_type(parent) != FS_FNODE_TYPE_DIR)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
+	ki_devio_dir_exdata_t *parent_exdata = (ki_devio_dir_exdata_t *)fs_get_fnode_exdata(parent);
 
-		if(child) {
-			return KM_RESULT_EXISTED;
-		}
-	}
+	ps::write_semaphore_guard g(parent_exdata->critical_semaphore);
 
 	fs::fnode_ptr fnode;
 	KM_RETURN_IF_FAILED(fs_alloc_dir_fnode(ki_devio_filesys, &fnode));
@@ -92,6 +89,11 @@ km_result_t ki_devio_ioctl(io_dispatch_context_t *dc, fs_fcb_t *fcb, uint32_t io
 
 km_result_t ki_devio_size(io_dispatch_context_t *dc, fs_fcb_t *fcb, size_t *size_out) {
 	return ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->device->ops.size(dc, fcb, size_out);
+}
+
+void ki_devio_destroy(fs_fnode_t *file) {
+	ki_devio_file_exdata_t *exdata = (ki_devio_file_exdata_t *)fs_get_fnode_exdata(file);
+	kfxx::destroy_and_release<ki_devio_file_exdata_t>(kfxx::kernel_allocator(), exdata);
 }
 
 km_result_t ki_devio_premount(fs_fnode_t *parent, fs_fnode_t *file) {

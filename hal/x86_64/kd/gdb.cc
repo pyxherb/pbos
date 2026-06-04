@@ -54,7 +54,7 @@ PBOS_PRIVATE void kh_handle_gdb_packet(const char *packet, size_t len, void *reg
 				if (*(ptr++) == ',') {
 					uintptr_t length;
 					if (hali_hex_to_addr(ptr, &length) && (length <= PAGESIZE)) {
-						ps::mutex_guard g(ki_gdb_read_pmem_mapping_mutex.c_mutex());
+						ps::mutex_guard g(ki_gdb_read_pmem_mapping_mutex);
 
 						mm_page_access_t access_begin, access_end;
 						mm_getmap(mm_get_cur_context(), (void *)addr, &access_begin);

@@ -79,14 +79,14 @@ typedef struct _fs_fnode_t {
 	_fs_fnode_t *parent = nullptr;
 
 	fs_filesys_t *fs = nullptr;
-	fs_filetype_t file_type;
+	fs_fnode_type_t fnode_type;
 
 	size_t filename_len = 0;
 	char *filename = nullptr;
 
 	void *exdata = nullptr;
 
-	_fs_fnode_t(fs_filetype_t file_type);
+	_fs_fnode_t(fs_fnode_type_t file_type);
 	~_fs_fnode_t();
 } fs_fnode_t;
 

@@ -194,7 +194,7 @@ PBOS_API km_result_t ps_register_kernel_symbol(ps_kmod_t *kmod, const char *name
 }
 
 PBOS_NODISCARD PBOS_API km_result_t ki_ps_register_kmod(ps_kmod_t *kmod) {
-	ps::mutex_guard g(ki_ps_kmod_list_mutex.c_mutex());
+	ps::mutex_guard g(ki_ps_kmod_list_mutex);
 
 	if (!kmod->name)
 		return KM_RESULT_INVALID_ARGS;
@@ -218,7 +218,7 @@ PBOS_NODISCARD PBOS_API km_result_t ki_ps_register_kmod(ps_kmod_t *kmod) {
 }
 
 PBOS_API void ki_ps_unregister_kmod(ps_kmod_t *kmod) {
-	ps::mutex_guard g(ki_ps_kmod_list_mutex.c_mutex());
+	ps::mutex_guard g(ki_ps_kmod_list_mutex);
 
 	ki_ps_kmod_map.remove(kfxx::string_view(kmod->name, kmod->name_len));
 

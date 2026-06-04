@@ -74,6 +74,10 @@ namespace ps {
 			ps_lock_mutex(&_mutex);
 		}
 
+		PBOS_FORCEINLINE mutex_guard(ps::mutex_t &rec_mutex) : _mutex(rec_mutex.c_mutex()) {
+			ps_lock_mutex(&_mutex);
+		}
+
 		PBOS_FORCEINLINE ~mutex_guard() {
 			ps_unlock_mutex(&_mutex);
 		}
@@ -93,6 +97,11 @@ namespace ps {
 		PBOS_FORCEINLINE rec_mutex_guard(ps_rec_mutex_t &rec_mutex) : _rec_mutex(rec_mutex) {
 			ps_lock_rec_mutex(&_rec_mutex);
 			_lock_times = ps_get_rec_mutex_lock_times(&rec_mutex);
+		}
+
+		PBOS_FORCEINLINE rec_mutex_guard(ps::rec_mutex_t &rec_mutex) : _rec_mutex(rec_mutex.c_mutex()) {
+			ps_lock_rec_mutex(&_rec_mutex);
+			_lock_times = ps_get_rec_mutex_lock_times(&rec_mutex.c_mutex());
 		}
 
 		PBOS_FORCEINLINE ~rec_mutex_guard() {

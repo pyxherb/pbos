@@ -100,8 +100,8 @@ PBOS_API void dm_unref_device(dm_device_t *device) {
 }
 
 PBOS_API km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device) {
-	ps::rec_mutex_guard gp(parent->device_mutex.c_mutex()),
-		gd(device->device_mutex.c_mutex());
+	ps::rec_mutex_guard gp(parent->device_mutex),
+		gd(device->device_mutex);
 
 	// The device must be already registered to a bus.
 	if(!device->bus)
@@ -126,8 +126,8 @@ PBOS_API km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device) {
 }
 
 PBOS_API void dm_unlink_device(dm_device_t *device) {
-	ps::rec_mutex_guard gp(device->parent_device->device_mutex.c_mutex()),
-		gd(device->device_mutex.c_mutex());
+	ps::rec_mutex_guard gp(device->parent_device->device_mutex),
+		gd(device->device_mutex);
 
 	if (!device->parent_device)
 		return;

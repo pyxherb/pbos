@@ -15,7 +15,7 @@ pciroot_domain_registry_t *pciroot_domain_registry_t::alloc() {
 static ps::mutex_t domain_id_alloc_mutex;
 
 bool pciroot_alloc_domain_id_and_insert(pciroot_domain_registry_t *registry) {
-	ps::mutex_guard g(domain_id_alloc_mutex.c_mutex());
+	ps::mutex_guard g(domain_id_alloc_mutex);
 
 	if (pciroot_domain_tree.size() == UINT16_MAX)
 		return false;

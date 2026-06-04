@@ -47,6 +47,10 @@ namespace ps {
 			ps_read_lock_semaphore(&_semaphore);
 		}
 
+		PBOS_FORCEINLINE read_semaphore_guard(ps::semaphore_t &rec_mutex) : _semaphore(rec_mutex.c_mutex()) {
+			ps_read_lock_semaphore(&_semaphore);
+		}
+
 		PBOS_FORCEINLINE ~read_semaphore_guard() {
 			ps_read_unlock_semaphore(&_semaphore);
 		}
@@ -63,6 +67,10 @@ namespace ps {
 
 	public:
 		PBOS_FORCEINLINE write_semaphore_guard(ps_semaphore_t &rec_mutex) : _semaphore(rec_mutex) {
+			ps_write_lock_semaphore(&_semaphore);
+		}
+
+		PBOS_FORCEINLINE write_semaphore_guard(ps::semaphore_t &rec_mutex) : _semaphore(rec_mutex.c_mutex()) {
 			ps_write_lock_semaphore(&_semaphore);
 		}
 

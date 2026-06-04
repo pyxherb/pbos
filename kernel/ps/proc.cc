@@ -47,7 +47,7 @@ PBOS_API fs_fcb_t *ps_kfcb_of_ufcb(ps_ufcb_t *ufcb) {
 void ki_destroy_proc(ps_pcb_t *pcb) {
 	{
 		// Make sure only remove when the PCB is in the global process set.
-		ps::write_semaphore_guard g(ps_global_proc_set_mutex.c_mutex());
+		ps::write_semaphore_guard g(ps_global_proc_set_mutex);
 		if (auto node = ps_global_proc_set.find(pcb->rb_value); node) {
 			ps_global_proc_set.remove(node);
 
@@ -79,7 +79,7 @@ void ki_destroy_proc(ps_pcb_t *pcb) {
 PBOS_API km_result_t ps_create_proc(
 	ps_pcb_t *pcb,
 	ps_proc_id_t parent) {
-	ps::write_semaphore_guard g(ps_global_proc_set_mutex.c_mutex());
+	ps::write_semaphore_guard g(ps_global_proc_set_mutex);
 
 	pcb->rb_value = PS_PROC_ID_MAX;
 

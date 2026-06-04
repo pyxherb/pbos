@@ -7,7 +7,12 @@
 
 PBOS_EXTERN_C_BEGIN
 
+struct ki_devio_dir_exdata_t {
+	ps::semaphore_t critical_semaphore;
+};
+
 struct ki_devio_file_exdata_t {
+	ps::semaphore_t critical_semaphore;
 	dm_device_t *device;
 };
 
@@ -34,6 +39,8 @@ km_result_t ki_devio_pwrite(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void
 km_result_t ki_devio_ioctl(io_dispatch_context_t *dc, fs_fcb_t *fcb, uint32_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args);
 
 km_result_t ki_devio_size(io_dispatch_context_t *dc, fs_fcb_t *fcb, size_t *size_out);
+
+void ki_devio_destroy(fs_fnode_t *file);
 
 km_result_t ki_devio_premount(fs_fnode_t *parent, fs_fnode_t *file);
 void ki_devio_mountfail(fs_fnode_t *parent, fs_fnode_t *file);
