@@ -303,9 +303,6 @@ PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
 	fs_dir_t *f = static_cast<fs_dir_t *>(file);
 
 	// The mount point should be empty.
-	if (f->subnodes.size())
-		return KM_RESULT_DIR_NOT_EMPTY;
-
 	if (!f->subnodes.shrink_buckets())
 		return KM_RESULT_NO_MEM;
 

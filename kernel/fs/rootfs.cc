@@ -7,6 +7,7 @@ fs_filesys_ops_t ki_rootfs_ops = {
 	.subnode = ki_rootfs_subnode,
 	.offload = ki_rootfs_offload,
 	.create_file = ki_rootfs_create_file,
+	.create_dir = ki_rootfs_create_dir,
 	.open = ki_rootfs_open,
 	.close = ki_rootfs_close,
 	.seek = ki_rootfs_seek,
@@ -33,7 +34,18 @@ km_result_t ki_rootfs_create_file(io_dispatch_context_t *dc, fs_fnode_t *parent,
 }
 
 km_result_t ki_rootfs_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
-	return KM_RESULT_UNSUPPORTED_OPERATION;
+	fs::fnode_write_lock_guard g(parent);
+
+	fs::fnode_ptr fnode;
+	KM_RETURN_IF_FAILED(fs_alloc_dir_fnode(fs_rootfs, &fnode));
+
+	KM_RETURN_IF_FAILED(fs_rename_fnode(fnode.get(), name, name_len));
+
+	KM_RETURN_IF_FAILED(fs_link_subnode(parent, fnode.get()));
+
+	*file_out = fnode.get();
+
+	return KM_RESULT_OK;
 }
 
 km_result_t ki_rootfs_seek(io_dispatch_context_t *dc, fs_fcb_t *fcb, long off, fs_seek_mode_t mode) {

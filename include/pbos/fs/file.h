@@ -91,6 +91,16 @@ PBOS_API fs_fnode_t *fs_get_file_of_fcb(fs_fcb_t *fcb);
 PBOS_NODISCARD PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file);
 PBOS_NODISCARD PBOS_API km_result_t fs_unmount_file(fs_fnode_t *file);
 
+///
+/// @brief Link an fnode to a parent fnode. This function requires the parent fnode has been locked.
+///
+/// @param parent Parent fnode to be linked.
+/// @param file fnode to be linked.
+/// @return @c KM_RESULT_OK The operation was performed successfully.
+/// @return @c KM_RESULT_UNSUPPORTED_OPERATION if the parent node does not support this operation.
+/// @return @c KM_RESULT_EXISTED Corresponding named child fnode already exists.
+/// @return @c KM_RESULT_NO_MEM No memory to perform the operation.
+///
 PBOS_NODISCARD PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file);
 
 km_result_t fs_close(fs_fcb_t *fcb);
@@ -122,6 +132,11 @@ PBOS_NODISCARD PBOS_API km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const c
 
 PBOS_NODISCARD km_result_t fs_enum_first_child_file(fs_fnode_t *dir, fs_fnode_t **first_file_out);
 PBOS_NODISCARD km_result_t fs_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **next_file_out);
+
+PBOS_API void fs_read_lock_fnode(fs_fnode_t *fnode);
+PBOS_API void fs_read_unlock_fnode(fs_fnode_t *fnode);
+PBOS_API void fs_write_lock_fnode(fs_fnode_t *fnode);
+PBOS_API void fs_write_unlock_fnode(fs_fnode_t *fnode);
 
 PBOS_API void fs_read_lock_fcb(fs_fcb_t *fcb);
 PBOS_API void fs_read_unlock_fcb(fs_fcb_t *fcb);

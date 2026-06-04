@@ -143,6 +143,44 @@ namespace fs {
 		}
 	};
 
+	class fnode_read_lock_guard {
+	private:
+		fs_fnode_t *fnode;
+
+	public:
+		PBOS_FORCEINLINE fnode_read_lock_guard(fs_fnode_t *fnode) : fnode(fnode) {
+			fs_read_lock_fnode(fnode);
+		}
+
+		PBOS_FORCEINLINE ~fnode_read_lock_guard() {
+			fs_read_unlock_fnode(fnode);
+		}
+
+		fnode_read_lock_guard(const fnode_read_lock_guard &) = delete;
+		fnode_read_lock_guard(fnode_read_lock_guard &&) = delete;
+		fnode_read_lock_guard &operator=(const fnode_read_lock_guard &) = delete;
+		fnode_read_lock_guard &operator=(fnode_read_lock_guard &&) = delete;
+	};
+
+	class fnode_write_lock_guard {
+	private:
+		fs_fnode_t *fnode;
+
+	public:
+		PBOS_FORCEINLINE fnode_write_lock_guard(fs_fnode_t *fnode) : fnode(fnode) {
+			fs_write_lock_fnode(fnode);
+		}
+
+		PBOS_FORCEINLINE ~fnode_write_lock_guard() {
+			fs_write_unlock_fnode(fnode);
+		}
+
+		fnode_write_lock_guard(const fnode_write_lock_guard &) = delete;
+		fnode_write_lock_guard(fnode_write_lock_guard &&) = delete;
+		fnode_write_lock_guard &operator=(const fnode_write_lock_guard &) = delete;
+		fnode_write_lock_guard &operator=(fnode_write_lock_guard &&) = delete;
+	};
+
 	class fcb_read_lock_guard {
 	private:
 		fs_fcb_t *fcb;

@@ -39,16 +39,14 @@ km_result_t ki_devio_create_file(io_dispatch_context_t *dc, fs_fnode_t *parent, 
 }
 
 km_result_t ki_devio_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
-	if(fs_get_fnode_type(parent) != FS_FNODE_TYPE_DIR)
-		return KM_RESULT_UNSUPPORTED_OPERATION;
-	ki_devio_dir_exdata_t *parent_exdata = (ki_devio_dir_exdata_t *)fs_get_fnode_exdata(parent);
-
-	ps::write_semaphore_guard g(parent_exdata->critical_semaphore);
+	fs::fnode_write_lock_guard g(parent);
 
 	fs::fnode_ptr fnode;
 	KM_RETURN_IF_FAILED(fs_alloc_dir_fnode(ki_devio_filesys, &fnode));
 
 	KM_RETURN_IF_FAILED(fs_link_subnode(parent, fnode.get()));
+
+	*file_out = fnode.get();
 
 	return KM_RESULT_OK;
 }

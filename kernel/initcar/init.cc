@@ -1,6 +1,6 @@
 #include <pbos/kd/logger.h>
-#include <pbos/kh/mm/misc.hh>
 #include <pbos/kh/initcar.hh>
+#include <pbos/kh/mm/misc.hh>
 #include <pbos/ki/fs/file.hh>
 #include <pbos/ki/fs/fs.hh>
 
@@ -111,20 +111,12 @@ void kh_initcar_init() {
 	const char *p_cur = ((const char *)kh_initcar_ptr) + sizeof(pbcar_metadata_t);
 	const uint32_t kh_initcar_size = kh_initcar_file_size;
 
-#define initcar_checksize(size)                                            \
+#define initcar_checksize(size)                                                 \
 	if (((p_cur - (const char *)kh_initcar_ptr) + size) > kh_initcar_file_size) \
 		km_panic("Prematured end of file\n");
 
-	if (KM_FAILED(result = fs_alloc_dir_fnode(kh_initcar_fs, &kh_initcar_dir)))
-		km_panic("Error creating initcar directory, error code = %.0x", result);
-
-	if (KM_FAILED(result = fs_rename_fnode(kh_initcar_dir, INITCAR_DIR_FILENAME.data(), INITCAR_DIR_FILENAME.size())))
-		km_panic("Error creating initcar directory, error code = %.0x", result);
-
-	{
-		if (KM_FAILED(result = fs_link_subnode(fs_abs_root_dir, kh_initcar_dir)))
-			km_panic("Error mounting initcar directory, error code = %.0x", result);
-	}
+	if (KM_FAILED(result = fs_create_dir(fs_abs_root_dir, INITCAR_DIR_FILENAME.data(), INITCAR_DIR_FILENAME.size(), &kh_initcar_dir)))
+		km_panic("Error mounting initcar directory, error code = %.0x", result);
 
 	pbcar_fentry_t *fe;
 	while (true) {
@@ -147,10 +139,10 @@ void kh_initcar_init() {
 		exdata->ptr = p_cur;
 		exdata->sz_total = fe->size;
 
-		if(!kh_initcar_first_file) {
+		if (!kh_initcar_first_file) {
 			kh_initcar_first_file = file.get();
 		}
-		if(kh_initcar_last_file) {
+		if (kh_initcar_last_file) {
 			exdata->prev = kh_initcar_last_file;
 			((kh_initcar_file_exdata *)fs_get_fnode_exdata(kh_initcar_last_file))->next = kh_initcar_last_file;
 		}
