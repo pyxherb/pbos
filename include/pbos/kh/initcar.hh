@@ -47,7 +47,6 @@ void kh_initcar_destroy(fs_fnode_t *file);
 
 km_result_t kh_initcar_premount(fs_fnode_t *parent, fs_fnode_t *file);
 km_result_t kh_initcar_postmount(fs_fnode_t *parent, fs_fnode_t *file);
-void kh_initcar_mount_fail(fs_fnode_t *parent, fs_fnode_t *file);
 km_result_t kh_initcar_unmount_cleanup(fs_fnode_t *file);
 
 km_result_t kh_initcar_destructor();

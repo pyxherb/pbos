@@ -94,11 +94,17 @@ typedef struct _fs_file_t : public fs_fnode_t {
 	_fs_file_t();
 } fs_file_t;
 
-typedef struct _fs_dir_t : public fs_fnode_t {
-	kfxx::hashmap_t<kfxx::string_view, fs::fnode_ptr> subnodes;
+struct ki_fs_mount_backup_t {
+	fs_filesys_t *fs = nullptr;
+};
 
-	_fs_dir_t(kfxx::allocator_t *allocator);
-} fs_dir_t;
+struct fs_dir_t : public fs_fnode_t {
+	kfxx::hashmap_t<kfxx::string_view, fs::fnode_ptr> subnodes;
+	fs::fnode_ptr mounted_dir;
+	ki_fs_mount_backup_t mount_backup;
+
+	fs_dir_t(kfxx::allocator_t *allocator);
+};
 
 PBOS_NODISCARD km_result_t ki_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t **fcb_out);
 

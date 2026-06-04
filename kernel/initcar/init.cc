@@ -35,7 +35,6 @@ fs_filesys_ops_t kh_initcar_ops = {
 	.enum_next_file = kh_initcar_enum_next_file,
 	.destroy = kh_initcar_destroy,
 	.premount = kh_initcar_premount,
-	.mount_fail = kh_initcar_mount_fail,
 	.unmount_cleanup = kh_initcar_unmount_cleanup,
 	.destructor = kh_initcar_destructor
 };
@@ -65,9 +64,6 @@ km_result_t kh_initcar_premount(fs_fnode_t *parent, fs_fnode_t *file) {
 
 km_result_t kh_initcar_postmount(fs_fnode_t *parent, fs_fnode_t *file) {
 	return KM_RESULT_OK;
-}
-
-void kh_initcar_mount_fail(fs_fnode_t *parent, fs_fnode_t *file) {
 }
 
 km_result_t kh_initcar_unmount_cleanup(fs_fnode_t *file) {
@@ -115,8 +111,17 @@ void kh_initcar_init() {
 	if (((p_cur - (const char *)kh_initcar_ptr) + size) > kh_initcar_file_size) \
 		km_panic("Prematured end of file\n");
 
-	if (KM_FAILED(result = fs_create_dir(fs_abs_root_dir, INITCAR_DIR_FILENAME.data(), INITCAR_DIR_FILENAME.size(), &kh_initcar_dir)))
-		km_panic("Error mounting initcar directory, error code = %.0x", result);
+	fs::fnode_ptr mount_point;
+	{
+		if (KM_FAILED(result = fs_create_dir(fs_abs_root_dir, INITCAR_DIR_FILENAME.data(), INITCAR_DIR_FILENAME.size(), &mount_point)))
+			km_panic("Error creating initcar mount point directory, error code = %.0x", result);
+	}
+
+	if (KM_FAILED(result = fs_alloc_dir_fnode(kh_initcar_fs, &kh_initcar_dir)))
+		km_panic("Error creating initcar directory, error code = %.0x", result);
+
+	if (KM_FAILED(result = fs_mount_file(mount_point.get(), kh_initcar_dir)))
+		km_panic("Error mounting initcar directory, error code = %x\n", result);
 
 	pbcar_fentry_t *fe;
 	while (true) {

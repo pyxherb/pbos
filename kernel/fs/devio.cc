@@ -20,7 +20,6 @@ fs_filesys_ops_t ki_devio_ops = {
 	.size = ki_devio_size,
 	.destroy = ki_devio_destroy,
 	.premount = ki_devio_premount,
-	.mount_fail = ki_devio_mountfail,
 	.unmount_cleanup = ki_devio_unmount_cleanup,
 	.destructor = ki_devio_destructor
 };
@@ -47,6 +46,8 @@ km_result_t ki_devio_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent, c
 	KM_RETURN_IF_FAILED(fs_link_subnode(parent, fnode.get()));
 
 	*file_out = fnode.get();
+
+	fs_ref_fnode(*file_out);
 
 	return KM_RESULT_OK;
 }
@@ -100,9 +101,6 @@ km_result_t ki_devio_premount(fs_fnode_t *parent, fs_fnode_t *file) {
 
 km_result_t ki_devio_unmount_cleanup(fs_fnode_t *file) {
 	return KM_RESULT_OK;
-}
-
-void ki_devio_mountfail(fs_fnode_t *parent, fs_fnode_t *file) {
 }
 
 km_result_t ki_devio_destructor() {

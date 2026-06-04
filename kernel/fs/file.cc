@@ -148,7 +148,7 @@ _fs_fnode_t::~_fs_fnode_t() {
 
 _fs_file_t::_fs_file_t() : _fs_fnode_t(FS_FNODE_TYPE_FILE) {}
 
-_fs_dir_t::_fs_dir_t(kfxx::allocator_t *allocator) : _fs_fnode_t(FS_FNODE_TYPE_DIR), subnodes(allocator) {}
+fs_dir_t::fs_dir_t(kfxx::allocator_t *allocator) : _fs_fnode_t(FS_FNODE_TYPE_DIR), subnodes(allocator) {}
 
 PBOS_API void fs_set_fcb_exdata(fs_fcb_t *fcb, void *exdata) {
 	fcb->exdata = exdata;
@@ -297,13 +297,24 @@ PBOS_NODISCARD PBOS_API km_result_t fs_create_fcb(
 
 PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
 	// The mount point should be a directory.
+	if (parent->fnode_type != FS_FNODE_TYPE_DIR)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
+
 	if (file->fnode_type != FS_FNODE_TYPE_DIR)
 		return KM_RESULT_UNSUPPORTED_OPERATION;
 
-	fs_dir_t *f = static_cast<fs_dir_t *>(file);
+	fs_dir_t *p = static_cast<fs_dir_t *>(parent);
 
 	// The mount point should be empty.
-	if (!f->subnodes.shrink_buckets())
+	if (p->subnodes.size())
+		return KM_RESULT_DIR_NOT_EMPTY;
+
+	if (p->mounted_dir)
+		return KM_RESULT_EXISTED;
+
+	fs::fnode_write_lock_guard g(parent);
+
+	if (!p->subnodes.shrink_buckets())
 		return KM_RESULT_NO_MEM;
 
 	fs_filesys_t *fs = parent->fs;
@@ -311,26 +322,25 @@ PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
 	KM_RETURN_IF_FAILED(fs->ops.premount(parent, file));
 
 	{
-		kfxx::scope_guard mount_fail_guard([fs, parent, file]() noexcept {
-			fs->ops.mount_fail(parent, file);
-		});
-
-		if (!f->subnodes.insert(kfxx::string_view(file->filename, file->filename_len), +file))
-			return KM_RESULT_NO_MEM;
-
-		mount_fail_guard.release();
+		p->mount_backup.fs = p->fs;
+		p->mounted_dir = file;
 	}
 	return KM_RESULT_OK;
 }
 
 PBOS_API km_result_t fs_unmount_file(fs_fnode_t *file) {
-	KM_RETURN_IF_FAILED(file->parent->fs->ops.unmount_cleanup(file));
-
-	kd_assert(file->parent);
+	if (file->fnode_type != FS_FNODE_TYPE_DIR)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
 
 	fs_dir_t *parent = static_cast<fs_dir_t *>(file->parent);
 
-	parent->subnodes.remove(kfxx::string_view(file->filename, file->filename_len));
+	if(!parent->mounted_dir)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
+
+	KM_RETURN_IF_FAILED(file->parent->fs->ops.unmount_cleanup(file));
+
+	parent->mounted_dir = nullptr;
+	parent->fs = parent->mount_backup.fs;
 
 	return KM_RESULT_OK;
 }
@@ -340,10 +350,12 @@ PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
 		return KM_RESULT_UNSUPPORTED_OPERATION;
 	fs_dir_t *p = (fs_dir_t *)parent;
 
-	if (p->subnodes.contains(kfxx::string_view(file->filename, file->filename_len)))
+	auto &subnodes = p->mounted_dir ? ((fs_dir_t *)p->mounted_dir.get())->subnodes : p->subnodes;
+
+	if (subnodes.contains(kfxx::string_view(file->filename, file->filename_len)))
 		return KM_RESULT_EXISTED;
 
-	if (!p->subnodes.insert(kfxx::string_view(file->filename, file->filename_len), +file))
+	if (!subnodes.insert(kfxx::string_view(file->filename, file->filename_len), +file))
 		return KM_RESULT_NO_MEM;
 
 	return KM_RESULT_OK;
@@ -354,13 +366,14 @@ PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t 
 		return KM_RESULT_NOT_FOUND;
 	switch (file->fnode_type) {
 		case FS_FNODE_TYPE_DIR: {
-			fs_dir_t *f = static_cast<fs_dir_t *>(file);
-			if (auto it = f->subnodes.find(kfxx::string_view(filename, filename_len)); it != f->subnodes.end()) {
+			fs_dir_t *p = static_cast<fs_dir_t *>(file);
+			auto &subnodes = p->mounted_dir ? ((fs_dir_t *)p->mounted_dir.get())->subnodes : p->subnodes;
+			if (auto it = subnodes.find(kfxx::string_view(filename, filename_len)); it != subnodes.end()) {
 				fs::fnode_ptr node = it.value();
 				*file_out = node.get();
 				fs_ref_fnode(node.get());
 			} else {
-				KM_RETURN_IF_FAILED(file->fs->ops.subnode(file, filename, filename_len, file_out));
+				KM_RETURN_IF_FAILED(p->fs->ops.subnode(file, filename, filename_len, file_out));
 			}
 			break;
 		}

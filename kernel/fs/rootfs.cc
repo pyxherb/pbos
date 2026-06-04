@@ -17,7 +17,6 @@ fs_filesys_ops_t ki_rootfs_ops = {
 	.pwrite = ki_rootfs_pwrite,
 	.size = ki_rootfs_size,
 	.premount = ki_rootfs_premount,
-	.mount_fail = ki_rootfs_mountfail,
 	.unmount_cleanup = ki_rootfs_unmount_cleanup,
 	.destructor = ki_rootfs_destructor
 };
@@ -44,6 +43,8 @@ km_result_t ki_rootfs_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent, 
 	KM_RETURN_IF_FAILED(fs_link_subnode(parent, fnode.get()));
 
 	*file_out = fnode.get();
+
+	fs_ref_fnode(*file_out);
 
 	return KM_RESULT_OK;
 }
@@ -89,9 +90,6 @@ km_result_t ki_rootfs_premount(fs_fnode_t *parent, fs_fnode_t *file) {
 
 km_result_t ki_rootfs_unmount_cleanup(fs_fnode_t *file) {
 	return KM_RESULT_OK;
-}
-
-void ki_rootfs_mountfail(fs_fnode_t *parent, fs_fnode_t *file) {
 }
 
 km_result_t ki_rootfs_destructor() {

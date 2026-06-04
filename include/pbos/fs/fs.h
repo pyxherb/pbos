@@ -36,7 +36,6 @@ typedef km_result_t (*fs_filesys_enum_next_file_op_t)(fs_fnode_t *cur_file, fs_f
 typedef void (*fs_filesys_destroy_file_op_t)(fs_fnode_t *file);
 
 typedef km_result_t (*fs_filesys_premount_op_t)(fs_fnode_t *parent, fs_fnode_t *file);
-typedef void (*fs_filesys_mount_fail_op_t)(fs_fnode_t *parent, fs_fnode_t *file);
 typedef km_result_t (*fs_filesys_unmount_cleanup_op_t)(fs_fnode_t *file);
 
 /// @brief Destructor of the file system.
@@ -80,7 +79,6 @@ typedef struct _fs_filesys_ops_t {
 	fs_filesys_destroy_file_op_t destroy;
 
 	fs_filesys_premount_op_t premount;
-	fs_filesys_mount_fail_op_t mount_fail;
 	fs_filesys_unmount_cleanup_op_t unmount_cleanup;
 
 	fs_filesys_filesys_destructor_op_t destructor;
