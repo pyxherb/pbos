@@ -142,6 +142,82 @@ namespace fs {
 			return _ptr != rhs._ptr;
 		}
 	};
+
+	class file_read_lock_guard {
+	private:
+		fs_fnode_t *fnode;
+
+	public:
+		PBOS_FORCEINLINE file_read_lock_guard(fs_fnode_t *fnode) : fnode(fnode) {
+			fs_read_lock_fnode(fnode);
+		}
+
+		PBOS_FORCEINLINE ~file_read_lock_guard() {
+			fs_read_unlock_fnode(fnode);
+		}
+
+		file_read_lock_guard(const file_read_lock_guard &) = delete;
+		file_read_lock_guard(file_read_lock_guard &&) = delete;
+		file_read_lock_guard &operator=(const file_read_lock_guard &) = delete;
+		file_read_lock_guard &operator=(file_read_lock_guard &&) = delete;
+	};
+
+	class file_write_lock_guard {
+	private:
+		fs_fnode_t *fnode;
+
+	public:
+		PBOS_FORCEINLINE file_write_lock_guard(fs_fnode_t *fnode) : fnode(fnode) {
+			fs_write_lock_fnode(fnode);
+		}
+
+		PBOS_FORCEINLINE ~file_write_lock_guard() {
+			fs_write_unlock_fnode(fnode);
+		}
+
+		file_write_lock_guard(const file_write_lock_guard &) = delete;
+		file_write_lock_guard(file_write_lock_guard &&) = delete;
+		file_write_lock_guard &operator=(const file_write_lock_guard &) = delete;
+		file_write_lock_guard &operator=(file_write_lock_guard &&) = delete;
+	};
+
+	class fcb_read_lock_guard {
+	private:
+		fs_fcb_t *fcb;
+
+	public:
+		PBOS_FORCEINLINE fcb_read_lock_guard(fs_fcb_t *fcb) : fcb(fcb) {
+			fs_read_lock_fcb(fcb);
+		}
+
+		PBOS_FORCEINLINE ~fcb_read_lock_guard() {
+			fs_read_unlock_fcb(fcb);
+		}
+
+		fcb_read_lock_guard(const fcb_read_lock_guard &) = delete;
+		fcb_read_lock_guard(fcb_read_lock_guard &&) = delete;
+		fcb_read_lock_guard &operator=(const fcb_read_lock_guard &) = delete;
+		fcb_read_lock_guard &operator=(fcb_read_lock_guard &&) = delete;
+	};
+
+	class fcb_write_lock_guard {
+	private:
+		fs_fcb_t *fcb;
+
+	public:
+		PBOS_FORCEINLINE fcb_write_lock_guard(fs_fcb_t *fcb) : fcb(fcb) {
+			fs_write_lock_fcb(fcb);
+		}
+
+		PBOS_FORCEINLINE ~fcb_write_lock_guard() {
+			fs_write_unlock_fcb(fcb);
+		}
+
+		fcb_write_lock_guard(const fcb_write_lock_guard &) = delete;
+		fcb_write_lock_guard(fcb_write_lock_guard &&) = delete;
+		fcb_write_lock_guard &operator=(const fcb_write_lock_guard &) = delete;
+		fcb_write_lock_guard &operator=(fcb_write_lock_guard &&) = delete;
+	};
 }
 
 #endif

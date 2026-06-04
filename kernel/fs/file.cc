@@ -447,12 +447,18 @@ PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path
 }
 
 PBOS_API km_result_t fs_close(fs_fcb_t *fcb) {
+	// Because the FCB is about to be destroyed, so we don't need to care about
+	// if the FCB's semaphore will be unlocked.
+	fcb->rw_semaphore.write_lock();
+
 	fcb->fnode.reset();
 	ki_destroy_fcb(fcb);
 	return KM_RESULT_OK;
 }
 
 PBOS_API km_result_t fs_seek(fs_fcb_t *fcb, long off, fs_seek_mode_t mode) {
+	fs::fcb_write_lock_guard g(fcb);
+
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
 
@@ -463,6 +469,8 @@ PBOS_API km_result_t fs_seek(fs_fcb_t *fcb, long off, fs_seek_mode_t mode) {
 }
 
 PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t *bytes_read_out) {
+	fs::fcb_read_lock_guard g(fcb);
+
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
 
@@ -473,6 +481,8 @@ PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t *byt
 }
 
 PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_t *bytes_written_out) {
+	fs::fcb_write_lock_guard g(fcb);
+
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
 
@@ -483,6 +493,8 @@ PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_
 }
 
 PBOS_API km_result_t fs_pread(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
+	fs::fcb_read_lock_guard g(fcb);
+
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
 
@@ -493,6 +505,8 @@ PBOS_API km_result_t fs_pread(fs_fcb_t *fcb, void *dest, size_t size, size_t off
 }
 
 PBOS_API km_result_t fs_pwrite(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out) {
+	fs::fcb_write_lock_guard g(fcb);
+
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
 
@@ -503,6 +517,8 @@ PBOS_API km_result_t fs_pwrite(fs_fcb_t *fcb, const void *src, size_t size, size
 }
 
 PBOS_API km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {
+	fs::fcb_read_lock_guard g(fcb);
+
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
 
@@ -519,6 +535,38 @@ PBOS_API void fs_ref_fnode(fs_fnode_t *fnode) {
 PBOS_API void fs_unref_fnode(fs_fnode_t *fnode) {
 	if (!kf_atomic_dec_size(&fnode->ref_count))
 		ki_destroy_fnode(fnode);
+}
+
+PBOS_API void fs_read_lock_fnode(fs_fnode_t *fnode) {
+	fnode->rw_semaphore.read_lock();
+}
+
+PBOS_API void fs_read_unlock_fnode(fs_fnode_t *fnode) {
+	fnode->rw_semaphore.read_unlock();
+}
+
+PBOS_API void fs_write_lock_fnode(fs_fnode_t *fnode) {
+	fnode->rw_semaphore.write_lock();
+}
+
+PBOS_API void fs_write_unlock_fnode(fs_fnode_t *fnode) {
+	fnode->rw_semaphore.write_unlock();
+}
+
+PBOS_API void fs_read_lock_fcb(fs_fcb_t *fcb) {
+	fcb->rw_semaphore.read_lock();
+}
+
+PBOS_API void fs_read_unlock_fcb(fs_fcb_t *fcb) {
+	fcb->rw_semaphore.read_unlock();
+}
+
+PBOS_API void fs_write_lock_fcb(fs_fcb_t *fcb) {
+	fcb->rw_semaphore.write_lock();
+}
+
+PBOS_API void fs_write_unlock_fcb(fs_fcb_t *fcb) {
+	fcb->rw_semaphore.write_unlock();
 }
 
 void ki_destroy_fnode(fs_fnode_t *fnode) {

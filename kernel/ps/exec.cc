@@ -7,6 +7,7 @@
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/ps/exec.hh>
 #include <pbos/kd/logger.h>
+#include <pbos/ps/semaphore.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -173,14 +174,14 @@ typedef struct _ki_cached_ro_page_registry : public kfxx::rbtree_t<void *>::node
 
 kfxx::map_t<uint64_t, kfxx::rbtree_t<void *>> ki_cached_ro_pages_hash_map(&ki_ps_cached_ro_pages_buckets_allocator);
 kfxx::map_t<void *, uint64_t> ki_cached_ro_pages_paddr_to_hash_map(&ki_ps_cached_ro_pages_buckets_allocator);
-ps::rw_mutex_t ki_ro_pages_cache_lock;
+ps::semaphore_t ki_ro_pages_cache_lock;
 // TODO: Add a read/write lock for the hash map.
 
 km_result_t ps_register_cached_ro_page(void *paddr, void *allocated_cmp_vpage, void *vaddr) {
 	const size_t page_size = mm_get_page_size();
 	uint64_t hash_code = kf_djb_hash64((const char *)vaddr, page_size);
 
-	ps::write_rw_mutex_guard g(ki_ro_pages_cache_lock.c_mutex());
+	ps::write_semaphore_guard g(ki_ro_pages_cache_lock.c_mutex());
 
 	if (auto it = ki_cached_ro_pages_hash_map.find(hash_code); it != ki_cached_ro_pages_hash_map.end()) {
 		// TODO: Implement this...
@@ -198,7 +199,7 @@ km_result_t ps_fetch_cached_ro_page(void *vaddr, void *comparison_tmpmap_vaddr, 
 	uint64_t hash_code = kf_djb_hash64((const char *)vaddr, page_size);
 	km_result_t result;
 
-	ps::read_rw_mutex_guard g(ki_ro_pages_cache_lock.c_mutex());
+	ps::read_semaphore_guard g(ki_ro_pages_cache_lock.c_mutex());
 
 	if (auto it = ki_cached_ro_pages_hash_map.find(hash_code); it != ki_cached_ro_pages_hash_map.end()) {
 		for (auto j : it.value()) {
@@ -216,7 +217,7 @@ km_result_t ps_fetch_cached_ro_page(void *vaddr, void *comparison_tmpmap_vaddr, 
 }
 
 void ps_ref_cached_ro_page(void *paddr) {
-	ps::read_rw_mutex_guard g(ki_ro_pages_cache_lock.c_mutex());
+	ps::read_semaphore_guard g(ki_ro_pages_cache_lock.c_mutex());
 
 	if (auto it = ki_cached_ro_pages_paddr_to_hash_map.find(paddr); it != ki_cached_ro_pages_paddr_to_hash_map.end()) {
 		auto &tree = ki_cached_ro_pages_hash_map.at(it.value());
@@ -245,7 +246,7 @@ void ps_unref_cached_ro_page(void *paddr) {
 			release_read_lock_guard.release();
 			ki_ro_pages_cache_lock.read_unlock();
 
-			ps::write_rw_mutex_guard g(ki_ro_pages_cache_lock.c_mutex());
+			ps::write_semaphore_guard g(ki_ro_pages_cache_lock.c_mutex());
 
 			tree.remove(registry);
 			kfxx::destroy_and_release<ki_cached_ro_page_registry>(&ki_ps_cached_ro_pages_registry_allocator, static_cast<ki_cached_ro_page_registry *>(registry));

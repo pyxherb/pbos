@@ -85,30 +85,4 @@ PBOS_API size_t ps_get_rec_mutex_lock_times(ps_rec_mutex_t *mtx) {
 	return mtx->_data.lock_times;
 }
 
-PBOS_API void ps_init_rw_mutex(ps_rw_mutex_t *mtx) {
-	mtx->_data.lock_thread = nullptr;
-	mtx->_data.spinlock = HAL_SPINLOCK_UNLOCKED;
-	mtx->_data.read_count = 0;
-}
-
-PBOS_API void ps_read_lock_rw_mutex(ps_rw_mutex_t *mtx) {
-	while (kf_atomic_cmp_xchg_u8((uint8_t *)&mtx->_data.is_writing, 0, 0) != 0)
-		ps_yield_cur_thread();
-	kf_atomic_inc_size(&mtx->_data.read_count);
-}
-
-PBOS_API void ps_write_lock_rw_mutex(ps_rw_mutex_t *mtx) {
-	kd_dbgcheck(kf_atomic_xchg_u8((uint8_t *)&mtx->_data.is_writing, true) != true, "Trying to lock an RW mutex that is already write locked");
-	while (kf_atomic_cmp_xchg_size(&mtx->_data.read_count, 0, 0) != 0)
-		ps_yield_cur_thread();
-}
-
-PBOS_API void ps_read_unlock_rw_mutex(ps_rw_mutex_t *mtx) {
-	kf_atomic_dec_size(&mtx->_data.read_count);
-}
-
-PBOS_API void ps_write_unlock_rw_mutex(ps_rw_mutex_t *mtx) {
-	kd_dbgcheck(kf_atomic_xchg_u8((uint8_t *)&mtx->_data.is_writing, false) != false, "Trying to unlock an RW mutex that is not write locked");
-}
-
 PBOS_EXTERN_C_END

@@ -65,31 +65,6 @@ namespace ps {
 		}
 	};
 
-	class rw_mutex_t final {
-	private:
-		ps_rw_mutex_t _mutex;
-
-	public:
-		PBOS_FORCEINLINE rw_mutex_t() noexcept {
-			ps_init_rw_mutex(&_mutex);
-		}
-
-		PBOS_FORCEINLINE ~rw_mutex_t() {
-		}
-
-		PBOS_FORCEINLINE void read_lock() noexcept {
-			ps_read_lock_rw_mutex(&_mutex);
-		}
-
-		PBOS_FORCEINLINE void read_unlock() noexcept {
-			ps_read_unlock_rw_mutex(&_mutex);
-		}
-
-		PBOS_FORCEINLINE ps_rw_mutex_t &c_mutex() noexcept {
-			return _mutex;
-		}
-	};
-
 	class mutex_guard {
 	private:
 		ps_mutex_t &_mutex;
@@ -129,44 +104,6 @@ namespace ps {
 		rec_mutex_guard(rec_mutex_guard &&) = delete;
 		rec_mutex_guard &operator=(const rec_mutex_guard &) = delete;
 		rec_mutex_guard &operator=(rec_mutex_guard &&) = delete;
-	};
-
-	class read_rw_mutex_guard {
-	private:
-		ps_rw_mutex_t &_rw_mutex;
-
-	public:
-		PBOS_FORCEINLINE read_rw_mutex_guard(ps_rw_mutex_t &rec_mutex) : _rw_mutex(rec_mutex) {
-			ps_read_lock_rw_mutex(&_rw_mutex);
-		}
-
-		PBOS_FORCEINLINE ~read_rw_mutex_guard() {
-			ps_read_unlock_rw_mutex(&_rw_mutex);
-		}
-
-		read_rw_mutex_guard(const read_rw_mutex_guard &) = delete;
-		read_rw_mutex_guard(read_rw_mutex_guard &&) = delete;
-		read_rw_mutex_guard &operator=(const read_rw_mutex_guard &) = delete;
-		read_rw_mutex_guard &operator=(read_rw_mutex_guard &&) = delete;
-	};
-
-	class write_rw_mutex_guard {
-	private:
-		ps_rw_mutex_t &_rw_mutex;
-
-	public:
-		PBOS_FORCEINLINE write_rw_mutex_guard(ps_rw_mutex_t &rec_mutex) : _rw_mutex(rec_mutex) {
-			ps_write_lock_rw_mutex(&_rw_mutex);
-		}
-
-		PBOS_FORCEINLINE ~write_rw_mutex_guard() {
-			ps_write_unlock_rw_mutex(&_rw_mutex);
-		}
-
-		write_rw_mutex_guard(const write_rw_mutex_guard &) = delete;
-		write_rw_mutex_guard(write_rw_mutex_guard &&) = delete;
-		write_rw_mutex_guard &operator=(const write_rw_mutex_guard &) = delete;
-		write_rw_mutex_guard &operator=(write_rw_mutex_guard &&) = delete;
 	};
 }
 

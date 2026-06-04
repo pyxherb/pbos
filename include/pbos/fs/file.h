@@ -123,6 +123,16 @@ PBOS_NODISCARD PBOS_API km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const c
 PBOS_NODISCARD km_result_t fs_enum_first_child_file(fs_fnode_t *dir, fs_fnode_t **first_file_out);
 PBOS_NODISCARD km_result_t fs_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **next_file_out);
 
+PBOS_API void fs_read_lock_fnode(fs_fnode_t *fnode);
+PBOS_API void fs_read_unlock_fnode(fs_fnode_t *fnode);
+PBOS_API void fs_write_lock_fnode(fs_fnode_t *fnode);
+PBOS_API void fs_write_unlock_fnode(fs_fnode_t *fnode);
+
+PBOS_API void fs_read_lock_fcb(fs_fcb_t *fcb);
+PBOS_API void fs_read_unlock_fcb(fs_fcb_t *fcb);
+PBOS_API void fs_write_lock_fcb(fs_fcb_t *fcb);
+PBOS_API void fs_write_unlock_fcb(fs_fcb_t *fcb);
+
 PBOS_API void fs_ref_fnode(fs_fnode_t *fnode);
 PBOS_API void fs_unref_fnode(fs_fnode_t *fnode);
 

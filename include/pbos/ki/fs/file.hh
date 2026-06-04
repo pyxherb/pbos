@@ -1,11 +1,13 @@
 #ifndef _PBOS_KI_FS_FILE_HH_
 #define _PBOS_KI_FS_FILE_HH_
 
-#include <pbos/fs/file.hh>
 #include <pbos/kf/list.h>
+#include <pbos/ps/mutex.h>
+#include <pbos/fs/file.hh>
 #include <pbos/kfxx/hashmap.hh>
 #include <pbos/kfxx/string_view.hh>
 #include "fs.hh"
+#include <pbos/ps/semaphore.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -61,6 +63,7 @@ extern ki_fs_filename_allocator_t ki_fs_filename_allocator;
 extern ki_fs_fnode_allocator_t ki_fs_fnode_allocator;
 
 typedef struct _fs_fcb_t : public kfxx::rbtree_t<fs_fhandle_t>::node_t {
+	ps::semaphore_t rw_semaphore;
 	fs::fnode_ptr fnode;
 	void *exdata = nullptr;
 
@@ -70,6 +73,8 @@ typedef struct _fs_fcb_t : public kfxx::rbtree_t<fs_fhandle_t>::node_t {
 
 typedef struct _fs_fnode_t {
 	size_t ref_count = 0;
+
+	ps::semaphore_t rw_semaphore;
 
 	_fs_fnode_t *parent = nullptr;
 

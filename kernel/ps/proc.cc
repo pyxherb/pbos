@@ -4,11 +4,12 @@
 #include <pbos/ki/km/symbol.hh>
 #include <pbos/ki/mm/context.hh>
 #include <pbos/ki/ps/proc.hh>
+#include <pbos/ps/semaphore.hh>
 
 PBOS_EXTERN_C_BEGIN
 
 kfxx::rbtree_t<ps_proc_id_t> ps_global_proc_set;
-ps::rw_mutex_t ps_global_proc_set_mutex;
+ps::semaphore_t ps_global_proc_set_mutex;
 ps_sched_t *ps_cur_sched = NULL;
 ps_proc_id_t ki_min_free_pid = 0, ki_cur_max_pid = 0;
 
@@ -46,7 +47,7 @@ PBOS_API fs_fcb_t *ps_kfcb_of_ufcb(ps_ufcb_t *ufcb) {
 void ki_destroy_proc(ps_pcb_t *pcb) {
 	{
 		// Make sure only remove when the PCB is in the global process set.
-		ps::write_rw_mutex_guard g(ps_global_proc_set_mutex.c_mutex());
+		ps::write_semaphore_guard g(ps_global_proc_set_mutex.c_mutex());
 		if (auto node = ps_global_proc_set.find(pcb->rb_value); node) {
 			ps_global_proc_set.remove(node);
 
@@ -78,7 +79,7 @@ void ki_destroy_proc(ps_pcb_t *pcb) {
 PBOS_API km_result_t ps_create_proc(
 	ps_pcb_t *pcb,
 	ps_proc_id_t parent) {
-	ps::write_rw_mutex_guard g(ps_global_proc_set_mutex.c_mutex());
+	ps::write_semaphore_guard g(ps_global_proc_set_mutex.c_mutex());
 
 	pcb->rb_value = PS_PROC_ID_MAX;
 
