@@ -37,7 +37,6 @@ void kima_free_ublk(kima_pool_t *pool, kima_ublk_t *ublk) {
 			pool->ublk_free_tree.remove(&slots[i]);
 		}
 		kima_vpgfree(pool, poolpg, pool->page_size);
-		--pool->num_allocated_pages;
 	}
 }
 
@@ -89,6 +88,5 @@ kima_ublk_t *kima_alloc_ublk(kima_pool_t *pool, void *ptr, size_t size) {
 		pool->ublk_free_tree.insert_unwrap(&slots[i]);
 	}
 
-	pool->num_allocated_pages += kfxx::ceil_align_to(size, pool->page_size) / pool->page_size;
 	return &slots[0];
 }

@@ -123,7 +123,6 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 			for (size_t j = 0; j < i; j += pool->page_size) {
 				kima_free_vpgdesc(pool, kima_lookup_vpgdesc(pool, ((char *)new_free_pg) + j));
 			}
-			pool->num_allocated_pages -= i;
 		});
 
 		for (; i < size; i += pool->page_size) {
@@ -134,8 +133,6 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 
 			++vpgdesc->ref_count;
 		}
-
-		pool->num_allocated_pages += kfxx::ceil_align_to(size, pool->page_size) / pool->page_size;
 
 		kima_ublk_t *ublk = kima_alloc_ublk(pool, new_free_pg, size);
 		if (!ublk)
@@ -272,7 +269,6 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 				for (size_t j = 0; j < i; j += pool->page_size) {
 					kima_free_vpgdesc(pool, kima_lookup_vpgdesc(pool, ((char *)new_free_pg) + j));
 				}
-				pool->num_allocated_pages -= i;
 			});
 
 			for (; i < size; i += pool->page_size) {
@@ -283,8 +279,6 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 
 				++vpgdesc->ref_count;
 			}
-
-			pool->num_allocated_pages += kfxx::ceil_align_to(size, pool->page_size) / pool->page_size;
 
 			kima_free_ublk(pool, old_ublk);
 
@@ -450,7 +444,6 @@ void kima_free(kima_pool_t *pool, void *ptr) {
 
 			if (!(--vpgdesc->ref_count)) {
 				kima_free_vpgdesc(pool, vpgdesc);
-				--pool->num_allocated_pages;
 			}
 		}
 
