@@ -135,6 +135,7 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 					}
 				}
 
+				// Choose a default PM group for unmapped PMAD.
 				if (!default_group) {
 					mm_vmr_t *nearing_vmr;
 					nearing_vmr = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find((char *)vaddr + kfxx::ceil_align_to(size, page_size)));

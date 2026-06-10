@@ -7,12 +7,16 @@
 
 PBOS_EXTERN_C_BEGIN
 
-struct ki_devio_dir_exdata_t {
+struct ki_devio_fnode_exdata_t {
+	fs_fnode_t *prev, *next;
 	ps::semaphore_t critical_semaphore;
 };
 
-struct ki_devio_file_exdata_t {
-	ps::semaphore_t critical_semaphore;
+struct ki_devio_dir_exdata_t : public ki_devio_fnode_exdata_t {
+	fs_fnode_t *first_child;
+};
+
+struct ki_devio_file_exdata_t : public ki_devio_dir_exdata_t {
 	dm_device_t *device;
 };
 

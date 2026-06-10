@@ -117,6 +117,8 @@ PBOS_NODISCARD PBOS_API km_result_t fs_pwrite(fs_fcb_t *fcb, const void *src, si
 
 PBOS_NODISCARD PBOS_API km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out);
 
+PBOS_NODISCARD PBOS_API fs_fnode_t *fs_parent_of(fs_fnode_t *file);
+
 PBOS_NODISCARD PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_len, fs_fnode_t **file_out);
 
 ///
@@ -130,7 +132,24 @@ PBOS_NODISCARD PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *fi
 ///
 PBOS_NODISCARD PBOS_API km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size_t path_len, fs_fnode_t **file_out);
 
+///
+/// @brief Enumerate the first file of the directory. The order is not guaranteed.
+/// @note The caller must hold the reference of the directory!
+///
+/// @param dir Directory to be enumerated.
+/// @param first_file_out Where the first file will be stored, it will be referenced once.
+/// @return @c KM_RESULT_OK The enumeration was successfully performed.
+///
 PBOS_NODISCARD km_result_t fs_enum_first_child_file(fs_fnode_t *dir, fs_fnode_t **first_file_out);
+
+///
+/// @brief Enumerate the succeeding file of current file in the directory. The order is not guaranteed.
+/// @note The caller must hold the reference of current file!
+///
+/// @param cur_file Current file to be enumerated, it will be unreferenced once.
+/// @param next_file_out Where the next file will be stored, it will be referenced once.
+/// @return @c KM_RESULT_OK The enumeration was successfully performed.
+///
 PBOS_NODISCARD km_result_t fs_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **next_file_out);
 
 PBOS_API void fs_read_lock_fnode(fs_fnode_t *fnode);
@@ -147,6 +166,8 @@ PBOS_API void fs_ref_fnode(fs_fnode_t *fnode);
 PBOS_API void fs_unref_fnode(fs_fnode_t *fnode);
 
 PBOS_API fs_fnode_type_t fs_get_fnode_type(fs_fnode_t *fnode);
+
+PBOS_API fs_filesys_t *fs_filesys_of_fnode(fs_fnode_t *fnode);
 
 PBOS_EXTERN_C_END
 

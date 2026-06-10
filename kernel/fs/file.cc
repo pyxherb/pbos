@@ -325,6 +325,8 @@ PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
 		p->mount_backup.fs = p->fs;
 		p->mounted_dir = file;
 	}
+
+	file->parent = p;
 	return KM_RESULT_OK;
 }
 
@@ -334,13 +336,15 @@ PBOS_API km_result_t fs_unmount_file(fs_fnode_t *file) {
 
 	fs_dir_t *parent = static_cast<fs_dir_t *>(file->parent);
 
-	if(!parent->mounted_dir)
+	if (!parent->mounted_dir)
 		return KM_RESULT_UNSUPPORTED_OPERATION;
 
 	KM_RETURN_IF_FAILED(file->parent->fs->ops.unmount_cleanup(file));
 
 	parent->mounted_dir = nullptr;
 	parent->fs = parent->mount_backup.fs;
+
+	file->parent = nullptr;
 
 	return KM_RESULT_OK;
 }
@@ -359,6 +363,15 @@ PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
 		return KM_RESULT_NO_MEM;
 
 	return KM_RESULT_OK;
+}
+
+PBOS_API fs_fnode_t *fs_parent_of(fs_fnode_t *file) {
+	fs::fnode_read_lock_guard g(file);
+	if (file->parent) {
+		fs_ref_fnode(file->parent);
+		return file->parent;
+	}
+	return nullptr;
 }
 
 PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t filename_len, fs_fnode_t **file_out) {
@@ -581,6 +594,10 @@ PBOS_API void fs_write_unlock_fcb(fs_fcb_t *fcb) {
 
 PBOS_API fs_fnode_type_t fs_get_fnode_type(fs_fnode_t *fnode) {
 	return fnode->fnode_type;
+}
+
+PBOS_API fs_filesys_t *fs_filesys_of_fnode(fs_fnode_t *fnode) {
+	return fnode->fs;
 }
 
 void ki_destroy_fnode(fs_fnode_t *fnode) {

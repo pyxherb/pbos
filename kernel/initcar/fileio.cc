@@ -83,7 +83,10 @@ km_result_t kh_initcar_enum_first_child_file(fs_fnode_t *dir, fs_fnode_t **first
 		*first_file_out = nullptr;
 		return KM_RESULT_UNSUPPORTED_OPERATION;
 	}
+
+	fs::fnode_read_lock_guard g(dir);
 	*first_file_out = kh_initcar_first_file;
+	fs_ref_fnode(*first_file_out);
 	return KM_RESULT_OK;
 }
 
@@ -92,7 +95,11 @@ km_result_t kh_initcar_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **next_fi
 		*next_file_out = nullptr;
 		return KM_RESULT_INVALID_ARGS;
 	}
-	*next_file_out = ((kh_initcar_file_exdata *)fs_get_fnode_exdata(cur_file))->next;
+
+	fs::fnode_read_lock_guard g(cur_file);
+	fs_unref_fnode(cur_file);
+	if((*next_file_out = ((kh_initcar_file_exdata *)fs_get_fnode_exdata(cur_file))->next))
+		fs_ref_fnode(*next_file_out);
 	return KM_RESULT_OK;
 }
 

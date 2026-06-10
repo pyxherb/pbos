@@ -90,9 +90,65 @@ km_result_t ki_devio_size(io_dispatch_context_t *dc, fs_fcb_t *fcb, size_t *size
 	return ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->device->ops.size(dc, fcb, size_out);
 }
 
+km_result_t ki_devio_enum_first_child_file(fs_fnode_t *dir, fs_fnode_t **first_file_out) {
+	fs::fnode_read_lock_guard g(dir);
+	if (fs_get_fnode_type(dir) != FS_FNODE_TYPE_DIR)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
+	*first_file_out = ((ki_devio_dir_exdata_t *)fs_get_fnode_exdata(dir))->first_child;
+	fs_ref_fnode(*first_file_out);
+	return KM_RESULT_OK;
+}
+
+km_result_t ki_devio_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **next_file_out) {
+	if (!cur_file) {
+		*next_file_out = nullptr;
+		return KM_RESULT_INVALID_ARGS;
+	}
+
+	fs::fnode_read_lock_guard g(cur_file);
+	if (fs_get_fnode_type(cur_file) != FS_FNODE_TYPE_FILE)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
+	fs_unref_fnode(cur_file);
+	if ((*next_file_out = ((ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(cur_file))->next))
+		fs_ref_fnode(*next_file_out);
+	return KM_RESULT_OK;
+}
+
 void ki_devio_destroy(fs_fnode_t *file) {
-	ki_devio_file_exdata_t *exdata = (ki_devio_file_exdata_t *)fs_get_fnode_exdata(file);
-	kfxx::destroy_and_release<ki_devio_file_exdata_t>(kfxx::kernel_allocator(), exdata);
+	{
+		ki_devio_fnode_exdata_t *base_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(file);
+		fs::fnode_ptr parent(fs_parent_of(file));
+		if (parent && (fs_filesys_of_fnode(parent.get()) == ki_devio_filesys)) {
+			ki_devio_dir_exdata_t *parent_exdata = (ki_devio_dir_exdata_t *)fs_get_fnode_exdata(file);
+
+			if (base_exdata->prev) {
+				ki_devio_fnode_exdata_t *prev_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(base_exdata->prev);
+				prev_exdata->next = base_exdata->next;
+			}
+
+			if (base_exdata->next) {
+				ki_devio_fnode_exdata_t *next_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(base_exdata->next);
+				next_exdata->prev = base_exdata->prev;
+			}
+
+			if (parent_exdata->first_child == file) {
+				parent_exdata->first_child = base_exdata->next;
+			}
+		}
+	}
+
+	switch (fs_get_fnode_type(file)) {
+		case FS_FNODE_TYPE_FILE: {
+			ki_devio_file_exdata_t *exdata = (ki_devio_file_exdata_t *)fs_get_fnode_exdata(file);
+			kfxx::destroy_and_release<ki_devio_file_exdata_t>(kfxx::kernel_allocator(), exdata);
+			break;
+		}
+		case FS_FNODE_TYPE_DIR: {
+			ki_devio_dir_exdata_t *exdata = (ki_devio_dir_exdata_t *)fs_get_fnode_exdata(file);
+			kfxx::destroy_and_release<ki_devio_dir_exdata_t>(kfxx::kernel_allocator(), exdata);
+			break;
+		}
+	}
 }
 
 km_result_t ki_devio_premount(fs_fnode_t *parent, fs_fnode_t *file) {
