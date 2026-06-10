@@ -4,6 +4,8 @@
 #include <pbos/dm/bus.h>
 #include <pbos/kf/atomic.h>
 #include <pbos/kfxx/map.hh>
+#include <pbos/fs/file.hh>
+#include <pbos/kfxx/string_view.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -35,6 +37,10 @@ using pcibus_domain_registry_ptr = kfxx::rc_object_ptr<pcibus_domain_registry_t>
 
 extern kfxx::option_t<kfxx::map_t<uint16_t, pcibus_domain_registry_ptr>> pcibus_segment_group_id_to_domain_map;
 extern kfxx::rbtree_t<pcibus_domain_id_t> pcibus_domain_tree;
+
+extern fs::fnode_ptr pcibus_devio_pci_root_dir;
+
+constexpr kfxx::string_view PCIBUS_DEVIO_PCI_ROOT_DIR_NAME = "pci";
 
 /// @brief Allocate a new free domain ID.
 ///

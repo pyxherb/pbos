@@ -47,8 +47,8 @@ void kh_mm_init() {
 	if ((!hali_limine_module_request.response) || (hali_limine_module_request.response->module_count != 1))
 		km_panic("Invalid module count, the module count passing to the kernel should be 1 (the initcar only)");
 	limine_file *initcar_file = hali_limine_module_request.response->modules[0];
-	kh_initcar_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)initcar_file->address) - hali_limine_hhdm_request.response->offset));
-	kh_initcar_file_size = initcar_file->size;
+	ki_initcar_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)initcar_file->address) - hali_limine_hhdm_request.response->offset));
+	ki_initcar_file_size = initcar_file->size;
 
 	// Collect ACPI RSDP's physical address.
 	ki_acpi_rsdp_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)hali_limine_rsdp_request.response->address) - hali_limine_hhdm_request.response->offset));

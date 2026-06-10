@@ -310,7 +310,7 @@ PBOS_NODISCARD PBOS_API km_result_t fs_create_fcb(
 	return ki_alloc_fcb(file, fcb_out);
 }
 
-PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
+PBOS_API km_result_t fs_mount(fs_fnode_t *parent, fs_fnode_t *file) {
 	// The mount point should be a directory.
 	if (parent->fnode_type != FS_FNODE_TYPE_DIR)
 		return KM_RESULT_UNSUPPORTED_OPERATION;
@@ -345,7 +345,7 @@ PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file) {
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_unmount_file(fs_fnode_t *file) {
+PBOS_API km_result_t fs_unmount(fs_fnode_t *file) {
 	if (file->fnode_type != FS_FNODE_TYPE_DIR)
 		return KM_RESULT_UNSUPPORTED_OPERATION;
 

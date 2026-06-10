@@ -1,6 +1,7 @@
 #include "mcfg.h"
 #include <pbos/kd/logger.h>
 #include <string.h>
+#include <pbos/dm/device.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -55,6 +56,9 @@ km_result_t pcibus_scan_acpi_mcfg_table() {
 				name[1] = ((registry->rb_value >> 4) & 0xff) + '0';
 				name[2] = ((registry->rb_value >> 8) & 0xff) + '0';
 				name[3] = ((registry->rb_value >> 12) & 0xff) + '0';
+
+				fs::fnode_ptr domain_dir;
+				KM_RETURN_IF_FAILED(dm_create_devio_dir(pcibus_devio_pci_root_dir.get(), name, sizeof(name), domain_dir.get_addr_without_release()));
 
 				kd_println(PCIROOT_COMPONENT_NAME, "Created directory for PCI segment: %s", name);
 			}

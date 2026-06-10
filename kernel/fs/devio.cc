@@ -26,6 +26,8 @@ fs_filesys_ops_t ki_devio_ops = {
 
 fs_filesys_t *ki_devio_filesys = nullptr;
 
+fs::fnode_ptr ki_devio_root_dir;
+
 km_result_t ki_devio_subnode(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
 	return KM_RESULT_NOT_FOUND;
 }
@@ -162,6 +164,36 @@ km_result_t ki_devio_unmount_cleanup(fs_fnode_t *file) {
 
 km_result_t ki_devio_destructor() {
 	return KM_RESULT_UNSUPPORTED_OPERATION;
+}
+
+void ki_devio_init() {
+	km_result_t result;
+
+	if (!(ki_devio_filesys = fs_register_file_system("initcar", strlen("initcar"), &ki_devio_ops, nullptr)))
+		km_panic("Error registering devio file system");
+
+	fs::fnode_ptr mount_point;
+	{
+		if (KM_FAILED(result = fs_create_dir(fs_abs_root_dir, KI_DEVIO_ROOT_DIR_NAME.data(), KI_DEVIO_ROOT_DIR_NAME.size(), &mount_point)))
+			km_panic("Error creating devio mount point, error code = %.0x", result);
+	}
+
+	if (KM_FAILED(result = fs_alloc_dir_fnode(ki_devio_filesys, ki_devio_root_dir.get_addr_without_release())))
+		km_panic("Error creating devio root directory, error code = %.0x", result);
+
+	ki_devio_dir_exdata_t *exdata = (ki_devio_dir_exdata_t *)mm_kalloc(sizeof(ki_devio_dir_exdata_t), alignof(ki_devio_dir_exdata_t));
+
+	if (!exdata)
+		km_panic("Error allocating exdata for devio root directory");
+
+	fs_set_fnode_exdata(ki_devio_root_dir.get(), exdata);
+
+	if (KM_FAILED(result = fs_mount(mount_point.get(), ki_devio_root_dir.get())))
+		km_panic("Error mounting devio root directory, error code = %x\n", result);
+}
+
+void ki_devio_deinit() {
+	// stub
 }
 
 PBOS_EXTERN_C_END

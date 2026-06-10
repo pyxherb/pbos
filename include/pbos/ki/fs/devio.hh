@@ -22,6 +22,7 @@ struct ki_devio_file_exdata_t : public ki_devio_fnode_exdata_t {
 
 extern fs_filesys_ops_t ki_devio_ops;
 extern fs_filesys_t *ki_devio_filesys;
+extern fs::fnode_ptr ki_devio_root_dir;
 
 constexpr kfxx::string_view KI_DEVIO_ROOT_DIR_NAME = "dev";
 
@@ -54,6 +55,9 @@ void ki_devio_mountfail(fs_fnode_t *parent, fs_fnode_t *file);
 km_result_t ki_devio_unmount_cleanup(fs_fnode_t *file);
 
 km_result_t ki_devio_destructor();
+
+void ki_devio_init();
+void ki_devio_deinit();
 
 PBOS_EXTERN_C_END
 

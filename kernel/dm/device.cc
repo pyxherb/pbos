@@ -155,10 +155,8 @@ PBOS_API void *dm_get_device_exdata(dm_device_t *device) {
 	return device->exdata;
 }
 
-PBOS_API fs_fnode_t *dm_get_devio_dir() {
-	fs::fnode_ptr dir;
-	km_unwrap_result(fs_child_of(fs_abs_root_dir, KI_DEVIO_ROOT_DIR_NAME.data(), KI_DEVIO_ROOT_DIR_NAME.size(), dir.get_addr_without_release()));
-	return dir.release();
+PBOS_API fs_fnode_t *dm_get_devio_root_dir() {
+	return ki_devio_root_dir.get();
 }
 
 PBOS_API km_result_t dm_create_devio_file(dm_device_t *device, fs_fnode_t *parent, const char *filename, size_t filename_len, fs_fnode_t **fnode_out) {
@@ -178,6 +176,8 @@ PBOS_API km_result_t dm_create_devio_file(dm_device_t *device, fs_fnode_t *paren
 
 	if (!exdata)
 		return KM_RESULT_NO_MEM;
+
+	fs_set_fnode_exdata(fnode.get(), exdata);
 
 	// TODO: Increase ref count of the device.
 
@@ -217,13 +217,16 @@ PBOS_API km_result_t dm_create_devio_dir(fs_fnode_t *parent, const char *filenam
 	if (!exdata)
 		return KM_RESULT_NO_MEM;
 
+	fs_set_fnode_exdata(fnode.get(), exdata);
+
 	KM_RETURN_IF_FAILED(fs_rename_fnode(fnode.get(), filename, filename_len));
 
 	KM_RETURN_IF_FAILED(fs_link_subnode(parent, fnode.get()));
 
 	{
 		ki_devio_dir_exdata_t *parent_exdata = (ki_devio_dir_exdata_t *)fs_get_fnode_exdata(parent);
-		((ki_devio_dir_exdata_t *)fs_get_fnode_exdata(parent_exdata->first_child))->prev = fnode.get();
+		if (parent_exdata->first_child)
+			((ki_devio_dir_exdata_t *)fs_get_fnode_exdata(parent_exdata->first_child))->prev = fnode.get();
 		exdata->next = parent_exdata->first_child;
 		parent_exdata->first_child = fnode.get();
 	}

@@ -12,6 +12,7 @@
 #include <pbos/ki/ps/exec.hh>
 #include <pbos/ki/ps/kmod.hh>
 #include <pbos/ki/ps/proc.hh>
+#include <pbos/ki/fs/devio.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -103,7 +104,8 @@ PBOS_NORETURN void kernel_main() {
 	}
 	kd_println("kernel", "Symbol scanning completed");
 
-	kh_initcar_init();
+	ki_initcar_init();
+	ki_devio_init();
 
 	auto kmod_close_fail_hook([&result](fs_fcb_t *fcb, km_result_t result_in) noexcept {
 		result = result_in;

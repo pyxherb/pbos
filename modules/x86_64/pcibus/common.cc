@@ -7,6 +7,8 @@ kfxx::option_t<kfxx::map_t<uint16_t, pcibus_domain_registry_ptr>> pcibus_segment
 
 kfxx::rbtree_t<pcibus_domain_id_t> pcibus_domain_tree;
 
+fs::fnode_ptr pcibus_devio_pci_root_dir;
+
 pcibus_domain_registry_t::pcibus_domain_registry_t() {}
 pcibus_domain_registry_t *pcibus_domain_registry_t::alloc() {
 	return kfxx::alloc_and_construct<pcibus_domain_registry_t>(kfxx::kernel_allocator());

@@ -84,8 +84,8 @@ PBOS_API fs_fnode_t *fs_get_file_of_fcb(fs_fcb_t *fcb);
 /// @param parent Parent directory to mount, the directory must be empty.
 /// @param file Handle of file to be mounted.
 /// @return Execution result of the operation.
-PBOS_NODISCARD PBOS_API km_result_t fs_mount_file(fs_fnode_t *parent, fs_fnode_t *file);
-PBOS_NODISCARD PBOS_API km_result_t fs_unmount_file(fs_fnode_t *file);
+PBOS_NODISCARD PBOS_API km_result_t fs_mount(fs_fnode_t *parent, fs_fnode_t *file);
+PBOS_NODISCARD PBOS_API km_result_t fs_unmount(fs_fnode_t *file);
 
 ///
 /// @brief Link an fnode to a parent fnode. This function requires the parent fnode has been locked.

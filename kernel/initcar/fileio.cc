@@ -5,47 +5,47 @@
 
 PBOS_EXTERN_C_BEGIN
 
-km_result_t kh_initcar_subnode(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
+km_result_t ki_initcar_subnode(fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
 	return KM_RESULT_NOT_FOUND;
 }
 
-void kh_initcar_offload(fs_fnode_t *file) {
+void ki_initcar_offload(fs_fnode_t *file) {
 }
 
-km_result_t kh_initcar_create_file(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
+km_result_t ki_initcar_create_file(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
 	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
-km_result_t kh_initcar_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
+km_result_t ki_initcar_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
 	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
-km_result_t kh_initcar_open(fs_fnode_t *file, fs_fcb_t **fcb_out, fs_open_flags_t flags) {
+km_result_t ki_initcar_open(fs_fnode_t *file, fs_fcb_t **fcb_out, fs_open_flags_t flags) {
 	km_result_t result;
 
 	return fs_create_fcb(file, fcb_out);
 }
 
-void kh_initcar_close(fs_fcb_t *fcb) {
+void ki_initcar_close(fs_fcb_t *fcb) {
 }
 
-km_result_t kh_initcar_seek(io_dispatch_context_t *dc, fs_fcb_t *fcb, long off, fs_seek_mode_t mode) {
+km_result_t ki_initcar_seek(io_dispatch_context_t *dc, fs_fcb_t *fcb, long off, fs_seek_mode_t mode) {
 	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
-km_result_t kh_initcar_read(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t *bytes_read_out) {
+km_result_t ki_initcar_read(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t *bytes_read_out) {
 	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
-km_result_t kh_initcar_write(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t *bytes_written_out) {
+km_result_t ki_initcar_write(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t *bytes_written_out) {
 	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
-km_result_t kh_initcar_pread(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out) {
+km_result_t ki_initcar_pread(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out) {
 	km_result_t result;
 	fs::fnode_ptr file = fs_get_file_of_fcb(fcb);
 
-	auto exdata = (kh_initcar_file_exdata *)fs_get_fnode_exdata(file.get());
+	auto exdata = (ki_initcar_file_exdata *)fs_get_fnode_exdata(file.get());
 
 	if (size + off > exdata->sz_total) {
 		memcpy(dest, exdata->ptr + off, exdata->sz_total - off);
@@ -58,39 +58,39 @@ km_result_t kh_initcar_pread(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *des
 	return KM_RESULT_OK;
 }
 
-km_result_t kh_initcar_pwrite(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out) {
+km_result_t ki_initcar_pwrite(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out) {
 	*bytes_written_out = 0;
 	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
-km_result_t kh_initcar_ioctl(io_dispatch_context_t *dc, fs_fcb_t *fcb, uint32_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args) {
+km_result_t ki_initcar_ioctl(io_dispatch_context_t *dc, fs_fcb_t *fcb, uint32_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args) {
 	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
-km_result_t kh_initcar_size(io_dispatch_context_t *dc, fs_fcb_t *fcb, size_t *size_out) {
+km_result_t ki_initcar_size(io_dispatch_context_t *dc, fs_fcb_t *fcb, size_t *size_out) {
 	km_result_t result;
 	fs::fnode_ptr file = fs_get_file_of_fcb(fcb);
 
-	auto exdata = (kh_initcar_file_exdata *)fs_get_fnode_exdata(file.get());
+	auto exdata = (ki_initcar_file_exdata *)fs_get_fnode_exdata(file.get());
 
 	*size_out = exdata->sz_total;
 
 	return KM_RESULT_OK;
 }
 
-km_result_t kh_initcar_enum_first_child_file(fs_fnode_t *dir, fs_fnode_t **first_file_out) {
-	if (dir != kh_initcar_dir) {
+km_result_t ki_initcar_enum_first_child_file(fs_fnode_t *dir, fs_fnode_t **first_file_out) {
+	if (dir != ki_initcar_dir) {
 		*first_file_out = nullptr;
 		return KM_RESULT_UNSUPPORTED_OPERATION;
 	}
 
 	fs::fnode_read_lock_guard g(dir);
-	*first_file_out = kh_initcar_first_file;
+	*first_file_out = ki_initcar_first_file;
 	fs_ref_fnode(*first_file_out);
 	return KM_RESULT_OK;
 }
 
-km_result_t kh_initcar_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **next_file_out) {
+km_result_t ki_initcar_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **next_file_out) {
 	if (!cur_file) {
 		*next_file_out = nullptr;
 		return KM_RESULT_INVALID_ARGS;
@@ -98,7 +98,7 @@ km_result_t kh_initcar_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **next_fi
 
 	fs::fnode_read_lock_guard g(cur_file);
 	fs_unref_fnode(cur_file);
-	if((*next_file_out = ((kh_initcar_file_exdata *)fs_get_fnode_exdata(cur_file))->next))
+	if((*next_file_out = ((ki_initcar_file_exdata *)fs_get_fnode_exdata(cur_file))->next))
 		fs_ref_fnode(*next_file_out);
 	return KM_RESULT_OK;
 }

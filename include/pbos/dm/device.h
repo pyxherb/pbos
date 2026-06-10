@@ -68,7 +68,12 @@ PBOS_API void dm_unlink_device(dm_device_t *device);
 PBOS_API void dm_set_device_exdata(dm_device_t *device, void *exdata);
 PBOS_API void *dm_get_device_exdata(dm_device_t *device);
 
-PBOS_API fs_fnode_t *dm_get_devio_dir();
+///
+/// @brief Get fnode object of the devio root directory, the fnode object returned will not be referenced.
+///
+/// @return Pointer to the devio root directory fnode object.
+///
+PBOS_API fs_fnode_t *dm_get_devio_root_dir();
 PBOS_API km_result_t dm_create_devio_file(dm_device_t *device, fs_fnode_t *parent, const char *filename, size_t filename_len, fs_fnode_t **fnode_out);
 PBOS_API km_result_t dm_create_devio_dir(fs_fnode_t *parent, const char *filename, size_t filename_len, fs_fnode_t **fnode_out);
 PBOS_API km_result_t dm_offload_devio_fnode(fs_fnode_t *fnode);
