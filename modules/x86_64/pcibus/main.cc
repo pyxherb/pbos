@@ -20,14 +20,14 @@ const dm_bus_ops_t pci_bus_ops = {
 	.unregister_device = pci_unregister_device
 };
 
-PBOS_USED PBOS_KMOD_API char PBOS_MODULE_NAME[] = "pciroot";
+PBOS_USED PBOS_KMOD_API char PBOS_MODULE_NAME[] = "pcibus";
 
 PBOS_USED PBOS_KMOD_API km_result_t pbos_module_init() {
 	kxi_call_ctors();
 
-	pciroot_segment_group_id_to_domain_map = kfxx::map_t<uint16_t, pciroot_domain_registry_ptr>(kfxx::kernel_allocator());
+	pcibus_segment_group_id_to_domain_map = kfxx::map_t<uint16_t, pcibus_domain_registry_ptr>(kfxx::kernel_allocator());
 
-	KM_RETURN_IF_FAILED(pciroot_scan_acpi_mcfg_table());
+	KM_RETURN_IF_FAILED(pcibus_scan_acpi_mcfg_table());
 
 	return KM_RESULT_OK;
 }

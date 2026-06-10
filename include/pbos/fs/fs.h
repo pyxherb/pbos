@@ -16,7 +16,7 @@ typedef void (*fs_filesys_offload_op_t)(fs_fnode_t *file);
 typedef km_result_t (*fs_filesys_create_file_op_t)(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
 typedef km_result_t (*fs_filesys_create_dir_op_t)(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
 
-typedef km_result_t (*fs_filesys_open_op_t)(fs_fnode_t *file, fs_fcb_t **fcb_out);
+typedef km_result_t (*fs_filesys_open_op_t)(fs_fnode_t *file, fs_fcb_t **fcb_out, fs_open_flags_t flags);
 typedef void (*fs_filesys_close_op_t)(fs_fcb_t *fcb);
 
 typedef km_result_t (*fs_filesys_seek_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, long off, fs_seek_mode_t mode);

@@ -110,7 +110,7 @@ PBOS_NORETURN void kernel_main() {
 	});
 	{
 		fs::fcb_ptr kmod_fp(nullptr, std::move(kmod_close_fail_hook));
-		if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pciroot.kx", sizeof("/initcar/pciroot.kx") - 1, &kmod_fp)))
+		if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pcibus.kx", sizeof("/initcar/pcibus.kx") - 1, &kmod_fp, FS_OPEN_READ)))
 			km_panic("Error opening the initial kernel modules");
 
 		ps_kmod_t *kmod = nullptr;
@@ -125,7 +125,7 @@ PBOS_NORETURN void kernel_main() {
 	});
 	{
 		fs::fcb_ptr init_fp(nullptr, std::move(init_close_fail_hook));
-		if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pbinit", sizeof("/initcar/pbinit") - 1, &init_fp)))
+		if (KM_FAILED(fs_open(fs_abs_root_dir, "/initcar/pbinit", sizeof("/initcar/pbinit") - 1, &init_fp, FS_OPEN_READ)))
 			km_panic("Error opening the init executable");
 
 		ps_proc_id_t pid;

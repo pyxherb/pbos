@@ -13,42 +13,42 @@ ps::mutex_t ki_kernel_mmap_mutex;
 _mm_context_t::_mm_context_t() {
 }
 
-PBOS_PRIVATE ki_mm_pmgroup_t::ki_mm_pmgroup_t(kfxx::allocator_t *allocator) : vmrs(allocator) {
+PBOS_PRIVATE ki_mm_rmlt_t::ki_mm_rmlt_t(kfxx::allocator_t *allocator) : vmrs(allocator) {
 }
 
-PBOS_PRIVATE ki_mm_pmgroup_t::~ki_mm_pmgroup_t() {
+PBOS_PRIVATE ki_mm_rmlt_t::~ki_mm_rmlt_t() {
 }
 
 PBOS_PURE PBOS_API size_t mm_get_page_size() {
 	return kh_get_page_size();
 }
 
-PBOS_PRIVATE km_result_t ki_mm_add_vmr_to_pmgroup(ki_mm_pmgroup_t *pmgroup, mm_vmr_t *vmr) {
-	// ps::mutex_guard g(pmgroup->mutex);
-	if (!pmgroup->vmrs.insert_or_keep(+vmr))
+PBOS_PRIVATE km_result_t ki_mm_add_vmr_to_rmlt(ki_mm_rmlt_t *rmlt, mm_vmr_t *vmr) {
+	// ps::mutex_guard g(rmlt->mutex);
+	if (!rmlt->vmrs.insert_or_keep(+vmr))
 		return KM_RESULT_NO_MEM;
 	return KM_RESULT_OK;
 }
 
-PBOS_PRIVATE bool ki_mm_remove_vmr_from_pmgroup(ki_mm_pmgroup_t *pmgroup, mm_vmr_t *vmr) {
-	ps::mutex_guard g(pmgroup->mutex);
+PBOS_PRIVATE bool ki_mm_remove_vmr_from_rmlt(ki_mm_rmlt_t *rmlt, mm_vmr_t *vmr) {
+	ps::mutex_guard g(rmlt->mutex);
 
-	pmgroup->vmrs.remove(vmr);
-	if (!pmgroup->vmrs.size()) {
-		ki_mm_destroy_pmgroup(pmgroup);
+	rmlt->vmrs.remove(vmr);
+	if (!rmlt->vmrs.size()) {
+		ki_mm_destroy_rmlt(rmlt);
 		return true;
 	}
 	return false;
 }
 
-PBOS_PRIVATE ki_mm_pmgroup_t *ki_mm_alloc_pmgroup() {
-	return kfxx::alloc_and_construct<ki_mm_pmgroup_t>(kfxx::kernel_allocator(), kfxx::kernel_allocator());
+PBOS_PRIVATE ki_mm_rmlt_t *ki_mm_alloc_rmlt() {
+	return kfxx::alloc_and_construct<ki_mm_rmlt_t>(kfxx::kernel_allocator(), kfxx::kernel_allocator());
 }
 
-PBOS_PRIVATE void ki_mm_destroy_pmgroup(ki_mm_pmgroup_t *pmgroup) {
-	kd_assert(!pmgroup->vmrs.size());
+PBOS_PRIVATE void ki_mm_destroy_rmlt(ki_mm_rmlt_t *rmlt) {
+	kd_assert(!rmlt->vmrs.size());
 
-	kfxx::destroy_and_release<ki_mm_pmgroup_t>(kfxx::kernel_allocator(), pmgroup);
+	kfxx::destroy_and_release<ki_mm_rmlt_t>(kfxx::kernel_allocator(), rmlt);
 }
 
 PBOS_PRIVATE void ki_mm_destroy_vmr(mm_vmr_t *vmr) {
@@ -127,11 +127,11 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 			new_vmr->access = access;
 
 			{
-				ki_mm_pmgroup_t *default_group = nullptr;
+				ki_mm_rmlt_t *default_group = nullptr;
 
 				if (vmr_begin) {
 					if ((char *)vmr_begin->rb_value + vmr_begin->size == vaddr) {
-						default_group = vmr_begin->default_pmgroup;
+						default_group = vmr_begin->default_rmlt;
 					}
 				}
 
@@ -140,18 +140,18 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 					mm_vmr_t *nearing_vmr;
 					nearing_vmr = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find((char *)vaddr + kfxx::ceil_align_to(size, page_size)));
 					if (nearing_vmr) {
-						default_group = nearing_vmr->default_pmgroup;
+						default_group = nearing_vmr->default_rmlt;
 					}
 					if (!default_group) {
 						for (size_t i = 0; i < size; i += page_size) {
 							ki_mad_t *mad = kh_get_mad((char *)paddr + i);
-							if (mad->pmgroup) {
-								default_group = mad->pmgroup;
+							if (mad->rmlt) {
+								default_group = mad->rmlt;
 								break;
 							}
 						}
 						if (!default_group) {
-							if (!(default_group = ki_mm_alloc_pmgroup()))
+							if (!(default_group = ki_mm_alloc_rmlt()))
 								return KM_RESULT_NO_MEM;
 						}
 					}
@@ -159,7 +159,7 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 
 				kfxx::deferred destroy_default_group_guard([&default_group]() noexcept {
 					if (!default_group->vmrs.size())
-						ki_mm_destroy_pmgroup(default_group);
+						ki_mm_destroy_rmlt(default_group);
 				});
 
 				if (!default_group->vmrs.insert_or_keep(+new_vmr))
@@ -171,26 +171,26 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 					for (size_t j = 0; j < i; ++j) {
 						ki_mad_t *mad = kh_get_mad((char *)paddr + i);
 
-						if (mad->pmgroup) {
-							if (ki_mm_remove_vmr_from_pmgroup(mad->pmgroup, new_vmr))
-								mad->pmgroup = nullptr;
+						if (mad->rmlt) {
+							if (ki_mm_remove_vmr_from_rmlt(mad->rmlt, new_vmr))
+								mad->rmlt = nullptr;
 						}
 					}
 				});
 
 				for (; i < size; i += page_size) {
 					ki_mad_t *mad = kh_get_mad((char *)paddr + i);
-					if (mad->pmgroup) {
-						if (!mad->pmgroup->vmrs.insert_or_keep(+new_vmr))
+					if (mad->rmlt) {
+						if (!mad->rmlt->vmrs.insert_or_keep(+new_vmr))
 							return KM_RESULT_NO_MEM;
 					} else {
-						mad->pmgroup = default_group;
+						mad->rmlt = default_group;
 					}
 				}
 
 				remove_vmr_guard.release();
 
-				new_vmr->default_pmgroup = default_group;
+				new_vmr->default_rmlt = default_group;
 			}
 
 			ctxt->vmr_tree.insert_unwrap(new_vmr);
@@ -265,8 +265,8 @@ PBOS_API km_result_t mm_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 					ki_mad_t *mad = kh_get_mad(paddr);
 					mm_vmr_t *vmr = (mm_vmr_t *)user_data;
 
-					if (ki_mm_remove_vmr_from_pmgroup(mad->pmgroup, vmr)) {
-						mad->pmgroup = nullptr;
+					if (ki_mm_remove_vmr_from_rmlt(mad->rmlt, vmr)) {
+						mad->rmlt = nullptr;
 					}
 					return KF_CONTROL_FLOW_CONTINUE;
 				},
@@ -340,8 +340,8 @@ PBOS_NODISCARD PBOS_API km_result_t mm_merge_mapped_area(
 			ki_mad_t *mad = kh_get_mad(paddr);
 			mm_vmr_t *vmr_b = (mm_vmr_t *)user_data;
 
-			if (ki_mm_remove_vmr_from_pmgroup(mad->pmgroup, vmr_b))
-				mad->pmgroup = nullptr;
+			if (ki_mm_remove_vmr_from_rmlt(mad->rmlt, vmr_b))
+				mad->rmlt = nullptr;
 
 			return KF_CONTROL_FLOW_CONTINUE;
 		},
@@ -394,8 +394,8 @@ PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
 	size_t page_size = kh_get_page_size();
 
 	{
-		ki_mm_pmgroup_t *default_group = vmr->default_pmgroup;
-		if (!ki_mm_add_vmr_to_pmgroup(default_group, new_vmr))
+		ki_mm_rmlt_t *default_group = vmr->default_rmlt;
+		if (!ki_mm_add_vmr_to_rmlt(default_group, new_vmr))
 			return KM_RESULT_NO_MEM;
 
 		// Guard which removes VMR from each involved PMGroups.
@@ -409,8 +409,8 @@ PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
 						return KF_CONTROL_FLOW_CONTINUE;
 					ki_mad_t *mad = kh_get_mad(paddr);
 					mm_vmr_t *new_vmr = (mm_vmr_t *)user_data;
-					if (ki_mm_remove_vmr_from_pmgroup(mad->pmgroup, new_vmr))
-						mad->pmgroup = nullptr;
+					if (ki_mm_remove_vmr_from_rmlt(mad->rmlt, new_vmr))
+						mad->rmlt = nullptr;
 					return KF_CONTROL_FLOW_CONTINUE;
 				},
 				new_vmr,
@@ -436,7 +436,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
 					return KF_CONTROL_FLOW_CONTINUE;
 				context_struct_t *cs = (context_struct_t *)user_data;
 				ki_mad_t *mad = kh_get_mad(paddr);
-				if (!mad->pmgroup->vmrs.insert_or_keep(+cs->new_vmr)) {
+				if (!mad->rmlt->vmrs.insert_or_keep(+cs->new_vmr)) {
 					cs->result = KM_RESULT_NO_MEM;
 					return KF_CONTROL_FLOW_BREAK;
 				}

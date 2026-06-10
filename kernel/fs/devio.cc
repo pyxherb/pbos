@@ -34,6 +34,7 @@ void ki_devio_offload(fs_fnode_t *file) {
 }
 
 km_result_t ki_devio_create_file(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out) {
+	// Deny to create normal files, only special device nodes can be created.
 	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
@@ -52,9 +53,9 @@ km_result_t ki_devio_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent, c
 	return KM_RESULT_OK;
 }
 
-km_result_t ki_devio_open(fs_fnode_t *file, fs_fcb_t **fcb_out) {
+km_result_t ki_devio_open(fs_fnode_t *file, fs_fcb_t **fcb_out, fs_open_flags_t flags) {
 	dm_device_t *device = ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(file))->device;
-	return device->ops.open(device, fcb_out);
+	return device->ops.open(device, fcb_out, flags);
 }
 
 void ki_devio_close(fs_fcb_t *fcb) {

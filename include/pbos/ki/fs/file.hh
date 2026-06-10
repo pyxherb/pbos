@@ -106,6 +106,10 @@ struct fs_dir_t : public fs_fnode_t {
 	fs_dir_t(kfxx::allocator_t *allocator);
 };
 
+typedef struct _fs_device_t : public fs_fnode_t {
+	_fs_device_t();
+} fs_device_t;
+
 PBOS_NODISCARD km_result_t ki_alloc_fcb(fs_fnode_t *file_in, fs_fcb_t **fcb_out);
 
 void ki_destroy_fnode(fs_fnode_t *fnode);

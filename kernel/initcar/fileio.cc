@@ -20,7 +20,7 @@ km_result_t kh_initcar_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent,
 	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
-km_result_t kh_initcar_open(fs_fnode_t *file, fs_fcb_t **fcb_out) {
+km_result_t kh_initcar_open(fs_fnode_t *file, fs_fcb_t **fcb_out, fs_open_flags_t flags) {
 	km_result_t result;
 
 	return fs_create_fcb(file, fcb_out);

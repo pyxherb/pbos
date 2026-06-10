@@ -61,7 +61,7 @@ km_result_t ki_rootfs_write(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void
 	return KM_RESULT_UNSUPPORTED_OPERATION;
 }
 
-km_result_t ki_rootfs_open(fs_fnode_t *file, fs_fcb_t **fcb_out) {
+km_result_t ki_rootfs_open(fs_fnode_t *file, fs_fcb_t **fcb_out, fs_open_flags_t flags) {
 	KM_RETURN_IF_FAILED(fs_create_fcb(file, fcb_out));
 
 	return KM_RESULT_OK;

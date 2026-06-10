@@ -7,13 +7,9 @@
 PBOS_EXTERN_C_BEGIN
 
 enum {
-	FS_FNODE_TYPE_FILE = 0,  // Regular file
-	FS_FNODE_TYPE_DIR,	   // Directory Entry
-	FS_FNODE_TYPE_LINK,	   // Link
-	FS_FNODE_TYPE_BLKDEV,	   // Block device
-	FS_FNODE_TYPE_CHARDEV,   // Character device
-	FS_FNODE_TYPE_PIPE,	   // Pipe
-	FS_FNODE_TYPE_SOCKET	   // Socket
+	FS_FNODE_TYPE_FILE = 0,	 // File-like node
+	FS_FNODE_TYPE_DIR,		 // Directory entry
+	FS_FNODE_TYPE_LINK,		 // Link
 };
 typedef uint8_t fs_fnode_type_t;
 
@@ -102,10 +98,19 @@ PBOS_NODISCARD PBOS_API km_result_t fs_unmount_file(fs_fnode_t *file);
 /// @return @c KM_RESULT_NO_MEM No memory to perform the operation.
 ///
 PBOS_NODISCARD PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file);
+PBOS_NODISCARD PBOS_API km_result_t fs_unlink_subnode(fs_fnode_t *file);
 
 km_result_t fs_close(fs_fcb_t *fcb);
 
-PBOS_NODISCARD PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out);
+enum {
+	FS_OPEN_READ = 0x00000001,
+	FS_OPEN_WRITE = 0x00000002,
+	FS_OPEN_EXCLUSIVE = 0x00000020,
+};
+
+typedef uint32_t fs_open_flags_t;
+
+PBOS_NODISCARD PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out, fs_open_flags_t flags);
 
 PBOS_NODISCARD PBOS_API km_result_t fs_seek(fs_fcb_t *fcb, long off, fs_seek_mode_t mode);
 

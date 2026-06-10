@@ -17,7 +17,7 @@ typedef struct _ki_mad_t : public kfxx::rbtree_t<void *>::node_t {
 	size_t ref_count = 0;
 	size_t pin_count = 0;
 
-	ki_mm_pmgroup_t *pmgroup = nullptr;
+	ki_mm_rmlt_t *rmlt = nullptr;
 
 	hal_spinlock_t spinlock = HAL_SPINLOCK_UNLOCKED;
 } ki_mad_t;

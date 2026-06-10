@@ -26,7 +26,7 @@ void kh_initcar_offload(fs_fnode_t *file);
 km_result_t kh_initcar_create_file(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
 km_result_t kh_initcar_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
 
-km_result_t kh_initcar_open(fs_fnode_t *handle, fs_fcb_t **fcb_out);
+km_result_t kh_initcar_open(fs_fnode_t *handle, fs_fcb_t **fcb_out, fs_open_flags_t flags);
 void kh_initcar_close(fs_fcb_t *fcb);
 
 km_result_t kh_initcar_seek(io_dispatch_context_t *dc, fs_fcb_t *fcb, long off, fs_seek_mode_t mode);

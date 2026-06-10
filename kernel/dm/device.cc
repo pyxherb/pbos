@@ -2,6 +2,7 @@
 #include <pbos/ki/dm/device.h>
 #include <string.h>
 #include <pbos/kfxx/scope_guard.hh>
+#include <pbos/ki/fs/devio.hh>
 #include <pbos/ki/km/symbol.hh>
 
 ki_dm_device_allocator_t::ki_dm_device_allocator_t() {
@@ -104,7 +105,7 @@ PBOS_API km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device) {
 		gd(device->device_mutex);
 
 	// The device must be already registered to a bus.
-	if(!device->bus)
+	if (!device->bus)
 		return KM_RESULT_INVALID_ARGS;
 
 	KM_RETURN_IF_FAILED(parent->ops.prelink(parent, device));
@@ -152,4 +153,117 @@ PBOS_API void dm_set_device_exdata(dm_device_t *device, void *exdata) {
 
 PBOS_API void *dm_get_device_exdata(dm_device_t *device) {
 	return device->exdata;
+}
+
+PBOS_API fs_fnode_t *dm_get_devio_dir() {
+	fs::fnode_ptr dir;
+	km_unwrap_result(fs_child_of(fs_abs_root_dir, KI_DEVIO_ROOT_DIR_NAME.data(), KI_DEVIO_ROOT_DIR_NAME.size(), dir.get_addr_without_release()));
+	return dir.release();
+}
+
+PBOS_API km_result_t dm_create_devio_file(dm_device_t *device, fs_fnode_t *parent, const char *filename, size_t filename_len, fs_fnode_t **fnode_out) {
+	if (fs_filesys_of_fnode(parent) != ki_devio_filesys)
+		return KM_RESULT_INVALID_ARGS;
+
+	if (fs_get_fnode_type(parent) != FS_FNODE_TYPE_DIR)
+		return KM_RESULT_INVALID_ARGS;
+
+	fs::fnode_write_lock_guard g(parent);
+
+	fs::fnode_ptr fnode;
+
+	KM_RETURN_IF_FAILED(fs_alloc_file_fnode(ki_devio_filesys, fnode.get_addr_without_release()));
+
+	ki_devio_file_exdata_t *exdata = (ki_devio_file_exdata_t *)mm_kalloc(sizeof(ki_devio_file_exdata_t), alignof(ki_devio_file_exdata_t));
+
+	if (!exdata)
+		return KM_RESULT_NO_MEM;
+
+	// TODO: Increase ref count of the device.
+
+	exdata->device = device;
+
+	KM_RETURN_IF_FAILED(fs_rename_fnode(fnode.get(), filename, filename_len));
+
+	KM_RETURN_IF_FAILED(fs_link_subnode(parent, fnode.get()));
+
+	{
+		ki_devio_dir_exdata_t *parent_exdata = (ki_devio_dir_exdata_t *)fs_get_fnode_exdata(parent);
+		((ki_devio_dir_exdata_t *)fs_get_fnode_exdata(parent_exdata->first_child))->prev = fnode.get();
+		exdata->next = parent_exdata->first_child;
+		parent_exdata->first_child = fnode.get();
+	}
+
+	*fnode_out = fnode.release();
+
+	return KM_RESULT_OK;
+}
+
+PBOS_API km_result_t dm_create_devio_dir(fs_fnode_t *parent, const char *filename, size_t filename_len, fs_fnode_t **fnode_out) {
+	if (fs_filesys_of_fnode(parent) != ki_devio_filesys)
+		return KM_RESULT_INVALID_ARGS;
+
+	if (fs_get_fnode_type(parent) != FS_FNODE_TYPE_DIR)
+		return KM_RESULT_INVALID_ARGS;
+
+	fs::fnode_write_lock_guard g(parent);
+
+	fs::fnode_ptr fnode;
+
+	KM_RETURN_IF_FAILED(fs_alloc_dir_fnode(ki_devio_filesys, fnode.get_addr_without_release()));
+
+	ki_devio_dir_exdata_t *exdata = (ki_devio_dir_exdata_t *)mm_kalloc(sizeof(ki_devio_dir_exdata_t), alignof(ki_devio_dir_exdata_t));
+
+	if (!exdata)
+		return KM_RESULT_NO_MEM;
+
+	KM_RETURN_IF_FAILED(fs_rename_fnode(fnode.get(), filename, filename_len));
+
+	KM_RETURN_IF_FAILED(fs_link_subnode(parent, fnode.get()));
+
+	{
+		ki_devio_dir_exdata_t *parent_exdata = (ki_devio_dir_exdata_t *)fs_get_fnode_exdata(parent);
+		((ki_devio_dir_exdata_t *)fs_get_fnode_exdata(parent_exdata->first_child))->prev = fnode.get();
+		exdata->next = parent_exdata->first_child;
+		parent_exdata->first_child = fnode.get();
+	}
+
+	*fnode_out = fnode.release();
+
+	return KM_RESULT_OK;
+}
+
+PBOS_API km_result_t dm_offload_devio_fnode(fs_fnode_t *fnode) {
+	if (fs_filesys_of_fnode(fnode) != ki_devio_filesys)
+		return KM_RESULT_INVALID_ARGS;
+
+	fs_fnode_t *parent = fs_parent_of(fnode);
+	if (fs_filesys_of_fnode(parent) != ki_devio_filesys)
+		return KM_RESULT_INVALID_ARGS;
+
+	if (fs_get_fnode_type(fnode) != FS_FNODE_TYPE_FILE)
+		return KM_RESULT_INVALID_ARGS;
+
+	{
+		ki_devio_fnode_exdata_t *base_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(parent);
+		ki_devio_dir_exdata_t *parent_exdata = (ki_devio_dir_exdata_t *)fs_get_fnode_exdata(parent);
+
+		if (base_exdata->prev) {
+			ki_devio_fnode_exdata_t *prev_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(base_exdata->prev);
+			prev_exdata->next = base_exdata->next;
+		}
+
+		if (base_exdata->next) {
+			ki_devio_fnode_exdata_t *next_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(base_exdata->next);
+			next_exdata->prev = base_exdata->prev;
+		}
+
+		if (parent_exdata->first_child == fnode) {
+			parent_exdata->first_child = base_exdata->next;
+		}
+	}
+
+	KM_RETURN_IF_FAILED(fs_unlink_subnode(fnode));
+
+	return KM_RESULT_OK;
 }

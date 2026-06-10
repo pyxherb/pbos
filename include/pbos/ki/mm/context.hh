@@ -5,9 +5,9 @@
 #include <pbos/ps/mutex.hh>
 #include "kima.hh"
 
-struct ki_mm_pmgroup_t;
+struct ki_mm_rmlt_t;
 
-struct ki_mm_pmgroup_t {
+struct ki_mm_rmlt_t {
 	ps::mutex_t mutex;
 
 	kima_allocator_t kima_allocator;
@@ -15,14 +15,14 @@ struct ki_mm_pmgroup_t {
 
 	size_t ref_count = 0;
 
-	PBOS_PRIVATE ki_mm_pmgroup_t(kfxx::allocator_t *allocator);
-	PBOS_PRIVATE ~ki_mm_pmgroup_t();
+	PBOS_PRIVATE ki_mm_rmlt_t(kfxx::allocator_t *allocator);
+	PBOS_PRIVATE ~ki_mm_rmlt_t();
 };
 
-PBOS_PRIVATE ki_mm_pmgroup_t *ki_mm_alloc_pmgroup();
-PBOS_PRIVATE void ki_mm_destroy_pmgroup(ki_mm_pmgroup_t *pmgroup);
-PBOS_PRIVATE km_result_t ki_mm_add_vmr_to_pmgroup(ki_mm_pmgroup_t *pmgroup, mm_vmr_t *vmr);
-PBOS_PRIVATE bool ki_mm_remove_vmr_from_pmgroup(ki_mm_pmgroup_t *pmgroup, mm_vmr_t *vmr);
+PBOS_PRIVATE ki_mm_rmlt_t *ki_mm_alloc_rmlt();
+PBOS_PRIVATE void ki_mm_destroy_rmlt(ki_mm_rmlt_t *rmlt);
+PBOS_PRIVATE km_result_t ki_mm_add_vmr_to_rmlt(ki_mm_rmlt_t *rmlt, mm_vmr_t *vmr);
+PBOS_PRIVATE bool ki_mm_remove_vmr_from_rmlt(ki_mm_rmlt_t *rmlt, mm_vmr_t *vmr);
 
 using ki_mm_vmr_tree_t = kfxx::rbtree_t<void *>;
 
@@ -34,7 +34,7 @@ typedef struct _mm_vmr_t
 	mm_vmr_t *prev, *next;
 	mm_context_t *mm_context = nullptr;
 
-	ki_mm_pmgroup_t *default_pmgroup = nullptr;
+	ki_mm_rmlt_t *default_rmlt = nullptr;
 
 	size_t size = 0;
 	mm_page_access_t access = 0;

@@ -6,7 +6,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-km_result_t pciroot_scan_acpi_mcfg_table();
+km_result_t pcibus_scan_acpi_mcfg_table();
 
 PBOS_EXTERN_C_END
 

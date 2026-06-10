@@ -16,8 +16,8 @@ function(add_pbos_kernel_module Name)
 
 		get_property(FREESTDC_INCLUDE_DIR GLOBAL PROPERTY FREESTDC_INCLUDE_DIR)
 		get_property(FREESTDC_INCLUDE_DIR_CXX GLOBAL PROPERTY FREESTDC_INCLUDE_DIR_CXX)
-		target_include_directories(pciroot PRIVATE ${FREESTDC_INCLUDE_DIR})
-		target_include_directories(pciroot PRIVATE ${FREESTDC_INCLUDE_DIR_CXX})
+		target_include_directories(pcibus PRIVATE ${FREESTDC_INCLUDE_DIR})
+		target_include_directories(pcibus PRIVATE ${FREESTDC_INCLUDE_DIR_CXX})
 	else()
 		# TODO: Implement it.
 	endif()

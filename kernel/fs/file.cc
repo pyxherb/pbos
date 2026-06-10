@@ -188,6 +188,21 @@ PBOS_NODISCARD PBOS_API km_result_t fs_alloc_dir_fnode(fs_filesys_t *file_system
 	return KM_RESULT_OK;
 }
 
+PBOS_NODISCARD PBOS_API km_result_t fs_alloc_device_fnode(fs_filesys_t *file_system, fs_fnode_t **file_out) {
+	fs_dir_t *ptr = kfxx::alloc_and_construct<fs_dir_t>(&ki_fs_filename_allocator, &ki_fs_filename_allocator);
+
+	if (!ptr)
+		return KM_RESULT_NO_MEM;
+
+	ptr->fs = file_system;
+
+	fs_ref_fnode(ptr);
+
+	*file_out = ptr;
+
+	return KM_RESULT_OK;
+}
+
 PBOS_API void *fs_get_fnode_exdata(fs_fnode_t *file) {
 	return file->exdata;
 }
@@ -364,6 +379,21 @@ PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file) {
 
 	return KM_RESULT_OK;
 }
+PBOS_NODISCARD PBOS_API km_result_t fs_unlink_subnode(fs_fnode_t *file) {
+	if (!file->parent)
+		return KM_RESULT_INVALID_ARGS;
+
+	fs_dir_t *p = (fs_dir_t *)file->parent;
+
+	fs::fnode_read_lock_guard g(p);
+
+	kfxx::string_view name_view(file->filename, file->filename_len);
+	kd_dbgcheck(p->subnodes.contains(name_view), "The parent fnode does not contain the child fnode, please report this bug");
+
+	p->subnodes.remove(name_view);
+
+	return KM_RESULT_OK;
+}
 
 PBOS_API fs_fnode_t *fs_parent_of(fs_fnode_t *file) {
 	fs::fnode_read_lock_guard g(file);
@@ -455,14 +485,14 @@ PBOS_NODISCARD km_result_t fs_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **
 	return cur_file->fs->ops.enum_next_file(cur_file, next_file_out);
 }
 
-PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out) {
+PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path_len, fs_fcb_t **fcb_out, fs_open_flags_t flags) {
 	fs::fnode_ptr file;
 	km_result_t result;
 
 	if (KM_FAILED(result = fs_resolve_path(base_dir, path, path_len, file.get_addr_without_release())))
 		return result;
 
-	if (KM_FAILED(result = file->fs->ops.open(file.get(), fcb_out))) {
+	if (KM_FAILED(result = file->fs->ops.open(file.get(), fcb_out, flags))) {
 		return result;
 	}
 

@@ -11,7 +11,7 @@ typedef struct _dm_device_class_t dm_device_class_t;
 
 #define DM_DEVICE_QUERY_MODE_SINGLE_ID KF_UUID(bad7a865, 758c, 40fb, 8a86, 5af9ccf2325f)
 
-typedef km_result_t (*dm_device_open_op_t)(dm_device_t *file, fs_fcb_t **fcb_out);
+typedef km_result_t (*dm_device_open_op_t)(dm_device_t *file, fs_fcb_t **fcb_out, fs_open_flags_t flags);
 typedef void (*dm_device_close_op_t)(fs_fcb_t *fcb);
 
 typedef km_result_t (*dm_device_seek_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, long off, fs_seek_mode_t mode);
@@ -67,5 +67,10 @@ PBOS_API void dm_unlink_device(dm_device_t *device);
 
 PBOS_API void dm_set_device_exdata(dm_device_t *device, void *exdata);
 PBOS_API void *dm_get_device_exdata(dm_device_t *device);
+
+PBOS_API fs_fnode_t *dm_get_devio_dir();
+PBOS_API km_result_t dm_create_devio_file(dm_device_t *device, fs_fnode_t *parent, const char *filename, size_t filename_len, fs_fnode_t **fnode_out);
+PBOS_API km_result_t dm_create_devio_dir(fs_fnode_t *parent, const char *filename, size_t filename_len, fs_fnode_t **fnode_out);
+PBOS_API km_result_t dm_offload_devio_fnode(fs_fnode_t *fnode);
 
 #endif

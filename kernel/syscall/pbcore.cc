@@ -32,10 +32,19 @@ km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint3
 	if (fd < 0)
 		return KM_RESULT_NO_SLOT;
 
+	fs_open_flags_t open_flags = 0;
+
+	if(mode & PBCORE_OPEN_READ)
+		open_flags |= FS_OPEN_READ;
+	if(mode & PBCORE_OPEN_WRITE)
+		open_flags |= FS_OPEN_WRITE;
+	if(mode & PBCORE_OPEN_EXCLUSIVE)
+		open_flags |= FS_OPEN_EXCLUSIVE;
+
 	fs_fcb_t *fcb;
 	{
 		size_t len_cwd;
-		if (KM_FAILED(result = fs_open(ps_get_cwd(pcb), path, path_len, &fcb))) {
+		if (KM_FAILED(result = fs_open(ps_get_cwd(pcb), path, path_len, &fcb, open_flags))) {
 			return result;
 		};
 	}
