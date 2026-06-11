@@ -15,6 +15,7 @@ typedef void (*fs_filesys_offload_op_t)(fs_fnode_t *file);
 
 typedef km_result_t (*fs_filesys_create_file_op_t)(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
 typedef km_result_t (*fs_filesys_create_dir_op_t)(io_dispatch_context_t *dc, fs_fnode_t *parent, const char *name, size_t name_len, fs_fnode_t **file_out);
+typedef km_result_t (*fs_filesys_remove_op_t)(io_dispatch_context_t *dc, fs_fnode_t *fnode);
 
 typedef km_result_t (*fs_filesys_open_op_t)(fs_fnode_t *file, fs_fcb_t **fcb_out, fs_open_flags_t flags);
 typedef void (*fs_filesys_close_op_t)(fs_fcb_t *fcb);
@@ -52,6 +53,7 @@ typedef struct _fs_filesys_ops_t {
 	fs_filesys_create_file_op_t create_file;
 	/// @brief Create a new directory.
 	fs_filesys_create_dir_op_t create_dir;
+	fs_filesys_remove_op_t remove;
 
 	/// @brief Open a file.
 	fs_filesys_open_op_t open;
@@ -76,11 +78,15 @@ typedef struct _fs_filesys_ops_t {
 	fs_filesys_enum_first_child_file_op_t enum_first_child_file;
 	fs_filesys_enum_next_file_op_t enum_next_file;
 
+	/// @brief The file destroying callback, it's mandatory.
 	fs_filesys_destroy_file_op_t destroy;
 
+	/// @brief The pre-mount callback, it's mandatory.
 	fs_filesys_premount_op_t premount;
+	/// @brief The unmount cleanup callback, it's mandatory.
 	fs_filesys_unmount_cleanup_op_t unmount_cleanup;
 
+	/// @brief The destructor callback, it's mandatory.
 	fs_filesys_filesys_destructor_op_t destructor;
 } fs_filesys_ops_t;
 

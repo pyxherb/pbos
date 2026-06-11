@@ -65,6 +65,9 @@ PBOS_NODISCARD PBOS_API km_result_t fs_create_fcb(
 	fs_fnode_t *file,
 	fs_fcb_t **fcb_out);
 
+PBOS_NODISCARD PBOS_API km_result_t fs_remove(
+	fs_fnode_t *fnode);
+
 PBOS_API void fs_set_fcb_exdata(fs_fcb_t *fcb, void *exdata);
 PBOS_NODISCARD PBOS_API void *fs_get_fcb_exdata(fs_fcb_t *fcb);
 
@@ -100,7 +103,7 @@ PBOS_NODISCARD PBOS_API km_result_t fs_unmount(fs_fnode_t *file);
 PBOS_NODISCARD PBOS_API km_result_t fs_link_subnode(fs_fnode_t *parent, fs_fnode_t *file);
 PBOS_NODISCARD PBOS_API km_result_t fs_unlink_subnode(fs_fnode_t *file);
 
-km_result_t fs_close(fs_fcb_t *fcb);
+PBOS_NODISCARD PBOS_API km_result_t fs_close(fs_fcb_t *fcb);
 
 enum {
 	FS_OPEN_READ = 0x00000001,

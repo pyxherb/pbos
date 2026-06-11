@@ -274,6 +274,8 @@ PBOS_API km_result_t fs_create_file(
 	const char *filename,
 	size_t filename_len,
 	fs_fnode_t **file_out) {
+	if (!parent->fs->ops.create_dir)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
 
@@ -295,6 +297,8 @@ PBOS_API km_result_t fs_create_dir(
 	const char *filename,
 	size_t filename_len,
 	fs_fnode_t **file_out) {
+	if (!parent->fs->ops.create_dir)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
 	KM_RETURN_IF_FAILED(parent->fs->ops.create_dir(&dispatch_context, parent, filename, filename_len, file_out));
@@ -308,6 +312,19 @@ PBOS_NODISCARD PBOS_API km_result_t fs_create_fcb(
 	fs_fnode_t *file,
 	fs_fcb_t **fcb_out) {
 	return ki_alloc_fcb(file, fcb_out);
+}
+
+PBOS_NODISCARD PBOS_API km_result_t fs_remove(
+	fs_fnode_t *fnode) {
+	if (!fnode->fs->ops.remove)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
+	io_dispatch_context_t dispatch_context;
+	io_init_dispatch_context(&dispatch_context);
+	KM_RETURN_IF_FAILED(fnode->fs->ops.remove(&dispatch_context, fnode));
+
+	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+
+	return KM_RESULT_OK;
 }
 
 PBOS_API km_result_t fs_mount(fs_fnode_t *parent, fs_fnode_t *file) {
@@ -416,6 +433,8 @@ PBOS_API km_result_t fs_child_of(fs_fnode_t *file, const char *filename, size_t 
 				*file_out = node.get();
 				fs_ref_fnode(node.get());
 			} else {
+				if (!p->fs->ops.subnode)
+					return KM_RESULT_UNSUPPORTED_OPERATION;
 				KM_RETURN_IF_FAILED(p->fs->ops.subnode(file, filename, filename_len, file_out));
 			}
 			break;
@@ -478,10 +497,14 @@ end:;
 }
 
 PBOS_NODISCARD km_result_t fs_enum_first_child_file(fs_fnode_t *dir, fs_fnode_t **first_file_out) {
+	if (!dir->fs->ops.enum_first_child_file)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
 	return dir->fs->ops.enum_first_child_file(dir, first_file_out);
 }
 
 PBOS_NODISCARD km_result_t fs_enum_next_file(fs_fnode_t *cur_file, fs_fnode_t **next_file_out) {
+	if (!cur_file->fs->ops.enum_next_file)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
 	return cur_file->fs->ops.enum_next_file(cur_file, next_file_out);
 }
 
@@ -491,6 +514,9 @@ PBOS_API km_result_t fs_open(fs_fnode_t *base_dir, const char *path, size_t path
 
 	if (KM_FAILED(result = fs_resolve_path(base_dir, path, path_len, file.get_addr_without_release())))
 		return result;
+
+	if (!file->fs->ops.open)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
 
 	if (KM_FAILED(result = file->fs->ops.open(file.get(), fcb_out, flags))) {
 		return result;
@@ -512,6 +538,9 @@ PBOS_API km_result_t fs_close(fs_fcb_t *fcb) {
 PBOS_API km_result_t fs_seek(fs_fcb_t *fcb, long off, fs_seek_mode_t mode) {
 	fs::fcb_write_lock_guard g(fcb);
 
+	if (!fcb->fnode->fs->ops.seek)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
+
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
 
@@ -523,6 +552,9 @@ PBOS_API km_result_t fs_seek(fs_fcb_t *fcb, long off, fs_seek_mode_t mode) {
 
 PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t *bytes_read_out) {
 	fs::fcb_read_lock_guard g(fcb);
+
+	if (!fcb->fnode->fs->ops.read)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
 
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
@@ -536,6 +568,9 @@ PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t *byt
 PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_t *bytes_written_out) {
 	fs::fcb_write_lock_guard g(fcb);
 
+	if (!fcb->fnode->fs->ops.write)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
+
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
 
@@ -547,6 +582,9 @@ PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_
 
 PBOS_API km_result_t fs_pread(fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out) {
 	fs::fcb_read_lock_guard g(fcb);
+
+	if (!fcb->fnode->fs->ops.pread)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
 
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
@@ -560,6 +598,9 @@ PBOS_API km_result_t fs_pread(fs_fcb_t *fcb, void *dest, size_t size, size_t off
 PBOS_API km_result_t fs_pwrite(fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out) {
 	fs::fcb_write_lock_guard g(fcb);
 
+	if (!fcb->fnode->fs->ops.pwrite)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
+
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
 
@@ -571,6 +612,9 @@ PBOS_API km_result_t fs_pwrite(fs_fcb_t *fcb, const void *src, size_t size, size
 
 PBOS_API km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {
 	fs::fcb_read_lock_guard g(fcb);
+
+	if (!fcb->fnode->fs->ops.size)
+		return KM_RESULT_UNSUPPORTED_OPERATION;
 
 	io_dispatch_context_t dispatch_context;
 	io_init_dispatch_context(&dispatch_context);
