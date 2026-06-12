@@ -20,8 +20,10 @@ typedef struct _dm_bus_ops_t {
 PBOS_API void dm_set_bus_exdata(dm_bus_t *bus, void *exdata);
 PBOS_API void *dm_get_bus_exdata(dm_bus_t *bus);
 
-PBOS_API km_result_t dm_register_bus(const char *name, size_t name_len, const dm_bus_ops_t *ops);
+PBOS_API km_result_t dm_register_bus(const char *name, size_t name_len, const dm_bus_ops_t *ops, dm_bus_t **bus_out);
 PBOS_API void dm_unregister_bus(dm_bus_t *bus);
+
+PBOS_API dm_bus_t *dm_get_bus(const char *name, size_t name_len);
 
 PBOS_API km_result_t dm_register_device_to_bus(dm_bus_t *bus, dm_device_t *device);
 PBOS_API void dm_unregister_device_from_bus(dm_device_t *device);

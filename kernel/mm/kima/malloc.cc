@@ -142,7 +142,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 
 		return (void *)kfxx::ceil_align_to((uintptr_t)new_free_pg, alignment);
 	} else {
-		kima_small_block_desc_t *desc = kima_alloc_small_block_desc(pool, PBOS_MAX(size_log2, alignment_log2));
+		kima_small_block_desc_t *desc = kima_alloc_small_block_desc(pool, PBOS_MAX(PBOS_MAX(size_log2, alignment_log2), KIMA_SMALL_BLOCK_MIN_ORDER));
 
 		// TODO: Add size field for the descriptor.
 
@@ -394,7 +394,7 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 
 		size_t log2_size = kima_log2(size);
 
-		if(log2_size > page_desc->order)
+		if (log2_size > page_desc->order)
 			return nullptr;
 
 		// TODO: Change the size...

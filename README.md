@@ -15,6 +15,8 @@ export PBOS_ARCH=x86_64
 export PBOS_TRIPLET=x86_64-pc
 ```
 
+**Note: DO NOT USE CMakePresets.json for initial configuration!**
+
 ### Windows
 
 To build PbOS on Windows, you will need:

@@ -40,12 +40,17 @@ extern kfxx::rbtree_t<pcibus_domain_id_t> pcibus_domain_tree;
 
 extern fs::fnode_ptr pcibus_devio_pci_root_dir;
 
+constexpr kfxx::string_view PCIBUS_BUS_NAME = "pci";
 constexpr kfxx::string_view PCIBUS_DEVIO_PCI_ROOT_DIR_NAME = "pci";
+
+extern dm_bus_t *pcibus_bus_object;
 
 /// @brief Allocate a new free domain ID.
 ///
 /// @return Allocated domain ID, @c nullopt if failed.
 bool pcibus_alloc_domain_id_and_insert(pcibus_domain_registry_t *registry);
+
+km_result_t pcibus_clear_domain_dir();
 
 PBOS_EXTERN_C_END
 
