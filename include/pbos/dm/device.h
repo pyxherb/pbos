@@ -59,6 +59,10 @@ typedef struct _dm_device_ops_t {
 	dm_device_destroy_op_t destroy;
 } dm_device_ops_t;
 
+km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_class_t **device_class_out);
+dm_device_class_t *dm_query_device_class(const kf_uuid_t *uuid);
+void dm_unregister_device_class(dm_device_class_t *device_class);
+
 PBOS_API void dm_ref_device(dm_device_t *device);
 PBOS_API void dm_unref_device(dm_device_t *device);
 

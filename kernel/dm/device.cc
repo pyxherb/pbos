@@ -44,6 +44,9 @@ void *ki_dm_device_allocator_t::type_identity() const noexcept {
 
 ki_dm_device_allocator_t ki_dm_device_allocator;
 
+_dm_device_class_t::_dm_device_class_t(kfxx::allocator_t *allocator) : owned_devices(allocator) {
+}
+
 _dm_device_t::_dm_device_t() {
 }
 
@@ -89,6 +92,34 @@ void ki_dm_destroy_device(dm_device_t *device) {
 		device->ops.destroy(device);
 
 	kfxx::destroy_and_release<dm_device_t>(&ki_dm_device_allocator, device);
+}
+
+km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_class_t **device_class_out) {
+	// TODO: Use more proper allocators.
+	dm_device_class_t *dev_cls = kfxx::alloc_and_construct<dm_device_class_t>(kfxx::kernel_allocator(), kfxx::kernel_allocator());
+	if (!dev_cls)
+		return KM_RESULT_NO_MEM;
+
+	kfxx::scope_guard delete_dev_cls_guard([dev_cls]() noexcept {
+		kfxx::destroy_and_release<dm_device_class_t>(kfxx::kernel_allocator(), dev_cls);
+	});
+
+	if (!ki_registered_device_classes.insert(dev_cls))
+		return KM_RESULT_EXISTED;
+
+	*device_class_out = dev_cls;
+
+	return KM_RESULT_OK;
+}
+
+dm_device_class_t *dm_query_device_class(const kf_uuid_t *uuid) {
+	if (auto node = ki_registered_device_classes.find(*uuid); node)
+		return static_cast<dm_device_class_t *>(node);
+	return nullptr;
+}
+
+void dm_unregister_device_class(dm_device_class_t *device_class) {
+	ki_registered_device_classes.remove(device_class);
 }
 
 PBOS_API void dm_ref_device(dm_device_t *device) {

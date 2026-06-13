@@ -20,13 +20,12 @@ public:
 	PBOS_PRIVATE virtual void *type_identity() const noexcept override;
 };
 
-typedef struct _dm_device_class_t {
-	char *name;
-	size_t name_len;
-
+typedef struct _dm_device_class_t : public kfxx::rbtree_t<kf_uuid_t>::node_t {
 	kfxx::set_t<dm_device_t *> owned_devices;
 
 	ps::mutex_t bus_mutex;
+
+	_dm_device_class_t(kfxx::allocator_t *allocator);
 } dm_device_class_t;
 
 typedef struct _dm_device_t {
@@ -48,6 +47,8 @@ typedef struct _dm_device_t {
 
 	_dm_device_t();
 } dm_device_t;
+
+extern kfxx::rbtree_t<kf_uuid_t> ki_registered_device_classes;
 
 km_result_t ki_dm_alloc_device(dm_bus_t *bus, dm_device_class_t *device_class, dm_device_ops_t *ops, dm_device_t **device_out);
 void ki_dm_destroy_device(dm_device_t *device);
