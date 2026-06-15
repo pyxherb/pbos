@@ -13,6 +13,7 @@
 #include <pbos/ki/ps/kmod.hh>
 #include <pbos/ki/ps/proc.hh>
 #include <pbos/ki/fs/devio.hh>
+#include <pbos/ki/dm/devcls.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -106,6 +107,8 @@ PBOS_NORETURN void kernel_main() {
 
 	ki_initcar_init();
 	ki_devio_init();
+
+	ki_register_device_classes();
 
 	auto kmod_close_fail_hook([&result](fs_fcb_t *fcb, km_result_t result_in) noexcept {
 		result = result_in;
