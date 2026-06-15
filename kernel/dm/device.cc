@@ -5,6 +5,8 @@
 #include <pbos/ki/fs/devio.hh>
 #include <pbos/ki/km/symbol.hh>
 
+kfxx::rbtree_t<kf_uuid_t> ki_registered_device_classes;
+
 ki_dm_device_allocator_t::ki_dm_device_allocator_t() {
 }
 

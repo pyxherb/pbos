@@ -7,5 +7,5 @@ get_property(FREESTDC_INCLUDE_DIR_CXX GLOBAL PROPERTY FREESTDC_INCLUDE_DIR_CXX)
 target_include_directories(pbinit SYSTEM BEFORE PRIVATE ${FREESTDC_INCLUDE_DIR})
 target_include_directories(pbinit SYSTEM BEFORE PRIVATE ${FREESTDC_INCLUDE_DIR_CXX})
 
-add_dependencies(pbinit freestdc)
+add_dependencies(pbinit pboskrnl freestdc)
 target_link_libraries(pbinit PUBLIC pbos_common freestdc)
