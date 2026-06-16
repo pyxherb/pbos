@@ -1,5 +1,11 @@
 {
 	"system": {
 		"uuid": "0b0c550e-0182-4a2b-a070-011be8a067ba"
+	},
+	"battery": {
+		"uuid": "0c053c59-f546-4711-b6eb-46a88e816033"
+	},
+	"disk": {
+		"uuid": "8ef1f686-5f34-41b9-a652-2b16b61824ed"
 	}
 }

@@ -1,3 +1,4 @@
+#include <pbos/kd/logger.h>
 #include <pbos/kf/atomic.h>
 #include <pbos/ki/dm/device.h>
 #include <string.h>
@@ -109,6 +110,15 @@ km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_class_t **
 	if (!ki_registered_device_classes.insert(dev_cls))
 		return KM_RESULT_EXISTED;
 
+	kd_println(
+		__func__,
+		"Registered device class: %.08x-%.04hx-%.04hx-%.04hx-%.08hx%.04hx",
+		uuid->a,
+		uuid->b,
+		uuid->c,
+		uuid->d,
+		uuid->e1, uuid->e2);
+
 	*device_class_out = dev_cls;
 
 	return KM_RESULT_OK;
@@ -121,6 +131,15 @@ dm_device_class_t *dm_query_device_class(const kf_uuid_t *uuid) {
 }
 
 void dm_unregister_device_class(dm_device_class_t *device_class) {
+
+	kd_println(
+		__func__,
+		"Registered device class: %.08x-%.04hx-%.04hx-%.04hx-%.08hx%.04hx",
+		device_class->rb_value.a,
+		device_class->rb_value.b,
+		device_class->rb_value.c,
+		device_class->rb_value.d,
+		device_class->rb_value.e1, device_class->rb_value.e2);
 	ki_registered_device_classes.remove(device_class);
 }
 

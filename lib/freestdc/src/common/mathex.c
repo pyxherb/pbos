@@ -19,6 +19,23 @@ int getdigit(int x, int n) {
 	return x % 10;
 }
 
+int lldigcount(long long x) {
+	int count = 0;
+	while (x)
+		x /= 10, count++;
+	return count ? count : 1;
+}
+
+int getlldigit(long long x, int n) {
+	if ((n > lldigcount(x)) || (n < 1))
+		return -1;
+	if (x < 0)
+		x = -x;
+	for (uint8_t i = 1; i < n; ++i)
+		x /= 10;
+	return x % 10;
+}
+
 int udigcount(unsigned int x) {
 	int count = 0;
 	while (x)

@@ -10,7 +10,6 @@ target_link_libraries(pbhal PUBLIC pbarch freestdc pbscintf)
 
 add_subdirectory("boot")
 add_subdirectory("kd")
-add_subdirectory("display")
 add_subdirectory("kf")
 add_subdirectory("exec")
 add_subdirectory("irq")

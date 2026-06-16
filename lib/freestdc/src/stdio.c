@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-int sprintf(char *s, const char *fmt, ...) {
+/*int sprintf(char *s, const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
 
@@ -270,3 +270,4 @@ int vsprintf(char* s, const char *fmt, va_list args) {
 
 	return printed_len;
 }
+*/

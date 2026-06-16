@@ -45,166 +45,317 @@ int do_vprintf(kd_logger_t *logger, const char *s, va_list args) {
 			// Resolve the format control character sequence.
 			switch (info.specifier) {
 				case FMTCTL_SPECIFIER_DEC: {
-					int arg = va_arg(args, int);
+					switch (info.length) {
+						case FMTCTL_LENGTH_HALF:
+						case FMTCTL_LENGTH_NONE: {
+							int arg = va_arg(args, int);
 
-					int num_digits = digcount(arg);
+							int num_digits = digcount(arg);
 
-					if (arg > 0) {
-						if (info.precision < num_digits)
-							info.precision = num_digits;
-						// Fill with space if the width has not reached.
-						for (int j = 0; j < info.width - info.precision; ++j) {
-							logger->putchar(' ');
-							len_printed++;
+							if (arg > 0) {
+								if (info.precision < num_digits)
+									info.precision = num_digits;
+								// Fill with space if the width has not reached.
+								for (int j = 0; j < info.width - info.precision; ++j) {
+									logger->putchar(' ');
+									len_printed++;
+								}
+
+								for (int j = 0; j < info.precision - num_digits; ++j) {
+									logger->putchar('0');
+									len_printed++;
+								}
+
+								for (int j = num_digits; j > 0; j--) {
+									int digit = getdigit(arg, j);
+									logger->putchar(digit + '0');
+									len_printed++;
+								}
+							} else if (arg < 0) {
+								logger->putchar('-');
+								len_printed++;
+
+								if (info.precision < num_digits)
+									info.precision = num_digits;
+								// Fill with space if the width has not reached.
+								for (int j = 0; j < info.width - info.precision - 1; ++j) {
+									logger->putchar(' ');
+									len_printed++;
+								}
+
+								for (int j = 0; j < info.precision - num_digits - 1; ++j) {
+									logger->putchar('0');
+									len_printed++;
+								}
+
+								arg = -arg;
+
+								for (int j = num_digits; j > 0; j--) {
+									int digit = getdigit(arg, j);
+									logger->putchar(digit + '0');
+									len_printed++;
+								}
+							} else {
+								// Fill with space if the width has not reached.
+								for (int j = 0; j < info.width - info.precision; ++j) {
+									logger->putchar(' ');
+									len_printed++;
+								}
+
+								for (int j = 0; j < info.precision; ++j) {
+									logger->putchar('0');
+									len_printed++;
+								}
+
+								logger->putchar('0');
+								len_printed++;
+							}
+							break;
 						}
+						case FMTCTL_LENGTH_LONG:
+						case FMTCTL_LENGTH_LONG_LONG: {
+							long long arg = va_arg(args, long long);
 
-						for (int j = 0; j < info.precision - num_digits; ++j) {
-							logger->putchar('0');
-							len_printed++;
+							long long num_digits = lldigcount(arg);
+
+							if (arg > 0) {
+								if (info.precision < num_digits)
+									info.precision = num_digits;
+								// Fill with space if the width has not reached.
+								for (int j = 0; j < info.width - info.precision; ++j) {
+									logger->putchar(' ');
+									len_printed++;
+								}
+
+								for (int j = 0; j < info.precision - num_digits; ++j) {
+									logger->putchar('0');
+									len_printed++;
+								}
+
+								for (int j = num_digits; j > 0; j--) {
+									int digit = getlldigit(arg, j);
+									logger->putchar(digit + '0');
+									len_printed++;
+								}
+							} else if (arg < 0) {
+								logger->putchar('-');
+								len_printed++;
+
+								if (info.precision < num_digits)
+									info.precision = num_digits;
+								// Fill with space if the width has not reached.
+								for (int j = 0; j < info.width - info.precision - 1; ++j) {
+									logger->putchar(' ');
+									len_printed++;
+								}
+
+								for (int j = 0; j < info.precision - num_digits - 1; ++j) {
+									logger->putchar('0');
+									len_printed++;
+								}
+
+								arg = -arg;
+
+								for (int j = num_digits; j > 0; j--) {
+									int digit = getlldigit(arg, j);
+									logger->putchar(digit + '0');
+									len_printed++;
+								}
+							} else {
+								// Fill with space if the width has not reached.
+								for (int j = 0; j < info.width - info.precision; ++j) {
+									logger->putchar(' ');
+									len_printed++;
+								}
+
+								for (int j = 0; j < info.precision; ++j) {
+									logger->putchar('0');
+									len_printed++;
+								}
+
+								logger->putchar('0');
+								len_printed++;
+							}
+							break;
 						}
-
-						for (int j = num_digits; j > 0; j--) {
-							int digit = getdigit(arg, j);
-							logger->putchar(digit + '0');
-							len_printed++;
-						}
-					} else if (arg < 0) {
-						logger->putchar('-');
-						len_printed++;
-
-						if (info.precision < num_digits)
-							info.precision = num_digits;
-						// Fill with space if the width has not reached.
-						for (int j = 0; j < info.width - info.precision - 1; ++j) {
-							logger->putchar(' ');
-							len_printed++;
-						}
-
-						for (int j = 0; j < info.precision - num_digits - 1; ++j) {
-							logger->putchar('0');
-							len_printed++;
-						}
-
-						arg = -arg;
-
-						for (int j = num_digits; j > 0; j--) {
-							int digit = getdigit(arg, j);
-							logger->putchar(digit + '0');
-							len_printed++;
-						}
-					} else {
-						// Fill with space if the width has not reached.
-						for (int j = 0; j < info.width - info.precision; ++j) {
-							logger->putchar(' ');
-							len_printed++;
-						}
-
-						for (int j = 0; j < info.precision; ++j) {
-							logger->putchar('0');
-							len_printed++;
-						}
-
-						logger->putchar('0');
-						len_printed++;
 					}
 					break;
 				}
 				case FMTCTL_SPECIFIER_OCT: {
-					unsigned int arg = va_arg(args, unsigned int);
+					switch (info.length) {
+						case FMTCTL_LENGTH_HALF:
+						case FMTCTL_LENGTH_NONE: {
+							unsigned int arg = va_arg(args, unsigned int);
 
-					int num_digits = odigcount(arg);
-					if (info.precision < num_digits)
-						info.precision = num_digits;
-					// Fill with space if the width has not reached.
-					for (int j = 0; j < info.width - info.precision; ++j) {
-						logger->putchar(' ');
-						len_printed++;
-					}
+							int num_digits = odigcount(arg);
+							if (info.precision < num_digits)
+								info.precision = num_digits;
+							// Fill with space if the width has not reached.
+							for (int j = 0; j < info.width - info.precision; ++j) {
+								logger->putchar(' ');
+								len_printed++;
+							}
 
-					for (int j = 0; j < info.precision - num_digits; ++j) {
-						logger->putchar('0');
-						len_printed++;
-					}
+							for (int j = 0; j < info.precision - num_digits; ++j) {
+								logger->putchar('0');
+								len_printed++;
+							}
 
-					for (int j = num_digits; j > 0; j--) {
-						int digit = getodigit(arg, j);
-						logger->putchar(digit + '0');
-						len_printed++;
+							for (int j = num_digits; j > 0; j--) {
+								int digit = getodigit(arg, j);
+								logger->putchar(digit + '0');
+								len_printed++;
+							}
+						}
+						case FMTCTL_LENGTH_LONG:
+						case FMTCTL_LENGTH_LONG_LONG: {
+							// TODO: Implement it.
+							break;
+						}
 					}
 					break;
 				}
 				case FMTCTL_SPECIFIER_HEX: {
-					unsigned int arg = va_arg(args, unsigned int);
+					switch (info.length) {
+						case FMTCTL_LENGTH_HALF:
+						case FMTCTL_LENGTH_NONE: {
+							unsigned int arg = va_arg(args, unsigned int);
 
-					int num_digits = xdigcount(arg);
-					if (info.precision < num_digits)
-						info.precision = num_digits;
-					// Fill with space if the width has not reached.
-					for (int j = 0; j < info.width - info.precision; ++j) {
-						logger->putchar(' ');
-						len_printed++;
-					}
+							int num_digits = xdigcount(arg);
+							if (info.precision < num_digits)
+								info.precision = num_digits;
+							// Fill with space if the width has not reached.
+							for (int j = 0; j < info.width - info.precision; ++j) {
+								logger->putchar(' ');
+								len_printed++;
+							}
 
-					for (int j = 0; j < info.precision - num_digits; ++j) {
-						logger->putchar('0');
-						len_printed++;
-					}
+							for (int j = 0; j < info.precision - num_digits; ++j) {
+								logger->putchar('0');
+								len_printed++;
+							}
 
-					for (int j = num_digits; j > 0; j--) {
-						int digit = getxdigit(arg, j);
-						if (digit > 9)
-							logger->putchar(digit - 10 + 'a');
-						else
-							logger->putchar(digit + '0');
-						len_printed++;
+							for (int j = num_digits; j > 0; j--) {
+								int digit = getxdigit(arg, j);
+								if (digit > 9)
+									logger->putchar(digit - 10 + 'a');
+								else
+									logger->putchar(digit + '0');
+								len_printed++;
+							}
+							break;
+						}
+						case FMTCTL_LENGTH_LONG:
+						case FMTCTL_LENGTH_LONG_LONG: {
+							unsigned long long arg = va_arg(args, unsigned long long);
+
+							int num_digits = llxdigcount(arg);
+							if (info.precision < num_digits)
+								info.precision = num_digits;
+							// Fill with space if the width has not reached.
+							for (int j = 0; j < info.width - info.precision; ++j) {
+								logger->putchar(' ');
+								len_printed++;
+							}
+
+							for (int j = 0; j < info.precision - num_digits; ++j) {
+								logger->putchar('0');
+								len_printed++;
+							}
+
+							for (int j = num_digits; j > 0; j--) {
+								int digit = getllxdigit(arg, j);
+								if (digit > 9)
+									logger->putchar(digit - 10 + 'a');
+								else
+									logger->putchar(digit + '0');
+								len_printed++;
+							}
+							break;
+						}
 					}
 					break;
 				}
 				case FMTCTL_SPECIFIER_UNSIGNED: {
-					unsigned int arg = va_arg(args, unsigned int);
+					switch (info.length) {
+						case FMTCTL_LENGTH_HALF:
+						case FMTCTL_LENGTH_NONE: {
+							unsigned int arg = va_arg(args, unsigned int);
 
-					int num_digits = udigcount(arg);
-					if (info.precision < num_digits)
-						info.precision = num_digits;
-					// Fill with space if the width has not reached.
-					for (int j = 0; j < info.width - info.precision; ++j) {
-						logger->putchar(' ');
-						len_printed++;
-					}
+							int num_digits = udigcount(arg);
+							if (info.precision < num_digits)
+								info.precision = num_digits;
+							// Fill with space if the width has not reached.
+							for (int j = 0; j < info.width - info.precision; ++j) {
+								logger->putchar(' ');
+								len_printed++;
+							}
 
-					for (int j = 0; j < info.precision - num_digits; ++j) {
-						logger->putchar('0');
-						len_printed++;
-					}
+							for (int j = 0; j < info.precision - num_digits; ++j) {
+								logger->putchar('0');
+								len_printed++;
+							}
 
-					for (int j = num_digits; j > 0; j--) {
-						int digit = getudigit(arg, j);
-						logger->putchar(digit + '0');
-						len_printed++;
-					}
-					break;
-				}
-				case FMTCTL_SPECIFIER_LUNSIGNED: {
-					unsigned long arg = va_arg(args, unsigned int);
+							for (int j = num_digits; j > 0; j--) {
+								int digit = getudigit(arg, j);
+								logger->putchar(digit + '0');
+								len_printed++;
+							}
+							break;
+						}
+						case FMTCTL_LENGTH_LONG: {
+							unsigned long arg = va_arg(args, unsigned int);
 
-					int num_digits = ludigcount(arg);
-					if (info.precision < num_digits)
-						info.precision = num_digits;
-					// Fill with space if the width has not reached.
-					for (int j = 0; j < info.width - info.precision; ++j) {
-						logger->putchar(' ');
-						len_printed++;
-					}
+							int num_digits = ludigcount(arg);
+							if (info.precision < num_digits)
+								info.precision = num_digits;
+							// Fill with space if the width has not reached.
+							for (int j = 0; j < info.width - info.precision; ++j) {
+								logger->putchar(' ');
+								len_printed++;
+							}
 
-					for (int j = 0; j < info.precision - num_digits; ++j) {
-						logger->putchar('0');
-						len_printed++;
-					}
+							for (int j = 0; j < info.precision - num_digits; ++j) {
+								logger->putchar('0');
+								len_printed++;
+							}
 
-					for (int j = num_digits; j > 0; j--) {
-						int digit = getludigit(arg, j);
-						logger->putchar(digit + '0');
-						len_printed++;
+							for (int j = num_digits; j > 0; j--) {
+								int digit = getludigit(arg, j);
+								logger->putchar(digit + '0');
+								len_printed++;
+							}
+							break;
+						}
+						case FMTCTL_LENGTH_LONG_LONG: {
+							unsigned long long arg = va_arg(args, unsigned int);
+
+							if (info.precision < lludigcount(arg))
+								info.precision = lludigcount(arg);
+							// Fill with space if the width has not reached.
+							for (int j = 0; j < info.width - info.precision; ++j) {
+								logger->putchar(' ');
+								len_printed++;
+							}
+
+							for (int j = 0; j < info.precision - lludigcount(arg); ++j) {
+								logger->putchar('0');
+								len_printed++;
+							}
+
+							if (!arg) {
+								logger->putchar('0');
+								len_printed++;
+							} else
+								while (arg) {
+									logger->putchar((arg % 10) + '0');
+									arg /= 10;
+									len_printed++;
+								}
+							break;
+						}
+						default:
+							break;
 					}
 					break;
 				}
@@ -297,33 +448,6 @@ int do_vprintf(kd_logger_t *logger, const char *s, va_list args) {
 							len_printed++;
 						}
 					}
-					break;
-				}
-				case FMTCTL_SPECIFIER_LLUNSIGNED: {
-					unsigned long long arg = va_arg(args, unsigned int);
-
-					if (info.precision < lludigcount(arg))
-						info.precision = lludigcount(arg);
-					// Fill with space if the width has not reached.
-					for (int j = 0; j < info.width - info.precision; ++j) {
-						logger->putchar(' ');
-						len_printed++;
-					}
-
-					for (int j = 0; j < info.precision - lludigcount(arg); ++j) {
-						logger->putchar('0');
-						len_printed++;
-					}
-
-					if (!arg) {
-						logger->putchar('0');
-						len_printed++;
-					} else
-						while (arg) {
-							logger->putchar((arg % 10) + '0');
-							arg /= 10;
-							len_printed++;
-						}
 					break;
 				}
 				case FMTCTL_SPECIFIER_PERCENT:

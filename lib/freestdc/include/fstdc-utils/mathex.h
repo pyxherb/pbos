@@ -14,6 +14,9 @@ FREESTDC_EXTERN_C_BEGIN
 int digcount(int x);
 int getdigit(int x, int n);
 
+int lldigcount(long long x);
+int getlldigit(long long x, int n);
+
 int udigcount(unsigned int x);
 int getudigit(unsigned int x, int n);
 

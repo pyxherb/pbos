@@ -8,21 +8,21 @@
 #endif
 
 typedef struct _kf_uuid_t {
-	unsigned int a;
-	unsigned short b;
-	unsigned short c;
-	unsigned short d;
-	unsigned int e1;
-	unsigned short e2;
+	uint32_t a;
+	uint16_t b;
+	uint16_t c;
+	uint16_t d;
+	uint16_t e2;
+	uint32_t e1;
 } kf_uuid_t;
 
 #define KF_UUID(_a, _b, _c, _d, _e) ((kf_uuid_t){ \
-	.a = 0x##_a,                               \
-	.b = 0x##_b,                               \
-	.c = 0x##_c,                               \
-	.d = 0x##_d,                               \
-	.e1 = ((uint64_t)0x##_e) >> 16,            \
-	.e2 = ((uint64_t)0x##_e) & 0xffff })
+	0x##_a,                                       \
+	0x##_b,                                       \
+	0x##_c,                                       \
+	0x##_d,                                       \
+	((uint64_t)0x##_e) & 0xffff,                  \
+	((uint64_t)0x##_e) >> 16 })
 
 #define uuid_eq(_a, _b)           \
 	(((_a)->a == (_b)->a) &&      \
