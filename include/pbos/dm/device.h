@@ -6,6 +6,7 @@
 #include <pbos/fs/file.h>
 
 typedef struct _dm_device_t dm_device_t;
+typedef struct _dm_bus_t dm_bus_t;
 
 typedef struct _dm_device_class_t dm_device_class_t;
 
@@ -59,9 +60,11 @@ typedef struct _dm_device_ops_t {
 	dm_device_destroy_op_t destroy;
 } dm_device_ops_t;
 
-km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_class_t **device_class_out);
-dm_device_class_t *dm_query_device_class(const kf_uuid_t *uuid);
-void dm_unregister_device_class(dm_device_class_t *device_class);
+PBOS_API km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_class_t **device_class_out);
+PBOS_API dm_device_class_t *dm_query_device_class(const kf_uuid_t *uuid);
+PBOS_API void dm_unregister_device_class(dm_device_class_t *device_class);
+
+PBOS_API km_result_t dm_create_device(dm_bus_t *bus, dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out);
 
 PBOS_API void dm_ref_device(dm_device_t *device);
 PBOS_API void dm_unref_device(dm_device_t *device);

@@ -1,5 +1,5 @@
 {
-	"system": {
+	"bus_controller": {
 		"uuid": "0b0c550e-0182-4a2b-a070-011be8a067ba"
 	},
 	"battery": {

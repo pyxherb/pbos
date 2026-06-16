@@ -1,3 +1,4 @@
+#include <pbos/dm/device.hh>
 #include <pbos/kd/logger.h>
 #include <pbos/kf/atomic.h>
 #include <pbos/ki/dm/device.h>
@@ -53,7 +54,7 @@ _dm_device_class_t::_dm_device_class_t(kfxx::allocator_t *allocator) : owned_dev
 _dm_device_t::_dm_device_t() {
 }
 
-km_result_t ki_dm_alloc_device(dm_bus_t *bus, dm_device_class_t *device_class, dm_device_ops_t *ops, dm_device_t **device_out) {
+km_result_t ki_dm_alloc_device(dm_bus_t *bus, dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out) {
 	dm_device_t *device = (dm_device_t *)kfxx::alloc_and_construct<dm_device_t>(&ki_dm_device_allocator);
 
 	if (!device)
@@ -85,6 +86,8 @@ km_result_t ki_dm_alloc_device(dm_bus_t *bus, dm_device_class_t *device_class, d
 
 	*device_out = device;
 
+	dm_ref_device(*device_out);
+
 	return KM_RESULT_OK;
 }
 
@@ -97,7 +100,7 @@ void ki_dm_destroy_device(dm_device_t *device) {
 	kfxx::destroy_and_release<dm_device_t>(&ki_dm_device_allocator, device);
 }
 
-km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_class_t **device_class_out) {
+PBOS_API km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_class_t **device_class_out) {
 	// TODO: Use more proper allocators.
 	dm_device_class_t *dev_cls = kfxx::alloc_and_construct<dm_device_class_t>(kfxx::kernel_allocator(), kfxx::kernel_allocator());
 	if (!dev_cls)
@@ -124,14 +127,13 @@ km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_class_t **
 	return KM_RESULT_OK;
 }
 
-dm_device_class_t *dm_query_device_class(const kf_uuid_t *uuid) {
+PBOS_API dm_device_class_t *dm_query_device_class(const kf_uuid_t *uuid) {
 	if (auto node = ki_registered_device_classes.find(*uuid); node)
 		return static_cast<dm_device_class_t *>(node);
 	return nullptr;
 }
 
-void dm_unregister_device_class(dm_device_class_t *device_class) {
-
+PBOS_API void dm_unregister_device_class(dm_device_class_t *device_class) {
 	kd_println(
 		__func__,
 		"Registered device class: %.08x-%.04hx-%.04hx-%.04hx-%.08hx%.04hx",
@@ -141,6 +143,16 @@ void dm_unregister_device_class(dm_device_class_t *device_class) {
 		device_class->rb_value.d,
 		device_class->rb_value.e1, device_class->rb_value.e2);
 	ki_registered_device_classes.remove(device_class);
+}
+
+PBOS_API km_result_t dm_create_device(dm_bus_t *bus, dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out) {
+	dm::device_ptr dev;
+
+	KM_RETURN_IF_FAILED(ki_dm_alloc_device(bus, device_class, ops, dev.get_addr_without_release()));
+
+	*device_out = dev.release();
+
+	return KM_RESULT_OK;
 }
 
 PBOS_API void dm_ref_device(dm_device_t *device) {

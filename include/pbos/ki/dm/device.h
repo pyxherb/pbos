@@ -50,7 +50,7 @@ typedef struct _dm_device_t {
 
 extern kfxx::rbtree_t<kf_uuid_t> ki_registered_device_classes;
 
-km_result_t ki_dm_alloc_device(dm_bus_t *bus, dm_device_class_t *device_class, dm_device_ops_t *ops, dm_device_t **device_out);
+km_result_t ki_dm_alloc_device(dm_bus_t *bus, dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out);
 void ki_dm_destroy_device(dm_device_t *device);
 
 #endif
