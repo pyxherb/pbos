@@ -7,5 +7,23 @@
 	},
 	"disk": {
 		"uuid": "8ef1f686-5f34-41b9-a652-2b16b61824ed"
+	},
+	"keyboard": {
+		"uuid": "a299f0c9-a302-4ca7-97be-29b05c55d204"
+	},
+	"mouse": {
+		"uuid": "4800fb0c-9817-4b83-af45-4826357e0875"
+	},
+	"monitor": {
+		"uuid": "008c608d-667b-4de1-9159-e7dacb805769"
+	},
+	"net": {
+		"uuid": "90c3d16b-be8d-481b-b53d-5e31e0953882"
+	},
+	"processor": {
+		"uuid": "882b1a7c-29b8-44c5-81dc-b1a0ec2eab12"
+	},
+	"sensor": {
+		"uuid": "add451a3-150b-460b-9fec-c43a216bc1eb"
 	}
 }

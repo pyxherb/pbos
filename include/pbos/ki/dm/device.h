@@ -4,6 +4,8 @@
 #include "bus.h"
 #include <pbos/dm/device.h>
 
+PBOS_EXTERN_C_BEGIN
+
 class ki_dm_device_allocator_t : public kfxx::allocator_t {
 public:
 	PBOS_PRIVATE ki_dm_device_allocator_t();
@@ -52,5 +54,7 @@ extern kfxx::rbtree_t<kf_uuid_t> ki_registered_device_classes;
 
 km_result_t ki_dm_alloc_device(dm_bus_t *bus, dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out);
 void ki_dm_destroy_device(dm_device_t *device);
+
+PBOS_EXTERN_C_END
 
 #endif

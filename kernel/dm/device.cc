@@ -1,11 +1,13 @@
-#include <pbos/dm/device.hh>
 #include <pbos/kd/logger.h>
 #include <pbos/kf/atomic.h>
 #include <pbos/ki/dm/device.h>
 #include <string.h>
+#include <pbos/dm/device.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/fs/devio.hh>
 #include <pbos/ki/km/symbol.hh>
+
+PBOS_EXTERN_C_BEGIN
 
 kfxx::rbtree_t<kf_uuid_t> ki_registered_device_classes;
 
@@ -110,8 +112,19 @@ PBOS_API km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_c
 		kfxx::destroy_and_release<dm_device_class_t>(kfxx::kernel_allocator(), dev_cls);
 	});
 
-	if (!ki_registered_device_classes.insert(dev_cls))
+	memcpy(&dev_cls->rb_value, uuid, sizeof(kf_uuid_t));
+
+	if (!ki_registered_device_classes.insert(dev_cls)) {
+		kd_println(
+			__func__,
+			"Trying to register an existed device class: %.08x-%.04hx-%.04hx-%.04hx-%.08hx%.04hx",
+			uuid->a,
+			uuid->b,
+			uuid->c,
+			uuid->d,
+			uuid->e1, uuid->e2);
 		return KM_RESULT_EXISTED;
+	}
 
 	kd_println(
 		__func__,
@@ -121,6 +134,8 @@ PBOS_API km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_c
 		uuid->c,
 		uuid->d,
 		uuid->e1, uuid->e2);
+
+	delete_dev_cls_guard.release();
 
 	*device_class_out = dev_cls;
 
@@ -243,7 +258,7 @@ PBOS_API km_result_t dm_create_devio_file(dm_device_t *device, fs_fnode_t *paren
 
 	fs_set_fnode_exdata(fnode.get(), exdata);
 
-	// TODO: Increase ref count of the device.
+	dm_ref_device(device);
 
 	exdata->device = device;
 
@@ -300,37 +315,11 @@ PBOS_API km_result_t dm_create_devio_dir(fs_fnode_t *parent, const char *filenam
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t dm_offload_devio_fnode(fs_fnode_t *fnode) {
+PBOS_API km_result_t dm_remove_devio_fnode(fs_fnode_t *fnode) {
 	if (fs_filesys_of_fnode(fnode) != ki_devio_filesys)
 		return KM_RESULT_INVALID_ARGS;
 
-	fs_fnode_t *parent = fs_parent_of(fnode);
-	if (fs_filesys_of_fnode(parent) != ki_devio_filesys)
-		return KM_RESULT_INVALID_ARGS;
-
-	if (fs_get_fnode_type(fnode) != FS_FNODE_TYPE_FILE)
-		return KM_RESULT_INVALID_ARGS;
-
-	{
-		ki_devio_fnode_exdata_t *base_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(parent);
-		ki_devio_dir_exdata_t *parent_exdata = (ki_devio_dir_exdata_t *)fs_get_fnode_exdata(parent);
-
-		if (base_exdata->prev) {
-			ki_devio_fnode_exdata_t *prev_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(base_exdata->prev);
-			prev_exdata->next = base_exdata->next;
-		}
-
-		if (base_exdata->next) {
-			ki_devio_fnode_exdata_t *next_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(base_exdata->next);
-			next_exdata->prev = base_exdata->prev;
-		}
-
-		if (parent_exdata->first_child == fnode) {
-			parent_exdata->first_child = base_exdata->next;
-		}
-	}
-
-	KM_RETURN_IF_FAILED(fs_unlink_subnode(fnode));
-
-	return KM_RESULT_OK;
+	return fs_remove(fnode);
 }
+
+PBOS_EXTERN_C_END

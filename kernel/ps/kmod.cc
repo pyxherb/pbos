@@ -69,7 +69,7 @@ PBOS_API km_result_t ps_load_kmod(fs_fcb_t *file_fp, ps_kmod_t **kmod_out) {
 			KM_RETURN_IF_FAILED(kmod->init_fn());
 			unregister_kmod_guard.release();
 			free_kmod_guard.release();
-			return result;
+			return KM_RESULT_OK;
 		}
 
 		if (result != KM_RESULT_UNSUPPORTED_EXECFMT)

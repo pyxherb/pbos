@@ -28,7 +28,7 @@ PBOS_USED PBOS_KMOD_API km_result_t pbos_module_init() {
 
 	pcibus_segment_group_id_to_domain_map = kfxx::map_t<uint16_t, pcibus_domain_registry_ptr>(kfxx::kernel_allocator());
 
-	// TODO: Register the root complex device.
+	KM_RETURN_IF_FAILED(pcibus_fetch_device_classes());
 
 	{
 		KM_RETURN_IF_FAILED(dm_register_bus(PCIBUS_BUS_NAME.data(), PCIBUS_BUS_NAME.size(), &pci_bus_ops, &pcibus_bus_object));

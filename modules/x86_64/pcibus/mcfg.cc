@@ -50,7 +50,7 @@ km_result_t pcibus_scan_acpi_mcfg_table() {
 				kd_println(PCIROOT_COMPONENT_NAME, "Registered PCI segment -> domain registry: %.4x -> %.4x", entry.pci_segment_group_num, registry->rb_value);
 
 				{
-
+					// dm_create_device(pcibus_bus_object, pcibus_bus_controller_device_class, /* TODO: Fill it. */, /* TODO: Fill it. */);
 				}
 
 				{

@@ -55,6 +55,58 @@ km_result_t ki_devio_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent, c
 	return KM_RESULT_OK;
 }
 
+km_result_t ki_devio_remove_file(io_dispatch_context_t *dc, fs_fnode_t *fnode) {
+	dm_device_t *device = ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fnode))->device;
+
+	switch (fs_get_fnode_type(fnode)) {
+		case FS_FNODE_TYPE_DIR: {
+			ki_devio_dir_exdata_t *fnode_exdata = (ki_devio_dir_exdata_t *)fs_get_fnode_exdata(fnode);
+
+			if(fnode_exdata->first_child)
+				return KM_RESULT_DIR_NOT_EMPTY;
+			break;
+		}
+		case FS_FNODE_TYPE_FILE:
+			KM_RETURN_IF_FAILED(device->ops.remove(dc, device));
+			break;
+		default:
+			return KM_RESULT_UNSUPPORTED_OPERATION;
+	}
+
+	fs_fnode_t *parent = fs_parent_of(fnode);
+
+	// Cannot delete the root devio directory.
+	if (fs_filesys_of_fnode(parent) != ki_devio_filesys)
+		return KM_RESULT_INVALID_ARGS;
+
+	{
+		ki_devio_fnode_exdata_t *base_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(parent);
+		ki_devio_dir_exdata_t *parent_exdata = (ki_devio_dir_exdata_t *)fs_get_fnode_exdata(parent);
+
+		if (base_exdata->prev) {
+			ki_devio_fnode_exdata_t *prev_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(base_exdata->prev);
+			prev_exdata->next = base_exdata->next;
+		}
+
+		if (base_exdata->next) {
+			ki_devio_fnode_exdata_t *next_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(base_exdata->next);
+			next_exdata->prev = base_exdata->prev;
+		}
+
+		if (parent_exdata->first_child == fnode) {
+			parent_exdata->first_child = base_exdata->next;
+		}
+	}
+
+	dm_unref_device(device);
+
+	KM_RETURN_IF_FAILED(fs_unlink_subnode(fnode));
+
+	// TODO: Delete the fnode?
+
+	return KM_RESULT_OK;
+}
+
 km_result_t ki_devio_open(fs_fnode_t *file, fs_fcb_t **fcb_out, fs_open_flags_t flags) {
 	dm_device_t *device = ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(file))->device;
 	return device->ops.open(device, fcb_out, flags);

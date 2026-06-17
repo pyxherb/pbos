@@ -43,6 +43,10 @@ typedef enum _km_results {
 	KM_RESULT_UNPROCESSABLE,
 	/// @brief Corresponding page table has not been allocated yet.
 	KM_RESULT_PGTAB_NOT_ALLOCATED,
+	/// @brief A required dependency was not found.
+	KM_RESULT_DEPENDECY_NOT_FOUND,
+	/// @brief Corresponding device class was not found.
+	KM_RESULT_DEVICE_CLASS_NOT_FOUND,
 	/// @brief The operation should be continue to process.
 	KM_RESULT_CONTINUE = 0x80000000,
 } km_results;

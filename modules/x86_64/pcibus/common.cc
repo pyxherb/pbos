@@ -1,6 +1,7 @@
 #include "common.h"
-#include <pbos/ps/mutex.hh>
 #include <pbos/kd/logger.h>
+#include <pbos/ps/mutex.hh>
+#include <pbos/generated/dm/devcls.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -11,6 +12,8 @@ kfxx::rbtree_t<pcibus_domain_id_t> pcibus_domain_tree;
 fs::fnode_ptr pcibus_devio_pci_root_dir;
 
 dm_bus_t *pcibus_bus_object = nullptr;
+
+dm_device_class_t *pcibus_bus_controller_device_class;
 
 pcibus_domain_registry_t::pcibus_domain_registry_t() {}
 pcibus_domain_registry_t *pcibus_domain_registry_t::alloc() {
@@ -62,6 +65,17 @@ km_result_t pcibus_clear_domain_dir() {
 
 		kd_println(PCIROOT_COMPONENT_NAME, "Removed directory for PCI domain: %s", name);
 	}
+}
+
+km_result_t pcibus_fetch_device_classes() {
+	kf_uuid_t uuid;
+
+	uuid = DM_DEVICE_CLASS_BUS_CONTROLLER;
+
+	if (!(pcibus_bus_controller_device_class = dm_query_device_class(&uuid)))
+		return KM_RESULT_DEVICE_CLASS_NOT_FOUND;
+
+	return KM_RESULT_OK;
 }
 
 PBOS_EXTERN_C_END

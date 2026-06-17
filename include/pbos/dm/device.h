@@ -5,6 +5,8 @@
 #include <pbos/km/result.h>
 #include <pbos/fs/file.h>
 
+PBOS_EXTERN_C_BEGIN
+
 typedef struct _dm_device_t dm_device_t;
 typedef struct _dm_bus_t dm_bus_t;
 
@@ -14,6 +16,8 @@ typedef struct _dm_device_class_t dm_device_class_t;
 
 typedef km_result_t (*dm_device_open_op_t)(dm_device_t *file, fs_fcb_t **fcb_out, fs_open_flags_t flags);
 typedef void (*dm_device_close_op_t)(fs_fcb_t *fcb);
+
+typedef km_result_t (*dm_device_remove_t)(io_dispatch_context_t *dc, dm_device_t *device);
 
 typedef km_result_t (*dm_device_seek_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, long off, fs_seek_mode_t mode);
 typedef km_result_t (*dm_device_read_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t *bytes_read_out);
@@ -38,6 +42,8 @@ typedef struct _dm_device_ops_t {
 	dm_device_open_op_t open;
 	/// @brief Close a FCB.
 	dm_device_close_op_t close;
+
+	dm_device_remove_t remove;
 
 	dm_device_seek_op_t seek;
 	dm_device_read_op_t read;
@@ -83,6 +89,8 @@ PBOS_API void *dm_get_device_exdata(dm_device_t *device);
 PBOS_API fs_fnode_t *dm_get_devio_root_dir();
 PBOS_API km_result_t dm_create_devio_file(dm_device_t *device, fs_fnode_t *parent, const char *filename, size_t filename_len, fs_fnode_t **fnode_out);
 PBOS_API km_result_t dm_create_devio_dir(fs_fnode_t *parent, const char *filename, size_t filename_len, fs_fnode_t **fnode_out);
-PBOS_API km_result_t dm_offload_devio_fnode(fs_fnode_t *fnode);
+PBOS_API km_result_t dm_remove_devio_fnode(fs_fnode_t *fnode);
+
+PBOS_EXTERN_C_END
 
 #endif

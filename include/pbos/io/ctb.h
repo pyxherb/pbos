@@ -1,3 +1,10 @@
+///
+/// @file ctb.h
+/// @author PbOS Contributors
+/// @brief Declarations for Continuable Task Block (CTB).
+///
+/// @copyright Copyright (c) 2026 PbOS Project
+///
 #ifndef _PBOS_IO_CTB_H_
 #define _PBOS_IO_CTB_H_
 

@@ -1,3 +1,10 @@
+///
+/// @file dispatch.h
+/// @author PbOS Contributors
+/// @brief Declarations for I/O dispatching functions.
+///
+/// @copyright Copyright (c) 2026 PbOS Project
+///
 #ifndef _PBOS_IO_DISPATCH_H_
 #define _PBOS_IO_DISPATCH_H_
 

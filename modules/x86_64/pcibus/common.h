@@ -2,9 +2,10 @@
 #define _PCIROOT_COMMON_H_
 
 #include <pbos/dm/bus.h>
+#include <pbos/dm/device.h>
 #include <pbos/kf/atomic.h>
-#include <pbos/kfxx/map.hh>
 #include <pbos/fs/file.hh>
+#include <pbos/kfxx/map.hh>
 #include <pbos/kfxx/string_view.hh>
 
 PBOS_EXTERN_C_BEGIN
@@ -51,6 +52,10 @@ extern dm_bus_t *pcibus_bus_object;
 bool pcibus_alloc_domain_id_and_insert(pcibus_domain_registry_t *registry);
 
 km_result_t pcibus_clear_domain_dir();
+
+extern dm_device_class_t *pcibus_bus_controller_device_class;
+
+km_result_t pcibus_fetch_device_classes();
 
 PBOS_EXTERN_C_END
 

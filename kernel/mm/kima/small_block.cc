@@ -84,11 +84,9 @@ void kima_free_small_block_desc(kima_pool_t *pool, kima_small_block_page_desc_t 
 		desc->next->prev = desc->prev;
 	if (desc->prev)
 		desc->prev->next = desc->next;
-	kd_assert(!pool->used_small_block_descs[index]->prev);
 	if (desc == pool->used_small_block_descs[index])
 		pool->used_small_block_descs[index] = desc->next;
 
-	kd_assert(!pool->free_small_block_descs[index]->prev);
 	desc->prev = nullptr;
 	if (pool->free_small_block_descs[index])
 		pool->free_small_block_descs[index]->prev = desc;
