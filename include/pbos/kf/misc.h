@@ -1,5 +1,5 @@
-#ifndef _PBOS_KM_MISC_H_
-#define _PBOS_KM_MISC_H_
+#ifndef _PBOS_KF_MISC_H_
+#define _PBOS_KF_MISC_H_
 
 #include <string.h>
 #include "basedefs.h"

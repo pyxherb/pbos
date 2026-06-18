@@ -5,6 +5,8 @@
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/mm/pgalloc.hh>
+// TODO: Separate the configuration into another new file.
+#include <kernel/generated/config.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -42,7 +44,7 @@ void *kh_get_direct_mmap(void *paddr) {
 
 void *kh_kvmalloc(mm_context_t *ctxt, size_t size, mm_page_access_t access, mm_vmalloc_flags_t flags) {
 	return kh_vmalloc(ctxt, (void *)(DIRECTPHYMEM_VTOP + 1),
-		(void *)KERNEL_VBASE, size, access, flags);
+		(void *)(KI_ENABLE_KASAN ? KASAN_SHADOW_VBASE : KERNEL_VBASE), size, access, flags);
 }
 
 void mm_vmfree(mm_context_t *ctxt, void *addr, size_t size) {

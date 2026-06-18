@@ -94,9 +94,9 @@ void kh_acpi_init() {
 			void *paddr = acpi_rsdt_paddr_at(i);
 
 			char *vaddr_base;
-			if (!(vaddr_base = (char *)kh_get_direct_mmap((void *)PGFLOOR(paddr)))) {
+			if (!(vaddr_base = static_cast<char *>(kh_get_direct_mmap((void *)PGFLOOR(paddr))))) {
 				is_direct_map = false;
-				if (!(vaddr_base = (char *)mm_kvmalloc(mm_get_cur_context(), i, MM_PAGE_READ | MM_PAGE_WRITE, 0)))
+				if (!(vaddr_base = static_cast<char *>(mm_kvmalloc(mm_get_cur_context(), i, MM_PAGE_READ | MM_PAGE_WRITE, 0))))
 					km_panic("Error mapping ACPI root tables");
 				km_unwrap_result(mm_mmap(mm_get_cur_context(), vaddr_base, paddr, page_size, MM_PAGE_READ | MM_PAGE_WRITE, 0));
 			}
@@ -107,7 +107,7 @@ void kh_acpi_init() {
 			if (!(is_direct_map)) {
 				uint32_t len = vaddr->length;
 				mm_munmap(mm_get_cur_context(), vaddr_base, page_size, 0);
-				if (!(vaddr_base = (char *)mm_kvmalloc(mm_get_cur_context(), len, MM_PAGE_MAPPED, 0)))
+				if (!(vaddr_base = static_cast<char *>(mm_kvmalloc(mm_get_cur_context(), len, MM_PAGE_MAPPED, 0))))
 					km_panic("Error reallocating virtual memory area for ACPI RSDT");
 				if (KM_FAILED(mm_mmap(mm_get_cur_context(), vaddr_base, paddr, len, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
 					km_panic("Error remapping ACPI RSDT");

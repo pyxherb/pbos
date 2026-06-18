@@ -15,7 +15,7 @@ bool km_is_panicked();
 ///
 /// @param fmt Formatted panic message to display.
 /// @param ... Arguments for the formatted message.
-PBOS_NORETURN PBOS_API void km_panic(const char *fmt, ...);
+PBOS_NO_SANITIZE PBOS_NORETURN PBOS_API void km_panic(const char *fmt, ...);
 
 PBOS_EXTERN_C_END
 

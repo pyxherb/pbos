@@ -2,6 +2,7 @@
 #define _ARCH_X86_64_MEMCONF_H_
 
 #include <pbos/ki/mm/memconf.h>
+#include "mlayout.h"
 
 PBOS_EXTERN_C_BEGIN
 
