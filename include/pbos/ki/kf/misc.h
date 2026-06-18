@@ -3,6 +3,8 @@
 
 #include <pbos/kf/misc.h>
 
+PBOS_NO_SANITIZE void *ki_raw_memcpy(void *dest, const void *src, size_t n);
+PBOS_NO_SANITIZE void *ki_raw_memmove(void *dest, const void *src, size_t n);
 PBOS_NO_SANITIZE void *ki_raw_memset(void *dest, int c, size_t n);
 
 #endif

@@ -1,5 +1,5 @@
-#include <pbos/ki/kasan/impl.hh>
 #include <pbos/ki/kf/misc.h>
+#include <pbos/ki/kasan/impl.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -134,9 +134,9 @@ PBOS_NO_SANITIZE PBOS_API void __asan_report_store_n_noabort(void *addr, size_t 
 	ki_kasan_report(addr, size, true, __builtin_return_address(0));
 }
 
-#define KASAN_SET_SHADOW_FN(value)                                  \
+#define KASAN_SET_SHADOW_FN(value)                            \
 	void __asan_set_shadow_##value(void *addr, size_t size) { \
-		ki_raw_memset(addr, 0x##value, size);                        \
+		ki_raw_memset(addr, 0x##value, size);                 \
 	}
 
 KASAN_SET_SHADOW_FN(00);
@@ -152,13 +152,21 @@ KASAN_SET_SHADOW_FN(f5);
 KASAN_SET_SHADOW_FN(f8);
 
 PBOS_NO_SANITIZE PBOS_API void *__asan_memset(void *addr, int c, size_t len) {
-	// TODO: Implement it.
+	if (ki_kasan_is_area_poisoned(addr, len))
+		return nullptr;
+	return ki_raw_memset(addr, c, len);
 }
 PBOS_NO_SANITIZE PBOS_API void *__asan_memmove(void *dest, const void *src, size_t len) {
-	// TODO: Implement it.
+	if (ki_kasan_is_area_poisoned(dest, len) ||
+		ki_kasan_is_area_poisoned(src, len))
+		return nullptr;
+	return ki_raw_memmove(dest, src, len);
 }
 PBOS_NO_SANITIZE PBOS_API void *__asan_memcpy(void *dest, const void *src, size_t len) {
-	// TODO: Implement it.
+	if (ki_kasan_is_area_poisoned(dest, len) ||
+		ki_kasan_is_area_poisoned(src, len))
+		return nullptr;
+	return ki_raw_memcpy(dest, src, len);
 }
 
 PBOS_EXTERN_C_END

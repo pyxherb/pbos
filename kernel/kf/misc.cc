@@ -247,6 +247,30 @@ PBOS_API void *memcpy(void *dest, const void *src, size_t n) {
 	return dest;
 }
 
+PBOS_NO_SANITIZE void *ki_raw_memcpy(void *dest, const void *src, size_t n) {
+	if ((!(n & 0b111)) && !(((uintptr_t)dest) & 0b111)) {
+		n >>= 3;
+		for (size_t i = 0; i < n; ++i)
+			((uint64_t *)dest)[i] = ((uint64_t *)src)[i];
+		return dest;
+	}
+	if ((!(n & 0b11)) && !(((uintptr_t)dest) & 0b11)) {
+		n >>= 2;
+		for (size_t i = 0; i < n; ++i)
+			((uint32_t *)dest)[i] = ((uint32_t *)src)[i];
+		return dest;
+	}
+	if ((!(n & 0b1)) && !(((uintptr_t)dest) & 0b1)) {
+		n >>= 1;
+		for (size_t i = 0; i < n; ++i)
+			((uint16_t *)dest)[i] = ((uint16_t *)src)[i];
+		return dest;
+	}
+	for (size_t i = 0; i < n; ++i)
+		((uint8_t *)dest)[i] = ((uint8_t *)src)[i];
+	return dest;
+}
+
 PBOS_API void *memmove(void *dest, const void *src, size_t n) {
 	if (((const char *)src + n) < (const char *)dest)
 		return memcpy(dest, src, n);
@@ -272,4 +296,35 @@ PBOS_API void *memmove(void *dest, const void *src, size_t n) {
 	for (size_t i = n; i; --i)
 		((uint8_t *)dest)[i - 1] = ((uint8_t *)src)[i - 1];
 	return dest;
+}
+
+PBOS_NO_SANITIZE void *ki_raw_memmove(void *dest, const void *src, size_t n) {
+#ifdef _PBOS_HAVE_NATIVE_memmove
+	memmove(dest, c, n);
+#else
+	if (((const char *)src + n) < (const char *)dest)
+		return memcpy(dest, src, n);
+	// Check if the size is aligned to 2, 4, 8, etc.
+	if ((!(n & 0b111)) && !(((uintptr_t)dest) & 0b111)) {
+		n >>= 3;
+		for (size_t i = n; i; --i)
+			((uint64_t *)dest)[i - 1] = ((uint64_t *)src)[i - 1];
+		return dest;
+	}
+	if ((!(n & 0b11)) && !(((uintptr_t)dest) & 0b11)) {
+		n >>= 2;
+		for (size_t i = n; i; --i)
+			((uint32_t *)dest)[i - 1] = ((uint32_t *)src)[i - 1];
+		return dest;
+	}
+	if ((!(n & 0b1)) && !(((uintptr_t)dest) & 0b1)) {
+		n >>= 1;
+		for (size_t i = n; i; --i)
+			((uint16_t *)dest)[i - 1] = ((uint16_t *)src)[i - 1];
+		return dest;
+	}
+	for (size_t i = n; i; --i)
+		((uint8_t *)dest)[i - 1] = ((uint8_t *)src)[i - 1];
+	return dest;
+#endif
 }
