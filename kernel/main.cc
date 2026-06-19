@@ -7,13 +7,14 @@
 #include <pbos/kh/initcar.hh>
 #include <pbos/kh/mm/init.hh>
 #include <pbos/kh/mp/init.hh>
+#include <pbos/ki/dm/devcls.hh>
+#include <pbos/ki/fs/devio.hh>
 #include <pbos/ki/fs/fs.hh>
+#include <pbos/ki/kasan/impl.hh>
 #include <pbos/ki/km/symbol.hh>
 #include <pbos/ki/ps/exec.hh>
 #include <pbos/ki/ps/kmod.hh>
 #include <pbos/ki/ps/proc.hh>
-#include <pbos/ki/fs/devio.hh>
-#include <pbos/ki/dm/devcls.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -140,6 +141,10 @@ PBOS_NORETURN void kernel_main() {
 	}
 	if (KM_FAILED(result))
 		km_panic("Error closing the init FCB");
+
+	// FIXME: Don't know why the slight out-of-range errors does not trigger panic function.
+	/*uint64_t *c = (uint64_t*)mm_kalloc(sizeof(uint64_t) * 3, alignof(uint64_t));
+	c[3] = 1;*/
 
 	kh_enter_sched(0);
 }

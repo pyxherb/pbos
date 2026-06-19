@@ -164,19 +164,21 @@ KASAN_SET_SHADOW_FN(f8);
 
 PBOS_NO_ASAN PBOS_API void *__asan_memset(void *addr, int c, size_t len) {
 	if (ki_kasan_is_area_poisoned(addr, len))
-		return nullptr;
+		ki_kasan_report(addr, len, true, __builtin_return_address(0));
 	return ki_raw_memset(addr, c, len);
 }
 PBOS_NO_ASAN PBOS_API void *__asan_memmove(void *dest, const void *src, size_t len) {
-	if (ki_kasan_is_area_poisoned(dest, len) ||
-		ki_kasan_is_area_poisoned(src, len))
-		return nullptr;
+	if (ki_kasan_is_area_poisoned(src, len))
+		ki_kasan_report(src, len, false, __builtin_return_address(0));
+	if (ki_kasan_is_area_poisoned(dest, len))
+		ki_kasan_report(src, len, true, __builtin_return_address(0));
 	return ki_raw_memmove(dest, src, len);
 }
 PBOS_NO_ASAN PBOS_API void *__asan_memcpy(void *dest, const void *src, size_t len) {
-	if (ki_kasan_is_area_poisoned(dest, len) ||
-		ki_kasan_is_area_poisoned(src, len))
-		return nullptr;
+	if (ki_kasan_is_area_poisoned(src, len))
+		ki_kasan_report(src, len, false, __builtin_return_address(0));
+	if (ki_kasan_is_area_poisoned(dest, len))
+		ki_kasan_report(src, len, true, __builtin_return_address(0));
 	return ki_raw_memcpy(dest, src, len);
 }
 

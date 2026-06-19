@@ -70,6 +70,7 @@ void *kima_alloc_small_block_page(kima_pool_t *pool, size_t order) {
 		}
 
 		desc->ptr = pg + KIMA_ORDERED_BLOCK_SIZE(order) * i;
+		ki_kasan_poison_addr(desc->ptr, KIMA_ORDERED_BLOCK_SIZE(order), KASAN_SHADOW_VALUE_FREE);
 	}
 
 	return pg;

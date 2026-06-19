@@ -158,11 +158,11 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 
 		desc->allocated_size = size;
 
-		memset(desc->ptr, 0, size);
-
 #if KI_ENABLE_KASAN
 		ki_kasan_unpoison_addr(desc->ptr, size);
 #endif
+
+		memset(desc->ptr, 0, size);
 
 		return desc->ptr;
 	}
