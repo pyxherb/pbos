@@ -8,28 +8,18 @@
 
 PBOS_EXTERN_C_BEGIN
 
-PBOS_NO_SANITIZE bool ki_kasan_is_available();
+PBOS_NO_SANITIZE void ki_kasan_report(const void *addr, size_t size, bool is_write, void *return_ip);
 
-PBOS_NO_SANITIZE void ki_kasan_enable();
-PBOS_NO_SANITIZE void ki_kasan_disable();
+PBOS_NO_SANITIZE bool ki_kasan_is_mem_in_shadow(const void *addr);
 
-PBOS_NO_SANITIZE void ki_kasan_report(const void *addr, size_t size, bool is_write, void *return_ip);;
+PBOS_NO_SANITIZE void *ki_kasan_mem_to_shadow(const void *addr);
 
-PBOS_NO_SANITIZE PBOS_FORCEINLINE bool ki_kasan_is_mem_in_shadow(const void *addr) {
-	return (addr >= (void *)KASAN_SHADOW_VBASE) && (addr <= (void *)KASAN_SHADOW_VTOP);
-}
+PBOS_NO_SANITIZE void *ki_kasan_shadow_to_mem(const void *addr);
 
-PBOS_NO_SANITIZE PBOS_FORCEINLINE void *ki_kasan_mem_to_shadow(const void *addr) {
-	return (void *)(((uintptr_t)addr >> KASAN_SHADOW_SCALE_SHIFT) + KASAN_SHADOW_VBASE);
-}
+PBOS_NO_SANITIZE km_result_t ki_kasan_alloc_shadow_page(const void *addr);
+PBOS_NO_SANITIZE km_result_t ki_kasan_free_shadow_page(const void *addr);
 
-PBOS_NO_SANITIZE PBOS_FORCEINLINE void *ki_kasan_shadow_to_mem(const void *addr) {
-	if ((addr >= (void *)KASAN_SHADOW_VBASE) ||
-		(addr <= (void *)KASAN_SHADOW_VTOP)) {
-		return nullptr;
-	}
-	return (void *)(((uintptr_t)(static_cast<const char *>(addr) - KASAN_SHADOW_VBASE)) << KASAN_SHADOW_SCALE_SHIFT);
-}
+PBOS_NO_SANITIZE km_result_t ki_kasan_alloc_fixed_shadow_page_for_vaddr(void *vaddr);
 
 PBOS_NO_SANITIZE PBOS_FORCEINLINE bool ki_kasan_is_byte_poisoned(const void *addr) {
 	const uint8_t shadow = *static_cast<const uint8_t *>(ki_kasan_mem_to_shadow(addr));
@@ -73,6 +63,8 @@ PBOS_NO_SANITIZE void ki_kasan_poison_addr(void *addr, size_t size, uint8_t valu
 PBOS_NO_SANITIZE void ki_kasan_unpoison_addr(void *addr, size_t size);
 
 PBOS_NO_SANITIZE void ki_kasan_poison_last_granule(void *addr, size_t size);
+
+PBOS_NO_SANITIZE void kh_init_kasan();
 
 PBOS_EXTERN_C_END
 

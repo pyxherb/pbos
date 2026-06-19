@@ -3,11 +3,13 @@
 #include <pbos/kd/logger.h>
 #include <string.h>
 #include <hal/x86_64/irq.hh>
-#include <hal/x86_64/proc.hh>
 #include <hal/x86_64/mm.hh>
-#include <pbos/kh/acpi/misc.hh>
-#include <pbos/ki/mp/init.hh>
 #include <hal/x86_64/mm/vmmgr/vm.hh>
+#include <hal/x86_64/proc.hh>
+#include <kernel/generated/config.hh>
+#include <pbos/kh/acpi/misc.hh>
+#include <pbos/ki/kasan/impl.hh>
+#include <pbos/ki/mp/init.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -131,15 +133,19 @@ void kh_mp_alloc_platform_resources() {
 		km_panic("Unable to allocate memory for TMPMAP information storage for processors");
 	}
 
+	void *vaddr = mm_kvmalloc(mm_get_cur_context(), KINITTMPMAP_SIZE * mp_num_total_cpu, MM_PAGE_MAPPED, 0);
+
+	if (!vaddr)
+		km_panic("Unable to allocate TMPMAP space for TMPMAP information storage for processors");
+
+#if KI_ENABLE_KASAN
+	kh_init_kasan();
+#endif
+
 	for (size_t i = 0; i < mp_num_total_cpu; ++i) {
-		void *vaddr = mm_kvmalloc(mm_get_cur_context(), KINITTMPMAP_SIZE, MM_PAGE_MAPPED, 0);
-
-		if (!vaddr)
-			km_panic("Unable to allocate TMPMAP space for TMPMAP information storage for processors");
-
-		tmp_hali_tmpmap_storage_ptr[i].tmpmap_base = vaddr;
+		tmp_hali_tmpmap_storage_ptr[i].tmpmap_base = static_cast<char *>(vaddr) + i * KINITTMPMAP_SIZE;
 		kd_dbgcheck(
-			(tmp_hali_tmpmap_storage_ptr[i].tmpmap_pgtab_base = (arch_pte_t*)hali_get_pgtab_paddr(mm_get_cur_context(), vaddr, nullptr)),
+			(tmp_hali_tmpmap_storage_ptr[i].tmpmap_pgtab_base = (arch_pte_t *)hali_get_pgtab_paddr(mm_get_cur_context(), vaddr, nullptr)),
 			"The TMPMAP page table address should not be invalid after mapped");
 	}
 
@@ -151,9 +157,9 @@ void hali_calibrate_apic() {
 	if (!(hali_lapic_vbase = (uint32_t *)mm_kvmalloc(mm_kernel_context, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0)))
 		km_panic("Unable to allocate virtual LAPIC page");
 
-	arch_set_apic_base((void*)ARCH_DEFAULT_APIC_PBASE, ARCH_APIC_BASE_MSR_BSP | ARCH_APIC_BASE_MSR_ENABLE);
+	arch_set_apic_base((void *)ARCH_DEFAULT_APIC_PBASE, ARCH_APIC_BASE_MSR_BSP | ARCH_APIC_BASE_MSR_ENABLE);
 
-	if (KM_FAILED(mm_iommap(mm_kernel_context, hali_lapic_vbase, (void*)ARCH_DEFAULT_APIC_PBASE, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_NOCACHE, 0))) {
+	if (KM_FAILED(mm_iommap(mm_kernel_context, hali_lapic_vbase, (void *)ARCH_DEFAULT_APIC_PBASE, PAGESIZE, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_NOCACHE, 0))) {
 		km_panic("Unable to mapping LAPIC page for the main CPU");
 	}
 

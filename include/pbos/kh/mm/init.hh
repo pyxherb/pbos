@@ -5,7 +5,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-void kh_mm_init();
+PBOS_NO_SANITIZE void kh_mm_init();
 
 PBOS_EXTERN_C_END
 

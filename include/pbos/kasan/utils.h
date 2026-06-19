@@ -3,6 +3,8 @@
 
 #include <pbos/mm/mm.h>
 
+PBOS_EXTERN_C_BEGIN
+
 #if __GNUC__ >= 7
 	#define KASAN_ABI_VERSION 5
 #else
@@ -64,5 +66,12 @@ typedef struct _kasan_global_t {
 	char *odr_indicator;
 #endif
 } kasan_global_t;
+
+PBOS_NO_SANITIZE PBOS_API bool kasan_is_available();
+
+PBOS_NO_SANITIZE PBOS_API void kasan_enable();
+PBOS_NO_SANITIZE PBOS_API void kasan_disable();
+
+PBOS_EXTERN_C_END
 
 #endif

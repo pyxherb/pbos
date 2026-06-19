@@ -1,12 +1,63 @@
 #include <pbos/ki/kf/misc.h>
 #include <kernel/generated/config.hh>
+#include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/kasan/impl.hh>
 
 PBOS_EXTERN_C_BEGIN
 
 bool ki_kasan_enabled = false;
 
-PBOS_NO_SANITIZE bool ki_kasan_is_available() {
+PBOS_NO_SANITIZE km_result_t ki_kasan_alloc_shadow_page(const void *addr) {
+	kd_dbgcheck(ki_kasan_shadow_to_mem(addr), "Address requested for allocation is not in the shadow area");
+
+	void *paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+
+	if (!paddr)
+		return KM_RESULT_NO_MEM;
+
+	kfxx::deferred free_paddr_guard([paddr]() noexcept {
+		mm_unpin_page(paddr);
+	});
+
+	KM_RETURN_IF_FAILED(mm_mmap(mm_get_cur_context(), const_cast<void *>(addr), paddr, mm_get_page_size(), MM_PAGE_READ | MM_PAGE_WRITE, MM_MMAP_NO_REMAP));
+
+	// Unpoison the shadow page.
+	ki_raw_memset(const_cast<void *>(addr), 0, mm_get_page_size());
+
+	return KM_RESULT_OK;
+}
+
+PBOS_NO_SANITIZE km_result_t ki_kasan_free_shadow_page(const void *addr) {
+	kd_dbgcheck(ki_kasan_shadow_to_mem(addr), "Address requested for freeing is not in the shadow area");
+
+	mm_munmap(mm_get_cur_context(), const_cast<void *>(addr), mm_get_page_size(), 0);
+
+	return KM_RESULT_OK;
+}
+
+PBOS_NO_SANITIZE km_result_t ki_kasan_alloc_fixed_shadow_page_for_vaddr(void *vaddr) {
+	void *shadow_page = ki_kasan_mem_to_shadow(vaddr);
+	if (mm_getmap(mm_get_cur_context(), shadow_page, nullptr))
+		return KM_RESULT_OK;
+
+	void *paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+
+	if (!paddr)
+		return KM_RESULT_NO_MEM;
+
+	kfxx::deferred free_paddr_guard([paddr]() noexcept {
+		mm_unpin_page(paddr);
+	});
+
+	KM_RETURN_IF_FAILED(mm_mmap(mm_get_cur_context(), shadow_page, paddr, mm_get_page_size(), MM_PAGE_READ | MM_PAGE_WRITE, MM_MMAP_NO_REMAP));
+
+	// Unpoison the shadow page.
+	ki_raw_memset(shadow_page, 0, mm_get_page_size());
+
+	return KM_RESULT_OK;
+}
+
+PBOS_NO_SANITIZE PBOS_API bool kasan_is_available() {
 #if !KI_ENABLE_KASAN
 	return false;
 #else
@@ -14,11 +65,11 @@ PBOS_NO_SANITIZE bool ki_kasan_is_available() {
 #endif
 }
 
-PBOS_NO_SANITIZE void ki_kasan_enable() {
+PBOS_NO_SANITIZE PBOS_API void kasan_enable() {
 	ki_kasan_enabled = true;
 }
 
-PBOS_NO_SANITIZE void ki_kasan_disable() {
+PBOS_NO_SANITIZE PBOS_API void kasan_disable() {
 	ki_kasan_enabled = false;
 }
 

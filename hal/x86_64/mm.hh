@@ -22,6 +22,8 @@ typedef struct _mm_context_t mm_context_t;
 typedef struct _hali_tmpmap_info_t hali_tmpmap_info_t;
 extern hali_tmpmap_info_t *hali_tmpmap_storage_ptr;
 
+extern void *hali_tmpmap_vbase;
+
 PBOS_NODISCARD void *mm_vmalloc_early(
 	mm_context_t *context,
 	const void *minaddr,
