@@ -19,6 +19,8 @@ arch_tss_t *hali_tss_storage_ptr;
 
 hali_tmpmap_info_t *hali_tmpmap_storage_ptr;
 
+void *hali_tmpmap_vbase;
+
 hali_kgdt_t *hali_gdt_storage_ptr;
 
 static void hali_mask_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
@@ -133,9 +135,9 @@ void kh_mp_alloc_platform_resources() {
 		km_panic("Unable to allocate memory for TMPMAP information storage for processors");
 	}
 
-	void *vaddr = mm_kvmalloc(mm_get_cur_context(), KINITTMPMAP_SIZE * mp_num_total_cpu, MM_PAGE_MAPPED, 0);
+	hali_tmpmap_vbase = mm_kvmalloc(mm_get_cur_context(), KINITTMPMAP_SIZE * mp_num_total_cpu, MM_PAGE_MAPPED, 0);
 
-	if (!vaddr)
+	if (!hali_tmpmap_vbase)
 		km_panic("Unable to allocate TMPMAP space for TMPMAP information storage for processors");
 
 #if KI_ENABLE_KASAN
@@ -143,9 +145,9 @@ void kh_mp_alloc_platform_resources() {
 #endif
 
 	for (size_t i = 0; i < mp_num_total_cpu; ++i) {
-		tmp_hali_tmpmap_storage_ptr[i].tmpmap_base = static_cast<char *>(vaddr) + i * KINITTMPMAP_SIZE;
+		tmp_hali_tmpmap_storage_ptr[i].tmpmap_base = static_cast<char *>(hali_tmpmap_vbase) + i * KINITTMPMAP_SIZE;
 		kd_dbgcheck(
-			(tmp_hali_tmpmap_storage_ptr[i].tmpmap_pgtab_base = (arch_pte_t *)hali_get_pgtab_paddr(mm_get_cur_context(), vaddr, nullptr)),
+			(tmp_hali_tmpmap_storage_ptr[i].tmpmap_pgtab_base = (arch_pte_t *)hali_get_pgtab_paddr(mm_get_cur_context(), static_cast<char *>(hali_tmpmap_vbase) + i * KINITTMPMAP_SIZE, nullptr)),
 			"The TMPMAP page table address should not be invalid after mapped");
 	}
 

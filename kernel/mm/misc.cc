@@ -1,6 +1,8 @@
 #include <pbos/kd/logger.h>
+#include <kernel/generated/config.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/kh/mm/misc.hh>
+#include <pbos/ki/kasan/impl.hh>
 #include <pbos/ki/km/symbol.hh>
 #include <pbos/ki/mm/pgalloc.hh>
 #include <pbos/ki/ps/proc.hh>
@@ -210,6 +212,20 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 
 	KM_RETURN_IF_FAILED(kh_mmap(ctxt, aligned_vaddr, aligned_paddr, aligned_size, access, flags));
 
+#if KI_ENABLE_KASAN
+	if (!(flags & MM_MMAP_IGNORE_KASAN)) {
+		if (!is_user_space) {
+			kfxx::scope_guard unmmap_guard([ctxt, aligned_vaddr, aligned_paddr, aligned_size]() noexcept {
+				kh_munmap(ctxt, aligned_vaddr, aligned_size, 0);
+			});
+
+			KM_RETURN_IF_FAILED(ki_kasan_alloc_shadow_pages_for_vaddr(aligned_vaddr, aligned_size));
+
+			unmmap_guard.release();
+		}
+	}
+#endif
+
 	remove_vmr_guard.release();
 
 	return KM_RESULT_OK;
@@ -237,7 +253,7 @@ PBOS_API km_result_t mm_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 		return KM_RESULT_INVALID_ARGS;
 	}
 
-	if (!(flags & MM_MMAP_IGNORE_VMR)) {
+	if (!(flags & MM_MUNMAP_IGNORE_VMR)) {
 		if (is_user_space) {
 			ki_mm_lock_vmr(ctxt);
 			kfxx::deferred lock_release([ctxt]() noexcept {
@@ -293,6 +309,15 @@ PBOS_API km_result_t mm_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 		ki_kernel_mmap_mutex.lock();
 
 	kh_munmap(ctxt, aligned_vaddr, aligned_size, flags);
+
+#if KI_ENABLE_KASAN
+	if (!(flags & MM_MMAP_IGNORE_KASAN)) {
+		if (!is_user_space) {
+			ki_kasan_scan_and_recycle_shadow_pages(aligned_vaddr, aligned_size);
+		}
+	}
+#endif
+
 	return KM_RESULT_OK;
 }
 

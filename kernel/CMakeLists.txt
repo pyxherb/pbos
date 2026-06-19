@@ -1,6 +1,11 @@
 file(GLOB SRC *.c *.cc *.h *.S)
 add_executable(pboskrnl ${SRC})
 
+if(PBOS_ENABLE_KASAN)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=kernel-address")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=kernel-address")
+endif()
+
 #find_package(kimgen REQUIRED)
 find_package(cargen REQUIRED)
 
@@ -51,7 +56,6 @@ add_custom_command(
 target_sources(pboskrnl PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/kernel.lds.ph.cc)
 
 set(PBOS_INITIAL_MM_AREA_STORAGE_NUM 256 CACHE STRING "Number of initial memory area storage")
-set(PBOS_ENABLE_KASAN FALSE CACHE BOOL "Whether to enable KASan")
 set(PBOS_GDB_STUB_MAX_PACKET_SIZE 8192 CACHE STRING "Maximum size of GDB packet the kernel can receive")
 
 configure_file(

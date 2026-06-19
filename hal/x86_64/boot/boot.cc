@@ -45,7 +45,7 @@ PBOS_USED PBOS_IN_SECTION(".limine_request_end") volatile uint64_t hali_limine_r
 
 PBOS_NORETURN void kernel_main();
 
-void kmain() {
+PBOS_NO_ASAN void kmain() {
 	// Setup SSE.
 	uint64_t cr0 = arch_rcr0();
 	cr0 &= ~CR0_EM;

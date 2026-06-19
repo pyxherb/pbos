@@ -11,7 +11,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-void hal_init() {
+PBOS_NO_ASAN void hal_init() {
 	if (LIMINE_BASE_REVISION_SUPPORTED(hali_limine_base_revision) == false) {
 		// TODO: Panic
 		arch_hlt();

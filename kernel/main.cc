@@ -29,17 +29,17 @@ extern ki_ctor_t KI_CTORS_END[];
 extern ki_dtor_t KI_DTORS_BEGIN[];
 extern ki_dtor_t KI_DTORS_END[];
 
-PBOS_API void __cxa_pure_virtual() {
+PBOS_NO_ASAN PBOS_API void __cxa_pure_virtual() {
 	km_panic("Attempting to call a pure virtual function!");
 }
 
 // Because the operating system will never exit normally,
 // we just designed a dummy procedure to register the destructors.
-int atexit(void (*func)(void)) {
+PBOS_NO_ASAN int atexit(void (*func)(void)) {
 	return 0;
 }
 
-void ki_call_ctors() {
+PBOS_NO_ASAN void ki_call_ctors() {
 	const size_t n_ctors = KI_CTORS_END - KI_CTORS_BEGIN;
 	for (size_t i = 0; i < n_ctors; ++i) {
 		KI_CTORS_BEGIN[i]();

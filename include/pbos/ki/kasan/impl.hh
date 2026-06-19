@@ -8,21 +8,26 @@
 
 PBOS_EXTERN_C_BEGIN
 
-PBOS_NO_SANITIZE void ki_kasan_report(const void *addr, size_t size, bool is_write, void *return_ip);
+PBOS_NO_ASAN void ki_kasan_report(const void *addr, size_t size, bool is_write, void *return_ip);
 
-PBOS_NO_SANITIZE bool ki_kasan_is_mem_in_shadow(const void *addr);
+PBOS_NO_ASAN bool ki_kasan_is_mem_in_shadow(const void *addr);
 
-PBOS_NO_SANITIZE void *ki_kasan_mem_to_shadow(const void *addr);
+PBOS_NO_ASAN void *ki_kasan_mem_to_shadow(const void *addr);
 
-PBOS_NO_SANITIZE void *ki_kasan_shadow_to_mem(const void *addr);
+PBOS_NO_ASAN void *ki_kasan_shadow_to_mem(const void *addr);
 
-PBOS_NO_SANITIZE km_result_t ki_kasan_alloc_shadow_page(const void *addr);
-PBOS_NO_SANITIZE km_result_t ki_kasan_free_shadow_page(const void *addr);
+PBOS_NO_ASAN void ki_kasan_scan_and_recycle_shadow_pages(void *vaddr, size_t size);
 
-PBOS_NO_SANITIZE km_result_t ki_kasan_alloc_fixed_shadow_page_for_vaddr(void *vaddr);
+PBOS_NO_ASAN km_result_t ki_kasan_alloc_shadow_pages_for_vaddr(void *vaddr, size_t size);
 
-PBOS_NO_SANITIZE PBOS_FORCEINLINE bool ki_kasan_is_byte_poisoned(const void *addr) {
-	const uint8_t shadow = *static_cast<const uint8_t *>(ki_kasan_mem_to_shadow(addr));
+PBOS_NO_ASAN PBOS_FORCEINLINE bool ki_kasan_is_byte_poisoned(const void *addr) {
+	if (!kasan_is_available())
+		return false;
+	const void *shadow_ptr = ki_kasan_mem_to_shadow(addr);
+	if(!shadow_ptr)
+		return false;
+
+	const uint8_t shadow = *static_cast<const uint8_t *>(shadow_ptr);
 
 	if (!shadow)
 		return false;
@@ -31,9 +36,14 @@ PBOS_NO_SANITIZE PBOS_FORCEINLINE bool ki_kasan_is_byte_poisoned(const void *add
 	return last_byte >= shadow;
 }
 
-PBOS_NO_SANITIZE PBOS_FORCEINLINE bool ki_kasan_is_area_poisoned(const void *addr, size_t size) {
+PBOS_NO_ASAN PBOS_FORCEINLINE bool ki_kasan_is_area_poisoned(const void *addr, size_t size) {
+	if (!kasan_is_available())
+		return false;
 	char *start = static_cast<char *>(ki_kasan_mem_to_shadow(addr)),
 		 *end = static_cast<char *>(ki_kasan_mem_to_shadow(static_cast<const char *>(addr) + size));
+
+	if (!start)
+		return false;
 
 	kfxx::option_t<size_t> nonzero_off;
 
@@ -57,14 +67,12 @@ PBOS_NO_SANITIZE PBOS_FORCEINLINE bool ki_kasan_is_area_poisoned(const void *add
 	return false;
 }
 
-PBOS_NO_SANITIZE bool ki_kasan_is_available();
+PBOS_NO_ASAN void ki_kasan_poison_addr(void *addr, size_t size, uint8_t value);
+PBOS_NO_ASAN void ki_kasan_unpoison_addr(void *addr, size_t size);
 
-PBOS_NO_SANITIZE void ki_kasan_poison_addr(void *addr, size_t size, uint8_t value);
-PBOS_NO_SANITIZE void ki_kasan_unpoison_addr(void *addr, size_t size);
+PBOS_NO_ASAN void ki_kasan_poison_last_granule(void *addr, size_t size);
 
-PBOS_NO_SANITIZE void ki_kasan_poison_last_granule(void *addr, size_t size);
-
-PBOS_NO_SANITIZE void kh_init_kasan();
+PBOS_NO_ASAN void kh_init_kasan();
 
 PBOS_EXTERN_C_END
 

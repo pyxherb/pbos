@@ -5,6 +5,7 @@
 #include <pbos/ki/mm/pgalloc.hh>
 #include "../mm.hh"
 #include <pbos/kh/initcar.hh>
+#include <pbos/ki/kf/misc.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -29,15 +30,15 @@ void *mm_kernel_initial_pdt_paddr = nullptr;
 void *mm_kernel_initial_pdpt_paddr = nullptr;
 void *mm_kernel_initial_pml4t_paddr = nullptr;
 
-PBOS_NO_SANITIZE static void hali_push_pmad(ki_pmad_t &&pmad);
-PBOS_NO_SANITIZE static void hali_init_gdt();
-PBOS_NO_SANITIZE static void hali_mm_init_paging();
-PBOS_NO_SANITIZE static void hali_mm_init_pmadlist();
-PBOS_NO_SANITIZE static void hali_mm_init_areas();
+PBOS_NO_ASAN static void hali_push_pmad(ki_pmad_t &&pmad);
+PBOS_NO_ASAN static void hali_init_gdt();
+PBOS_NO_ASAN static void hali_mm_init_paging();
+PBOS_NO_ASAN static void hali_mm_init_pmadlist();
+PBOS_NO_ASAN static void hali_mm_init_areas();
 
 static hali_tmpmap_info_t hali_kernel_early_tmpmap_info;
 
-PBOS_NO_SANITIZE void kh_mm_init() {
+PBOS_NO_ASAN void kh_mm_init() {
 	mm_kernel_context->page_table = mm_kernel_initial_pml4t;
 
 	hali_init_gdt();
@@ -71,7 +72,7 @@ PBOS_NO_SANITIZE void kh_mm_init() {
 	hali_tmpmap_storage_ptr = &hali_kernel_early_tmpmap_info;
 }
 
-PBOS_NO_SANITIZE static void hali_mm_init_areas() {
+PBOS_NO_ASAN static void hali_mm_init_areas() {
 	{
 		ki_pmad_t *init_madpool_pmad = nullptr;
 		ki_pmad_t *init_pgtab_pmad = nullptr;
@@ -130,7 +131,7 @@ PBOS_NO_SANITIZE static void hali_mm_init_areas() {
 
 			ki_global_mad_pool_list = (ki_madpool_t *)init_madpool_vaddr;
 
-			memset(ki_global_mad_pool_list, 0, PAGESIZE);
+			ki_raw_memset(ki_global_mad_pool_list, 0, PAGESIZE);
 
 			ki_mad_t *descs = (ki_mad_t *)(((uintptr_t)ki_global_mad_pool_list) + kh_mad_pool_descs_off);
 
@@ -237,7 +238,7 @@ PBOS_NO_SANITIZE static void hali_mm_init_areas() {
 
 					cur_madpool_slot_index = 0;
 
-					memset((ki_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
+					ki_raw_memset((ki_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
 
 					last_madpool = ki_global_mad_pool_list;
 					((ki_madpool_t *)new_poolpg_vaddr)->header.next = ki_global_mad_pool_list;
@@ -313,7 +314,7 @@ PBOS_NO_SANITIZE static void hali_mm_init_areas() {
 
 					cur_madpool_slot_index = 0;
 
-					memset((ki_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
+					ki_raw_memset((ki_madpool_t *)new_poolpg_vaddr, 0, PAGESIZE);
 
 					last_madpool = ki_global_mad_pool_list;
 					((ki_madpool_t *)new_poolpg_vaddr)->header.next = ki_global_mad_pool_list;
@@ -405,7 +406,7 @@ PBOS_NO_SANITIZE static void hali_mm_init_areas() {
 ///
 /// @brief Initialize and load GDT.
 ///
-PBOS_NO_SANITIZE static void hali_init_gdt() {
+PBOS_NO_ASAN static void hali_init_gdt() {
 	// NULL descriptor.
 	hali_init_kgdt.null_desc = GDTDESC(0, 0, 0, 0);
 
@@ -449,7 +450,7 @@ PBOS_NO_SANITIZE static void hali_init_gdt() {
 ///
 /// @brief Scan and push PMADs.
 ///
-PBOS_NO_SANITIZE static void hali_mm_init_pmadlist() {
+PBOS_NO_ASAN static void hali_mm_init_pmadlist() {
 	if (hali_limine_memmap_request.response->entry_count > KI_INITIAL_MM_AREA_STORAGE_NUM)
 		km_panic("Too many initial memory maps");
 
@@ -523,11 +524,11 @@ PBOS_NO_SANITIZE static void hali_mm_init_pmadlist() {
 ///
 /// @brief Initialize paging. This also collects physical address of ACPI RSDP.
 ///
-PBOS_NO_SANITIZE static void hali_mm_init_paging() {
-	memset(mm_kernel_initial_ptt, 0, sizeof(mm_kernel_initial_ptt));
-	memset(mm_kernel_initial_pdt, 0, sizeof(mm_kernel_initial_pdt));
-	memset(mm_kernel_initial_pdpt, 0, sizeof(mm_kernel_initial_pdpt));
-	memset(mm_kernel_initial_pml4t, 0, sizeof(mm_kernel_initial_pml4t));
+PBOS_NO_ASAN static void hali_mm_init_paging() {
+	ki_raw_memset(mm_kernel_initial_ptt, 0, sizeof(mm_kernel_initial_ptt));
+	ki_raw_memset(mm_kernel_initial_pdt, 0, sizeof(mm_kernel_initial_pdt));
+	ki_raw_memset(mm_kernel_initial_pdpt, 0, sizeof(mm_kernel_initial_pdpt));
+	ki_raw_memset(mm_kernel_initial_pml4t, 0, sizeof(mm_kernel_initial_pml4t));
 
 	mm_kernel_initial_ptt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_ptt[0]) - hali_limine_executable_address_request.response->virtual_base) + hali_limine_executable_address_request.response->physical_base);
 	mm_kernel_initial_pdt_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)&mm_kernel_initial_pdt[0]) - hali_limine_executable_address_request.response->virtual_base) + hali_limine_executable_address_request.response->physical_base);
@@ -662,7 +663,7 @@ fill_end:
 ///
 /// @param pmad PMAD to push.
 ///
-PBOS_NO_SANITIZE static void hali_push_pmad(ki_pmad_t &&pmad) {
+PBOS_NO_ASAN static void hali_push_pmad(ki_pmad_t &&pmad) {
 	if (ki_pmad_number + 1 >= PBOS_ARRAYSIZE(ki_initial_pmad_storage))
 		km_panic("Too many memory map entries");
 	if (auto d = ki_pmad_tree.find_max_lteq(pmad.rb_value);

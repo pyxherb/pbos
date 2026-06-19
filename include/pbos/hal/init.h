@@ -5,7 +5,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-void hal_init();
+PBOS_NO_ASAN void hal_init();
 
 PBOS_EXTERN_C_END
 

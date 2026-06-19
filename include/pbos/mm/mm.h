@@ -180,12 +180,15 @@ PBOS_NODISCARD void *mm_kvmalloc(mm_context_t *context, size_t size, mm_page_acc
 /// @param size Previous allocated size.
 void mm_vmfree(mm_context_t *context, void *addr, size_t size);
 
-#define MM_MMAP_ATOMIC 0x00000001
-#define MM_MMAP_NO_REMAP 0x00000002
-/// @brief Do not increase the reference count, usually used for mapping page allocated by @c mm_pgalloc
-#define MM_MMAP_NO_INC_RC 0x00000004
-#define MM_MMAP_IGNORE_VMR 0x40000000
-#define MM_MMAP_NO_PGTAB_ALLOC 0x40000000
+enum {
+	MM_MMAP_ATOMIC = 0x00000001,
+	MM_MMAP_NO_REMAP = 0x00000002,
+	/// @brief Do not increase the reference count, usually used for mapping page allocated by @c mm_pgalloc
+	MM_MMAP_NO_INC_RC = 0x00000004,
+	MM_MMAP_IGNORE_VMR = 0x20000000,
+	MM_MMAP_NO_PGTAB_ALLOC = 0x40000000,
+	MM_MMAP_IGNORE_KASAN = 0x80000000
+};
 
 typedef uint32_t mmap_flags_t;
 
@@ -243,6 +246,13 @@ PBOS_NODISCARD PBOS_API km_result_t mm_set_page_access(
 	void *vaddr,
 	size_t size,
 	mm_page_access_t access);
+
+enum {
+	MM_MUNMAP_NO_DEC_RC = 0x00000004,
+	MM_MUNMAP_IGNORE_VMR = 0x20000000,
+	MM_MUNMAP_NO_PGTAB_FREEING = 0x40000000,
+	MM_MUNMAP_IGNORE_KASAN = 0x80000000
+};
 
 ///
 /// @brief Unmap a continuous virtual memory region.

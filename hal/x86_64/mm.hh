@@ -24,13 +24,13 @@ extern hali_tmpmap_info_t *hali_tmpmap_storage_ptr;
 
 extern void *hali_tmpmap_vbase;
 
-PBOS_NODISCARD void *mm_vmalloc_early(
+PBOS_NODISCARD PBOS_NO_ASAN void *mm_vmalloc_early(
 	mm_context_t *context,
 	const void *minaddr,
 	const void *maxaddr,
 	size_t size,
 	mm_page_access_t access);
-PBOS_NODISCARD void *mm_kvmalloc_early(mm_context_t *context, size_t size, mm_page_access_t access);
+PBOS_NODISCARD PBOS_NO_ASAN void *mm_kvmalloc_early(mm_context_t *context, size_t size, mm_page_access_t access);
 ///
 /// @brief Map a page-sized region of memory in the early stage. This function does not pin any page.
 ///

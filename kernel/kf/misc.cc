@@ -164,7 +164,7 @@ PBOS_API void *memset(void *dest, int c, size_t n) {
 }
 #endif
 
-PBOS_NO_SANITIZE void *ki_raw_memset(void *dest, int c, size_t n) {
+PBOS_NO_ASAN void *ki_raw_memset(void *dest, int c, size_t n) {
 #ifdef _PBOS_HAVE_NATIVE_memset
 	memset(dest, c, n);
 #else
@@ -247,7 +247,7 @@ PBOS_API void *memcpy(void *dest, const void *src, size_t n) {
 	return dest;
 }
 
-PBOS_NO_SANITIZE void *ki_raw_memcpy(void *dest, const void *src, size_t n) {
+PBOS_NO_ASAN void *ki_raw_memcpy(void *dest, const void *src, size_t n) {
 	if ((!(n & 0b111)) && !(((uintptr_t)dest) & 0b111)) {
 		n >>= 3;
 		for (size_t i = 0; i < n; ++i)
@@ -298,7 +298,7 @@ PBOS_API void *memmove(void *dest, const void *src, size_t n) {
 	return dest;
 }
 
-PBOS_NO_SANITIZE void *ki_raw_memmove(void *dest, const void *src, size_t n) {
+PBOS_NO_ASAN void *ki_raw_memmove(void *dest, const void *src, size_t n) {
 #ifdef _PBOS_HAVE_NATIVE_memmove
 	memmove(dest, c, n);
 #else

@@ -1,5 +1,6 @@
 #include "vm.hh"
 #include <pbos/kd/logger.h>
+#include <pbos/ki/kf/misc.h>
 #include <pbos/ps/proc.h>
 #include <string.h>
 #include <pbos/hal/irq.hh>
@@ -7,6 +8,7 @@
 #include <pbos/ki/mm/pgalloc.hh>
 // TODO: Separate the configuration into another new file.
 #include <kernel/generated/config.hh>
+#include <pbos/ki/kasan/impl.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -28,7 +30,7 @@ static uint16_t hali_page_access_to_pgmask(mm_page_access_t access) {
 	return mask;
 }
 
-void *kh_get_direct_mmap(void *paddr) {
+PBOS_NO_ASAN void *kh_get_direct_mmap(void *paddr) {
 	ki_pmad_t *pmad = ki_get_pmad(paddr);
 
 	if ((!pmad) || (!pmad->direct_map_base))
@@ -98,7 +100,7 @@ PBOS_NODISCARD uint8_t hali_mm_mmap_early(
 		});
 
 		if (init_pdpt)
-			memset(pdpt, 0, PAGESIZE);
+			ki_raw_memset(pdpt, 0, PAGESIZE);
 
 		for (uint16_t pdptx = (pml4x == PML4X(vaddr) ? PDPTX(vaddr) : 0);
 			pdptx < PDPTX_MAX + 1;
@@ -132,7 +134,7 @@ PBOS_NODISCARD uint8_t hali_mm_mmap_early(
 			});
 
 			if (init_pdt)
-				memset(pdt, 0, PAGESIZE);
+				ki_raw_memset(pdt, 0, PAGESIZE);
 
 			for (uint16_t pdx =
 					 (pml4x == PML4X(vaddr) &&
@@ -166,7 +168,7 @@ PBOS_NODISCARD uint8_t hali_mm_mmap_early(
 						PTE_P | PTE_RW);
 
 				if (init_ptt)
-					memset(ptt, 0, PAGESIZE);
+					ki_raw_memset(ptt, 0, PAGESIZE);
 
 				kfxx::deferred release_pte_guard([&ptt]() noexcept {
 					hali_tmpunmap_early((void *)ptt, PAGESIZE);
@@ -208,7 +210,7 @@ PBOS_NODISCARD uint8_t hali_mm_mmap_early(
 	return result;
 }
 
-km_result_t kh_mmap(mm_context_t *ctxt,
+PBOS_NO_ASAN km_result_t kh_mmap(mm_context_t *ctxt,
 	void *vaddr,
 	void *paddr,
 	size_t size,
@@ -238,7 +240,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 
 	char *pi = (char *)paddr;
 	size_t pi_diff = paddr ? PAGESIZE : 0;
-	uint8_t mask = hali_page_access_to_pgmask(access);
+	uint8_t mask = hali_page_access_to_pgmask(access) | PTE_P;
 
 	kfxx::scope_guard munmap_guard([ctxt, vaddr, size]() noexcept {
 		kh_munmap(ctxt, vaddr, size, 0);
@@ -278,7 +280,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 			release_tmpmap_pdpt_guard.release();
 
 		if (is_pml4te_allocated)
-			memset(pdpt, 0, PAGESIZE);
+			ki_raw_memset(pdpt, 0, PAGESIZE);
 
 		// Walk each PDPTE.
 		for (uint16_t pdptx = (pml4x == PML4X(vaddr) ? PDPTX(vaddr) : 0);
@@ -319,7 +321,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 				release_tmpmap_pdt_guard.release();
 
 			if (is_pdpte_allocated)
-				memset(pdt, 0, PAGESIZE);
+				ki_raw_memset(pdt, 0, PAGESIZE);
 
 			// Walk each PDE.
 			for (uint16_t pdx =
@@ -364,7 +366,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 					release_tmpmap_ptt_guard.release();
 
 				if (is_pde_allocated)
-					memset(ptt, 0, PAGESIZE);
+					ki_raw_memset(ptt, 0, PAGESIZE);
 
 				// Walk each PTE.
 				for (uint16_t ptx =
@@ -422,7 +424,7 @@ km_result_t kh_mmap(mm_context_t *ctxt,
 	return KM_RESULT_OK;
 }
 
-void kh_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
+PBOS_NO_ASAN void kh_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags) {
 	kd_assert(ctxt);
 
 #ifndef NDEBUG
@@ -606,7 +608,7 @@ void kh_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_flags_t flags)
 	}
 }
 
-void kh_walk_pgtab(mm_context_t *ctxt, void *vaddr, size_t size, kh_pgtab_walker walker, void *user_data, kh_walk_pgtab_flags_t flags) {
+PBOS_NO_ASAN void kh_walk_pgtab(mm_context_t *ctxt, void *vaddr, size_t size, kh_pgtab_walker walker, void *user_data, kh_walk_pgtab_flags_t flags) {
 	bool is_user_space = mm_is_user_space(vaddr);
 
 #ifndef NDEBUG
@@ -779,7 +781,7 @@ void kh_walk_pgtab(mm_context_t *ctxt, void *vaddr, size_t size, kh_pgtab_walker
 	}
 }
 
-void kh_set_page_access(
+PBOS_NO_ASAN void kh_set_page_access(
 	mm_context_t *ctxt,
 	const void *vaddr,
 	size_t size,
@@ -833,7 +835,7 @@ void kh_set_page_access(
 			release_tmpmap_pdpt_guard.release();
 
 		if (is_pml4te_allocated)
-			memset(pdpt, 0, PAGESIZE);
+			ki_raw_memset(pdpt, 0, PAGESIZE);
 
 		// Walk each PDPTE.
 		for (uint16_t pdptx = (pml4x == PML4X(vaddr) ? PDPTX(vaddr) : 0);
@@ -863,7 +865,7 @@ void kh_set_page_access(
 				release_tmpmap_pdt_guard.release();
 
 			if (is_pdpte_allocated)
-				memset(pdt, 0, PAGESIZE);
+				ki_raw_memset(pdt, 0, PAGESIZE);
 
 			// Walk each PDE.
 			for (uint16_t pdx =
@@ -897,7 +899,7 @@ void kh_set_page_access(
 					release_tmpmap_ptt_guard.release();
 
 				if (is_pde_allocated)
-					memset(ptt, 0, PAGESIZE);
+					ki_raw_memset(ptt, 0, PAGESIZE);
 
 				// Walk each PTE.
 				for (uint16_t ptx =
@@ -931,7 +933,7 @@ void kh_set_page_access(
 	}
 }
 
-void *kh_vmalloc(mm_context_t *context,
+PBOS_NO_ASAN void *kh_vmalloc(mm_context_t *context,
 	const void *minaddr,
 	const void *maxaddr,
 	size_t size,
@@ -1092,12 +1094,12 @@ void *kh_vmalloc(mm_context_t *context,
 	return nullptr;
 }
 
-PBOS_NODISCARD void *mm_kvmalloc_early(mm_context_t *context, size_t size, mm_page_access_t access) {
+PBOS_NODISCARD PBOS_NO_ASAN void *mm_kvmalloc_early(mm_context_t *context, size_t size, mm_page_access_t access) {
 	return mm_vmalloc_early(context, (void *)(DIRECTPHYMEM_VTOP + 1),
 		(void *)KERNEL_VBASE, size, access);
 }
 
-PBOS_NODISCARD void *mm_vmalloc_early(
+PBOS_NODISCARD PBOS_NO_ASAN void *mm_vmalloc_early(
 	mm_context_t *context,
 	const void *minaddr,
 	const void *maxaddr,
@@ -1236,7 +1238,7 @@ PBOS_NODISCARD void *mm_vmalloc_early(
 	return nullptr;
 }
 
-void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_page_access_t *page_access_out) {
+PBOS_NO_ASAN void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_page_access_t *page_access_out) {
 	// io::LocalIrqLock irq_lock;
 	if (page_access_out)
 		*page_access_out = 0;
@@ -1339,7 +1341,7 @@ void *kh_getmap(mm_context_t *ctxt, const void *vaddr, mm_page_access_t *page_ac
 	return UNPGADDR(ARCH_PTE_ADDR(ptt[ptx]));
 }
 
-PBOS_NODISCARD void *hali_tmpmap_early(void *paddr, size_t size, uint16_t mask) {
+PBOS_NODISCARD PBOS_NO_ASAN void *hali_tmpmap_early(void *paddr, size_t size, uint16_t mask) {
 	// kd_dbgcheck(hal_is_irq_disabled(), "hali_tmpmap() requires interrupts disabled");
 	kd_dbgcheck(
 		size <= (KINITTMPMAP_SIZE),
@@ -1494,7 +1496,7 @@ alloc_succeeded:
 	return vaddr;
 }
 
-void hali_tmpunmap_early(void *vaddr, size_t size) {
+PBOS_NO_ASAN void hali_tmpunmap_early(void *vaddr, size_t size) {
 	// kd_dbgcheck(hal_is_irq_disabled(), "hali_tmpunmap() requires interrupts disabled");
 	kd_dbgcheck(!PGOFF(vaddr), "Address for hali_tmpunmap must be page-aligned");
 
@@ -1561,7 +1563,7 @@ void hali_tmpunmap_early(void *vaddr, size_t size) {
 	}
 }
 
-PBOS_NODISCARD void *hali_tmpmap_post(void *paddr, size_t size, uint16_t mask) {
+PBOS_NODISCARD PBOS_NO_ASAN void *hali_tmpmap_post(void *paddr, size_t size, uint16_t mask) {
 	hali_tmpmap_info_t *tmpmap_info = &hali_tmpmap_storage_ptr[ps_get_cur_cpuid()];
 	// kd_dbgcheck(hal_is_irq_disabled(), "hali_tmpmap() requires interrupts disabled");
 	kd_dbgcheck(
@@ -1622,10 +1624,12 @@ alloc_succeeded:
 		off_paddr += PAGESIZE;
 	}
 
+	ki_kasan_unpoison_addr(vaddr, size);
+
 	return vaddr;
 }
 
-void hali_tmpunmap_post(void *vaddr, size_t size) {
+PBOS_NO_ASAN void hali_tmpunmap_post(void *vaddr, size_t size) {
 	hali_tmpmap_info_t *tmpmap_info = &hali_tmpmap_storage_ptr[ps_get_cur_cpuid()];
 	// kd_dbgcheck(hal_is_irq_disabled(), "hali_tmpunmap() requires interrupts disabled");
 	kd_dbgcheck(!PGOFF(vaddr), "Address for hali_tmpunmap must be page-aligned");
@@ -1646,9 +1650,11 @@ void hali_tmpunmap_post(void *vaddr, size_t size) {
 
 		arch_invlpg(ptt_vaddr);
 	}
+
+	ki_kasan_unpoison_addr(vaddr, size);
 }
 
-void *hali_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_page_access_t *page_access_out) {
+PBOS_NODISCARD void *hali_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_page_access_t *page_access_out) {
 	// io::LocalIrqLock irq_lock;
 
 	kd_assert(ctxt);
