@@ -154,15 +154,14 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 
 		return addr;
 	} else {
-		kima_small_block_desc_t *desc = kima_alloc_small_block_desc(pool, PBOS_MAX(PBOS_MAX(size_log2, alignment_log2), KIMA_SMALL_BLOCK_MIN_ORDER));
+		uint8_t order = PBOS_MAX(PBOS_MAX(size_log2, alignment_log2), KIMA_SMALL_BLOCK_MIN_ORDER);
+		kima_small_block_desc_t *desc = kima_alloc_small_block_desc(pool, order);
 
 		desc->allocated_size = size;
 
 #if KI_ENABLE_KASAN
 		ki_kasan_unpoison_addr(desc->ptr, size);
 #endif
-
-		memset(desc->ptr, 0, size);
 
 		return desc->ptr;
 	}

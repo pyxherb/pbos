@@ -10,9 +10,11 @@ PBOS_NO_ASAN bool kh_kasan_is_mem_in_shadow(const void *addr) {
 }
 
 PBOS_NO_ASAN void *kh_kasan_mem_to_shadow(const void *addr) {
+	if ((addr < (void *)KSPACE_VBASE))
+		return nullptr;
 	if ((addr >= (void *)DIRECTPHYMEM_VBASE) && (addr <= (void *)DIRECTPHYMEM_VTOP))
 		return nullptr;
-	return (void *)(((uintptr_t)(static_cast<const char*>(addr) - KSPACE_VBASE) / 8) + KASAN_SHADOW_VBASE);
+	return (void *)(((uintptr_t)(static_cast<const char*>(addr) - KSPACE_VBASE) >> 3) + KASAN_SHADOW_VBASE);
 }
 
 PBOS_NO_ASAN void *kh_kasan_shadow_to_mem(const void *addr) {

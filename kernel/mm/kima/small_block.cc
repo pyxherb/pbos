@@ -1,6 +1,6 @@
 #include <pbos/kd/logger.h>
-#include <pbos/ki/mm/kima.hh>
 #include <pbos/ki/kasan/impl.hh>
+#include <pbos/ki/mm/kima.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -30,11 +30,11 @@ void *kima_alloc_small_block_page(kima_pool_t *pool, size_t order) {
 	if (!pg)
 		return nullptr;
 
-	ki_kasan_unpoison_addr(pg, pool->page_size);
-
 	auto &info = pool->small_block_page_info[order - KIMA_SMALL_BLOCK_MIN_ORDER];
 	kima_small_block_page_desc_t *page_desc =
 		(kima_small_block_page_desc_t *)(pg + info.page_descs_off);
+
+	ki_kasan_unpoison_addr(page_desc, sizeof(kima_small_block_page_desc_t));
 
 	kfxx::construct_at<kima_small_block_page_desc_t>(page_desc);
 
@@ -48,6 +48,7 @@ void *kima_alloc_small_block_page(kima_pool_t *pool, size_t order) {
 	pool->small_block_pages = page_desc;
 
 	// Link the descriptors.
+	ki_kasan_unpoison_addr(pg + info.block_descs_off, sizeof(kima_small_block_desc_t) * info.max_block_capacity);
 	size_t index = order - KIMA_SMALL_BLOCK_MIN_ORDER;
 	auto prev_free_small_block_descs_head = pool->free_small_block_descs[index];
 	for (size_t i = 0; i < info.max_block_capacity; ++i) {
@@ -70,7 +71,7 @@ void *kima_alloc_small_block_page(kima_pool_t *pool, size_t order) {
 		}
 
 		desc->ptr = pg + KIMA_ORDERED_BLOCK_SIZE(order) * i;
-		ki_kasan_poison_addr(desc->ptr, KIMA_ORDERED_BLOCK_SIZE(order), KASAN_SHADOW_VALUE_FREE);
+		// ki_kasan_poison_addr(desc->ptr, KIMA_ORDERED_BLOCK_SIZE(order), KASAN_SHADOW_VALUE_FREE);
 	}
 
 	return pg;

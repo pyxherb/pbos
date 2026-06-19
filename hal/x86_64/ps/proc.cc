@@ -13,6 +13,8 @@ ps_tcb_t **ps_cur_thread_per_cpu;
 
 void kh_yield_cur_thread() {
 	ps_tcb_t *tcb = ps_get_cur_thread();
+	if (!tcb)
+		return;
 	tcb->scheduled = false;
 	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_LVT_TIMER, 0x30 | ARCH_LAPIC_LVT_TIMER_REG_PERIODIC);
 	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_INITIAL_COUNT, 0);

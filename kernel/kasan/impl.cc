@@ -103,6 +103,7 @@ PBOS_NO_ASAN void ki_kasan_poison_addr(void *addr, size_t size, uint8_t value) {
 PBOS_NO_ASAN void ki_kasan_unpoison_addr(void *addr, size_t size) {
 	if (reinterpret_cast<uintptr_t>(addr) & (KASAN_GRANULE_SIZE - 1))
 		km_panic("Unaligned address poisoning on %p", addr);
+	kd_println(__func__, "Unpoisoning: %p-%p", addr, (char *)addr + size);
 	ki_kasan_poison_addr(addr, kfxx::ceil_align_to<size_t, KASAN_GRANULE_SIZE>(size), 0);
 }
 
