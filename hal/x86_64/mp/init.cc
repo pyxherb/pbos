@@ -130,11 +130,6 @@ void kh_mp_alloc_platform_resources() {
 		hali_gdt_storage_ptr[i].tss_desc2 = TSSDESC_HIGH(((uintptr_t)(hali_tss_storage_ptr + i)));
 	}
 
-	hali_tmpmap_info_t *tmp_hali_tmpmap_storage_ptr = (hali_tmpmap_info_t *)mm_kalloc(mp_num_total_cpu * sizeof(hali_tmpmap_info_t), alignof(std::max_align_t));
-	if (!tmp_hali_tmpmap_storage_ptr) {
-		km_panic("Unable to allocate memory for TMPMAP information storage for processors");
-	}
-
 	hali_tmpmap_vbase = mm_kvmalloc(mm_get_cur_context(), KINITTMPMAP_SIZE * mp_num_total_cpu, MM_PAGE_MAPPED, 0);
 
 	if (!hali_tmpmap_vbase)
@@ -143,6 +138,11 @@ void kh_mp_alloc_platform_resources() {
 #if KI_ENABLE_KASAN
 	kh_init_kasan();
 #endif
+
+	hali_tmpmap_info_t *tmp_hali_tmpmap_storage_ptr = (hali_tmpmap_info_t *)mm_kalloc(mp_num_total_cpu * sizeof(hali_tmpmap_info_t), alignof(std::max_align_t));
+	if (!tmp_hali_tmpmap_storage_ptr) {
+		km_panic("Unable to allocate memory for TMPMAP information storage for processors");
+	}
 
 	for (size_t i = 0; i < mp_num_total_cpu; ++i) {
 		tmp_hali_tmpmap_storage_ptr[i].tmpmap_base = static_cast<char *>(hali_tmpmap_vbase) + i * KINITTMPMAP_SIZE;

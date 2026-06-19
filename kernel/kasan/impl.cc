@@ -20,16 +20,17 @@ PBOS_NO_ASAN void ki_kasan_scan_and_recycle_shadow_pages(void *vaddr, size_t siz
 			*static_cast<bool *>(user_data) = true;
 			return KF_CONTROL_FLOW_BREAK; }, &recyclable, KH_WALK_PGTAB_SKIP_UNMAPPED);
 		if (recyclable) {
-			mm_munmap(mm_get_cur_context(), ki_kasan_mem_to_shadow(reinterpret_cast<void *>(floor_vaddr + i)), PAGESIZE, MM_MMAP_IGNORE_KASAN);
+			mm_munmap(mm_get_cur_context(), kh_kasan_mem_to_shadow(reinterpret_cast<void *>(floor_vaddr + i)), PAGESIZE, MM_MMAP_IGNORE_KASAN);
 		}
 	}
 }
 
 PBOS_NO_ASAN km_result_t ki_kasan_alloc_shadow_pages_for_vaddr(void *vaddr, size_t size) {
 	mm_context_t *const context = mm_get_cur_context();
+	const size_t page_size = mm_get_page_size();
 
-	void *shadow_pages_begin = ki_kasan_mem_to_shadow(vaddr), *shadow_pages_end = ki_kasan_mem_to_shadow(static_cast<char *>(vaddr) + size);
-	if(!shadow_pages_begin)
+	void *shadow_pages_begin = kh_kasan_mem_to_shadow(vaddr), *shadow_pages_end = kh_kasan_mem_to_shadow(static_cast<char *>(vaddr) + size);
+	if (!shadow_pages_begin)
 		return KM_RESULT_OK;
 	const size_t delta = mm_get_page_size();
 
@@ -40,8 +41,8 @@ PBOS_NO_ASAN km_result_t ki_kasan_alloc_shadow_pages_for_vaddr(void *vaddr, size
 	const size_t limit = size / 8;
 
 	for (size_t i = 0; i < limit; i += delta) {
-		void *cur_page = static_cast<char *>(shadow_pages_begin) + i;
-		if (mm_getmap(mm_get_cur_context(), cur_page, nullptr))
+		void *cur_page = (void *)kfxx::floor_align_to<uintptr_t>((uintptr_t)shadow_pages_begin + i, page_size);
+		if (kh_getmap(context, cur_page, nullptr))
 			return KM_RESULT_OK;
 
 		void *paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
@@ -53,10 +54,11 @@ PBOS_NO_ASAN km_result_t ki_kasan_alloc_shadow_pages_for_vaddr(void *vaddr, size
 			mm_unpin_page(paddr);
 		});
 
-		KM_RETURN_IF_FAILED(kh_mmap(mm_get_cur_context(), cur_page, paddr, mm_get_page_size(), MM_PAGE_READ | MM_PAGE_WRITE, MM_MMAP_NO_REMAP));
+		KM_RETURN_IF_FAILED(kh_mmap(mm_get_cur_context(), cur_page, paddr, page_size, MM_PAGE_READ | MM_PAGE_WRITE, MM_MMAP_NO_REMAP));
 
 		// Unpoison the shadow page.
-		ki_raw_memset(cur_page, 0, mm_get_page_size());
+		// DO NOT use the unpoisoning function since we have to unpoison the pages in the early stages.
+		ki_raw_memset(cur_page, 0, page_size);
 	}
 
 	unmap_guard.release();
@@ -85,25 +87,6 @@ PBOS_NO_ASAN void ki_kasan_report(const void *addr, size_t size, bool is_write, 
 	km_panic("KASan %s error on address %p, size=%u, return_ip = %p", is_write ? "write" : "read", addr, (unsigned int)size, return_ip);
 }
 
-PBOS_FORCEINLINE bool _verify_area(void *addr, size_t size, bool is_write, void *return_ip) {
-	if (!kasan_is_available())
-		return true;
-
-	if (!size)
-		return true;
-
-	if ((static_cast<char *>(addr) + size < static_cast<char *>(addr)))
-		ki_kasan_report(addr, size, is_write, return_ip);
-
-	if (!ki_kasan_mem_to_shadow(addr))
-		ki_kasan_report(addr, size, is_write, return_ip);
-
-	if (ki_kasan_is_area_poisoned(addr, size))
-		ki_kasan_report(addr, size, is_write, return_ip);
-
-	return false;
-}
-
 PBOS_NO_ASAN void ki_kasan_poison_addr(void *addr, size_t size, uint8_t value) {
 	if (kasan_is_available()) {
 		if (reinterpret_cast<uintptr_t>(addr) & (KASAN_GRANULE_SIZE - 1))
@@ -111,14 +94,14 @@ PBOS_NO_ASAN void ki_kasan_poison_addr(void *addr, size_t size, uint8_t value) {
 		if (size & (KASAN_GRANULE_SIZE - 1))
 			// TODO: Use %zu.
 			km_panic("Address poisoning on %p with unaligned size %u", addr, (unsigned int)size);
-		char *start = static_cast<char *>(ki_kasan_mem_to_shadow(addr)), *end = static_cast<char *>(ki_kasan_mem_to_shadow(static_cast<char *>(addr) + size));
+		char *start = static_cast<char *>(kh_kasan_mem_to_shadow(addr)), *end = static_cast<char *>(kh_kasan_mem_to_shadow(static_cast<char *>(addr) + size));
 
 		ki_raw_memset(start, value, end - start);
 	}
 }
 
 PBOS_NO_ASAN void ki_kasan_unpoison_addr(void *addr, size_t size) {
-	if (reinterpret_cast<uintptr_t>(addr) & KASAN_GRANULE_SIZE)
+	if (reinterpret_cast<uintptr_t>(addr) & (KASAN_GRANULE_SIZE - 1))
 		km_panic("Unaligned address poisoning on %p", addr);
 	ki_kasan_poison_addr(addr, kfxx::ceil_align_to<size_t, KASAN_GRANULE_SIZE>(size), 0);
 }
@@ -126,7 +109,7 @@ PBOS_NO_ASAN void ki_kasan_unpoison_addr(void *addr, size_t size) {
 PBOS_NO_ASAN void ki_kasan_poison_last_granule(void *addr, size_t size) {
 	if (kasan_is_available()) {
 		if (size & KASAN_GRANULE_SIZE) {
-			char *shadow = static_cast<char *>(ki_kasan_mem_to_shadow(static_cast<char *>(addr) + size));
+			char *shadow = static_cast<char *>(kh_kasan_mem_to_shadow(static_cast<char *>(addr) + size));
 			*shadow = size & (KASAN_GRANULE_SIZE - 1);
 		}
 	}

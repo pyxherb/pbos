@@ -43,7 +43,7 @@ PBOS_NODISCARD PBOS_NO_ASAN void *mm_kvmalloc_early(mm_context_t *context, size_
 /// @param pte_paddr Reserved page table physical address for mapping if the page table does not exist.
 /// @return Bit mask of reserved pages used state. 0b001 for pte_paddr used, 0b010 for pde_paddr used, 0b100 for pdpte_padr used.
 ///
-PBOS_NODISCARD uint8_t hali_mm_mmap_early(
+PBOS_NODISCARD PBOS_NO_ASAN uint8_t hali_mm_mmap_early(
 	mm_context_t *context,
 	void *vaddr,
 	void *paddr,

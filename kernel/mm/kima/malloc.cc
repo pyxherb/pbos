@@ -1,7 +1,9 @@
 #include <pbos/kd/logger.h>
 #include <string.h>
+#include <kernel/generated/config.hh>
 #include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
+#include <pbos/ki/kasan/impl.hh>
 #include <pbos/ki/km/symbol.hh>
 #include <pbos/ki/mm/kima.hh>
 
@@ -102,6 +104,10 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 							++vpgdesc->ref_count;
 						}
 
+#if KI_ENABLE_KASAN
+						ki_kasan_unpoison_addr(cur_base, size);
+#endif
+
 						return cur_base;
 					}
 				}
@@ -112,7 +118,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 		}
 
 	alloc_new_page:
-		char *new_free_pg = (char *)kima_vpgalloc(pool, NULL, kfxx::ceil_align_to(size + alignment, pool->page_size)),
+		char *new_free_pg = (char *)kima_vpgalloc(pool, kfxx::ceil_align_to(size + alignment, pool->page_size)),
 			 *aligned_new_free_pg = (char *)kfxx::ceil_align_to((uintptr_t)new_free_pg, alignment);
 
 		if (!new_free_pg)
@@ -140,13 +146,23 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 
 		release_vpgdesc_sg.release();
 
-		return (void *)kfxx::ceil_align_to((uintptr_t)new_free_pg, alignment);
+		void *addr = (void *)kfxx::ceil_align_to((uintptr_t)new_free_pg, alignment);
+
+#if KI_ENABLE_KASAN
+		ki_kasan_unpoison_addr(addr, size);
+#endif
+
+		return addr;
 	} else {
 		kima_small_block_desc_t *desc = kima_alloc_small_block_desc(pool, PBOS_MAX(PBOS_MAX(size_log2, alignment_log2), KIMA_SMALL_BLOCK_MIN_ORDER));
 
-		// TODO: Add size field for the descriptor.
+		desc->allocated_size = size;
 
 		memset(desc->ptr, 0, size);
+
+#if KI_ENABLE_KASAN
+		ki_kasan_unpoison_addr(desc->ptr, size);
+#endif
 
 		return desc->ptr;
 	}
@@ -255,7 +271,7 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 			noncontinuous:;
 			}
 			// Allocate new pages if there is no suitable continuous virtual memory area.
-			char *new_free_pg = (char *)kima_vpgalloc(pool, NULL, kfxx::ceil_align_to(size + alignment, pool->page_size));
+			char *new_free_pg = (char *)kima_vpgalloc(pool, kfxx::ceil_align_to(size + alignment, pool->page_size));
 
 			if (size_t aligned_diff = ((uintptr_t)new_free_pg) % alignment; aligned_diff) {
 				new_free_pg += alignment - aligned_diff;
@@ -280,11 +296,19 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 				++vpgdesc->ref_count;
 			}
 
+#if KI_ENABLE_KASAN
+			ki_kasan_poison_addr(old_ptr, old_ublk->size, KASAN_SHADOW_VALUE_FREE);
+#endif
+
 			kima_free_ublk(pool, old_ublk);
 
 			kima_ublk_t *ublk = kima_alloc_ublk(pool, new_free_pg, size);
 			if (!ublk)
 				return nullptr;
+
+#if KI_ENABLE_KASAN
+			ki_kasan_unpoison_addr(new_free_pg, size);
+#endif
 
 			release_vpgdesc_sg.release();
 
@@ -411,7 +435,15 @@ PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, siz
 		kd_dbgcheck(!desc->is_free, "The block at %p is not allocated, perhaps the descriptor is damaged by heap buffer overflows?", old_ptr);
 		// DEBUG end
 
-		kima_free_small_block_desc(pool, page_desc, desc);
+#if KI_ENABLE_KASAN
+		ki_kasan_poison_addr(old_ptr, desc->allocated_size, KASAN_SHADOW_VALUE_FREE);
+#endif
+
+		desc->allocated_size = size;
+
+#if KI_ENABLE_KASAN
+		ki_kasan_unpoison_addr(old_ptr, size);
+#endif
 
 		return old_ptr;
 	}
@@ -447,6 +479,10 @@ void kima_free(kima_pool_t *pool, void *ptr) {
 			}
 		}
 
+#if KI_ENABLE_KASAN
+		ki_kasan_poison_addr(ptr, ublk->size, KASAN_SHADOW_VALUE_FREE);
+#endif
+
 		kima_free_ublk(pool, ublk);
 	} else {
 		uintptr_t floor_addr = kfxx::floor_align_to((uintptr_t)ptr, pool->page_size);
@@ -466,6 +502,10 @@ void kima_free(kima_pool_t *pool, void *ptr) {
 
 		kd_dbgcheck(desc->ptr == ptr, "The pointer to be freed %p does not match the descriptor's %p", ptr, desc->ptr);
 		kd_dbgcheck(!desc->is_free, "The block at %p is not allocated, perhaps the descriptor is damaged by heap buffer overflows?", ptr);
+
+#if KI_ENABLE_KASAN
+		ki_kasan_poison_addr(ptr, desc->allocated_size, KASAN_SHADOW_VALUE_FREE);
+#endif
 
 		kima_free_small_block_desc(pool, page_desc, desc);
 	}

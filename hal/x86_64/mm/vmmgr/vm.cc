@@ -12,7 +12,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-static uint16_t hali_page_access_to_pgmask(mm_page_access_t access) {
+PBOS_NO_ASAN static uint16_t hali_page_access_to_pgmask(mm_page_access_t access) {
 	uint16_t mask = 0;
 
 	if (access & MM_PAGE_MAPPED)
@@ -44,16 +44,16 @@ PBOS_NO_ASAN void *kh_get_direct_mmap(void *paddr) {
 	return p;
 }
 
-void *kh_kvmalloc(mm_context_t *ctxt, size_t size, mm_page_access_t access, mm_vmalloc_flags_t flags) {
+PBOS_NO_ASAN void *kh_kvmalloc(mm_context_t *ctxt, size_t size, mm_page_access_t access, mm_vmalloc_flags_t flags) {
 	return kh_vmalloc(ctxt, (void *)(DIRECTPHYMEM_VTOP + 1),
 		(void *)(KI_ENABLE_KASAN ? KASAN_SHADOW_VBASE : KERNEL_VBASE), size, access, flags);
 }
 
-void mm_vmfree(mm_context_t *ctxt, void *addr, size_t size) {
+PBOS_NO_ASAN void mm_vmfree(mm_context_t *ctxt, void *addr, size_t size) {
 	kh_munmap(ctxt, addr, size, 0);
 }
 
-PBOS_NODISCARD uint8_t hali_mm_mmap_early(
+PBOS_NODISCARD PBOS_NO_ASAN uint8_t hali_mm_mmap_early(
 	mm_context_t *context,
 	void *vaddr,
 	void *paddr,

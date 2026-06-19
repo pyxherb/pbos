@@ -178,7 +178,7 @@ PBOS_NODISCARD void *mm_kvmalloc(mm_context_t *context, size_t size, mm_page_acc
 /// @param context Target memory context.
 /// @param addr Pointer to allocated virtual address.
 /// @param size Previous allocated size.
-void mm_vmfree(mm_context_t *context, void *addr, size_t size);
+PBOS_NO_ASAN void mm_vmfree(mm_context_t *context, void *addr, size_t size);
 
 enum {
 	MM_MMAP_ATOMIC = 0x00000001,

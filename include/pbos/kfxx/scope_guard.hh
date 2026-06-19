@@ -1,8 +1,8 @@
 #ifndef _PBOS_KFXX_SCOPE_GUARD_HH_
 #define _PBOS_KFXX_SCOPE_GUARD_HH_
 
-#include "basedefs.hh"
 #include <type_traits>
+#include "basedefs.hh"
 
 namespace kfxx {
 	template <typename T>
@@ -14,7 +14,7 @@ namespace kfxx {
 
 		scope_guard() = delete;
 		PBOS_FORCEINLINE scope_guard(T &&callback)
-			: callback(std::move(callback)) {
+			: callback(std::forward<T &&>(callback)) {
 		}
 		PBOS_FORCEINLINE ~scope_guard() {
 			if (!released)

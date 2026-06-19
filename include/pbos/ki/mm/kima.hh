@@ -24,6 +24,7 @@ struct kima_small_block_page_desc_t {
 struct kima_small_block_desc_t {
 	kima_small_block_desc_t *prev = nullptr, *next = nullptr;
 	void *ptr = nullptr;
+	size_t allocated_size;
 	bool is_free = true;
 };
 
@@ -132,7 +133,7 @@ kima_vpgdesc_t *kima_lookup_vpgdesc(kima_pool_t *pool, void *ptr);
 kima_vpgdesc_t *kima_alloc_vpgdesc(kima_pool_t *pool, void *ptr);
 void kima_free_vpgdesc(kima_pool_t *pool, kima_vpgdesc_t *vpgdesc);
 
-void *kima_vpgalloc(kima_pool_t *pool, void *addr, size_t size);
+void *kima_vpgalloc(kima_pool_t *pool, size_t size);
 void kima_vpgfree(kima_pool_t *pool, void *addr, size_t size);
 
 //

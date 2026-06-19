@@ -30,6 +30,9 @@ PBOS_NO_ASAN PBOS_API void __asan_handle_no_return(void) {
 }
 
 PBOS_NO_ASAN PBOS_API void __asan_alloca_poison(void *addr, size_t size) {
+	if (!kasan_is_available())
+		return;
+
 	size_t ceil_size = kfxx::ceil_align_to<size_t, KASAN_GRANULE_SIZE>(size);
 	size_t padding_size = kfxx::ceil_align_to<size_t, KASAN_ALLOCA_REDZONE_SIZE>(size) -
 						  ceil_size;
@@ -38,7 +41,7 @@ PBOS_NO_ASAN PBOS_API void __asan_alloca_poison(void *addr, size_t size) {
 	if (reinterpret_cast<uintptr_t>(addr) & (KASAN_ALLOCA_REDZONE_SIZE - 1))
 		km_panic("Poisoning alloca unaligned: %p", addr);
 
-	ki_kasan_unpoison_addr(static_cast<char *>(addr) + ceil_size, size - floor_size);
+	ki_kasan_unpoison_addr(static_cast<char *>(addr) + floor_size, size - floor_size);
 
 	void *redzone_l = static_cast<void *>(static_cast<char *>(addr) - KASAN_ALLOCA_REDZONE_SIZE);
 	void *redzone_r = static_cast<void *>(static_cast<char *>(addr) + ceil_size);
@@ -47,6 +50,8 @@ PBOS_NO_ASAN PBOS_API void __asan_alloca_poison(void *addr, size_t size) {
 	ki_kasan_poison_addr(redzone_r, padding_size + KASAN_ALLOCA_REDZONE_SIZE, KASAN_ALLOCA_RIGHT);
 }
 PBOS_NO_ASAN PBOS_API void __asan_allocas_unpoison(void *stack_top, void *stack_bottom) {
+	if (!kasan_is_available())
+		return;
 	if ((!stack_top) || (stack_top > stack_bottom))
 		return;
 
@@ -54,12 +59,12 @@ PBOS_NO_ASAN PBOS_API void __asan_allocas_unpoison(void *stack_top, void *stack_
 }
 
 PBOS_NO_ASAN PBOS_API void __asan_load1(void *addr) {
-	if (ki_kasan_is_byte_poisoned(addr))
+	if (ki_kasan_is_area_poisoned(addr, 1))
 		ki_kasan_report(addr, 1, false, __builtin_return_address(0));
 }
 
 PBOS_NO_ASAN PBOS_API void __asan_store1(void *addr) {
-	if (ki_kasan_is_byte_poisoned(addr))
+	if (ki_kasan_is_area_poisoned(addr, 1))
 		ki_kasan_report(addr, 1, true, __builtin_return_address(0));
 }
 
@@ -82,11 +87,11 @@ KASAN_LOAD_STORE_FN(8);
 KASAN_LOAD_STORE_FN(16);
 
 PBOS_NO_ASAN PBOS_API void __asan_loadN(void *addr, size_t size) {
-	if (ki_kasan_is_byte_poisoned(addr))
+	if (ki_kasan_is_area_poisoned(addr, size))
 		ki_kasan_report(addr, size, false, __builtin_return_address(0));
 }
 PBOS_NO_ASAN PBOS_API void __asan_storeN(void *addr, size_t size) {
-	if (ki_kasan_is_byte_poisoned(addr))
+	if (ki_kasan_is_area_poisoned(addr, size))
 		ki_kasan_report(addr, 1, true, __builtin_return_address(0));
 }
 

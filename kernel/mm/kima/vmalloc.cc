@@ -1,8 +1,9 @@
 #include <pbos/kd/logger.h>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/mm/kima.hh>
+#include <pbos/ki/kasan/impl.hh>
 
-void *kima_vpgalloc(kima_pool_t *pool, void *addr, size_t size) {
+void *kima_vpgalloc(kima_pool_t *pool, size_t size) {
 	kd_assert(size);
 	char *vaddr = (char *)mm_kvmalloc(mm_get_cur_context(), size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE, 0);
 	kd_assert(vaddr);
@@ -20,6 +21,7 @@ void *kima_vpgalloc(kima_pool_t *pool, void *addr, size_t size) {
 			kd_assert(false);
 	}
 	pool->num_allocated_pages += kfxx::ceil_align_to(size, pool->page_size);
+	ki_kasan_poison_addr(vaddr, size, KASAN_SHADOW_VALUE_FREE);
 	return vaddr;
 }
 
@@ -30,5 +32,6 @@ void kima_vpgfree(kima_pool_t *pool, void *addr, size_t size) {
 			 *vaddr = ((char *)addr) + i;
 		mm_vmfree(mm_get_cur_context(), vaddr, pool->page_size);
 	}
+	ki_kasan_unpoison_addr(addr, size);
 	pool->num_allocated_pages -= kfxx::ceil_align_to(size, pool->page_size);
 }

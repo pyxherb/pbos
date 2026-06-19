@@ -3,22 +3,24 @@
 #include <pbos/ki/mm/pgalloc.hh>
 #include <pbos/ki/mp/misc.hh>
 
-PBOS_NO_ASAN bool ki_kasan_is_mem_in_shadow(const void *addr) {
+PBOS_EXTERN_C_BEGIN
+
+PBOS_NO_ASAN bool kh_kasan_is_mem_in_shadow(const void *addr) {
 	return (addr >= (void *)KASAN_SHADOW_VBASE) && (addr <= (void *)KASAN_SHADOW_VTOP);
 }
 
-PBOS_NO_ASAN void *ki_kasan_mem_to_shadow(const void *addr) {
-	if ((addr >= (void *)DIRECTPHYMEM_VBASE) || (addr <= (void *)DIRECTPHYMEM_VTOP))
+PBOS_NO_ASAN void *kh_kasan_mem_to_shadow(const void *addr) {
+	if ((addr >= (void *)DIRECTPHYMEM_VBASE) && (addr <= (void *)DIRECTPHYMEM_VTOP))
 		return nullptr;
-	return (void *)(((uintptr_t)addr >> KASAN_SHADOW_SCALE_SHIFT) + KASAN_SHADOW_VBASE);
+	return (void *)(((uintptr_t)(static_cast<const char*>(addr) - KSPACE_VBASE) / 8) + KASAN_SHADOW_VBASE);
 }
 
-PBOS_NO_ASAN void *ki_kasan_shadow_to_mem(const void *addr) {
-	if ((addr >= (void *)KASAN_SHADOW_VBASE) ||
+PBOS_NO_ASAN void *kh_kasan_shadow_to_mem(const void *addr) {
+	if ((addr >= (void *)KASAN_SHADOW_VBASE) &&
 		(addr <= (void *)KASAN_SHADOW_VTOP)) {
-		return nullptr;
+		return (void *)(((uintptr_t)(static_cast<const char *>(addr) - KASAN_SHADOW_VBASE)) * 8);
 	}
-	return (void *)(((uintptr_t)(static_cast<const char *>(addr) - KASAN_SHADOW_VBASE)) << KASAN_SHADOW_SCALE_SHIFT);
+	return nullptr;
 }
 
 PBOS_NO_ASAN void kh_init_kasan() {
@@ -37,3 +39,5 @@ PBOS_NO_ASAN void kh_init_kasan() {
 
 	kasan_enable();
 }
+
+PBOS_EXTERN_C_END

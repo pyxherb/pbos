@@ -24,6 +24,10 @@ enum {
 	KASAN_SHADOW_VALUE_GLOBAL_REDZONE = 0xf9
 };
 
+enum {
+	KASAN_SHADOW_VALUE_FREE = 0xff
+};
+
 // Specified by compiler ABI.
 enum {
 	KASAN_SHADOW_VALUE_STACK_LEFT = 0xf1,
@@ -41,7 +45,7 @@ enum {
 // but Linux uses it, we follow it.
 enum {
 	KASAN_ALLOCA_LEFT = 0xca,
-	KASAN_ALLOCA_RIGHT
+	KASAN_ALLOCA_RIGHT = 0xcb
 };
 
 // Specified by compiler ABI.

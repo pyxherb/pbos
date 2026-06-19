@@ -66,6 +66,8 @@ typedef uint64_t pgsize_t;
 #define UNPGADDR(addr) ((void *)((addr) << 12))
 #define UNPGSIZE(size) ((size_t)((size) << 12))
 
+#define KVADDR_PREFIX 0xffff000000000000ULL
+
 //
 // Paging levels.
 //

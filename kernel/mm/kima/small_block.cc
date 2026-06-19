@@ -1,5 +1,6 @@
 #include <pbos/kd/logger.h>
 #include <pbos/ki/mm/kima.hh>
+#include <pbos/ki/kasan/impl.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -24,10 +25,12 @@ void kima_calc_small_block_page_info(kima_pool_t *pool, size_t order, kima_small
 }
 
 void *kima_alloc_small_block_page(kima_pool_t *pool, size_t order) {
-	char *pg = (char *)kima_vpgalloc(pool, NULL, pool->page_size);
+	char *pg = (char *)kima_vpgalloc(pool, pool->page_size);
 
 	if (!pg)
 		return nullptr;
+
+	ki_kasan_unpoison_addr(pg, pool->page_size);
 
 	auto &info = pool->small_block_page_info[order - KIMA_SMALL_BLOCK_MIN_ORDER];
 	kima_small_block_page_desc_t *page_desc =
