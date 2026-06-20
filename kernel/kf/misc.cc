@@ -145,7 +145,7 @@ PBOS_API void *memset(void *dest, int c, size_t n) {
 			 _c;
 		n >>= 2;
 		for (size_t i = 0; i < n; ++i) {
-			((uint32_t *)dest)[i] = (uint32_t)c;
+			((uint32_t *)dest)[i] = (uint32_t)_c;
 		}
 	} else if ((!(n & 0b1) && !(((uintptr_t)dest) & 0b1))) {
 		uint16_t _c = c;
@@ -153,7 +153,7 @@ PBOS_API void *memset(void *dest, int c, size_t n) {
 			 _c;
 		n >>= 1;
 		for (size_t i = 0; i < n; ++i) {
-			((uint16_t *)dest)[i] = (uint16_t)c;
+			((uint16_t *)dest)[i] = (uint16_t)_c;
 		}
 	} else {
 		for (size_t i = 0; i < n; ++i) {
@@ -169,7 +169,7 @@ PBOS_NO_ASAN void *ki_raw_memset(void *dest, int c, size_t n) {
 	memset(dest, c, n);
 #else
 	c &= 0xff;
-	if ((!(n & 0b111)) && !(((uintptr_t)dest) & 0b111)) {
+	if ((!(n & 0b111)) && (!(((uintptr_t)dest) & 0b111))) {
 		uint64_t _c = c;
 		_c = (_c << 56) |
 			 (_c << 48) |
@@ -179,29 +179,30 @@ PBOS_NO_ASAN void *ki_raw_memset(void *dest, int c, size_t n) {
 			 (_c << 16) |
 			 (_c << 8) |
 			 _c;
-		n >>= 3;
+		n /= sizeof(uint64_t);
 		for (size_t i = 0; i < n; ++i) {
 			((uint64_t *)dest)[i] = (uint64_t)_c;
 		}
-	} else if ((!(n & 0b11) && !(((uintptr_t)dest) & 0b11))) {
+	} else if ((!(n & 0b11)) && !(((uintptr_t)dest) & 0b11)) {
 		uint32_t _c = c;
 		_c = (_c << 24) |
 			 (_c << 16) |
 			 (_c << 8) |
 			 _c;
-		n >>= 2;
+		n /= sizeof(uint32_t);
 		for (size_t i = 0; i < n; ++i) {
-			((uint32_t *)dest)[i] = (uint32_t)c;
+			((uint32_t *)dest)[i] = (uint32_t)_c;
 		}
-	} else if ((!(n & 0b1) && !(((uintptr_t)dest) & 0b1))) {
+	} else if ((!(n & 0b1)) && (!(((uintptr_t)dest) & 0b1))) {
 		uint16_t _c = c;
 		_c = (_c << 8) |
 			 _c;
-		n >>= 1;
+		n /= sizeof(uint16_t);
 		for (size_t i = 0; i < n; ++i) {
-			((uint16_t *)dest)[i] = (uint16_t)c;
+			((uint16_t *)dest)[i] = (uint16_t)_c;
 		}
-	} else {
+	} else
+	{
 		for (size_t i = 0; i < n; ++i) {
 			((uint8_t *)dest)[i] = (uint8_t)c;
 		}

@@ -62,6 +62,12 @@ PBOS_NO_ASAN PBOS_FORCEINLINE bool ki_kasan_is_area_poisoned(const void *addr, s
 		uint8_t *last_shadow = (uint8_t *)kh_kasan_mem_to_shadow(last_byte);
 		uint8_t last_accessible_byte = ((uintptr_t)last_byte) & (KASAN_GRANULE_SIZE - 1);
 
+		if (nonzero_start != last_shadow)
+			km_panic("Area %p-%p poisoned, reason: nonzero_start != last_shadow", addr, (char *)addr + size);
+
+		if (last_accessible_byte < *last_shadow)
+			km_panic("Area %p-%p poisoned, reason: last_accessible_byte < *last_shadow", addr, (char *)addr + size);
+
 		if ((nonzero_start != last_shadow) ||
 			// Fuck this shit, Linux may have some buggy codes that misled us to
 			// use >= instead, understand what you've learned well before you leap.

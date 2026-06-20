@@ -3,6 +3,7 @@
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/kh/mm/misc.hh>
 #include <pbos/ki/kasan/impl.hh>
+#include <pbos/hal/irq.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -26,6 +27,8 @@ PBOS_NO_ASAN void ki_kasan_scan_and_recycle_shadow_pages(void *vaddr, size_t siz
 }
 
 PBOS_NO_ASAN km_result_t ki_kasan_alloc_shadow_pages_for_vaddr(void *vaddr, size_t size) {
+	io::local_irq_lock irq_lock;
+
 	mm_context_t *const context = mm_get_cur_context();
 	const size_t page_size = mm_get_page_size();
 
@@ -103,7 +106,6 @@ PBOS_NO_ASAN void ki_kasan_poison_addr(void *addr, size_t size, uint8_t value) {
 PBOS_NO_ASAN void ki_kasan_unpoison_addr(void *addr, size_t size) {
 	if (reinterpret_cast<uintptr_t>(addr) & (KASAN_GRANULE_SIZE - 1))
 		km_panic("Unaligned address poisoning on %p", addr);
-	kd_println(__func__, "Unpoisoning: %p-%p", addr, (char *)addr + size);
 	ki_kasan_poison_addr(addr, kfxx::ceil_align_to<size_t, KASAN_GRANULE_SIZE>(size), 0);
 }
 

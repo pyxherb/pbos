@@ -9,6 +9,7 @@ PBOS_API void ps_init_semaphore(ps_semaphore_t *mtx) {
 	mtx->_data.lock_thread = nullptr;
 	mtx->_data.spinlock = HAL_SPINLOCK_UNLOCKED;
 	mtx->_data.read_count = 0;
+	mtx->_data.is_writing = false;
 }
 
 PBOS_API void ps_read_lock_semaphore(ps_semaphore_t *mtx) {

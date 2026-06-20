@@ -111,11 +111,6 @@ PBOS_NORETURN void kernel_main() {
 
 	ki_register_device_classes();
 
-	// FIXME: Don't know why the slight out-of-range errors does not trigger panic function. (Solved)
-	// FIXME: Don't know why duplicated poisoning unpoisons corresponding range.
-	// uint64_t *c = (uint64_t*)mm_kalloc(sizeof(uint64_t) * 3, alignof(uint64_t));
-	// c[3] = 1;
-
 	auto kmod_close_fail_hook([&result](fs_fcb_t *fcb, km_result_t result_in) noexcept {
 		result = result_in;
 	});

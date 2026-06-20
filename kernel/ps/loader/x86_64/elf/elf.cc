@@ -39,7 +39,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 	if (KM_FAILED(result = ps_thread_alloc_stack(tcb, 0x200000)))
 		return result;
 
-	if (KM_FAILED(result = ps_thread_alloc_kernel_stack(tcb, 0x2000)))
+	if (KM_FAILED(result = ps_thread_alloc_kernel_stack(tcb, 0x8000)))
 		return result;
 
 	Elf64_Ehdr ehdr;
