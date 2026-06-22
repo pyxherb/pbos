@@ -7,13 +7,17 @@
 
 PBOS_EXTERN_C_BEGIN
 
-#define PS_INVALID_UHANDLE_VALUE UINT32_MAX
+enum {
+	PS_INVALID_UHANDLE_VALUE = UINT32_MAX,
+};
 
 typedef uint32_t ps_proc_access_t;
 
-#define PS_PROC_ID_MAX UINT32_MAX
-#define PS_THREAD_ID_MAX UINT32_MAX
-#define PS_CPU_ID_MAX UINT32_MAX
+enum {
+	PS_PROC_ID_MAX = UINT32_MAX,
+	PS_THREAD_ID_MAX = UINT32_MAX,
+	PS_CPU_ID_MAX = UINT32_MAX,
+};
 
 typedef uint32_t ps_proc_id_t;
 typedef uint32_t ps_thread_id_t;
@@ -39,16 +43,20 @@ typedef struct _kh_user_context_t kh_user_context_t;
 // Thread Control Block (TCB)
 typedef struct _ps_tcb_t ps_tcb_t;
 
-#define PM_PROC_ID_MAX PROC_MAX
-#define PM_THREAD_ID_MAX UINT32_MAX
+enum {
+	PM_PROC_ID_MAX = UINT32_MAX,
+	PM_THREAD_ID_MAX = UINT32_MAX,
+};
 
 typedef void (*thread_fn_t)(void *args);
 
 extern ps_pcb_t **ps_cur_proc_per_cpu;
 extern ps_tcb_t **ps_cur_thread_per_cpu;
 
-#define PS_PROC_P 0x01	// Present
-#define PS_PROC_A 0x02	// Available
+enum {
+	PS_PROC_P = 0x01,  // Present
+	PS_PROC_A = 0x02   // Available
+};
 
 PBOS_NODISCARD PBOS_API km_result_t ps_create_proc(
 	ps_pcb_t *pcb,

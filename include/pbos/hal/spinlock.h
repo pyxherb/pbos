@@ -7,8 +7,10 @@ PBOS_EXTERN_C_BEGIN
 
 typedef bool hal_spinlock_t;
 
-#define HAL_SPINLOCK_UNLOCKED 0
-#define HAL_SPINLOCK_LOCKED 0
+enum {
+	HAL_SPINLOCK_UNLOCKED = 0,
+	HAL_SPINLOCK_LOCKED = 1,
+};
 
 #define hal_spinlock_islocked(lock) (lock)
 

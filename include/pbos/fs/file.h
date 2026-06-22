@@ -13,16 +13,19 @@ enum {
 };
 typedef uint8_t fs_fnode_type_t;
 
-#define FS_ACCESS_READ 0x0001	   // Read the file
-#define FS_ACCESS_WRITE 0x0002	   // Write the file
-#define FS_ACCESS_EXEC 0x0004	   // Execute the file
-#define FS_ACCESS_DELETE 0x0008	   // Delete the file
-#define FS_ACCESS_LOCK 0x0010	   // Lock the file
-#define FS_ACCESS_RDMOD 0x0020	   // Read access modifier
-#define FS_ACCESS_CHMOD 0x0040	   // Write access modifier
-#define FS_ACCESS_LIST 0x0080	   // List children
-#define FS_ACCESS_READ_XA 0x0100   // Read extra attributes (XA)
-#define FS_ACCESS_WRITE_XA 0x0200  // Write extra attributes (XA)
+enum {
+	FS_ACCESS_READ = 0x0001,	  // Read the file
+	FS_ACCESS_WRITE = 0x0002,	  // Write the file
+	FS_ACCESS_EXEC = 0x0004,	  // Execute the file
+	FS_ACCESS_DELETE = 0x0008,	  // Delete the file
+	FS_ACCESS_LOCK = 0x0010,	  // Lock the file
+	FS_ACCESS_RDMOD = 0x0020,	  // Read access modifier
+	FS_ACCESS_CHMOD = 0x0040,	  // Write access modifier
+	FS_ACCESS_LIST = 0x0080,	  // List children
+	FS_ACCESS_READ_XA = 0x0100,	  // Read extra attributes (XA)
+	FS_ACCESS_WRITE_XA = 0x0200,  // Write extra attributes (XA)
+};
+
 typedef uint16_t fs_faccess_t;
 
 typedef struct _fs_filesys_t fs_filesys_t;

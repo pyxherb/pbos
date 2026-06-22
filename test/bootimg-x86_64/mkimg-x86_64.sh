@@ -1,17 +1,17 @@
 #!/bin/bash
-if [ -z "$LIMINE_PATH" ]; then
-	echo "LIMINE_PATH does not present"
-	exit 1
-fi
-
-if [ ! -d "$LIMINE_PATH" ]; then
-	echo "LIMINE_PATH \"$LIMINE_PATH\" does not exist"
-	exit 1
-fi
-
 img_path="$PWD/build/boot.raw"
 
 if [ ! -f "$img_path" ]; then
+	if [ -z "$LIMINE_PATH" ]; then
+		echo "LIMINE_PATH does not present"
+		exit 1
+	fi
+
+	if [ ! -d "$LIMINE_PATH" ]; then
+		echo "LIMINE_PATH \"$LIMINE_PATH\" does not exist"
+		exit 1
+	fi
+
 	# Create original image.
 	dd if=/dev/zero bs=256M count=1 > $img_path
 

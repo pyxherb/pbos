@@ -25,7 +25,18 @@ void *mm_pgalloc(uint8_t memtype) {
 
 		if (i->free_list) {
 			void *addr = i->free_list->rb_value;
-			mm_pin_page(addr);
+			ki_mad_t *mad = i->free_list;
+
+			if ((!(mad->pin_count++)) && (!mad->ref_count)) {
+				i->free_list = mad->next_free;
+				if (mad->prev_free)
+					mad->prev_free->next_free = mad->next_free;
+				if (mad->next_free)
+					mad->next_free->prev_free = mad->prev_free;
+				mad->prev_free = nullptr;
+				mad->next_free = nullptr;
+			}
+
 			return addr;
 		}
 	}

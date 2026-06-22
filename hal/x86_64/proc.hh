@@ -2,7 +2,6 @@
 #define _HAL_X86_64_PROC_H_
 
 #include <pbos/kf/list.h>
-#include <pbos/kf/rbtree.h>
 #include <pbos/ki/ps/proc.hh>
 #ifdef __cplusplus
 	#include "mm.hh"

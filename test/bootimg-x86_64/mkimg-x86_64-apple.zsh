@@ -3,19 +3,19 @@ function mount_loop_dev() {
 	loop_dev_name=$(echo $loop_dev_name | awk '{ split($1, a, "/"); print a[3]; }')
 }
 
-if [ -z "$LIMINE_PATH" ]; then
-	echo "LIMINE_PATH does not present"
-	exit 1
-fi
-
-if [ ! -d "$LIMINE_PATH" ]; then
-	echo "LIMINE_PATH \"$LIMINE_PATH\" does not exist"
-	exit 1
-fi
-
 img_path="$PWD/build/boot.raw"
 
 if [ ! -f "$img_path" ]; then
+	if [ -z "$LIMINE_PATH" ]; then
+		echo "LIMINE_PATH does not present"
+		exit 1
+	fi
+
+	if [ ! -d "$LIMINE_PATH" ]; then
+		echo "LIMINE_PATH \"$LIMINE_PATH\" does not exist"
+		exit 1
+	fi
+
 	qemu-img create --format raw $img_path 256M
 
 	chmod 777 $img_path

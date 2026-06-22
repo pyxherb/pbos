@@ -1,8 +1,8 @@
 #ifndef _ARCH_X86_64_IRQ_H_
 #define _ARCH_X86_64_IRQ_H_
 
-#include "seg.h"
 #include "io.h"
+#include "seg.h"
 
 PBOS_EXTERN_C_BEGIN
 
@@ -22,26 +22,28 @@ static inline void arch_unmask_nmi() {
 
 void arch_lidt(void *idt, uint16_t size);
 
-#define ARCH_PIC1_IO_BASE 0x20
-#define ARCH_PIC2_IO_BASE 0xa0
-#define ARCH_PIC1_IO_COMMAND ARCH_PIC1_IO_BASE
-#define ARCH_PIC1_IO_DATA (ARCH_PIC1_IO_BASE + 1)
-#define ARCH_PIC2_IO_COMMAND ARCH_PIC2_IO_BASE
-#define ARCH_PIC2_IO_DATA (ARCH_PIC2_IO_BASE + 1)
+enum {
+	ARCH_PIC1_IO_BASE = 0x20,
+	ARCH_PIC2_IO_BASE = 0xa0,
+	ARCH_PIC1_IO_COMMAND = ARCH_PIC1_IO_BASE,
+	ARCH_PIC1_IO_DATA = (ARCH_PIC1_IO_BASE + 1),
+	ARCH_PIC2_IO_COMMAND = ARCH_PIC2_IO_BASE,
+	ARCH_PIC2_IO_DATA = (ARCH_PIC2_IO_BASE + 1),
 
-#define ARCH_PIC_COMMAND_EOI 0x20
+	ARCH_PIC_COMMAND_EOI = 0x20,
 
-#define ARCH_ICW1_COMMAND_ICW4 0x01		  // Indicates that ICW1 presents.
-#define ARCH_ICW1_COMMAND_SINGLE 0x02	  // Single (cascade) mode.
-#define ARCH_ICW1_COMMAND_INTERVAL4 0x04  // Call address interval 4.
-#define ARCH_ICW1_COMMAND_LEVEL 0x08	  // Level triggered (edge) mode.
-#define ARCH_ICW1_COMMAND_INIT 0x10		  // Initialize.
+	ARCH_ICW1_COMMAND_ICW4 = 0x01,		 // Indicates that ICW1 presents.
+	ARCH_ICW1_COMMAND_SINGLE = 0x02,	 // Single (cascade) mode.
+	ARCH_ICW1_COMMAND_INTERVAL4 = 0x04,	 // Call address interval 4.
+	ARCH_ICW1_COMMAND_LEVEL = 0x08,		 // Level triggered (edge) mode.
+	ARCH_ICW1_COMMAND_INIT = 0x10,		 // Initialize.
 
-#define ARCH_ICW4_COMMAND_8086 0x01		   // 8086/88 (MCS-80/85) mode.
-#define ARCH_ICW4_COMMAND_AUTO 0x02		   // Auto EOI
-#define ARCH_ICW4_COMMAND_BUF_SLAVE 0x08   // Buffered mode/slave
-#define ARCH_ICW4_COMMAND_BUF_MASTER 0x0c  // Buffered mode/master
-#define ARCH_ICW4_COMMAND_SFNM 0x10		   // Special fully nested
+	ARCH_ICW4_COMMAND_8086 = 0x01,		  // 8086/88 (MCS-80/85) mode.
+	ARCH_ICW4_COMMAND_AUTO = 0x02,		  // Auto EOI
+	ARCH_ICW4_COMMAND_BUF_SLAVE = 0x08,	  // Buffered mode/slave
+	ARCH_ICW4_COMMAND_BUF_MASTER = 0x0c,  // Buffered mode/master
+	ARCH_ICW4_COMMAND_SFNM = 0x10,		  // Special fully nested
+};
 
 static inline void arch_pic_eoi(uint8_t irq) {
 	if (irq >= 8)
@@ -56,7 +58,7 @@ static inline void arch_disable_pic() {
 }
 
 static inline void arch_mask_irq(uint8_t irq) {
-	if(irq < 8) {
+	if (irq < 8) {
 		arch_out8(
 			ARCH_PIC1_IO_DATA,
 			arch_in8(ARCH_PIC1_IO_DATA) | (1 << irq));
@@ -68,7 +70,7 @@ static inline void arch_mask_irq(uint8_t irq) {
 }
 
 static inline void arch_unmask_irq(uint8_t irq) {
-	if(irq < 8) {
+	if (irq < 8) {
 		arch_out8(
 			ARCH_PIC1_IO_DATA,
 			arch_in8(ARCH_PIC1_IO_DATA) & ~(1 << irq));
@@ -79,8 +81,10 @@ static inline void arch_unmask_irq(uint8_t irq) {
 	}
 }
 
-#define ARCH_PIC_COMMAND_READ_IRR 0x0a
-#define ARCH_PIC_COMMAND_READ_ISR 0x0b
+enum {
+	ARCH_PIC_COMMAND_READ_IRR = 0x0a,
+	ARCH_PIC_COMMAND_READ_ISR = 0x0b,
+};
 
 static inline uint16_t arch_read_pic_reg(uint8_t ocw3) {
 	arch_out8(ARCH_PIC1_IO_COMMAND, ocw3);

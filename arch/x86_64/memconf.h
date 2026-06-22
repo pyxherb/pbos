@@ -6,28 +6,34 @@
 
 PBOS_EXTERN_C_BEGIN
 
-#define PML4X_MAX 0x1ff
-#define PML4X_MIN 0
+enum {
+	PAGESIZE = 4096
+};
 
-#define PDPTX_MAX 0x1ff
-#define PDPTX_MIN 0
+enum {
+	PML4X_MAX = 0x1ff,
+	PML4X_MIN = 0,
 
-#define PDX_MAX 0x1ff
-#define PDX_MIN 0
+	PDPTX_MAX = 0x1ff,
+	PDPTX_MIN = 0,
 
-#define PTX_MAX 0x1ff
-#define PTX_MIN 0
+	PDX_MAX = 0x1ff,
+	PDX_MIN = 0,
 
-#define PGOFF_MAX ((PAGESIZE) - 1)
-#define PGOFF_MIN 0
+	PTX_MAX = 0x1ff,
+	PTX_MIN = 0,
+
+	PGOFF_MAX = PAGESIZE - 1,
+	PGOFF_MIN = 0,
+};
 
 typedef uint64_t pgaddr_t;
 typedef uint64_t pgsize_t;
 
-#define PAGESIZE 4096
-
-#define PGADDR_MAX 0xfffff
-#define PGADDR_MIN 0
+enum {
+	PGADDR_MAX = 0xfffff,
+	PGADDR_MIN = 0,
+};
 
 /// @brief Round up a linear address into page-aligned.
 #define PGCEIL(addr) ((uintptr_t)((((size_t)(addr)) + (PAGESIZE - 1)) & (~(PAGESIZE - 1))))
@@ -40,10 +46,12 @@ typedef uint64_t pgsize_t;
 /// @brief Round down a linear address into a paged address
 #define PGROUNDDOWN(addr) ((((pgaddr_t)(addr))) >> 12)
 
-#define PML4_SHIFT 39
-#define PDPT_SHIFT 30
-#define PD_SHIFT 21
-#define PT_SHIFT 12
+enum {
+	PML4_SHIFT = 39,
+	PDPT_SHIFT = 30,
+	PD_SHIFT = 21,
+	PT_SHIFT = 12,
+};
 
 #define PML4X(va) (((uintptr_t)(va) >> PML4_SHIFT) & 0x1ffULL)
 #define PDPTX(va) (((uintptr_t)(va) >> PDPT_SHIFT) & 0x1ffULL)
@@ -66,15 +74,9 @@ typedef uint64_t pgsize_t;
 #define UNPGADDR(addr) ((void *)((addr) << 12))
 #define UNPGSIZE(size) ((size_t)((size) << 12))
 
-#define KVADDR_PREFIX 0xffff000000000000ULL
-
-//
-// Paging levels.
-//
-#define PAGING_LEVEL_PML4 3
-#define PAGING_LEVEL_PDPT 2
-#define PAGING_LEVEL_PGDIR 1
-#define PAGING_LEVEL_PGTAB 0
+enum {
+	KVADDR_PREFIX = 0xffff000000000000ULL
+};
 
 //
 // Paging configurations.

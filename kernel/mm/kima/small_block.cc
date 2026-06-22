@@ -38,7 +38,7 @@ void *kima_alloc_small_block_page(kima_pool_t *pool, size_t order) {
 
 	kfxx::construct_at<kima_small_block_page_desc_t>(page_desc);
 
-	ps::mutex_guard g(pool->mutex);
+	ps::rec_mutex_guard g(pool->mutex);
 
 	// Add the new block page to the pool.
 	page_desc->next = pool->small_block_pages;

@@ -27,18 +27,20 @@ enum {
 	MM_PHYSICAL_MEMORY_TYPE_ACPI
 };
 
-/// @brief The page is mapped.
-#define MM_PAGE_MAPPED 0x01
-/// @brief The page can be read.
-#define MM_PAGE_READ 0x02
-/// @brief The page can be written.
-#define MM_PAGE_WRITE 0x04
-/// @brief The page can be executed.
-#define MM_PAGE_EXEC 0x08
-/// @brief The page should not be cached.
-#define MM_PAGE_NOCACHE 0x10
-/// @brief The page can be accessed by the user.
-#define MM_PAGE_USER 0x20
+enum {
+	/// @brief The page is mapped.
+	MM_PAGE_MAPPED = 0x01,
+	/// @brief The page can be read.
+	MM_PAGE_READ = 0x02,
+	/// @brief The page can be written.
+	MM_PAGE_WRITE = 0x04,
+	/// @brief The page can be executed.
+	MM_PAGE_EXEC = 0x08,
+	/// @brief The page should not be cached.
+	MM_PAGE_NOCACHE = 0x10,
+	/// @brief The page can be accessed by the user.
+	MM_PAGE_USER = 0x20,
+};
 
 /// @brief Type used for representing access mode of a page.
 typedef uint32_t mm_page_access_t;
@@ -141,10 +143,12 @@ PBOS_NODISCARD void *mm_pprealloc_in_place(ps_pcb_t *proc, void *old_ptr, size_t
 
 void mm_ppfree(ps_pcb_t *proc, void *ptr);
 
-/// @brief Do not mark the virtual pages as reserved after the allocation.
-#define VMALLOC_ATOMIC 0x00000001
-#define VMALLOC_NOSETVPM 0x40000000
-#define VMALLOC_NORESERVE 0x80000000
+enum {
+	/// @brief Do not mark the virtual pages as reserved after the allocation.
+	VMALLOC_ATOMIC = 0x00000001,
+	VMALLOC_NOSETVPM = 0x40000000,
+	VMALLOC_NORESERVE = 0x80000000,
+};
 
 typedef uint32_t mm_vmalloc_flags_t;
 

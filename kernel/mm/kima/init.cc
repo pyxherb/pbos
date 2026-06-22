@@ -27,7 +27,7 @@ _kima_pool_t::_kima_pool_t() {
 
 _kima_pool_t::_kima_pool_t(_kima_pool_t &&rhs) {
 	if (rhs._initialized) {
-		ps::mutex_guard g(rhs.mutex);
+		ps::rec_mutex_guard g(rhs.mutex);
 
 		ublk_poolpg_list = rhs.ublk_poolpg_list;
 		rhs.ublk_poolpg_list = nullptr;

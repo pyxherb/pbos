@@ -38,7 +38,7 @@ struct kima_small_block_page_info_t {
 };
 
 typedef struct _kima_pool_t {
-	ps::mutex_t mutex;
+	ps::rec_mutex_t mutex;
 
 	kima_ublk_poolpg_t *ublk_poolpg_list = nullptr;
 	kfxx::rbtree_t<void *> ublk_query_tree, ublk_free_tree;

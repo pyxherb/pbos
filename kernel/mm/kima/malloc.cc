@@ -12,7 +12,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 	kd_dbgcheck((alignment & (alignment - 1)) == 0, "The alignment must be power of 2");
 	kd_dbgcheck(size, "The size for mm_kalloc must not be 0");
 
-	ps::mutex_guard g(pool->mutex);
+	ps::rec_mutex_guard g(pool->mutex);
 
 	size_t size_log2 = kima_log2(size), alignment_log2 = kima_log2(alignment);
 	if ((size_log2 > KIMA_SMALL_BLOCK_MAX_ORDER) || (alignment > KIMA_SMALL_BLOCK_MAX_ORDER)) {
@@ -171,7 +171,7 @@ void *kima_alloc(kima_pool_t *pool, size_t size, size_t alignment) {
 PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size, size_t alignment) {
 	kd_dbgcheck(pool->_initialized == true, "The pool must be initialized");
 	kd_dbgcheck(size, "The new block size must not be 0");
-	ps::mutex_guard g(pool->mutex);
+	ps::rec_mutex_guard g(pool->mutex);
 
 	kima_ublk_t *old_ublk = static_cast<kima_ublk_t *>(pool->ublk_query_tree.find(old_ptr));
 
@@ -343,7 +343,7 @@ PBOS_NODISCARD void *kima_realloc(kima_pool_t *pool, void *old_ptr, size_t size,
 PBOS_NODISCARD void *kima_realloc_in_place(kima_pool_t *pool, void *old_ptr, size_t size) {
 	kd_dbgcheck(pool->_initialized == true, "The pool must be initialized");
 	kd_dbgcheck(size, "The new block size must not be 0");
-	ps::mutex_guard g(pool->mutex);
+	ps::rec_mutex_guard g(pool->mutex);
 	char *continuous_area_base = nullptr;
 
 	kima_ublk_t *old_ublk = static_cast<kima_ublk_t *>(pool->ublk_query_tree.find(old_ptr));
@@ -452,7 +452,7 @@ void kima_free(kima_pool_t *pool, void *ptr) {
 	kd_dbgcheck(pool->_initialized == true, "The pool must be initialized");
 	// io::LocalIrqLock irq_lock;
 
-	ps::mutex_guard g(pool->mutex);
+	ps::rec_mutex_guard g(pool->mutex);
 
 	kima_ublk_t *ublk = kima_lookup_ublk(pool, ptr);
 
