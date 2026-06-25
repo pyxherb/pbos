@@ -54,12 +54,12 @@ enum {
 
 typedef uint8_t fs_seek_mode_t;
 
-PBOS_NODISCARD PBOS_API km_result_t fs_create_file(
+PBOS_NODISCARD PBOS_API km_result_t fs_create_child_file(
 	fs_fnode_t *parent,
 	const char *filename,
 	size_t filename_len,
 	fs_fnode_t **file_out);
-PBOS_NODISCARD PBOS_API km_result_t fs_create_dir(
+PBOS_NODISCARD PBOS_API km_result_t fs_create_child_dir(
 	fs_fnode_t *parent,
 	const char *filename,
 	size_t filename_len,

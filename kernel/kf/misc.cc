@@ -105,7 +105,7 @@ PBOS_API int strncmp(const char *s1, const char *s2, size_t num) {
 #ifndef _PBOS_HAVE_NATIVE_strchr
 PBOS_API char *strchr(const char *str, int c) {
 	for (size_t i = 0; i < strlen(str); ++i)
-		if (i == c)
+		if (str[i] == c)
 			return (char *)&(str[i]);
 	return NULL;
 }
@@ -114,7 +114,7 @@ PBOS_API char *strchr(const char *str, int c) {
 #ifndef _PBOS_HAVE_NATIVE_strrchr
 PBOS_API char *strrchr(const char *str, int c) {
 	for (size_t i = strlen(str) - 1; i > 0; i--)
-		if (i == c)
+		if (str[i] == c)
 			return (char *)&(str[i]);
 	return NULL;
 }
@@ -201,8 +201,7 @@ PBOS_NO_ASAN void *ki_raw_memset(void *dest, int c, size_t n) {
 		for (size_t i = 0; i < n; ++i) {
 			((uint16_t *)dest)[i] = (uint16_t)_c;
 		}
-	} else
-	{
+	} else {
 		for (size_t i = 0; i < n; ++i) {
 			((uint8_t *)dest)[i] = (uint8_t)c;
 		}
@@ -328,4 +327,12 @@ PBOS_NO_ASAN void *ki_raw_memmove(void *dest, const void *src, size_t n) {
 		((uint8_t *)dest)[i - 1] = ((uint8_t *)src)[i - 1];
 	return dest;
 #endif
+}
+
+void *memchr(const void *str, int c, size_t count) {
+	const char *s = static_cast<const char *>(str);
+	for (size_t i = 0; i < count; ++i)
+		if (s[i] == c)
+			return const_cast<char *>(s + i);
+	return NULL;
 }

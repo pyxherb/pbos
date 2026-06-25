@@ -269,7 +269,7 @@ km_result_t ki_do_rename_fnode(fs_fnode_t *file, const char *name, size_t name_l
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_create_file(
+PBOS_API km_result_t fs_create_child_file(
 	fs_fnode_t *parent,
 	const char *filename,
 	size_t filename_len,
@@ -292,7 +292,7 @@ PBOS_API km_result_t fs_create_file(
 	return KM_RESULT_OK;
 }
 
-PBOS_API km_result_t fs_create_dir(
+PBOS_API km_result_t fs_create_child_dir(
 	fs_fnode_t *parent,
 	const char *filename,
 	size_t filename_len,
@@ -453,43 +453,38 @@ PBOS_API km_result_t fs_resolve_path(fs_fnode_t *cur_dir, const char *path, size
 	fs::fnode_ptr file = cur_dir;
 	km_result_t result;
 
-	const char *i = path, *last_divider = path;
+	const char *i = path, *last_divider = path, *limit = path + path_len;
 	fs::fnode_ptr new_file;
 
-	while (i - path < path_len) {
-		switch (*i) {
-			case '/': {
-				size_t filename_len = i - last_divider;
+	for (;;) {
+		i = static_cast<char *>(memchr(i, '/', limit - i));
 
-				if (!filename_len) {
-					if (last_divider == path) {
-						new_file = fs_abs_root_dir;
-					}
-				} else {
-					if (!file)
-						return KM_RESULT_NOT_FOUND;
-					if (KM_FAILED(result = fs_child_of(file.get(), last_divider, filename_len, new_file.get_addr())))
-						return result;
+		if (i) {
+			size_t filename_len = i - last_divider;
+
+			if (!filename_len) {
+				if (last_divider == path) {
+					new_file = fs_abs_root_dir;
 				}
-
-				last_divider = i + 1;
-				file = new_file;
-				break;
+			} else {
+				if (!file)
+					return KM_RESULT_NOT_FOUND;
+				KM_RETURN_IF_FAILED(fs_child_of(file.get(), last_divider, filename_len, new_file.get_addr()));
 			}
-			case '\0':
-				goto end;
+
+			last_divider = i + 1;
+			file = new_file;
+		} else {
+			size_t filename_len = limit - last_divider;
+			if (filename_len) {
+				if (!file)
+					return KM_RESULT_NOT_FOUND;
+				KM_RETURN_IF_FAILED(fs_child_of(file.get(), last_divider, filename_len, new_file.get_addr()));
+			}
+			break;
 		}
 
 		++i;
-	}
-
-end:;
-	size_t filename_len = i - last_divider;
-	if (filename_len) {
-		if (!file)
-			return KM_RESULT_NOT_FOUND;
-		if (KM_FAILED(result = fs_child_of(file.get(), last_divider, filename_len, new_file.get_addr())))
-			return result;
 	}
 
 	*file_out = new_file.release();

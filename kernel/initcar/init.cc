@@ -113,7 +113,7 @@ void ki_initcar_init() {
 
 	fs::fnode_ptr mount_point;
 	{
-		if (KM_FAILED(result = fs_create_dir(fs_abs_root_dir, INITCAR_DIR_FILENAME.data(), INITCAR_DIR_FILENAME.size(), &mount_point)))
+		if (KM_FAILED(result = fs_create_child_dir(fs_abs_root_dir, INITCAR_DIR_FILENAME.data(), INITCAR_DIR_FILENAME.size(), &mount_point)))
 			km_panic("Error creating initcar mount point directory, error code = %.0x", result);
 	}
 

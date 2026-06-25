@@ -226,7 +226,7 @@ void ki_devio_init() {
 
 	fs::fnode_ptr mount_point;
 	{
-		if (KM_FAILED(result = fs_create_dir(fs_abs_root_dir, KI_DEVIO_ROOT_DIR_NAME.data(), KI_DEVIO_ROOT_DIR_NAME.size(), &mount_point)))
+		if (KM_FAILED(result = fs_create_child_dir(fs_abs_root_dir, KI_DEVIO_ROOT_DIR_NAME.data(), KI_DEVIO_ROOT_DIR_NAME.size(), &mount_point)))
 			km_panic("Error creating devio mount point, error code = %.0x", result);
 	}
 
