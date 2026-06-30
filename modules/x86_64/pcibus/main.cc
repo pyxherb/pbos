@@ -2,26 +2,27 @@
 #include <pbos/dm/device.h>
 #include <pbos/kd/logger.h>
 #include "mcfg.h"
+#include <pbos/pci/driver.h>
 
 PBOS_EXTERN_C_BEGIN
 
-void pci_destroy_bus(dm_bus_t *bus) {
+void pcibus_destroy_bus(dm_bus_t *bus) {
 }
 
-km_result_t pci_register_device(dm_bus_t *bus, dm_device_t *device) {
+km_result_t pcibus_register_device(dm_bus_t *bus, dm_device_t *device) {
 	return KM_RESULT_OK;
 }
 
-void pci_unregister_device(dm_bus_t *bus, dm_device_t *device) {
+void pcibus_unregister_device(dm_bus_t *bus, dm_device_t *device) {
 }
 
-const dm_bus_ops_t pci_bus_ops = {
-	.destroy_bus = pci_destroy_bus,
-	.register_device = pci_register_device,
-	.unregister_device = pci_unregister_device
+const dm_bus_ops_t pcibus_ops = {
+	.destroy_bus = pcibus_destroy_bus,
+	.register_device = pcibus_register_device,
+	.unregister_device = pcibus_unregister_device
 };
 
-PBOS_USED PBOS_KMOD_API char PBOS_MODULE_NAME[] = "pcibus";
+PBOS_USED PBOS_KMOD_API char PBOS_MODULE_NAME[] = PCI_PCIBUS_KMOD_NAME;
 
 PBOS_USED PBOS_KMOD_API km_result_t pbos_module_init() {
 	kxi_call_ctors();
@@ -31,18 +32,18 @@ PBOS_USED PBOS_KMOD_API km_result_t pbos_module_init() {
 	KM_RETURN_IF_FAILED(pcibus_fetch_device_classes());
 
 	{
-		KM_RETURN_IF_FAILED(dm_register_bus(PCIBUS_BUS_NAME.data(), PCIBUS_BUS_NAME.size(), &pci_bus_ops, &pcibus_bus_object));
+		KM_RETURN_IF_FAILED(dm_register_bus(PCIBUS_BUS_NAME.data(), PCIBUS_BUS_NAME.size(), &pcibus_ops, &pcibus_bus_object));
 
 		kd_println(PCIROOT_COMPONENT_NAME, "Registered PCI bus");
 	}
 
 	{
 		KM_RETURN_IF_FAILED(dm_create_devio_dir(dm_get_devio_root_dir(), PCIBUS_DEVIO_PCI_ROOT_DIR_NAME.data(), PCIBUS_DEVIO_PCI_ROOT_DIR_NAME.size(), pcibus_devio_pci_root_dir.get_addr_without_release()));
-		kd_println(PCIROOT_COMPONENT_NAME, "Created PCI namespace directory");
+		kd_println(PCIROOT_COMPONENT_NAME, "Created PCI devio directory");
 	}
 
 	{
-		KM_RETURN_IF_FAILED(pcibus_scan_acpi_mcfg_table());
+		KM_RETURN_IF_FAILED(pcibus_scan_acpi_mcfg_table_and_create_resources());
 	}
 
 	return KM_RESULT_OK;

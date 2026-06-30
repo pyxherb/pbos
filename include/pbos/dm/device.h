@@ -91,6 +91,9 @@ PBOS_API km_result_t dm_create_devio_file(dm_device_t *device, fs_fnode_t *paren
 PBOS_API km_result_t dm_create_devio_dir(fs_fnode_t *parent, const char *filename, size_t filename_len, fs_fnode_t **fnode_out);
 PBOS_API km_result_t dm_remove_devio_fnode(fs_fnode_t *fnode);
 
+PBOS_API km_result_t dm_create_devio_file_by_path(dm_device_t *device, const char *filename, size_t filename_len, fs_fnode_t **fnode_out);
+PBOS_API km_result_t dm_create_devio_dir_by_path(const char *filename, size_t filename_len, fs_fnode_t **fnode_out);
+
 PBOS_EXTERN_C_END
 
 #endif

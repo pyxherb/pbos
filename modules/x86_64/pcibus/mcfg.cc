@@ -5,7 +5,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-km_result_t pcibus_scan_acpi_mcfg_table() {
+km_result_t pcibus_scan_acpi_mcfg_table_and_create_resources() {
 	mm_context_t *context = mm_get_cur_context();
 	void *mcfg_table_base = nullptr;
 	for (size_t i = 0; i < acpi_rsdt_length(); ++i) {

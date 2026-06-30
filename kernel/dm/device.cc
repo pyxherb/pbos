@@ -322,4 +322,20 @@ PBOS_API km_result_t dm_remove_devio_fnode(fs_fnode_t *fnode) {
 	return fs_remove(fnode);
 }
 
+PBOS_API km_result_t dm_create_devio_file_by_path(dm_device_t *device, const char *filename, size_t filename_len, fs_fnode_t **fnode_out) {
+	fs::fnode_ptr fnode;
+
+	KM_RETURN_IF_FAILED(fs_resolve_path(ki_devio_root_dir.get(), filename, filename_len, fnode.get_addr_without_release()));
+
+	return dm_create_devio_file(device, fnode.get(),  filename, filename_len, fnode_out);
+}
+
+PBOS_API km_result_t dm_create_devio_dir_by_path(const char *filename, size_t filename_len, fs_fnode_t **fnode_out) {
+	fs::fnode_ptr fnode;
+
+	KM_RETURN_IF_FAILED(fs_resolve_path(ki_devio_root_dir.get(), filename, filename_len, fnode.get_addr_without_release()));
+
+	return dm_create_devio_dir(fnode.get(),  filename, filename_len, fnode_out);
+}
+
 PBOS_EXTERN_C_END
