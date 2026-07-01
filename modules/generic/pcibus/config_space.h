@@ -1,0 +1,10 @@
+#ifndef _PCIROOT_CONFIG_SPACE_H_
+#define _PCIROOT_CONFIG_SPACE_H_
+
+#include "common.h"
+
+PBOS_EXTERN_C_BEGIN
+
+PBOS_EXTERN_C_END
+
+#endif

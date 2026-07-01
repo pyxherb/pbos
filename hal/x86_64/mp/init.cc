@@ -60,7 +60,7 @@ static void hali_mask_pic(uint8_t pic1_offset, uint8_t pic2_offset) {
 }
 
 void kh_mp_init_topology() {
-	if (kh_acpi_is_available()) {
+	if (kh_acpi_is_supported()) {
 		uint32_t lapic_num = 0, lx2apic_num = 0;
 		const size_t num_rsd = acpi_rsdt_length();
 		for (size_t i = 0; i < num_rsd; ++i) {

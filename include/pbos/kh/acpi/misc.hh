@@ -4,7 +4,7 @@
 #include <pbos/acpi/misc.h>
 #include <pbos/ki/acpi/rsdt.hh>
 
-bool kh_acpi_is_available();
+bool kh_acpi_is_supported();
 bool kh_acpi_is_required();
 void kh_acpi_init();
 

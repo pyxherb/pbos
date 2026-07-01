@@ -71,7 +71,7 @@ typedef struct _kasan_global_t {
 #endif
 } kasan_global_t;
 
-PBOS_NO_ASAN PBOS_API bool kasan_is_available();
+PBOS_NO_ASAN PBOS_API bool kasan_is_supported();
 
 PBOS_NO_ASAN PBOS_API void kasan_enable();
 PBOS_NO_ASAN PBOS_API void kasan_disable();

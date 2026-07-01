@@ -1,7 +1,8 @@
 #include "common.h"
+#include <pbos/generated/dm/devcls.h>
+#include <pbos/io/ioport.h>
 #include <pbos/kd/logger.h>
 #include <pbos/ps/mutex.hh>
-#include <pbos/generated/dm/devcls.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -67,7 +68,7 @@ km_result_t pcibus_clear_domain_dir() {
 	}
 }
 
-km_result_t pcibus_fetch_device_classes() {
+km_result_t pcibus_fetch_device_classes_to_global_vars() {
 	kf_uuid_t uuid;
 
 	uuid = DM_DEVICE_CLASS_BUS_CONTROLLER;
@@ -76,6 +77,15 @@ km_result_t pcibus_fetch_device_classes() {
 		return KM_RESULT_DEVICE_CLASS_NOT_FOUND;
 
 	return KM_RESULT_OK;
+}
+
+uint16_t pcibus_read_pci_config_space16(uint8_t bus, uint8_t slot, uint8_t func, uint8_t off) {
+	io_write_ioport32(0xcf8,
+		static_cast<uint32_t>(
+			(bus << 16) | (slot << 11) |
+			(func << 8) | (off & 0xfc) | ((uint32_t)0x80000000)));
+
+	return static_cast<uint16_t>(io_read_ioport32(0xcfc) >> ((off & 2) * 8));
 }
 
 PBOS_EXTERN_C_END

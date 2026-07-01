@@ -1,4 +1,5 @@
 #include "mcfg.h"
+#include <pbos/acpi/misc.h>
 #include <pbos/dm/device.h>
 #include <pbos/kd/logger.h>
 #include <string.h>
@@ -6,6 +7,10 @@
 PBOS_EXTERN_C_BEGIN
 
 km_result_t pcibus_scan_acpi_mcfg_table_and_create_resources() {
+	if (!acpi_is_supported()) {
+		kd_println(PCIROOT_COMPONENT_NAME, "ACPI is not available, skipping scanning ACPI MCFG table");
+		return KM_RESULT_OK;
+	}
 	mm_context_t *context = mm_get_cur_context();
 	void *mcfg_table_base = nullptr;
 	for (size_t i = 0; i < acpi_rsdt_length(); ++i) {

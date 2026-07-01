@@ -55,7 +55,9 @@ km_result_t pcibus_clear_domain_dir();
 
 extern dm_device_class_t *pcibus_bus_controller_device_class;
 
-km_result_t pcibus_fetch_device_classes();
+km_result_t pcibus_fetch_device_classes_to_global_vars();
+
+uint16_t pcibus_read_pci_config_space16(uint8_t bus, uint8_t slot, uint8_t func, uint8_t off);
 
 PBOS_EXTERN_C_END
 

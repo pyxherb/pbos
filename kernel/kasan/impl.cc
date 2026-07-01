@@ -69,7 +69,7 @@ PBOS_NO_ASAN km_result_t ki_kasan_alloc_shadow_pages_for_vaddr(void *vaddr, size
 	return KM_RESULT_OK;
 }
 
-PBOS_NO_ASAN PBOS_API bool kasan_is_available() {
+PBOS_NO_ASAN PBOS_API bool kasan_is_supported() {
 #if !KI_ENABLE_KASAN
 	return false;
 #else
@@ -91,7 +91,7 @@ PBOS_NO_ASAN void ki_kasan_report(const void *addr, size_t size, bool is_write, 
 }
 
 PBOS_NO_ASAN void ki_kasan_poison_addr(void *addr, size_t size, uint8_t value) {
-	if (kasan_is_available()) {
+	if (kasan_is_supported()) {
 		if (reinterpret_cast<uintptr_t>(addr) & (KASAN_GRANULE_SIZE - 1))
 			km_panic("Unaligned address poisoning on %p", addr);
 		if (size & (KASAN_GRANULE_SIZE - 1))
@@ -110,7 +110,7 @@ PBOS_NO_ASAN void ki_kasan_unpoison_addr(void *addr, size_t size) {
 }
 
 PBOS_NO_ASAN void ki_kasan_poison_last_granule(void *addr, size_t size) {
-	if (kasan_is_available()) {
+	if (kasan_is_supported()) {
 		if (size & KASAN_GRANULE_SIZE) {
 			char *shadow = static_cast<char *>(kh_kasan_mem_to_shadow(static_cast<char *>(addr) + size));
 			*shadow = size & (KASAN_GRANULE_SIZE - 1);

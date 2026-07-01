@@ -30,7 +30,7 @@ PBOS_NO_ASAN PBOS_API void __asan_handle_no_return(void) {
 }
 
 PBOS_NO_ASAN PBOS_API void __asan_alloca_poison(void *addr, size_t size) {
-	if (!kasan_is_available())
+	if (!kasan_is_supported())
 		return;
 
 	size_t ceil_size = kfxx::ceil_align_to<size_t, KASAN_GRANULE_SIZE>(size);
@@ -50,7 +50,7 @@ PBOS_NO_ASAN PBOS_API void __asan_alloca_poison(void *addr, size_t size) {
 	ki_kasan_poison_addr(redzone_r, padding_size + KASAN_ALLOCA_REDZONE_SIZE, KASAN_ALLOCA_RIGHT);
 }
 PBOS_NO_ASAN PBOS_API void __asan_allocas_unpoison(void *stack_top, void *stack_bottom) {
-	if (!kasan_is_available())
+	if (!kasan_is_supported())
 		return;
 	if ((!stack_top) || (stack_top > stack_bottom))
 		return;

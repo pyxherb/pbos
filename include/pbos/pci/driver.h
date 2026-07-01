@@ -13,10 +13,11 @@ typedef struct _pci_device_id_t {
 typedef struct _pci_device_exdata_t {
 } pci_device_exdata_t;
 
-typedef km_result_t (*pci_driver_found_op_t)(io_dispatch_context_t *dc, dm_device_t *device, const pci_device_id_t *device_id);
+typedef km_result_t (*pci_driver_detected_op_t)(dm_device_t *device, const pci_device_id_t *device_id);
+typedef void (*pci_driver_removed_op_t)(dm_device_t *device);
 
 typedef struct _pci_driver_ops_t {
-	pci_driver_found_op_t found;
+	pci_driver_detected_op_t detected;
 } pci_driver_ops_t;
 
 PBOS_API km_result_t pci_register_driver(const pci_device_id_t *device_ids, const pci_driver_ops_t *ops);

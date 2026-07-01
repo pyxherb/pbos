@@ -22,7 +22,7 @@ PBOS_NO_ASAN void ki_kasan_scan_and_recycle_shadow_pages(void *vaddr, size_t siz
 PBOS_NO_ASAN km_result_t ki_kasan_alloc_shadow_pages_for_vaddr(void *vaddr, size_t size);
 
 /*PBOS_NO_ASAN PBOS_FORCEINLINE bool ki_kasan_is_byte_poisoned(const void *addr) {
-	if (!kasan_is_available())
+	if (!kasan_is_supported())
 		return false;
 	const void *shadow_ptr = kh_kasan_mem_to_shadow(addr);
 	if (!shadow_ptr)
@@ -39,7 +39,7 @@ PBOS_NO_ASAN km_result_t ki_kasan_alloc_shadow_pages_for_vaddr(void *vaddr, size
 }*/
 
 PBOS_NO_ASAN PBOS_FORCEINLINE bool ki_kasan_is_area_poisoned(const void *addr, size_t size) {
-	if (!kasan_is_available())
+	if (!kasan_is_supported())
 		return false;
 	char *start = static_cast<char *>(kh_kasan_mem_to_shadow(addr)),
 		 *end = static_cast<char *>(kh_kasan_mem_to_shadow(static_cast<const char *>(addr) + size - 1)) + 1;

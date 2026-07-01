@@ -3,6 +3,6 @@
 
 #include <pbos/kf/basedefs.h>
 
-PBOS_API bool acpi_is_available();
+PBOS_API bool acpi_is_supported();
 
 #endif

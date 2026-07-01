@@ -5,7 +5,7 @@
 #include <pbos/kh/mm/misc.hh>
 #include <pbos/ki/acpi/rsdt.hh>
 
-bool kh_acpi_is_available() {
+bool kh_acpi_is_supported() {
 	return hali_limine_rsdp_request.response;
 }
 
