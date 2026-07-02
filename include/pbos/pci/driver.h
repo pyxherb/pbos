@@ -20,7 +20,7 @@ typedef struct _pci_driver_ops_t {
 	pci_driver_detected_op_t detected;
 } pci_driver_ops_t;
 
-PBOS_API km_result_t pci_register_driver(const pci_device_id_t *device_ids, const pci_driver_ops_t *ops);
-PBOS_API void pci_unregister_driver(const pci_device_id_t *device_id);
+PBOS_KMOD_API km_result_t pci_register_driver(const pci_device_id_t *device_ids, const pci_driver_ops_t *ops);
+PBOS_KMOD_API void pci_unregister_driver(const pci_device_id_t *device_id);
 
 #endif

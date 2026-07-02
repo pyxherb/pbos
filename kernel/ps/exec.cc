@@ -150,7 +150,7 @@ km_result_t ps_exec(
 }
 
 km_result_t ps_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
-	io::local_irq_lock LocalIrqLock;
+	io::local_irq_lock irq_lock;
 
 	if (ki_registered_binprotos.find(fcb))
 		return KM_RESULT_EXISTED;
@@ -258,13 +258,13 @@ void ps_unref_cached_ro_page(void *paddr) {
 }
 
 km_binproto_t *ps_find_binproto(fs_fcb_t *fcb) {
-	io::local_irq_lock LocalIrqLock;
+	io::local_irq_lock irq_lock;
 
 	return static_cast<km_binproto_t *>(ki_registered_binprotos.find(fcb));
 }
 
 void ps_unregister_binproto(km_binproto_t *proto) {
-	io::local_irq_lock LocalIrqLock;
+	io::local_irq_lock irq_lock;
 
 	// TODO: Check if the prototype is registered.
 	ki_registered_binprotos.remove(proto);

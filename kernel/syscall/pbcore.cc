@@ -117,8 +117,6 @@ km_result_t sysent_exec_child(
 	mm_context_t *mm_context = ps_mm_context_of(pcb);
 	km_result_t result;
 
-	// TODO: Unlock the pages.
-
 	KM_RETURN_IF_FAILED(mm_probe_and_lock_user_pages(mm_context, (void *)args, args_len, MM_PAGE_READ));
 	kfxx::deferred unlock_args_guard([mm_context, args, args_len]() noexcept {
 		mm_unlock_pages(mm_context, (void *)args, args_len);

@@ -7,12 +7,12 @@
 PBOS_EXTERN_C_BEGIN
 
 void hal_lock_spinlock(hal_spinlock_t *lock) {
-	while (arch_atomic_cmpxchg8((uint8_t *)lock, HAL_SPINLOCK_UNLOCKED, HAL_SPINLOCK_LOCKED) == HAL_SPINLOCK_UNLOCKED);
+	while (arch_atomic_cmpxchg8((uint8_t *)lock, HAL_SPINLOCK_UNLOCKED, HAL_SPINLOCK_LOCKED) == HAL_SPINLOCK_LOCKED);
 	// ps_yield_cur_thread();
 }
 
 bool hal_try_lock_spinlock(hal_spinlock_t *lock) {
-	return arch_atomic_cmpxchg8((uint8_t *)lock, HAL_SPINLOCK_UNLOCKED, HAL_SPINLOCK_LOCKED) != HAL_SPINLOCK_UNLOCKED;
+	return arch_atomic_cmpxchg8((uint8_t *)lock, HAL_SPINLOCK_UNLOCKED, HAL_SPINLOCK_LOCKED) != HAL_SPINLOCK_LOCKED;
 }
 
 void hal_unlock_spinlock(hal_spinlock_t *lock) {

@@ -10,7 +10,7 @@
 mm_context_t **mm_cur_contexts = nullptr;
 const ki_paging_config_t *ki_cur_paging_config;
 
-ps::mutex_t ki_kernel_mmap_mutex;
+ps::rec_mutex_t ki_kernel_mmap_mutex;
 
 _mm_context_t::_mm_context_t() {
 }
