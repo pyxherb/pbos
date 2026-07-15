@@ -32,8 +32,8 @@ set(PBOS_ARCH ${_GUESSED_ARCH} CACHE STRING "Identifier of target architecture")
 
 # Setup build environments
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/")
-set(CMAKE_FIND_ROOT_PATH "${PROJECT_SOURCE_DIR}/cmake")
-set(CMAKE_INCLUDE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+set(CMAKE_FIND_ROOT_PATH "${PROJECT_SOURCE_DIR}/cmake/")
+set(CMAKE_INCLUDE_PATH "${PROJECT_SOURCE_DIR}/cmake/")
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories("${PROJECT_SOURCE_DIR}/include")

@@ -1,8 +1,8 @@
-if(WIN32)
+if(CMAKE_HOST_WIN32)
 	foreach(i ${CMAKE_SYSTEM_PREFIX_PATH})
-		message(CHECK_START "Finding dcgen: ${i}/ClenchTools/bin")
+		message(CHECK_START "Finding dcgen: ${i}/PbOSTools/bin")
 
-		find_program(DCGEN_EXECUTABLE dcgen NAMES dcgen HINTS ${i}/ClenchTools/bin)
+		find_program(DCGEN_EXECUTABLE dcgen NAMES dcgen HINTS ${i}/PbOSTools/bin)
 
 		if (DCGEN_EXECUTABLE)
 			message(CHECK_PASS "Found dcgen: ${DCGEN_EXECUTABLE}")

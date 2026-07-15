@@ -1,5 +1,12 @@
 $ErrorActionPreference = "Stop"
 
+$pbosTriplet = $env:PBOS_TRIPLET
+
+if (-not $pbosTriplet) {
+	Write-Output "LIMINE_PATH not set"
+	Exit -1
+}
+
 $CC=$(where.exe clang)
 $CXX=$(where.exe clang++)
 $ASM=$(where.exe clang)
@@ -23,11 +30,8 @@ for ($i = 0; $i -lt $args.Count; $i++) {
 
 cmake `
 --no-warn-unused-cli `
---toolchain cmake/platform/x86_64-pc-pbkim.cmake `
--DCMAKE_C_COMPILER:FILEPATH="$CC" `
--DCMAKE_CXX_COMPILER:FILEPATH="$CXX" `
--DCMAKE_ASM_COMPILER:FILEPATH="$ASM" `
--DCMAKE_LINKER:FILEPATH="$LD" `
+-DCMAKE_BUILD_TYPE:STRING=Debug `
+--toolchain ./cmake/Platform/$pbosTriplet-pbkim.cmake `
 -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE `
 -G "Ninja" `
 -S . -B build

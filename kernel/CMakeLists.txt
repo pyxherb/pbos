@@ -15,7 +15,7 @@ target_include_directories(pboskrnl PRIVATE ${FREESTDC_INCLUDE_DIR})
 target_include_directories(pboskrnl PRIVATE ${FREESTDC_INCLUDE_DIR_CXX})
 
 # add_dependencies(pboskrnl bootldr)
-target_link_libraries(pboskrnl PRIVATE pbarch freestdc pbhal)
+target_link_libraries(pboskrnl PRIVATE pbarch freestdc pbhal pbos_common)
 target_compile_definitions(pboskrnl PRIVATE PBOS_COMPILING_KERNEL=1)
 target_link_options(pboskrnl PRIVATE "-T${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/kernel.lds")
 
