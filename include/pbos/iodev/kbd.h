@@ -3,7 +3,11 @@
 
 #include <pbos/dm/device.h>
 
+PBOS_EXTERN_C_BEGIN
+
 #define IODEV_KBD_KMOD_NAME "kbdcls"
+
+#define IODEV_KBD_DEVICE_DIR_NAME "kbd"
 
 enum {
 	KBD_EVENT_IN_ECHO = 0x00,
@@ -69,5 +73,10 @@ typedef struct _kbd_device_ops_t {
 	kbd_connect_op_t connect;
 	kbd_disconnect_op_t disconnect;
 } kbd_device_ops_t;
+
+km_result_t kbd_register_device(dm_device_t *device, const kbd_device_ops_t *ops, dm_device_t **kbd_device_out);
+void kbd_unregister_device(dm_device_t *kbd_device);
+
+PBOS_EXTERN_C_END
 
 #endif

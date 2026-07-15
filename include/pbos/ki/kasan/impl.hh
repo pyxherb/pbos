@@ -69,7 +69,7 @@ PBOS_NO_ASAN PBOS_FORCEINLINE bool ki_kasan_is_area_poisoned(const void *addr, s
 			km_panic("Area %p-%p poisoned, reason: last_accessible_byte < *last_shadow", addr, (char *)addr + size);
 
 		if ((nonzero_start != last_shadow) ||
-			// Fuck this shit, Linux may have some buggy codes that misled us to
+			// Fuck this shit, Linux may had some buggy codes that misled us to
 			// use >= instead, understand what you've learned well before you leap.
 			(last_accessible_byte < *last_shadow))
 			return true;

@@ -34,4 +34,4 @@ cmake --build build --config Debug --target pboskrnl
 
 ## License
 
-The PbOS kernel and components in this repository is licensed under GNU General Public License v3.0 (may be changed later).
+PbOS components in this repository is licensed under GNU General Public License v3.0 (may be changed later).

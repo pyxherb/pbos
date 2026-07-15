@@ -72,6 +72,8 @@ PBOS_API void dm_unregister_device_class(dm_device_class_t *device_class);
 
 PBOS_API km_result_t dm_create_device(dm_bus_t *bus, dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out);
 
+PBOS_API void dm_invalidate_device(dm_device_t *device);
+
 PBOS_API void dm_ref_device(dm_device_t *device);
 PBOS_API void dm_unref_device(dm_device_t *device);
 

@@ -30,6 +30,12 @@ typedef struct _dm_device_class_t : public kfxx::rbtree_t<kf_uuid_t>::node_t {
 	_dm_device_class_t(kfxx::allocator_t *allocator);
 } dm_device_class_t;
 
+enum {
+	DM_DEVICE_FLAG_REMOVED = 1 << 0
+};
+
+typedef uint32_t dm_device_flags_t;
+
 typedef struct _dm_device_t {
 	size_t ref_count = 0;
 
@@ -46,6 +52,8 @@ typedef struct _dm_device_t {
 	ps::rec_mutex_t device_mutex;
 
 	void *exdata = nullptr;
+
+	dm_device_flags_t flags = 0;
 
 	_dm_device_t();
 } dm_device_t;

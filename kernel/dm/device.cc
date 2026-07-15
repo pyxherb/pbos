@@ -170,6 +170,12 @@ PBOS_API km_result_t dm_create_device(dm_bus_t *bus, dm_device_class_t *device_c
 	return KM_RESULT_OK;
 }
 
+PBOS_API void dm_invalidate_device(dm_device_t *device) {
+	ps::rec_mutex_guard gd(device->device_mutex);
+
+	device->flags |= DM_DEVICE_FLAG_REMOVED;
+}
+
 PBOS_API void dm_ref_device(dm_device_t *device) {
 	kf_atomic_inc_size(&device->ref_count);
 }
