@@ -6,7 +6,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-km_result_t pcibus_scan_acpi_mcfg_table_and_create_resources();
+km_result_t pcibus_scan_acpi_mcfg_table_and_create_domains();
 
 PBOS_EXTERN_C_END
 

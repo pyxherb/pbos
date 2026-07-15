@@ -7,6 +7,7 @@
 #include <pbos/fs/file.hh>
 #include <pbos/kfxx/map.hh>
 #include <pbos/kfxx/string_view.hh>
+#include <pbos/pci/driver.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -14,12 +15,16 @@ PBOS_EXTERN_C_BEGIN
 
 using pcibus_domain_id_t = uint32_t;
 
-struct pcibus_domain_registry_t : public kfxx::rbtree_t<pcibus_domain_id_t>::node_t {
-	size_t ref_count = 0;
-	uint16_t segment_group_id;
-	dm_device_t *device;
+struct pcibus_domain_t;
 
-	pcibus_domain_registry_t();
+struct pcibus_domain_t : public kfxx::rbtree_t<pcibus_domain_id_t>::node_t {
+	size_t ref_count = 0;
+	dm_device_t *device = nullptr;
+	uint16_t segment_group_id = 0xffff;
+	void *ecam_pbase = nullptr, *ecam_vbase = nullptr;
+
+	pcibus_domain_t();
+	~pcibus_domain_t();
 
 	PBOS_FORCEINLINE void inc_ref() noexcept {
 		kf_atomic_inc_size(&ref_count);
@@ -27,17 +32,38 @@ struct pcibus_domain_registry_t : public kfxx::rbtree_t<pcibus_domain_id_t>::nod
 
 	PBOS_FORCEINLINE void dec_ref() noexcept {
 		if (!kf_atomic_dec_size(&ref_count)) {
-			kfxx::destroy_and_release<pcibus_domain_registry_t>(kfxx::kernel_allocator(), this);
+			kfxx::destroy_and_release<pcibus_domain_t>(kfxx::kernel_allocator(), this);
 		}
 	}
 
-	static pcibus_domain_registry_t *alloc();
+	static pcibus_domain_t *alloc();
 };
 
-using pcibus_domain_registry_ptr = kfxx::rc_object_ptr<pcibus_domain_registry_t>;
+using pcibus_domain_ptr = kfxx::rc_object_ptr<pcibus_domain_t>;
 
-extern kfxx::option_t<kfxx::map_t<uint16_t, pcibus_domain_registry_ptr>> pcibus_segment_group_id_to_domain_map;
+struct pcibus_device_t : public kfxx::rbtree_t<pci_device_id_t>::node_t {
+	size_t ref_count = 0;
+	dm_device_t *device = nullptr;
+	uint16_t segment_group_id = 0xffff;
+
+	pcibus_device_t();
+
+	PBOS_FORCEINLINE void inc_ref() noexcept {
+		kf_atomic_inc_size(&ref_count);
+	}
+
+	PBOS_FORCEINLINE void dec_ref() noexcept {
+		if (!kf_atomic_dec_size(&ref_count)) {
+			kfxx::destroy_and_release<pcibus_device_t>(kfxx::kernel_allocator(), this);
+		}
+	}
+
+	static pcibus_device_t *alloc();
+};
+
+extern kfxx::option_t<kfxx::map_t<uint16_t, pcibus_domain_ptr>> pcibus_segment_group_id_to_domain_map;
 extern kfxx::rbtree_t<pcibus_domain_id_t> pcibus_domain_tree;
+extern kfxx::rbtree_t<pci_device_id_t> pcibus_all_devices_set;
 
 extern fs::fnode_ptr pcibus_devio_pci_root_dir;
 
@@ -49,15 +75,13 @@ extern dm_bus_t *pcibus_bus_object;
 /// @brief Allocate a new free domain ID.
 ///
 /// @return Allocated domain ID, @c nullopt if failed.
-bool pcibus_alloc_domain_id_and_insert(pcibus_domain_registry_t *registry);
+bool pcibus_alloc_domain_id_and_insert(pcibus_domain_t *registry);
 
 km_result_t pcibus_clear_domain_dir();
 
 extern dm_device_class_t *pcibus_bus_controller_device_class;
 
 km_result_t pcibus_fetch_device_classes_to_global_vars();
-
-uint16_t pcibus_read_pci_config_space16(uint8_t bus, uint8_t slot, uint8_t func, uint8_t off);
 
 PBOS_EXTERN_C_END
 

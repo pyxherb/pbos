@@ -1,8 +1,8 @@
 #include <pbkxrt/init.h>
 #include <pbos/dm/device.h>
 #include <pbos/kd/logger.h>
-#include "mcfg.h"
 #include <pbos/pci/driver.h>
+#include "mcfg.h"
 
 PBOS_EXTERN_C_BEGIN
 
@@ -27,7 +27,7 @@ PBOS_USED PBOS_KMOD_API char PBOS_MODULE_NAME[] = PCI_PCIBUS_KMOD_NAME;
 PBOS_USED PBOS_KMOD_API km_result_t pbos_module_init() {
 	kxi_call_ctors();
 
-	pcibus_segment_group_id_to_domain_map = kfxx::map_t<uint16_t, pcibus_domain_registry_ptr>(kfxx::kernel_allocator());
+	pcibus_segment_group_id_to_domain_map = kfxx::map_t<uint16_t, pcibus_domain_ptr>(kfxx::kernel_allocator());
 
 	KM_RETURN_IF_FAILED(pcibus_fetch_device_classes_to_global_vars());
 
@@ -42,9 +42,7 @@ PBOS_USED PBOS_KMOD_API km_result_t pbos_module_init() {
 		kd_println(PCIROOT_COMPONENT_NAME, "Created PCI devio directory");
 	}
 
-	{
-		KM_RETURN_IF_FAILED(pcibus_scan_acpi_mcfg_table_and_create_resources());
-	}
+	KM_RETURN_IF_FAILED(pcibus_scan_acpi_mcfg_table_and_create_domains());
 
 	return KM_RESULT_OK;
 }

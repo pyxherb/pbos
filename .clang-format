@@ -26,7 +26,7 @@ IncludeBlocks: Merge
 IndentCaseLabels: true
 IndentPPDirectives: BeforeHash
 IndentWidth: 4
-MaxEmptyLinesToKeep: 10
+MaxEmptyLinesToKeep: 1
 NamespaceIndentation: All
 DerivePointerAlignment: false
 PointerAlignment: Right

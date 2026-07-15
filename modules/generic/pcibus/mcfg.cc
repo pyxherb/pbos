@@ -3,10 +3,11 @@
 #include <pbos/dm/device.h>
 #include <pbos/kd/logger.h>
 #include <string.h>
+#include "device.h"
 
 PBOS_EXTERN_C_BEGIN
 
-km_result_t pcibus_scan_acpi_mcfg_table_and_create_resources() {
+km_result_t pcibus_scan_acpi_mcfg_table_and_create_domains() {
 	if (!acpi_is_supported()) {
 		kd_println(PCIROOT_COMPONENT_NAME, "ACPI is not available, skipping scanning ACPI MCFG table");
 		return KM_RESULT_OK;
@@ -30,10 +31,20 @@ km_result_t pcibus_scan_acpi_mcfg_table_and_create_resources() {
 				if (pcibus_domain_tree.find(entry.pci_segment_group_num))
 					continue;
 
-				pcibus_domain_registry_ptr registry = pcibus_domain_registry_t::alloc();
+				pcibus_domain_ptr registry = pcibus_domain_t::alloc();
 
 				if (!registry)
 					return KM_RESULT_NO_MEM;
+
+				// Set the physical address.
+				registry->ecam_pbase = reinterpret_cast<void *>(entry.ecam_base);
+
+				void *ecam_vbase = mm_kvmalloc(mm_get_cur_context(), PCIBUS_ECAM_SIZE_PER_SEGMENT, 0, 0);
+
+				if (!ecam_vbase)
+					return KM_RESULT_NO_MEM;
+
+				KM_RETURN_IF_FAILED(mm_mmap(mm_get_cur_context(), ecam_vbase, registry->ecam_pbase, PCIBUS_ECAM_SIZE_PER_SEGMENT, MM_PAGE_READ | MM_PAGE_WRITE, 0));
 
 				// Add the registry to the segment group ID map.
 				registry->segment_group_id = entry.pci_segment_group_num;
@@ -55,10 +66,6 @@ km_result_t pcibus_scan_acpi_mcfg_table_and_create_resources() {
 				kd_println(PCIROOT_COMPONENT_NAME, "Registered PCI segment -> domain registry: %.4x -> %.4x", entry.pci_segment_group_num, registry->rb_value);
 
 				{
-					// dm_create_device(pcibus_bus_object, pcibus_bus_controller_device_class, /* TODO: Fill it. */, /* TODO: Fill it. */);
-				}
-
-				{
 					char name[sizeof("0000")] = {};
 
 					name[0] = (registry->rb_value & 0xff) + '0';
@@ -66,10 +73,9 @@ km_result_t pcibus_scan_acpi_mcfg_table_and_create_resources() {
 					name[2] = ((registry->rb_value >> 8) & 0xff) + '0';
 					name[3] = ((registry->rb_value >> 12) & 0xff) + '0';
 
-					fs::fnode_ptr domain_dir;
-					KM_RETURN_IF_FAILED(dm_create_devio_dir(pcibus_devio_pci_root_dir.get(), name, sizeof(name), domain_dir.get_addr_without_release()));
+					// dm_create_device(pcibus_bus_object, pcibus_bus_controller_device_class, /* TODO: Fill it. */, /* TODO: Fill it. */);
 
-					kd_println(PCIROOT_COMPONENT_NAME, "Created directory for PCI domain: %s", name);
+					kd_println(PCIROOT_COMPONENT_NAME, "Created device for PCI domain: %s", name);
 				}
 			}
 			break;

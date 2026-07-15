@@ -43,10 +43,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 		return result;
 
 	Elf64_Ehdr ehdr;
-	if (KM_FAILED(result = fs_pread(file_fp, &ehdr, sizeof(ehdr), off, &bytes_read))) {
-		// TODO: free allocated resources here.
-		return result;
-	}
+	KM_RETURN_IF_FAILED(result = fs_pread(file_fp, &ehdr, sizeof(ehdr), off, &bytes_read));
 	off += bytes_read;
 
 	{
