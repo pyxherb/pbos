@@ -20,6 +20,8 @@ uint16_t pcibus_read_pci_config_space16(uint8_t bus, uint8_t device, uint8_t fun
 uint16_t pcibus_read_pcie_config_space16(pcibus_domain_t *domain, uint8_t bus, uint8_t device, uint8_t func, size_t off);
 uint32_t pcibus_read_pcie_config_space32(pcibus_domain_t *domain, uint8_t bus, uint8_t device, uint8_t func, size_t off);
 
+km_result_t pcibus_scan_devices_in_bus(pcibus_domain_t *domain, uint8_t bus);
+
 PBOS_EXTERN_C_END
 
 PBOS_FORCEINLINE constexpr size_t pcibus_calc_pcie_ecam_off(uint8_t bus, uint8_t device, uint8_t func, size_t off) {

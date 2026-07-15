@@ -26,7 +26,7 @@ typedef km_result_t (*dm_device_write_op_t)(io_dispatch_context_t *dc, fs_fcb_t 
 typedef km_result_t (*dm_device_pread_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
 typedef km_result_t (*dm_device_pwrite_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
 
-typedef km_result_t (*ki_devio_ioctl_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, uint32_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args);
+typedef km_result_t (*dm_device_ioctl_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, uint32_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args);
 
 typedef km_result_t (*dm_device_size_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, size_t *size_out);
 
@@ -54,7 +54,7 @@ typedef struct _dm_device_ops_t {
 	/// @brief Write data into a file.
 	dm_device_pwrite_op_t pwrite;
 
-	ki_devio_ioctl_op_t ioctl;
+	dm_device_ioctl_op_t ioctl;
 
 	dm_device_size_op_t size;
 

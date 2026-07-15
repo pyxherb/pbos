@@ -34,4 +34,8 @@ uint32_t pcibus_read_pcie_config_space32(pcibus_domain_t *domain, uint8_t bus, u
 	return *static_cast<uint32_t *>(static_cast<void *>(static_cast<char *>(domain->ecam_vbase) + pcibus_calc_pcie_ecam_off(bus, device, func, off)));
 }
 
+km_result_t pcibus_scan_devices_in_bus(pcibus_domain_t *domain, uint8_t bus) {
+
+}
+
 PBOS_EXTERN_C_END
