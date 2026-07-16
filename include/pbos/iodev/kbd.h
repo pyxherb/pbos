@@ -75,8 +75,10 @@ typedef struct _kbd_device_ops_t {
 	kbd_disconnect_op_t disconnect;
 } kbd_device_ops_t;
 
-km_result_t kbd_register_device(dm_device_t *device, const kbd_device_ops_t *ops, dm_device_t **kbd_device_out);
-void kbd_unregister_device(dm_device_t *kbd_device);
+typedef uint16_t kbd_device_id_t;
+
+km_result_t kbd_register_device(dm_device_t *device, const kbd_device_ops_t *ops, kbd_device_id_t *device_id_out, fs_fnode_t **fnode_out);
+km_result_t kbd_unregister_device(kbd_device_id_t id);
 
 PBOS_EXTERN_C_END
 

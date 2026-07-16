@@ -4,7 +4,7 @@
 #include <pbos/kd/logger.h>
 #include <pbos/dm/device.hh>
 #include <pbos/kfxx/scope_guard.hh>
-#include "common.h"
+#include "devio.h"
 
 PBOS_EXTERN_C_BEGIN
 
@@ -13,10 +13,25 @@ PBOS_USED PBOS_KMOD_API char PBOS_MODULE_NAME[] = IODEV_KBD_KMOD_NAME;
 kfxx::rbtree_t<uint16_t> kbdcls_registered_devices;
 
 dm_devio_file_ops_t kbdcls_kbd_file_ops = {
+	.open = kbdcls_devio_open,
+	.close = kbdcls_devio_close,
 
+	.remove = kbdcls_devio_remove,
+
+	.seek = nullptr,
+
+	.read = kbdcls_devio_read,
+	.write = kbdcls_devio_write,
+
+	.pread = kbdcls_devio_pread,
+	.pwrite = kbdcls_devio_pwrite,
+
+	.ioctl = kbdcls_devio_ioctl,
+
+	.destroy = kbdcls_devio_destroy
 };
 
-km_result_t kbd_register_device(dm_device_t *device, const kbd_device_ops_t *ops, dm_device_t **device_out) {
+km_result_t kbd_register_device(dm_device_t *device, const kbd_device_ops_t *ops, kbd_device_id_t *device_id_out, fs_fnode_t **fnode_out) {
 	kfxx::unique_ptr<kbdcls_device_t, kfxx::deallocable_deleter<kbdcls_device_t>> kbdcls_dev(kbdcls_device_t::alloc());
 
 	if (!kbdcls_dev)
@@ -40,21 +55,36 @@ km_result_t kbd_register_device(dm_device_t *device, const kbd_device_ops_t *ops
 
 	KM_RETURN_IF_FAILED(dm_create_devio_file(device, kbdcls_device_dir.get(), name, sizeof(name) - 1, &kbdcls_kbd_file_ops, fnode.get_addr_without_release()));
 
+	fs_set_fnode_exdata(fnode.get(), kbdcls_dev.release());
+
 	g.release();
+
+	*device_id_out = kbdcls_dev->rb_value;
+	*fnode_out = fnode.release();
 
 	return KM_RESULT_OK;
 }
 
-void kbd_unregister_device(dm_device_t *kbd_device) {
-	// auto exdata = static_cast<kbdcls_device_exdata_t *>(dm_get_device_exdata(kbd_device));
-	// fs::fnode_ptr fnode = exdata->device_file;
+km_result_t kbd_unregister_device(uint16_t device_id) {
+	ps::mutex_guard g(kbdcls_device_tree_mutex);
+	kbdcls_device_t *dev;
 
-	// km_unwrap_result(dm_remove_devio_fnode(fnode.release()));
+	if (auto it = kbdcls_registered_devices.find(device_id); it)
+		dev = static_cast<kbdcls_device_t *>(dev);
+	else
+		return KM_RESULT_NOT_FOUND;
 
-	dm_invalidate_device(kbd_device);
-	dm_unref_device(kbd_device);
+	{
+		fs::fnode_ptr fnode = dev->kbd_file;
 
-	// exdata->device_file.reset();
+		km_unwrap_result(dm_remove_devio_fnode(fnode.release()));
+	}
+
+	kbdcls_remove_registered_device(dev);
+
+	dev->dealloc();
+
+	return KM_RESULT_OK;
 }
 
 PBOS_USED PBOS_KMOD_API km_result_t pbos_module_init() {
