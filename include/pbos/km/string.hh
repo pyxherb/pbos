@@ -55,6 +55,12 @@ namespace km {
 			return &_handle;
 		}
 
+		PBOS_FORCEINLINE km_shared_string_handle_t release() noexcept {
+			km_shared_string_handle_t handle = _handle;
+			_handle = nullptr;
+			return handle;
+		}
+
 		PBOS_FORCEINLINE kfxx::string_view get() const noexcept {
 			size_t length;
 			const char *s = km_lookup_shared_string(_handle, &length);

@@ -1,6 +1,7 @@
 #ifndef _PBOS_KM_KMOD_H_
 #define _PBOS_KM_KMOD_H_
 
+#include <pbos/km/string.h>
 #include "proc.h"
 
 PBOS_EXTERN_C_BEGIN
@@ -9,6 +10,8 @@ typedef struct _ps_kmod_section_t ps_kmod_section_t;
 typedef struct _ps_kmod_t ps_kmod_t;
 
 PBOS_API km_result_t ps_load_kmod(fs_fcb_t *file_fp, ps_kmod_t **kmod_out);
+
+PBOS_API ps_kmod_t *ps_get_kmod(const char *name, size_t len);
 
 PBOS_API char *ps_get_kmod_name(ps_kmod_t *kmod, size_t *len_out);
 PBOS_API void ps_unname_kmod(ps_kmod_t *kmod);
@@ -34,6 +37,8 @@ PBOS_NODISCARD PBOS_API km_result_t ps_unregister_kernel_symbol(const char *name
 PBOS_API void *ps_get_kernel_symbol(const char *name, size_t name_len);
 
 PBOS_NODISCARD PBOS_API km_result_t ps_add_kmod_dependency(ps_kmod_t *kmod, const char *name, size_t name_len);
+
+PBOS_NODISCARD PBOS_API km_result_t ps_init_kmod_chain(ps_kmod_t *kmod, km_shared_string_handle_t *problematic_kmod_name_out);
 
 PBOS_EXTERN_C_END
 

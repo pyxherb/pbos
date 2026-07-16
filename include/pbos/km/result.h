@@ -45,6 +45,8 @@ typedef enum _km_results {
 	KM_RESULT_PGTAB_NOT_ALLOCATED,
 	/// @brief A required dependency was not found.
 	KM_RESULT_DEPENDECY_NOT_FOUND,
+	/// @brief Cyclic dependency was found.
+	KM_RESULT_CYCLIC_DEPENDENCY,
 	/// @brief Corresponding device class was not found.
 	KM_RESULT_DEVICE_CLASS_NOT_FOUND,
 	/// @brief Corresponding device has been removed.

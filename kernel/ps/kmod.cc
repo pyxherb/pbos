@@ -17,7 +17,13 @@ _ps_kmod_t::~_ps_kmod_t() {
 
 ps_kmod_t *ki_ps_kmod_list = nullptr;
 kfxx::hashmap_t<kfxx::string_view, ps_kmod_t *> ki_ps_kmod_map(kfxx::kernel_allocator());
-ps::mutex_t ki_ps_kmod_list_mutex;
+ps::rec_mutex_t ki_ps_kmod_list_mutex;
+
+PBOS_API ps_kmod_t *ps_get_kmod(const char *name, size_t len) {
+	if (auto it = ki_ps_kmod_map.find(kfxx::string_view(name, len)); it != ki_ps_kmod_map.end())
+		return it.value();
+	return nullptr;
+}
 
 PBOS_API char *ps_get_kmod_name(ps_kmod_t *kmod, size_t *len_out) {
 	*len_out = kmod->name_len;
@@ -46,6 +52,7 @@ PBOS_API km_result_t ps_set_kmod_name(ps_kmod_t *kmod, const char *name, size_t 
 }
 
 PBOS_API km_result_t ps_load_kmod(fs_fcb_t *file_fp, ps_kmod_t **kmod_out) {
+	ps::rec_mutex_guard g(ki_ps_kmod_list_mutex);
 	km_result_t result;
 
 	for (auto it = ki_registered_binldrs.begin(); it != ki_registered_binldrs.end(); ++it) {
@@ -80,6 +87,7 @@ PBOS_API km_result_t ps_load_kmod(fs_fcb_t *file_fp, ps_kmod_t **kmod_out) {
 }
 
 PBOS_API void ps_destroy_kmod(ps_kmod_t *kmod) {
+	ps::rec_mutex_guard g(ki_ps_kmod_list_mutex);
 #ifndef NDEBUG
 	if (auto it = ki_ps_kmod_map.find(kfxx::string_view(kmod->name, kmod->name_len)); it != ki_ps_kmod_map.end()) {
 		if (it.value() == kmod)
@@ -194,7 +202,7 @@ PBOS_API km_result_t ps_register_kernel_symbol(ps_kmod_t *kmod, const char *name
 }
 
 PBOS_NODISCARD PBOS_API km_result_t ki_ps_register_kmod(ps_kmod_t *kmod) {
-	ps::mutex_guard g(ki_ps_kmod_list_mutex);
+	ps::rec_mutex_guard g(ki_ps_kmod_list_mutex);
 
 	if (!kmod->name)
 		return KM_RESULT_INVALID_ARGS;
@@ -218,7 +226,7 @@ PBOS_NODISCARD PBOS_API km_result_t ki_ps_register_kmod(ps_kmod_t *kmod) {
 }
 
 PBOS_API void ki_ps_unregister_kmod(ps_kmod_t *kmod) {
-	ps::mutex_guard g(ki_ps_kmod_list_mutex);
+	ps::rec_mutex_guard g(ki_ps_kmod_list_mutex);
 
 	ki_ps_kmod_map.remove(kfxx::string_view(kmod->name, kmod->name_len));
 
@@ -288,8 +296,78 @@ PBOS_NODISCARD PBOS_API km_result_t ps_add_kmod_dependency(ps_kmod_t *kmod, cons
 
 	KM_RETURN_IF_FAILED(km_register_shared_string(name, name_len, nullptr, s.get_addr_without_release()));
 
-	if(!kmod->dependencies.insert_or_keep(std::move(s)))
+	if (!kmod->dependencies.insert_or_keep(std::move(s)))
 		return KM_RESULT_NO_MEM;
+
+	return KM_RESULT_OK;
+}
+
+struct ki_kmod_resolve_frame_t {
+	ps_kmod_t *kmod;
+	kfxx::set_t<km::shared_string_ref>::iterator cur_iter;
+	kfxx::set_t<km::shared_string_ref>::iterator end_iter;
+};
+
+PBOS_NODISCARD PBOS_API km_result_t ps_init_kmod_chain(ps_kmod_t *kmod, km_shared_string_handle_t *problematic_kmod_name_out) {
+	kfxx::list_t<ps_kmod_t *> kmod_load_list(kfxx::kernel_allocator());
+	kfxx::list_t<ki_kmod_resolve_frame_t> resolution_frames(kfxx::kernel_allocator());
+
+	if (!resolution_frames.push_back({ kmod, kmod->dependencies.begin(), kmod->dependencies.end() }))
+		return KM_RESULT_NO_MEM;
+
+	while (resolution_frames.size()) {
+		auto &cur_frame = resolution_frames.back();
+
+		if (cur_frame.cur_iter == cur_frame.end_iter) {
+			resolution_frames.pop_back();
+			continue;
+		}
+
+		auto dep_name = *cur_frame.cur_iter;
+
+		kfxx::string_view name = dep_name.get();
+
+		ps_kmod_t *mod = ps_get_kmod(name.data(), name.size());
+
+		if (!mod) {
+			*problematic_kmod_name_out = dep_name.release();
+			return KM_RESULT_DEPENDECY_NOT_FOUND;
+		}
+
+		if (mod == kmod) {
+			*problematic_kmod_name_out = dep_name.release();
+		}
+
+		// Check if there is any cyclic dependency.
+		for (const auto &i : resolution_frames) {
+			if (i.kmod == mod) {
+				*problematic_kmod_name_out = dep_name.release();
+				return KM_RESULT_CYCLIC_DEPENDENCY;
+			}
+		}
+
+		if(!kmod_load_list.push_back(+kmod))
+			return KM_RESULT_NO_MEM;
+
+		if (!resolution_frames.push_back({ mod,
+				mod->dependencies.begin(),
+				mod->dependencies.end() }))
+			return KM_RESULT_NO_MEM;
+
+		++cur_frame.cur_iter;
+	}
+
+	for(auto it = kmod_load_list.begin(); it != kmod_load_list.end(); ++it) {
+		km_result_t result;
+
+		if(KM_FAILED(result = (*it)->init_fn())) {
+			while(it != kmod_load_list.begin()) {
+				(*it)->deinit_fn();
+				--it;
+			}
+			(*it)->deinit_fn();
+		}
+	}
 
 	return KM_RESULT_OK;
 }
