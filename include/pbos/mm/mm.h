@@ -68,7 +68,7 @@ void mm_unref_page(void *ptr);
 
 typedef uint32_t mm_iommap_flags_t;
 
-PBOS_NODISCARD km_result_t mm_iommap(
+PBOS_NODISCARD PBOS_API km_result_t mm_iommap(
 	mm_context_t *context,
 	void *vaddr,
 	void *paddr,
@@ -76,7 +76,7 @@ PBOS_NODISCARD km_result_t mm_iommap(
 	mm_page_access_t access,
 	mm_iommap_flags_t flags);
 
-void mm_uniommap(mm_context_t *context, void *vaddr, size_t size, mm_iommap_flags_t flags);
+PBOS_API void mm_uniommap(mm_context_t *context, void *vaddr, size_t size, mm_iommap_flags_t flags);
 
 ///
 /// @brief Increase reference counter of a physical page. This does not prevent the page from swapping out.

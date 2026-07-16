@@ -1,11 +1,13 @@
 #include <hal/x86_64/misc.h>
 #include <pbos/kd/logger.h>
+#include <pbos/ki/ds/blfb.h>
+#include <pbos/ki/kf/misc.h>
 #include <pbos/ps/proc.h>
+#include <hal/x86_64/ds/blfb.hh>
+#include <pbos/kh/initcar.hh>
 #include <pbos/ki/acpi/rsdt.hh>
 #include <pbos/ki/mm/pgalloc.hh>
 #include "../mm.hh"
-#include <pbos/kh/initcar.hh>
-#include <pbos/ki/kf/misc.h>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -53,6 +55,47 @@ PBOS_NO_ASAN void kh_mm_init() {
 
 	// Collect ACPI RSDP's physical address.
 	ki_acpi_rsdp_paddr = (void *)((~0xffff000000000000) & (uint64_t)(((char *)hali_limine_rsdp_request.response->address) - hali_limine_hhdm_request.response->offset));
+
+	// Collect framebuffer information.
+	if (hali_limine_framebuffer_request.response) {
+		const size_t cnt = hali_limine_framebuffer_request.response->framebuffer_count;
+		for (size_t i = 0; i < cnt; ++i) {
+			auto fb = hali_limine_framebuffer_request.response->framebuffers[i];
+
+			ds_pixel_format_t pf = DS_PIXEL_FORMAT_UNKNOWN;
+
+			for (size_t j = 0; j < ki_blfb_pixel_format_case_num; ++j) {
+				if ((ki_blfb_pixel_format_cases[j].red.shift == fb->red_mask_shift) &&
+					(ki_blfb_pixel_format_cases[j].red.size == fb->red_mask_size) &&
+					(ki_blfb_pixel_format_cases[j].green.shift == fb->green_mask_shift) &&
+					(ki_blfb_pixel_format_cases[j].green.size == fb->green_mask_size) &&
+					(ki_blfb_pixel_format_cases[j].blue.shift == fb->blue_mask_shift) &&
+					(ki_blfb_pixel_format_cases[j].blue.size == fb->blue_mask_size)) {
+					pf = ki_blfb_pixel_format_cases[j].format;
+
+					if (fb->pitch > UINT32_MAX) {
+						dbg_printf("Stride out-of-range by BLFB #%lu: %lu\n", static_cast<uint64_t>(i), static_cast<uint64_t>(j));
+						break;
+					}
+
+					ki_blfb_desc_t desc = {
+						.paddr = reinterpret_cast<void *>(static_cast<char *>(fb->address) - static_cast<char *>(mm_kernel_bottom_mapping_base_vaddr)),
+						.mapped_vaddr = nullptr,
+						.pixel_format = pf,
+						.width = fb->width,
+						.height = fb->height,
+						.stride = static_cast<uint32_t>(fb->pitch)
+					};
+
+					hali_push_blfb_desc(desc);
+					break;
+				}
+			}
+
+			if (pf == DS_PIXEL_FORMAT_UNKNOWN)
+				dbg_printf("BLFB #%lu has unknown pixel format, ignored\n", static_cast<uint64_t>(i));
+		}
+	}
 
 	hali_mm_init_paging();
 

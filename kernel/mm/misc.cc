@@ -770,6 +770,29 @@ PBOS_API km_result_t mm_unlock_pages(mm_context_t *mm_context, void *ptr, size_t
 	return KM_RESULT_OK;
 }
 
+PBOS_NODISCARD PBOS_API km_result_t mm_iommap(
+	mm_context_t *context,
+	void *vaddr,
+	void *paddr,
+	size_t size,
+	mm_page_access_t access,
+	mm_iommap_flags_t flags) {
+	km_result_t result;
+	mmap_flags_t mmap_flags = MM_MMAP_NO_INC_RC;
+
+	if ((result = mm_mmap(context, vaddr, paddr, size, access, mmap_flags)))
+		return result;
+
+	return KM_RESULT_OK;
+}
+
+PBOS_API void mm_uniommap(mm_context_t *context, void *vaddr, size_t size, mm_iommap_flags_t flags) {
+	km_result_t result;
+	mmap_flags_t mmap_flags = MM_MMAP_NO_INC_RC;
+
+	mm_munmap(context, vaddr, size, mmap_flags);
+}
+
 PBOS_API mm_context_t *mm_get_cur_context() {
 	return mm_cur_contexts ? mm_cur_contexts[ps_get_cur_cpuid()] : mm_kernel_context;
 }

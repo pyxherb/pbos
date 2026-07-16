@@ -71,6 +71,7 @@ add_subdirectory("syscall")
 add_subdirectory("acpi")
 add_subdirectory("mp")
 add_subdirectory("dm")
+add_subdirectory("ds")
 add_subdirectory("initcar")
 
 if(PBOS_ENABLE_KASAN)

@@ -44,7 +44,7 @@ km_result_t pcibus_scan_acpi_mcfg_table_and_create_domains() {
 				if (!ecam_vbase)
 					return KM_RESULT_NO_MEM;
 
-				KM_RETURN_IF_FAILED(mm_mmap(mm_get_cur_context(), ecam_vbase, registry->ecam_pbase, PCIBUS_ECAM_SIZE_PER_SEGMENT, MM_PAGE_READ | MM_PAGE_WRITE, 0));
+				KM_RETURN_IF_FAILED(mm_iommap(mm_get_cur_context(), ecam_vbase, registry->ecam_pbase, PCIBUS_ECAM_SIZE_PER_SEGMENT, MM_PAGE_READ | MM_PAGE_WRITE, 0));
 
 				// Add the registry to the segment group ID map.
 				registry->segment_group_id = entry.pci_segment_group_num;

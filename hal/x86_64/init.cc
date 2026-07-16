@@ -1,11 +1,9 @@
 #include <arch/x86_64/kargs.h>
 #include <arch/x86_64/misc.h>
 #include <pbos/hal/init.h>
-#include <pbos/ps/exec.h>
 #include <pbos/km/panic.h>
+#include <pbos/ps/exec.h>
 #include <pbos/ki/ps/proc.hh>
-#include "irq.hh"
-#include "logger.hh"
 #include "misc.h"
 #include "mm.hh"
 
