@@ -5,6 +5,7 @@
 #include <pbos/kfxx/rbtree.hh>
 #include <pbos/kfxx/string_view.hh>
 #include <pbos/kfxx/set.hh>
+#include <pbos/km/string.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -21,6 +22,7 @@ typedef struct _ps_kmod_t {
 	ps_kmod_deinit_fn_t deinit_fn = nullptr;
 	kfxx::rbtree_t<void *> registered_sections;
 	kfxx::set_t<kfxx::string_view> registered_symbols;
+	kfxx::set_t<km::shared_string_ref> dependencies;
 	bool is_inited = false;
 
 	_ps_kmod_t(kfxx::allocator_t *allocator);

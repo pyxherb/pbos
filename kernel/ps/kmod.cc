@@ -9,7 +9,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-_ps_kmod_t::_ps_kmod_t(kfxx::allocator_t *allocator) : registered_symbols(allocator) {
+_ps_kmod_t::_ps_kmod_t(kfxx::allocator_t *allocator) : registered_symbols(allocator), dependencies(allocator) {
 }
 
 _ps_kmod_t::~_ps_kmod_t() {
@@ -281,6 +281,17 @@ PBOS_API void *ps_get_kernel_symbol(const char *name, size_t name_len) {
 		return it.value()->rb_value;
 	}
 	return nullptr;
+}
+
+PBOS_NODISCARD PBOS_API km_result_t ps_add_kmod_dependency(ps_kmod_t *kmod, const char *name, size_t name_len) {
+	km::shared_string_ref s;
+
+	KM_RETURN_IF_FAILED(km_register_shared_string(name, name_len, nullptr, s.get_addr_without_release()));
+
+	if(!kmod->dependencies.insert_or_keep(std::move(s)))
+		return KM_RESULT_NO_MEM;
+
+	return KM_RESULT_OK;
 }
 
 PBOS_EXTERN_C_END

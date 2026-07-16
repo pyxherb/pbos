@@ -33,6 +33,8 @@ PBOS_NODISCARD PBOS_API km_result_t ps_register_kernel_symbol(ps_kmod_t *kmod, c
 PBOS_NODISCARD PBOS_API km_result_t ps_unregister_kernel_symbol(const char *name, size_t name_len);
 PBOS_API void *ps_get_kernel_symbol(const char *name, size_t name_len);
 
+PBOS_NODISCARD PBOS_API km_result_t ps_add_kmod_dependency(ps_kmod_t *kmod, const char *name, size_t name_len);
+
 PBOS_EXTERN_C_END
 
 #endif
