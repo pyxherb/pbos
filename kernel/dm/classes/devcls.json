@@ -2,6 +2,9 @@
 	"bus_controller": {
 		"uuid": "0b0c550e-0182-4a2b-a070-011be8a067ba"
 	},
+	"bus_endpoint": {
+		"uuid": "8ba344ce-fcf7-4084-8e09-86217463d41d"
+	},
 	"battery": {
 		"uuid": "0c053c59-f546-4711-b6eb-46a88e816033"
 	},

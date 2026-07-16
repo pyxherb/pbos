@@ -18,6 +18,7 @@ struct ki_devio_dir_exdata_t : public ki_devio_fnode_exdata_t {
 
 struct ki_devio_file_exdata_t : public ki_devio_fnode_exdata_t {
 	dm_device_t *device = nullptr;
+	dm_devio_file_ops_t ops;
 };
 
 extern fs_filesys_ops_t ki_devio_ops;

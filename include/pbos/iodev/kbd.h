@@ -2,6 +2,7 @@
 #define _PBOS_IODEV_KBD_H_
 
 #include <pbos/dm/device.h>
+#include <pbos/dm/devcls.h>
 
 PBOS_EXTERN_C_BEGIN
 

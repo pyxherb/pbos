@@ -262,7 +262,7 @@ PBOS_API fs_fnode_t *dm_get_devio_root_dir() {
 	return ki_devio_root_dir.get();
 }
 
-PBOS_API km_result_t dm_create_devio_file(dm_device_t *device, fs_fnode_t *parent, const char *filename, size_t filename_len, fs_fnode_t **fnode_out) {
+PBOS_API km_result_t dm_create_devio_file(dm_device_t *device, fs_fnode_t *parent, const char *filename, size_t filename_len, const dm_devio_file_ops_t *ops, fs_fnode_t **fnode_out) {
 	if (fs_filesys_of_fnode(parent) != ki_devio_filesys)
 		return KM_RESULT_INVALID_ARGS;
 
@@ -296,6 +296,8 @@ PBOS_API km_result_t dm_create_devio_file(dm_device_t *device, fs_fnode_t *paren
 		exdata->next = parent_exdata->first_child;
 		parent_exdata->first_child = fnode.get();
 	}
+
+	memcpy(&exdata->ops, ops, sizeof(*ops));
 
 	*fnode_out = fnode.release();
 
@@ -346,12 +348,12 @@ PBOS_API km_result_t dm_remove_devio_fnode(fs_fnode_t *fnode) {
 	return fs_remove(fnode);
 }
 
-PBOS_API km_result_t dm_create_devio_file_by_path(dm_device_t *device, const char *filename, size_t filename_len, fs_fnode_t **fnode_out) {
+PBOS_API km_result_t dm_create_devio_file_by_path(dm_device_t *device, const char *filename, size_t filename_len, const dm_devio_file_ops_t *ops, fs_fnode_t **fnode_out) {
 	fs::fnode_ptr fnode;
 
 	KM_RETURN_IF_FAILED(fs_resolve_path(ki_devio_root_dir.get(), filename, filename_len, fnode.get_addr_without_release()));
 
-	return dm_create_devio_file(device, fnode.get(), filename, filename_len, fnode_out);
+	return dm_create_devio_file(device, fnode.get(), filename, filename_len, ops, fnode_out);
 }
 
 PBOS_API km_result_t dm_create_devio_dir_by_path(const char *filename, size_t filename_len, fs_fnode_t **fnode_out) {

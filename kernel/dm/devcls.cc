@@ -2,10 +2,11 @@
 #include <pbos/ki/dm/devcls.hh>
 #include <pbos/kd/logger.h>
 
-#define DM_BUILTIN_DEVICE_CLASS_MACRO(name) { DM_DEVICE_CLASS_##name, #name }
+#define DEVICE_CLASS(name) { DM_DEVICE_CLASS_##name, #name }
 
 static const std::pair<kf_uuid_t, const char *> DM_DEVICE_CLASSES_TO_REGISTER[] = {
-	DM_BUILTIN_DEVICE_CLASSES
+	DEVICE_CLASS(BUS_CONTROLLER),
+	DEVICE_CLASS(BUS_ENDPOINT)
 };
 
 void ki_register_device_classes() {

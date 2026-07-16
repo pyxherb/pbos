@@ -12,35 +12,33 @@ PBOS_USED PBOS_KMOD_API char PBOS_MODULE_NAME[] = IODEV_KBD_KMOD_NAME;
 
 kfxx::rbtree_t<uint16_t> kbdcls_registered_devices;
 
-dm_device_ops_t kbdcls_kbd_device_ops = {
+dm_devio_file_ops_t kbdcls_kbd_file_ops = {
 
 };
 
 km_result_t kbd_register_device(dm_device_t *device, const kbd_device_ops_t *ops, dm_device_t **device_out) {
-	kfxx::unique_ptr<kbdcls_device_t, kfxx::deallocable_deleter<kbdcls_device_t>> dev(kbdcls_device_t::alloc());
+	kfxx::unique_ptr<kbdcls_device_t, kfxx::deallocable_deleter<kbdcls_device_t>> kbdcls_dev(kbdcls_device_t::alloc());
 
-	// KM_RETURN_IF_FAILED(dm_create_device(/* TODO: Fill it. */, &kbdcls_kbd_device_ops, dev.get_addr_without_release()));
-
-	if (!dev)
+	if (!kbdcls_dev)
 		return KM_RESULT_NO_MEM;
 
-	if (!kbdcls_alloc_kbd_id_and_insert(dev.get()))
+	if (!kbdcls_alloc_kbd_id_and_insert(kbdcls_dev.get()))
 		return KM_RESULT_NO_SLOT;
 
-	kfxx::scope_guard g([&dev]() noexcept {
-		kbdcls_remove_registered_device(dev.get());
+	kfxx::scope_guard g([&kbdcls_dev]() noexcept {
+		kbdcls_remove_registered_device(kbdcls_dev.get());
 	});
 
 	fs::fnode_ptr fnode;
 
 	char name[sizeof("0000")] = {};
 
-	name[0] = (dev->rb_value & 0xff) + '0';
-	name[1] = ((dev->rb_value >> 4) & 0xff) + '0';
-	name[2] = ((dev->rb_value >> 8) & 0xff) + '0';
-	name[3] = ((dev->rb_value >> 12) & 0xff) + '0';
+	name[0] = (kbdcls_dev->rb_value & 0xff) + '0';
+	name[1] = ((kbdcls_dev->rb_value >> 4) & 0xff) + '0';
+	name[2] = ((kbdcls_dev->rb_value >> 8) & 0xff) + '0';
+	name[3] = ((kbdcls_dev->rb_value >> 12) & 0xff) + '0';
 
-	KM_RETURN_IF_FAILED(dm_create_devio_file(device, kbdcls_device_dir.get(), name, sizeof(name) - 1, fnode.get_addr_without_release()));
+	KM_RETURN_IF_FAILED(dm_create_devio_file(device, kbdcls_device_dir.get(), name, sizeof(name) - 1, &kbdcls_kbd_file_ops, fnode.get_addr_without_release()));
 
 	g.release();
 
@@ -61,6 +59,12 @@ void kbd_unregister_device(dm_device_t *kbd_device) {
 
 PBOS_USED PBOS_KMOD_API km_result_t pbos_module_init() {
 	kxi_call_ctors();
+
+	{
+		kf_uuid_t uuid = DM_DEVICE_CLASS_KEYBOARD;
+
+		KM_RETURN_IF_FAILED(dm_register_device_class(&uuid, &kbdcls_keyboard_device_class));
+	}
 
 	return KM_RESULT_OK;
 }

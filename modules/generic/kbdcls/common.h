@@ -31,6 +31,8 @@ extern fs::fnode_ptr kbdcls_device_dir;
 extern kfxx::rbtree_t<uint16_t> kbdcls_registered_devices;
 extern ps::mutex_t kbdcls_device_tree_mutex;
 
+extern dm_device_class_t *kbdcls_keyboard_device_class;
+
 bool kbdcls_alloc_kbd_id_and_insert(kbdcls_device_t *device);
 void kbdcls_remove_registered_device(kbdcls_device_t *device);
 
