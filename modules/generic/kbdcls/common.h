@@ -2,14 +2,38 @@
 #define _KBDCLS_COMMON_H_
 
 #include <pbos/iodev/kbd.h>
+#include <pbos/dm/device.hh>
 #include <pbos/fs/file.hh>
+#include <pbos/kfxx/rbtree.hh>
+#include <pbos/ps/mutex.hh>
 
-typedef struct _kbdcls_device_exdata_t {
-	uint16_t device_id;
-	fs::fnode_ptr device_file;
+PBOS_EXTERN_C_BEGIN
+
+struct kbdcls_device_t : public kfxx::rbtree_t<uint16_t>::node_t {
+	fs::fnode_ptr kbd_file;
+	dm::device_ptr source_device;
 	kbd_device_ops_t ops;
-} kbdcls_device_exdata_t;
+
+	PBOS_FORCEINLINE kbdcls_device_t(const kbd_device_ops_t &ops) : ops(ops) {
+	}
+
+	PBOS_FORCEINLINE void dealloc() {
+		kfxx::destroy_and_release<kbdcls_device_t>(kfxx::kernel_allocator(), this);
+	}
+
+	PBOS_FORCEINLINE static kbdcls_device_t *alloc() {
+		return kfxx::alloc_and_construct<kbdcls_device_t>(kfxx::kernel_allocator());
+	}
+};
 
 extern fs::fnode_ptr kbdcls_device_dir;
+
+extern kfxx::rbtree_t<uint16_t> kbdcls_registered_devices;
+extern ps::mutex_t kbdcls_device_tree_mutex;
+
+bool kbdcls_alloc_kbd_id_and_insert(kbdcls_device_t *device);
+void kbdcls_remove_registered_device(kbdcls_device_t *device);
+
+PBOS_EXTERN_C_END
 
 #endif

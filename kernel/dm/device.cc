@@ -56,7 +56,7 @@ _dm_device_class_t::_dm_device_class_t(kfxx::allocator_t *allocator) : owned_dev
 _dm_device_t::_dm_device_t() {
 }
 
-km_result_t ki_dm_alloc_device(dm_bus_t *bus, dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out) {
+km_result_t ki_dm_alloc_device(dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out) {
 	dm_device_t *device = (dm_device_t *)kfxx::alloc_and_construct<dm_device_t>(&ki_dm_device_allocator);
 
 	if (!device)
@@ -68,12 +68,6 @@ km_result_t ki_dm_alloc_device(dm_bus_t *bus, dm_device_class_t *device_class, c
 		ki_dm_destroy_device(device);
 	});
 
-	if (!bus->owned_devices.insert(+device))
-		return KM_RESULT_NO_MEM;
-	kfxx::scope_guard remove_device_from_bus_guard([bus, device]() noexcept {
-		bus->owned_devices.remove(device);
-	});
-
 	if (!device_class->owned_devices.insert(+device))
 		return KM_RESULT_NO_MEM;
 	kfxx::scope_guard remove_device_from_class_guard([device_class, device]() noexcept {
@@ -83,7 +77,6 @@ km_result_t ki_dm_alloc_device(dm_bus_t *bus, dm_device_class_t *device_class, c
 	memcpy(&device->ops, ops, sizeof(*ops));
 
 	release_device_guard.release();
-	remove_device_from_bus_guard.release();
 	remove_device_from_class_guard.release();
 
 	*device_out = device;
@@ -160,10 +153,10 @@ PBOS_API void dm_unregister_device_class(dm_device_class_t *device_class) {
 	ki_registered_device_classes.remove(device_class);
 }
 
-PBOS_API km_result_t dm_create_device(dm_bus_t *bus, dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out) {
+PBOS_API km_result_t dm_create_device(dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out) {
 	dm::device_ptr dev;
 
-	KM_RETURN_IF_FAILED(ki_dm_alloc_device(bus, device_class, ops, dev.get_addr_without_release()));
+	KM_RETURN_IF_FAILED(ki_dm_alloc_device(device_class, ops, dev.get_addr_without_release()));
 
 	*device_out = dev.release();
 
@@ -185,13 +178,38 @@ PBOS_API void dm_unref_device(dm_device_t *device) {
 		ki_dm_destroy_device(device);
 }
 
+PBOS_API km_result_t dm_attach_device_to_bus(dm_bus_t *bus, dm_device_t *device) {
+	kd_dbgcheck(bus, "Bus passed to %s must be non-null", __func__);
+
+	if (!bus->owned_devices.insert(+device)) {
+		return KM_RESULT_NO_MEM;
+	}
+
+	kfxx::scope_guard g([bus, device]() noexcept {
+		bus->owned_devices.remove(device);
+	});
+
+	KM_RETURN_IF_FAILED(bus->ops.register_device(bus, device));
+
+	return KM_RESULT_OK;
+}
+
+PBOS_API void dm_detach_device_from_bus(dm_device_t *device) {
+	if (device->bus) {
+		device->bus->ops.unregister_device(device->bus, device);
+		device->bus->owned_devices.remove(device);
+	} else {
+		// TODO: Remove the device from the logical device set.
+	}
+}
+
 PBOS_API km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device) {
 	ps::rec_mutex_guard gp(parent->device_mutex),
 		gd(device->device_mutex);
 
-	// The device must be already registered to a bus.
-	if (!device->bus)
-		return KM_RESULT_INVALID_ARGS;
+	if (!device->bus) {
+		// TODO: Add the device into the logical device set.
+	}
 
 	KM_RETURN_IF_FAILED(parent->ops.prelink(parent, device));
 
@@ -333,7 +351,7 @@ PBOS_API km_result_t dm_create_devio_file_by_path(dm_device_t *device, const cha
 
 	KM_RETURN_IF_FAILED(fs_resolve_path(ki_devio_root_dir.get(), filename, filename_len, fnode.get_addr_without_release()));
 
-	return dm_create_devio_file(device, fnode.get(),  filename, filename_len, fnode_out);
+	return dm_create_devio_file(device, fnode.get(), filename, filename_len, fnode_out);
 }
 
 PBOS_API km_result_t dm_create_devio_dir_by_path(const char *filename, size_t filename_len, fs_fnode_t **fnode_out) {
@@ -341,7 +359,7 @@ PBOS_API km_result_t dm_create_devio_dir_by_path(const char *filename, size_t fi
 
 	KM_RETURN_IF_FAILED(fs_resolve_path(ki_devio_root_dir.get(), filename, filename_len, fnode.get_addr_without_release()));
 
-	return dm_create_devio_dir(fnode.get(),  filename, filename_len, fnode_out);
+	return dm_create_devio_dir(fnode.get(), filename, filename_len, fnode_out);
 }
 
 PBOS_EXTERN_C_END

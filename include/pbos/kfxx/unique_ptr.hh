@@ -49,7 +49,7 @@ namespace kfxx {
 			}
 		}
 
-		PBOS_FORCEINLINE unique_ptr(T *ptr, D deleter = {}) noexcept : _ptr(ptr), _deleter(std::move(deleter)) {
+		PBOS_FORCEINLINE unique_ptr(T *ptr = nullptr, D deleter = {}) noexcept : _ptr(ptr), _deleter(std::move(deleter)) {
 		}
 		unique_ptr(const ThisType &other) noexcept = delete;
 		PBOS_FORCEINLINE unique_ptr(ThisType &&other) noexcept : _ptr(other._ptr), _deleter(other._deleter) {
@@ -85,7 +85,7 @@ namespace kfxx {
 		PBOS_FORCEINLINE T *&get_ref_without_release() noexcept {
 			return _ptr;
 		}
-		PBOS_FORCEINLINE T *const &get_Ref_without_release() const noexcept {
+		PBOS_FORCEINLINE T *const &get_ref_without_release() const noexcept {
 			return _ptr;
 		}
 		PBOS_FORCEINLINE T **get_addr() noexcept {

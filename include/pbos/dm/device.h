@@ -70,12 +70,15 @@ PBOS_API km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_c
 PBOS_API dm_device_class_t *dm_query_device_class(const kf_uuid_t *uuid);
 PBOS_API void dm_unregister_device_class(dm_device_class_t *device_class);
 
-PBOS_API km_result_t dm_create_device(dm_bus_t *bus, dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out);
+PBOS_API km_result_t dm_create_device(dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out);
 
 PBOS_API void dm_invalidate_device(dm_device_t *device);
 
 PBOS_API void dm_ref_device(dm_device_t *device);
 PBOS_API void dm_unref_device(dm_device_t *device);
+
+PBOS_API km_result_t dm_attach_device_to_bus(dm_bus_t *bus, dm_device_t *device);
+PBOS_API void dm_detach_device_from_bus(dm_device_t *device);
 
 PBOS_API km_result_t dm_link_device(dm_device_t *parent, dm_device_t *device);
 PBOS_API void dm_unlink_device(dm_device_t *device);

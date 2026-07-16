@@ -44,6 +44,9 @@ typedef struct _dm_device_t {
 	dm_device_t *prev_same_level = nullptr, *next_same_level = nullptr;
 	dm_device_t *child_devices = nullptr;
 
+	///
+	/// @brief Physical bus type which the device belongs to. Sets to nullptr to indicate a logical device.
+	///
 	dm_bus_t *bus = nullptr;
 	dm_device_class_t *device_class = nullptr;
 
@@ -60,7 +63,7 @@ typedef struct _dm_device_t {
 
 extern kfxx::rbtree_t<kf_uuid_t> ki_registered_device_classes;
 
-km_result_t ki_dm_alloc_device(dm_bus_t *bus, dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out);
+km_result_t ki_dm_alloc_device(dm_device_class_t *device_class, const dm_device_ops_t *ops, dm_device_t **device_out);
 void ki_dm_destroy_device(dm_device_t *device);
 
 PBOS_EXTERN_C_END

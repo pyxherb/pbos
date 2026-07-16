@@ -8,6 +8,21 @@
 #include "basedefs.hh"
 
 namespace kfxx {
+#if __cplusplus >= 202002L
+	template <typename T>
+	concept deallocable_trait = requires(T *ptr) {
+		ptr->dealloc();
+	};
+#endif
+
+	template <typename T>
+	PBOS_REQUIRES_CONCEPT(deallocable_trait<T>)
+	struct deallocable_deleter {
+		PBOS_FORCEINLINE void operator()(T *ptr) const noexcept {
+			ptr->dealloc();
+		}
+	};
+
 	template <typename T, typename... Args>
 	// PBOS_REQUIRES_CONCEPT(std::constructible_from<T, Args...>)
 	PBOS_FORCEINLINE void construct_at(T *ptr, Args &&...args) {
