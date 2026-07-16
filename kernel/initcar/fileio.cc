@@ -26,7 +26,7 @@ km_result_t ki_initcar_open(fs_fnode_t *file, fs_fcb_t **fcb_out, fs_open_flags_
 	return fs_create_fcb(file, fcb_out);
 }
 
-void ki_initcar_close(fs_fcb_t *fcb) {
+void ki_initcar_close_cleanup(fs_fcb_t *fcb) {
 }
 
 km_result_t ki_initcar_seek(io_dispatch_context_t *dc, fs_fcb_t *fcb, long off, fs_seek_mode_t mode) {

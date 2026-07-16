@@ -21,8 +21,8 @@ struct kbdcls_device_t : public kfxx::rbtree_t<uint16_t>::node_t {
 		kfxx::destroy_and_release<kbdcls_device_t>(kfxx::kernel_allocator(), this);
 	}
 
-	PBOS_FORCEINLINE static kbdcls_device_t *alloc() {
-		return kfxx::alloc_and_construct<kbdcls_device_t>(kfxx::kernel_allocator());
+	PBOS_FORCEINLINE static kbdcls_device_t *alloc(const kbd_device_ops_t &ops) {
+		return kfxx::alloc_and_construct<kbdcls_device_t>(kfxx::kernel_allocator(), ops);
 	}
 };
 

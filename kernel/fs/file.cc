@@ -1,6 +1,5 @@
 #include <pbos/kf/atomic.h>
 #include <pbos/kf/hash.h>
-#include <pbos/kf/string.h>
 #include <pbos/mm/mm.h>
 #include <pbos/ki/fs/file.hh>
 #include <pbos/ki/fs/fs.hh>
@@ -524,6 +523,8 @@ PBOS_API km_result_t fs_close(fs_fcb_t *fcb) {
 	// Because the FCB is about to be destroyed, so we don't need to care about
 	// if the FCB's semaphore will be unlocked.
 	fcb->rw_semaphore.write_lock();
+
+	fcb->fnode->fs->ops.close_cleanup(fcb);
 
 	fcb->fnode.reset();
 	ki_destroy_fcb(fcb);

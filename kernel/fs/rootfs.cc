@@ -9,7 +9,7 @@ fs_filesys_ops_t ki_rootfs_ops = {
 	.create_file = ki_rootfs_create_file,
 	.create_dir = ki_rootfs_create_dir,
 	.open = ki_rootfs_open,
-	.close = ki_rootfs_close,
+	.close_cleanup = ki_rootfs_close_cleanup,
 	.seek = ki_rootfs_seek,
 	.read = ki_rootfs_read,
 	.write = ki_rootfs_write,
@@ -67,7 +67,7 @@ km_result_t ki_rootfs_open(fs_fnode_t *file, fs_fcb_t **fcb_out, fs_open_flags_t
 	return KM_RESULT_OK;
 }
 
-void ki_rootfs_close(fs_fcb_t *fcb) {
+void ki_rootfs_close_cleanup(fs_fcb_t *fcb) {
 }
 
 km_result_t ki_rootfs_pread(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out) {

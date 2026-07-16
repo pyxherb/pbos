@@ -51,7 +51,7 @@ km_result_t sysent_open(const char *path, size_t path_len, uint32_t flags, uint3
 
 	ps_ufcb_t *ufcb;
 	if (!(ufcb = ps_alloc_ufcb(pcb, fcb, fd))) {
-		fs_close(fcb);
+		km_unwrap_result(fs_close(fcb));
 		return KM_RESULT_NO_MEM;
 	}
 

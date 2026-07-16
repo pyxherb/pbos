@@ -58,7 +58,7 @@ typedef struct _fs_filesys_ops_t {
 	/// @brief Open a file.
 	fs_filesys_open_op_t open;
 	/// @brief Close a FCB.
-	fs_filesys_close_op_t close;
+	fs_filesys_close_op_t close_cleanup;
 
 	fs_filesys_seek_op_t seek;
 	fs_filesys_read_op_t read;

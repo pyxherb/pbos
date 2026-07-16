@@ -492,7 +492,8 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 	km_result_t (*module_init)();
 	void (*module_deinit)();
 	const char *module_name;
-	uint64_t module_init_len = 0, module_deinit_len = 0, module_name_len = 0;
+	const char *module_deps;
+	uint64_t module_init_len = 0, module_deinit_len = 0, module_name_len = 0, module_deps_len = 0;
 	{
 		auto tmp = find_func(symtab, strtab, num_syms, "pbos_module_init");
 		module_init = (km_result_t(*)())tmp.first;
@@ -507,6 +508,11 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 		auto tmp = find_obj(symtab, strtab, num_syms, "PBOS_MODULE_NAME");
 		module_name = (const char *)tmp.first;
 		module_name_len = tmp.second;
+	}
+	{
+		auto tmp = find_obj(symtab, strtab, num_syms, "PBOS_MODULE_DEPS");
+		module_deps = (const char *)tmp.first;
+		module_deps_len = tmp.second;
 	}
 
 	if (!module_init) {
@@ -545,6 +551,22 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 	if (module_name[module_name_len - 1] == '\0') {
 		if (!(module_name_len = strlen(module_name)))
 			return KM_RESULT_MALFORMED;
+	}
+
+	if (module_deps) {
+		for (size_t i = 0; i < module_deps_len; i += page_size) {
+			if (!check_if_addr_is_inside_valid_region((module_deps + i)))
+				return KM_RESULT_MALFORMED;
+		}
+	}
+
+	const void *dep_name_end, *dep_name = module_deps;
+	while ((dep_name_end = memchr(dep_name, ';', module_deps_len))) {
+		if(size_t len = static_cast<const char*>(dep_name) - static_cast<const char*>(dep_name_end); len) {
+			KM_RETURN_IF_FAILED(ps_add_kmod_dependency(kmod, static_cast<const char*>(dep_name), len));
+		}
+
+		dep_name = static_cast<const char*>(dep_name_end) + 1;
 	}
 
 	KM_RETURN_IF_FAILED(ps_set_kmod_name(kmod, module_name, module_name_len));

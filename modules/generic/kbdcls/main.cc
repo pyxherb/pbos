@@ -10,11 +10,9 @@ PBOS_EXTERN_C_BEGIN
 
 PBOS_USED PBOS_KMOD_API char PBOS_MODULE_NAME[] = IODEV_KBD_KMOD_NAME;
 
-kfxx::rbtree_t<uint16_t> kbdcls_registered_devices;
-
 dm_devio_file_ops_t kbdcls_kbd_file_ops = {
 	.open = kbdcls_devio_open,
-	.close = kbdcls_devio_close,
+	.close_cleanup = kbdcls_devio_close_cleanup,
 
 	.remove = kbdcls_devio_remove,
 
@@ -26,13 +24,11 @@ dm_devio_file_ops_t kbdcls_kbd_file_ops = {
 	.pread = kbdcls_devio_pread,
 	.pwrite = kbdcls_devio_pwrite,
 
-	.ioctl = kbdcls_devio_ioctl,
-
-	.destroy = kbdcls_devio_destroy
+	.ioctl = kbdcls_devio_ioctl
 };
 
 km_result_t kbd_register_device(dm_device_t *device, const kbd_device_ops_t *ops, kbd_device_id_t *device_id_out, fs_fnode_t **fnode_out) {
-	kfxx::unique_ptr<kbdcls_device_t, kfxx::deallocable_deleter<kbdcls_device_t>> kbdcls_dev(kbdcls_device_t::alloc());
+	kfxx::unique_ptr<kbdcls_device_t, kfxx::deallocable_deleter<kbdcls_device_t>> kbdcls_dev(kbdcls_device_t::alloc(*ops));
 
 	if (!kbdcls_dev)
 		return KM_RESULT_NO_MEM;

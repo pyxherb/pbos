@@ -31,16 +31,16 @@ typedef struct _dm_device_ops_t {
 	dm_device_destroy_op_t destroy;
 } dm_device_ops_t;
 
-typedef km_result_t (*dm_devio_open_op_t)(dm_device_t *file, fs_fnode_t *fnode, fs_fcb_t **fcb_out, fs_open_flags_t flags);
-typedef void (*dm_devio_close_op_t)(fs_fcb_t *fcb);
+typedef km_result_t (*dm_devio_open_op_t)(dm_device_t *device, fs_fnode_t *fnode, fs_fcb_t **fcb_out, fs_open_flags_t flags);
+typedef void (*dm_devio_close_cleanup_op_t)(fs_fcb_t *fcb);
 
-typedef km_result_t (*dm_devio_remove_t)(io_dispatch_context_t *dc, dm_device_t *device);
+typedef km_result_t (*dm_devio_remove_t)(io_dispatch_context_t *dc, dm_device_t *device, fs_fnode_t *fnode);
 
 typedef km_result_t (*dm_devio_seek_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, long off, fs_seek_mode_t mode);
-typedef km_result_t (*dm_devio_read_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t *bytes_read_out);
+typedef km_result_t (*dm_devio_read_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, void *dest, size_t size, size_t *bytes_read_out);
 typedef km_result_t (*dm_devio_write_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t *bytes_written_out);
 
-typedef km_result_t (*dm_devio_pread_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
+typedef km_result_t (*dm_devio_pread_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, void *dest, size_t size, size_t off, size_t *bytes_read_out);
 typedef km_result_t (*dm_devio_pwrite_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);
 
 typedef km_result_t (*dm_devio_ioctl_op_t)(io_dispatch_context_t *dc, fs_fcb_t *fcb, uint32_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args);
@@ -52,7 +52,7 @@ typedef void (*dm_devio_destroy_op_t)(dm_device_t *device, fs_fnode_t *fnode);
 typedef struct _dm_devio_ops_t {
 	dm_devio_open_op_t open;
 	/// @brief Close a FCB.
-	dm_devio_close_op_t close;
+	dm_devio_close_cleanup_op_t close_cleanup;
 
 	dm_devio_remove_t remove;
 
@@ -68,8 +68,6 @@ typedef struct _dm_devio_ops_t {
 	dm_devio_ioctl_op_t ioctl;
 
 	dm_devio_size_op_t size;
-
-	dm_devio_destroy_op_t destroy;
 } dm_devio_file_ops_t;
 
 PBOS_API km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_class_t **device_class_out);

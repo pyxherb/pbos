@@ -21,7 +21,7 @@ km_result_t ki_rootfs_read(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest,
 km_result_t ki_rootfs_write(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t *bytes_written_out);
 
 km_result_t ki_rootfs_open(fs_fnode_t *file, fs_fcb_t **fcb_out, fs_open_flags_t flags);
-void ki_rootfs_close(fs_fcb_t *fcb);
+void ki_rootfs_close_cleanup(fs_fcb_t *fcb);
 
 km_result_t ki_rootfs_pread(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out);
 km_result_t ki_rootfs_pwrite(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out);

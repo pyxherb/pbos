@@ -61,8 +61,8 @@ typedef struct _kbd_device_t kbd_device_t;
 
 typedef km_result_t (*kbd_enable_op_t)(io_dispatch_context_t *dc, dm_device_t *device);
 typedef km_result_t (*kbd_disable_op_t)(io_dispatch_context_t *dc, dm_device_t *device);
-typedef km_result_t (*kbd_send_event_t)(io_dispatch_context_t *dc, dm_device_t *device, const kbd_event_in_t *event_in);
-typedef km_result_t (*kbd_receive_event_t)(io_dispatch_context_t *dc, dm_device_t *device, const kbd_event_out_t *event_out);
+typedef km_result_t (*kbd_send_event_t)(io_dispatch_context_t *dc, dm_device_t *device, const kbd_event_out_t *event_out);
+typedef km_result_t (*kbd_receive_event_t)(io_dispatch_context_t *dc, dm_device_t *device, kbd_event_in_t *event_in);
 typedef km_result_t (*kbd_connect_op_t)(io_dispatch_context_t *dc, dm_device_t *device);
 typedef km_result_t (*kbd_disconnect_op_t)(io_dispatch_context_t *dc, dm_device_t *device);
 

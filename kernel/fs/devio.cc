@@ -10,7 +10,7 @@ fs_filesys_ops_t ki_devio_ops = {
 	.offload = ki_devio_offload,
 	.create_file = ki_devio_create_file,
 	.open = ki_devio_open,
-	.close = ki_devio_close,
+	.close_cleanup = ki_devio_close,
 	.seek = ki_devio_seek,
 	.read = ki_devio_read,
 	.write = ki_devio_write,
@@ -56,22 +56,7 @@ km_result_t ki_devio_create_dir(io_dispatch_context_t *dc, fs_fnode_t *parent, c
 }
 
 km_result_t ki_devio_remove_file(io_dispatch_context_t *dc, fs_fnode_t *fnode) {
-	dm_device_t *device = ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fnode))->device;
-
-	switch (fs_get_fnode_type(fnode)) {
-		case FS_FNODE_TYPE_DIR: {
-			ki_devio_dir_exdata_t *fnode_exdata = (ki_devio_dir_exdata_t *)fs_get_fnode_exdata(fnode);
-
-			if(fnode_exdata->first_child)
-				return KM_RESULT_DIR_NOT_EMPTY;
-			break;
-		}
-		case FS_FNODE_TYPE_FILE:
-			KM_RETURN_IF_FAILED(device->ops.remove(dc, device));
-			break;
-		default:
-			return KM_RESULT_UNSUPPORTED_OPERATION;
-	}
+	auto exdata = static_cast<ki_devio_fnode_exdata_t *>(fs_get_fnode_exdata(fnode));
 
 	fs_fnode_t *parent = fs_parent_of(fnode);
 
@@ -79,9 +64,28 @@ km_result_t ki_devio_remove_file(io_dispatch_context_t *dc, fs_fnode_t *fnode) {
 	if (fs_filesys_of_fnode(parent) != ki_devio_filesys)
 		return KM_RESULT_INVALID_ARGS;
 
+	switch (fs_get_fnode_type(fnode)) {
+		case FS_FNODE_TYPE_DIR: {
+			ki_devio_dir_exdata_t *fnode_exdata = static_cast<ki_devio_dir_exdata_t *>(exdata);
+
+			if (fnode_exdata->first_child)
+				return KM_RESULT_DIR_NOT_EMPTY;
+			break;
+		}
+		case FS_FNODE_TYPE_FILE: {
+			auto xd = static_cast<ki_devio_file_exdata_t *>(exdata);
+			auto dev = xd->device;
+			KM_RETURN_IF_FAILED(xd->ops.remove(dc, dev, fnode));
+			dm_unref_device(dev);
+			break;
+		}
+		default:
+			return KM_RESULT_UNSUPPORTED_OPERATION;
+	}
+
 	{
-		ki_devio_fnode_exdata_t *base_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(parent);
-		ki_devio_dir_exdata_t *parent_exdata = (ki_devio_dir_exdata_t *)fs_get_fnode_exdata(parent);
+		ki_devio_fnode_exdata_t *base_exdata = static_cast<ki_devio_fnode_exdata_t *>(fs_get_fnode_exdata(parent));
+		ki_devio_dir_exdata_t *parent_exdata = static_cast<ki_devio_dir_exdata_t *>(fs_get_fnode_exdata(parent));
 
 		if (base_exdata->prev) {
 			ki_devio_fnode_exdata_t *prev_exdata = (ki_devio_fnode_exdata_t *)fs_get_fnode_exdata(base_exdata->prev);
@@ -98,8 +102,6 @@ km_result_t ki_devio_remove_file(io_dispatch_context_t *dc, fs_fnode_t *fnode) {
 		}
 	}
 
-	dm_unref_device(device);
-
 	KM_RETURN_IF_FAILED(fs_unlink_subnode(fnode));
 
 	// TODO: Delete the fnode?
@@ -108,41 +110,40 @@ km_result_t ki_devio_remove_file(io_dispatch_context_t *dc, fs_fnode_t *fnode) {
 }
 
 km_result_t ki_devio_open(fs_fnode_t *file, fs_fcb_t **fcb_out, fs_open_flags_t flags) {
-	dm_device_t *device = ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(file))->device;
-	return device->ops.open(device, fcb_out, flags);
+	auto exdata = static_cast<ki_devio_file_exdata_t *>(fs_get_fnode_exdata(file));
+	return exdata->ops.open(exdata->device, file, fcb_out, flags);
 }
 
 void ki_devio_close(fs_fcb_t *fcb) {
-	dm_device_t *device = ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->device;
-	device->ops.close(fcb);
+	static_cast<ki_devio_file_exdata_t *>(fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->ops.close_cleanup(fcb);
 }
 
 km_result_t ki_devio_seek(io_dispatch_context_t *dc, fs_fcb_t *fcb, long off, fs_seek_mode_t mode) {
-	return ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->device->ops.seek(dc, fcb, off, mode);
+	return static_cast<ki_devio_file_exdata_t *>(fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->ops.seek(dc, fcb, off, mode);
 }
 
 km_result_t ki_devio_read(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t *bytes_read_out) {
-	return ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->device->ops.read(dc, fcb, dest, size, bytes_read_out);
+	return static_cast<ki_devio_file_exdata_t *>(fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->ops.read(dc, fcb, dest, size, bytes_read_out);
 }
 
 km_result_t ki_devio_write(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t *bytes_written_out) {
-	return ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->device->ops.write(dc, fcb, src, size, bytes_written_out);
+	return static_cast<ki_devio_file_exdata_t *>(fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->ops.write(dc, fcb, src, size, bytes_written_out);
 }
 
 km_result_t ki_devio_pread(io_dispatch_context_t *dc, fs_fcb_t *fcb, char *dest, size_t size, size_t off, size_t *bytes_read_out) {
-	return ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->device->ops.pread(dc, fcb, dest, size, off, bytes_read_out);
+	return ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->ops.pread(dc, fcb, dest, size, off, bytes_read_out);
 }
 
 km_result_t ki_devio_pwrite(io_dispatch_context_t *dc, fs_fcb_t *fcb, const void *src, size_t size, size_t off, size_t *bytes_written_out) {
-	return ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->device->ops.pwrite(dc, fcb, src, size, off, bytes_written_out);
+	return ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->ops.pwrite(dc, fcb, src, size, off, bytes_written_out);
 }
 
 km_result_t ki_devio_ioctl(io_dispatch_context_t *dc, fs_fcb_t *fcb, uint32_t ioctl_code, void *data_in, size_t size_in, void *data_out, size_t size_out, void *args) {
-	return ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->device->ops.ioctl(dc, fcb, ioctl_code, data_in, size_in, data_out, size_out, args);
+	return ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->ops.ioctl(dc, fcb, ioctl_code, data_in, size_in, data_out, size_out, args);
 }
 
 km_result_t ki_devio_size(io_dispatch_context_t *dc, fs_fcb_t *fcb, size_t *size_out) {
-	return ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->device->ops.size(dc, fcb, size_out);
+	return ((ki_devio_file_exdata_t *)fs_get_fnode_exdata(fs_get_file_of_fcb(fcb)))->ops.size(dc, fcb, size_out);
 }
 
 km_result_t ki_devio_enum_first_child_file(fs_fnode_t *dir, fs_fnode_t **first_file_out) {
