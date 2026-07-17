@@ -1,0 +1,15 @@
+#ifndef _FREESTDC_CXX_RANGES_
+#define _FREESTDC_CXX_RANGES_
+
+#include "_ranges/access.hh"
+#include <compare>
+#include <initializer_list>
+#include <iterator>
+
+namespace std {
+	namespace ranges {
+
+	}
+}
+
+#endif

@@ -1,0 +1,9 @@
+#ifndef _FREESTDC_CXX_ITERATOR_
+#define _FREESTDC_CXX_ITERATOR_
+
+#include "_iterator/traits.hh"
+
+namespace std {
+}
+
+#endif

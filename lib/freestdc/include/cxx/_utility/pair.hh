@@ -1,7 +1,7 @@
 #ifndef _FREESTDC_CXX_UTILITY_PAIR_
 #define _FREESTDC_CXX_UTILITY_PAIR_
 
-#include <functional>
+#include "../_functional/misc.hh"
 #include "forward.hh"
 
 namespace std {
