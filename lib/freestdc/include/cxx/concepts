@@ -65,7 +65,7 @@ namespace std {
 		};
 
 	//
-	// WARNING: this swappable implementation is non-standard!!!
+	// TODO: Use the range version to replace it.
 	//
 	template <class T>
 	concept swappable =
@@ -73,6 +73,9 @@ namespace std {
 			std::swap(a, b);
 		};
 
+	//
+	// TODO: Use the range version to replace it.
+	//
 	template <class T, class U>
 	concept swappable_with =
 		std::common_reference_with<T, U> &&
