@@ -1,9 +1,10 @@
 #include <pbos/kd/logger.h>
 #include <hal/x86_64/proc.hh>
-#include <pbos/kh/io/irq.hh>
 #include <pbos/kfxx/allocator.hh>
 #include <pbos/kfxx/scope_guard.hh>
+#include <pbos/kh/io/irq.hh>
 #include <pbos/ki/kasan/impl.hh>
+
 
 void ps_user_thread_init(ps_tcb_t *tcb) {
 	tcb->context->rflags |= (1 << 9);  // IF
@@ -135,7 +136,9 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 	ki_thread_set_kernel_stack(tcb, ptr, size);
 
 	// TODO: Repoison the addresses in the free function.
+#if KI_ENABLE_KASAN
 	ki_kasan_unpoison_addr(ptr, size);
+#endif
 
 	// stub
 	if (!ps_global_proc_set.size()) {

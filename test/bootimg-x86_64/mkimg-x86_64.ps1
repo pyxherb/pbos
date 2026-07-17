@@ -52,20 +52,23 @@ format FS=FAT32 QUICK`n`
 }
 
 function InstallLimine {
-	New-Item "Y:\EFI\" -ItemType dir
-	New-Item "Y:\EFI\BOOT\" -ItemType dir
+	New-Item "X:\EFI\" -ItemType dir
+	New-Item "X:\EFI\BOOT\" -ItemType dir
 
-	Copy-Item "$liminePath\BOOTX64.EFI" "Y:\EFI\BOOT"
-	Copy-Item "$liminePath\BOOTIA32.EFI" "Y:\EFI\BOOT"
+	Copy-Item "$liminePath\BOOTX64.EFI" "X:\EFI\BOOT"
+	Copy-Item "$liminePath\BOOTIA32.EFI" "X:\EFI\BOOT"
 }
 
 function UpdateLimineConfig {
-	Copy-Item test\bootimg-x86_64\config\limine.conf X:\
+	Copy-Item test\bootimg-x86_64\config\limine.conf B:\
 }
 
 function CopySystemFiles {
-	Copy-Item build\pboskrnl B:\sys\kernel\
-	Copy-Item build\initcar B:\sys\boot\
+	if (-not (Test-Path B:\sys\)) {
+		mkdir B:\sys\
+	}
+	Copy-Item build\kernel\pboskrnl B:\sys\
+	Copy-Item build\initcar B:\sys\
 }
 
 function RemovePreviousDiskImage {
@@ -86,7 +89,7 @@ function MountDiskImageEFI {
 	ExecDiskpartScript "`
 select vdisk FILE=`"$($imgPath)`"`n`
 select partition 2`n`
-assign letter=Y`n`
+assign letter=X`n`
 "
 }
 
@@ -94,7 +97,7 @@ function MountDiskImage {
 	ExecDiskpartScript "`
 select vdisk FILE=`"$($imgPath)`"`n`
 select partition 3`n`
-assign letter=X`n`
+assign letter=B`n`
 "
 }
 
@@ -110,14 +113,14 @@ if ($flagRemovePrevious) {
 	}
 }
 
-if (Test-Path "X:") {
-	Write-Output "Error: Drive letter X is already in use"
+if (Test-Path "B:") {
+	Write-Output "Error: Drive letter B is already in use"
 	Exit -1;
 }
 
 if (-not (Test-Path $imgPath)) {
-	if (Test-Path "Y:") {
-		Write-Output "Error: Drive letter Y is already in use"
+	if (Test-Path "X:") {
+		Write-Output "Error: Drive letter X is already in use"
 		Exit -1;
 	}
 	CreateDiskImage
@@ -129,6 +132,6 @@ if (-not (Test-Path $imgPath)) {
 
 MountDiskImage
 UpdateLimineConfig
-# CopySystemFiles
+CopySystemFiles
 
 UnmountDiskImage

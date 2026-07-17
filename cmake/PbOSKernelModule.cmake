@@ -8,7 +8,7 @@ function(add_pbos_kernel_module Name)
 	)
 
 	if(PROJECT_NAME STREQUAL "PbOS")
-		target_link_libraries(${Name} PRIVATE pbkxrt)
+		target_link_libraries(${Name} PRIVATE pbos_common pbkxrt)
 		target_link_options(${Name} PRIVATE "-T${PBOS_ROOT_DIR}/scripts/ld/${PBOS_ARCH}/kmod.lds")
 		get_property(_modules GLOBAL PROPERTY PBOS_KERNEL_MODULES)
 		list(APPEND _modules ${Name})

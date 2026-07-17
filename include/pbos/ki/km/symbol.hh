@@ -4,7 +4,7 @@
 #include <pbos/common.h>
 #include <cstddef>
 #include <type_traits>
-#include <elf.h>
+#include <pbos/fmt/elf.h>
 
 PBOS_EXTERN_C_BEGIN
 

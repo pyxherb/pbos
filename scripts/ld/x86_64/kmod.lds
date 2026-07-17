@@ -28,6 +28,30 @@ SECTIONS
 
 	. = ALIGN(CONSTANT(MAXPAGESIZE));
 
+	.init_array :
+	{
+		HIDDEN(KXI_CTORS_BEGIN = .);
+		KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.init_array.*)))
+		KEEP(*(.init_array EXCLUDE_FILE(*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o) .init_array))
+		HIDDEN(KXI_CTORS_END = .);
+	}
+
+	.fini_array :
+	{
+		HIDDEN(KXI_DTORS_BEGIN = .);
+		KEEP(*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.fini_array.*)))
+		KEEP(*(.fini_array EXCLUDE_FILE(*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o) .fini_array))
+		HIDDEN(KXI_DTORS_END = .);
+	}
+	
+	.got :
+	{
+		*(.got)
+		*(.got.*)
+	} :rodata
+	
+	. = ALIGN(CONSTANT(MAXPAGESIZE));
+
 	.dynamic :
 	{
 		*(.dynamic)
@@ -65,24 +89,6 @@ SECTIONS
 	{
 		*(.data)
 		*(.data.*)
-	}
-
-	. = ALIGN(CONSTANT(MAXPAGESIZE));
-
-	.init_array :
-	{
-		HIDDEN(KXI_CTORS_BEGIN = .);
-		KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.init_array.*)))
-		KEEP(*(.init_array EXCLUDE_FILE(*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o) .init_array))
-		HIDDEN(KXI_CTORS_END = .);
-	}
-
-	.fini_array :
-	{
-		HIDDEN(KXI_DTORS_BEGIN = .);
-		KEEP(*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.fini_array.*)))
-		KEEP(*(.fini_array EXCLUDE_FILE(*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o) .fini_array))
-		HIDDEN(KXI_DTORS_END = .);
 	}
 
 	. = ALIGN(CONSTANT(MAXPAGESIZE));

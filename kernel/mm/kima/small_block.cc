@@ -34,7 +34,9 @@ void *kima_alloc_small_block_page(kima_pool_t *pool, size_t order) {
 	kima_small_block_page_desc_t *page_desc =
 		(kima_small_block_page_desc_t *)(pg + info.page_descs_off);
 
+#if KI_ENABLE_KASAN
 	ki_kasan_unpoison_addr(page_desc, sizeof(kima_small_block_page_desc_t));
+#endif
 
 	kfxx::construct_at<kima_small_block_page_desc_t>(page_desc);
 
@@ -48,7 +50,9 @@ void *kima_alloc_small_block_page(kima_pool_t *pool, size_t order) {
 	pool->small_block_pages = page_desc;
 
 	// Link the descriptors.
+#if KI_ENABLE_KASAN
 	ki_kasan_unpoison_addr(pg + info.block_descs_off, sizeof(kima_small_block_desc_t) * info.max_block_capacity);
+#endif
 	size_t index = order - KIMA_SMALL_BLOCK_MIN_ORDER;
 	auto prev_free_small_block_descs_head = pool->free_small_block_descs[index];
 	for (size_t i = 0; i < info.max_block_capacity; ++i) {

@@ -6,4 +6,6 @@
 -no-shutdown ^
 -drive file=.\build\boot.vhdx,format=vhdx ^
 -drive if=pflash,format=raw,file="C:\Program Files\qemu\share\edk2-x86_64-code.fd",readonly=on ^
--monitor stdio
+-monitor stdio ^
+-debugcon vc:640x480 ^
+-machine q35

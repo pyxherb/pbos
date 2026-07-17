@@ -1623,7 +1623,9 @@ alloc_succeeded:
 		off_paddr += PAGESIZE;
 	}
 
+#if KI_ENABLE_KASAN
 	ki_kasan_unpoison_addr(vaddr, size);
+#endif
 
 	return vaddr;
 }
@@ -1650,7 +1652,9 @@ PBOS_NO_ASAN void hali_tmpunmap_post(void *vaddr, size_t size) {
 		arch_invlpg(ptt_vaddr);
 	}
 
+#if KI_ENABLE_KASAN
 	ki_kasan_unpoison_addr(vaddr, size);
+#endif
 }
 
 PBOS_NODISCARD void *hali_get_pgtab_paddr(mm_context_t *ctxt, const void *vaddr, mm_page_access_t *page_access_out) {

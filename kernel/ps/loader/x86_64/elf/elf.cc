@@ -1,6 +1,6 @@
 #include <arch/x86_64/mlayout.h>
 #include <arch/x86_64/paging.h>
-#include <elf.h>
+#include <pbos/fmt/elf.h>
 #include <pbos/fs/file.h>
 #include <pbos/kd/logger.h>
 #include <pbos/ps/exec.h>
@@ -253,7 +253,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 				dbg_println(__func__, "Trying to load a kernel module with PT_INTERP segments");
 				return KM_RESULT_INVALID_ARGS;
 			case PT_DYNAMIC: {
-				if (!dyn_entries.resize(kfxx::ceil_align_to(i.p_filesz, alignof(Elf64_Dyn)))) {
+				if (!dyn_entries.resize(kfxx::ceil_align_to<size_t>(i.p_filesz, alignof(Elf64_Dyn)))) {
 					return KM_RESULT_NO_MEM;
 				}
 				if (KM_FAILED(result = fs_pread(file_fp, dyn_entries.data(), i.p_filesz, i.p_offset, &bytes_read))) {

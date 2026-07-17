@@ -1,6 +1,7 @@
 #include <string.h>
-#include <pbos/ki/mm/kima.hh>
 #include <pbos/ki/kasan/impl.hh>
+#include <pbos/ki/mm/kima.hh>
+
 
 kima_ublk_t *kima_lookup_ublk(kima_pool_t *pool, void *ptr) {
 	kfxx::rbtree_t<void *>::node_t *node = pool->ublk_query_tree.find(ptr);
@@ -61,7 +62,9 @@ kima_ublk_t *kima_alloc_ublk(kima_pool_t *pool, void *ptr, size_t size) {
 
 	kima_ublk_poolpg_t *pg = (kima_ublk_poolpg_t *)kima_vpgalloc(pool, pool->page_size);
 
+#if KI_ENABLE_KASAN
 	ki_kasan_unpoison_addr(pg, pool->page_size);
+#endif
 
 	if (!pg)
 		return nullptr;

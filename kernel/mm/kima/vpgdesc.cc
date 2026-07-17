@@ -1,6 +1,7 @@
 #include <string.h>
-#include <pbos/ki/mm/kima.hh>
 #include <pbos/ki/kasan/impl.hh>
+#include <pbos/ki/mm/kima.hh>
+
 
 kima_vpgdesc_t *kima_lookup_vpgdesc(kima_pool_t *pool, void *ptr) {
 	kfxx::rbtree_t<void *>::node_t *node = pool->vpgdesc_query_tree.find(ptr);
@@ -54,7 +55,9 @@ kima_vpgdesc_t *kima_alloc_vpgdesc(kima_pool_t *pool, void *ptr) {
 	if (!pg)
 		return nullptr;
 
+#if KI_ENABLE_KASAN
 	ki_kasan_unpoison_addr(pg, pool->page_size);
+#endif
 
 	pg->header.prev = nullptr;
 	pg->header.next = pool->vpgdesc_poolpg_list;
