@@ -1,6 +1,6 @@
 #include <arch/x86_64/paging.h>
 #include <string.h>
-#include <pbos/hal/irq.hh>
+#include <pbos/io/irq.hh>
 #include <pbos/kfxx/allocator.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/mp/misc.hh>

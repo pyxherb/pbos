@@ -77,7 +77,7 @@ void ki_initcar_init() {
 	if (!(ki_initcar_filesys = fs_register_file_system("initcar", strlen("initcar"), &ki_initcar_ops, nullptr)))
 		km_panic("Error registering initcar file system");
 
-	dbg_printf("INITCAR range: %p-%p\n",
+	kd_printf("INITCAR range: %p-%p\n",
 		ki_initcar_paddr,
 		((const char *)ki_initcar_paddr) + ki_initcar_file_size);
 
@@ -155,7 +155,7 @@ void ki_initcar_init() {
 
 		fs_set_fnode_exdata(file.get(), exdata);
 
-		dbg_printf("initcar: Mounting file: %s\n", fe->filename);
+		kd_printf("initcar: Mounting file: %s\n", fe->filename);
 		if (KM_FAILED(result = fs_link_subnode(ki_initcar_dir, file.get())))
 			km_panic("Error mounting initcar file `%s', error code = %x\n", fe->filename, result);
 

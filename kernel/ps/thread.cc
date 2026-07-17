@@ -1,8 +1,7 @@
 #include <pbos/kd/logger.h>
-#include <pbos/ki/ps/proc.hh>
-#include <pbos/hal/irq.hh>
 #include <pbos/kfxx/allocator.hh>
 #include <pbos/kfxx/scope_guard.hh>
+#include <pbos/ki/ps/proc.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -10,6 +9,7 @@ void ki_destroy_thread(ps_tcb_t *tcb) {
 	const size_t page_size = mm_get_page_size();
 
 	if (tcb->parent) {
+		ps::write_semaphore_guard g(tcb->parent->thread_set_semaphore);
 		ps_cur_sched->drop_thread(ps_cur_sched, tcb);
 		tcb->parent->thread_set.remove(tcb);
 	}

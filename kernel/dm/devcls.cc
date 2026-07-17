@@ -14,7 +14,7 @@ void ki_register_device_classes() {
 	dm_device_class_t *device_class;
 
 	for (const auto &i : DM_DEVICE_CLASSES_TO_REGISTER) {
-		kd_println("kernel", "Registering built-in device class: %s", i.second);
+		dbg_println("kernel", "Registering built-in device class: %s", i.second);
 		if (KM_FAILED(result = dm_register_device_class(&i.first, &device_class))) {
 			km_panic("Error registering built-in device class: %s, result=%.08x", i.second, result);
 		}

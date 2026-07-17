@@ -1,6 +1,6 @@
 #include <pbos/kd/logger.h>
 #include <hal/x86_64/proc.hh>
-#include <pbos/hal/irq.hh>
+#include <pbos/kh/io/irq.hh>
 #include <pbos/kfxx/allocator.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/kasan/impl.hh>

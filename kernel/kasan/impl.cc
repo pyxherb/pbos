@@ -3,7 +3,7 @@
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/kh/mm/misc.hh>
 #include <pbos/ki/kasan/impl.hh>
-#include <pbos/hal/irq.hh>
+#include <pbos/io/irq.hh>
 
 PBOS_EXTERN_C_BEGIN
 

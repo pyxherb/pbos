@@ -72,7 +72,7 @@ km_result_t pcibus_clear_domain_dir() {
 
 		// TODO: Implement it.
 
-		kd_println(PCIROOT_COMPONENT_NAME, "Removed directory for PCI domain: %s", name);
+		dbg_println(PCIROOT_COMPONENT_NAME, "Removed directory for PCI domain: %s", name);
 	}
 }
 

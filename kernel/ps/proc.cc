@@ -1,5 +1,4 @@
 #include <pbos/kh/ps/proc.h>
-#include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/km/symbol.hh>
 #include <pbos/ki/mm/context.hh>
@@ -163,7 +162,7 @@ PBOS_API ps_proc_id_t ps_pid_of(ps_pcb_t *pcb) {
 }
 
 PBOS_API void ps_add_thread(ps_pcb_t *proc, ps_tcb_t *thread) {
-	io::local_irq_lock irq_lock;
+	ps::write_semaphore_guard g(proc->thread_set_semaphore);
 	// stub: do some checks with the new thread id, such as checking if a thread with the id exists.
 	thread->rb_value = ++proc->last_thread_id;
 	kd_dbgcheck(proc->thread_set.insert(thread), "Error adding thread with PID=%u, TID=%u", proc->rb_value, thread->rb_value);

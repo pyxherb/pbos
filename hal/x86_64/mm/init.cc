@@ -74,7 +74,7 @@ PBOS_NO_ASAN void kh_mm_init() {
 					pf = ki_blfb_pixel_format_cases[j].format;
 
 					if (fb->pitch > UINT32_MAX) {
-						dbg_printf("Stride out-of-range by BLFB #%lu: %lu\n", static_cast<uint64_t>(i), static_cast<uint64_t>(j));
+						kd_printf("Stride out-of-range by BLFB #%lu: %lu\n", static_cast<uint64_t>(i), static_cast<uint64_t>(j));
 						break;
 					}
 
@@ -93,7 +93,7 @@ PBOS_NO_ASAN void kh_mm_init() {
 			}
 
 			if (pf == DS_PIXEL_FORMAT_UNKNOWN)
-				dbg_printf("BLFB #%lu has unknown pixel format, ignored\n", static_cast<uint64_t>(i));
+				kd_printf("BLFB #%lu has unknown pixel format, ignored\n", static_cast<uint64_t>(i));
 		}
 	}
 

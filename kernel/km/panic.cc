@@ -1,4 +1,4 @@
-#include <pbos/hal/irq.h>
+#include <pbos/io/irq.hh>
 #include <pbos/kasan/utils.h>
 #include <pbos/kd/logger.h>
 #include <pbos/kd/stacktrace.h>
@@ -16,7 +16,7 @@ bool km_is_panicked() {
 }
 
 PBOS_NO_ASAN PBOS_NORETURN PBOS_API void km_panic(const char *fmt, ...) {
-	irq_disable();
+	io_disable_irq();
 #if KI_ENABLE_KASAN
 	kasan_disable();
 #endif

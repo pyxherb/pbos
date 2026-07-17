@@ -1,7 +1,7 @@
 ///
 /// @file iocb.h
 /// @author PbOS Contributors
-/// @brief Declarations for Continuable Task Block (CTB).
+/// @brief Declarations for I/O Continuation Block (IOCB).
 ///
 /// @copyright Copyright (c) 2026 PbOS Project
 ///
@@ -28,7 +28,6 @@ typedef struct _io_iocb_ops_t {
 	io_iocb_destroy_fn_t destroy;
 } io_iocb_ops_t;
 
-/// @brief The CTB (Continuable Task Block) structure.
 typedef struct _io_iocb_t {
 	alignas(max_align_t) size_t size;
 	io_iocb_t *prev, *next;

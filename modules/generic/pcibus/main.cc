@@ -34,12 +34,12 @@ PBOS_USED PBOS_KMOD_API km_result_t pbos_module_init() {
 	{
 		KM_RETURN_IF_FAILED(dm_register_bus(PCIBUS_BUS_NAME.data(), PCIBUS_BUS_NAME.size(), &pcibus_ops, &pcibus_bus_object));
 
-		kd_println(PCIROOT_COMPONENT_NAME, "Registered PCI bus");
+		dbg_println(PCIROOT_COMPONENT_NAME, "Registered PCI bus");
 	}
 
 	{
 		KM_RETURN_IF_FAILED(dm_create_devio_dir(dm_get_devio_root_dir(), PCIBUS_DEVIO_PCI_ROOT_DIR_NAME.data(), PCIBUS_DEVIO_PCI_ROOT_DIR_NAME.size(), pcibus_devio_pci_root_dir.get_addr_without_release()));
-		kd_println(PCIROOT_COMPONENT_NAME, "Created PCI devio directory");
+		dbg_println(PCIROOT_COMPONENT_NAME, "Created PCI devio directory");
 	}
 
 	KM_RETURN_IF_FAILED(pcibus_scan_acpi_mcfg_table_and_create_domains());
@@ -50,7 +50,7 @@ PBOS_USED PBOS_KMOD_API km_result_t pbos_module_init() {
 PBOS_USED PBOS_KMOD_API void pbos_module_deinit() {
 	if (pcibus_bus_object) {
 		dm_unregister_bus(pcibus_bus_object);
-		kd_println(PCIROOT_COMPONENT_NAME, "Unregistered PCI bus");
+		dbg_println(PCIROOT_COMPONENT_NAME, "Unregistered PCI bus");
 	}
 	// TODO: Destroy the root bus directory.
 	kxi_call_dtors();

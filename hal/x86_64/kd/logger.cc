@@ -4,7 +4,6 @@
 #include <pbos/hal/spinlock.h>
 #include <string.h>
 #include <hal/x86_64/logger.hh>
-// #include <pbos/hal/irq.hh>
 
 PBOS_EXTERN_C_BEGIN
 

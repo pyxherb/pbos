@@ -2,7 +2,6 @@
 #include <pbos/kf/hash.h>
 #include <string.h>
 #include <hal/x86_64/proc.hh>
-#include <pbos/hal/irq.hh>
 #include <pbos/kfxx/map.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/ps/exec.hh>
@@ -150,8 +149,7 @@ km_result_t ps_exec(
 }
 
 km_result_t ps_register_binproto(fs_fcb_t *fcb, km_binproto_t **proto_out) {
-	io::local_irq_lock irq_lock;
-
+	// TODO: Add a binproto lock.
 	if (ki_registered_binprotos.find(fcb))
 		return KM_RESULT_EXISTED;
 
@@ -192,7 +190,7 @@ km_result_t ps_register_cached_ro_page(void *paddr, void *allocated_cmp_vpage, v
 
 km_result_t ps_fetch_cached_ro_page(void *vaddr, void *comparison_tmpmap_vaddr, void **paddr_out) {
 	if(mm_is_user_space(comparison_tmpmap_vaddr)) {
-		kd_printf(__func__, "Temporary mapping area for comparison must be in kernel space, but %p was provided", comparison_tmpmap_vaddr);
+		dbg_printf(__func__, "Temporary mapping area for comparison must be in kernel space, but %p was provided", comparison_tmpmap_vaddr);
 		return KM_RESULT_INVALID_ARGS;
 	}
 	const size_t page_size = mm_get_page_size();
@@ -258,13 +256,13 @@ void ps_unref_cached_ro_page(void *paddr) {
 }
 
 km_binproto_t *ps_find_binproto(fs_fcb_t *fcb) {
-	io::local_irq_lock irq_lock;
+	// TODO: Add a binproto lock.
 
 	return static_cast<km_binproto_t *>(ki_registered_binprotos.find(fcb));
 }
 
 void ps_unregister_binproto(km_binproto_t *proto) {
-	io::local_irq_lock irq_lock;
+	// TODO: Add a binproto lock.
 
 	// TODO: Check if the prototype is registered.
 	ki_registered_binprotos.remove(proto);

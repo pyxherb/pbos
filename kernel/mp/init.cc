@@ -1,6 +1,5 @@
 #include <pbos/ki/mp/init.hh>
 #include <pbos/ki/mm/context.hh>
-#include <pbos/hal/irq.hh>
 #include <string.h>
 
 void ki_mp_alloc_resources() {
@@ -11,11 +10,4 @@ void ki_mp_alloc_resources() {
 	for (ps_cpuid_t i = 0; i < mp_num_total_cpu; ++i) {
 		mm_cur_contexts[i] = mm_kernel_context;
 	}
-
-	// Allocate IRQ contexts.
-	if (!(irq_contexts = (hal_irq_context_t **)mm_kalloc(mp_num_total_cpu * sizeof(hal_irq_context_t *), alignof(hal_irq_context_t *)))) {
-		km_panic("Unable to allocate interrupt context for all CPUs");
-	}
-
-	memset(irq_contexts, 0, mp_num_total_cpu * sizeof(hal_irq_context_t *));
 }

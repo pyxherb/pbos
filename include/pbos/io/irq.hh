@@ -1,8 +1,6 @@
 #ifndef _HAL_IRQ_HH_
 #define _HAL_IRQ_HH_
 
-#include <pbos/kd/assert.h>
-#include <pbos/kfxx/basedefs.hh>
 #include "irq.h"
 
 namespace io {
@@ -12,8 +10,8 @@ namespace io {
 
 	public:
 		PBOS_FORCEINLINE local_irq_lock() noexcept {
-			if (!(irq_is_disabled())) {
-				irq_disable();
+			if (!(io_is_irq_disabled())) {
+				io_disable_irq();
 				_int_disabled = true;
 			} else
 				_int_disabled = false;
@@ -21,7 +19,7 @@ namespace io {
 
 		PBOS_FORCEINLINE ~local_irq_lock() {
 			if (_int_disabled)
-				irq_enable();
+				io_enable_irq();
 		}
 	};
 }

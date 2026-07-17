@@ -60,7 +60,7 @@ void hali_isr_timer_impl(
 		if (!mm_is_user_space((void *)rip))
 			cur_thread->context->rsp0 = cur_thread->context->rsp;
 		// kd_assert(cur_thread->context->esp0 == (uint32_t)((char*)cur_thread->kernel_stack + cur_thread->kernel_stack_size));
-		// dbg_printf("U!\n");
+		// kd_printf("U!\n");
 
 		cur_thread->context->ds = ds;
 		cur_thread->context->ss = rsp_top[4];
@@ -91,14 +91,14 @@ void hali_isr_timer_impl(
 	arch_write_lapic(hali_lapic_vbase, ARCH_LAPIC_REG_EOI, 0);
 
 	if (((uintptr_t)next_thread->context->rip) < KSPACE_VBASE) {
-		/*dbg_printf(
+		/*kd_printf(
 			"PID=%d, EIP=%.8x, ESP=%.8x, ESP0=%.8x U\n",
 			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);*/
 
 		ki_switch_to_user_thread(next_thread);
 	} else {
 		// We are already in ring 0.
-		/*dbg_printf(
+		/*kd_printf(
 			"PID=%d, EIP=%.8x, ESP=%.8x, ESP0=%.8x K\n",
 			next_thread->parent->rb_value, next_thread->context->eip, next_thread->context->esp, next_thread->context->esp0);*/
 		// asm volatile("xchg %bx, %bx");

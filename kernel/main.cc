@@ -1,5 +1,5 @@
 #include <pbos/hal/init.h>
-#include <pbos/hal/irq.h>
+#include <pbos/kh/io/irq.hh>
 #include <pbos/kd/logger.h>
 #include <pbos/km/panic.h>
 #include <pbos/kfxx/map.hh>
@@ -82,14 +82,14 @@ PBOS_NORETURN void kernel_main() {
 	ki_fs_init();
 	ki_ps_init();
 
-	kd_println("kernel", "Scanning for kernel symbols...");
+	dbg_println("kernel", "Scanning for kernel symbols...");
 	{
 		for (const Elf64_Sym *i = KI_EXPORTED_SYMBOLS_BEGIN; i != KI_EXPORTED_SYMBOLS_END; ++i) {
 			uint8_t visibility = ELF64_ST_VISIBILITY(i->st_other);
 			kfxx::string_view name = kfxx::string_view(KI_EXPORTED_SYMBOL_NAMES_BEGIN + i->st_name);
 
 			if ((visibility == STV_DEFAULT) && i->st_value) {
-				// kd_println("kernel", "Found public symbol: %s -> %p", name.data(), (void *)i->st_value);
+				// dbg_println("kernel", "Found public symbol: %s -> %p", name.data(), (void *)i->st_value);
 				// TODO: Handle value when ASLR enabled...
 				if (KM_FAILED(result = ki_do_register_kernel_symbol(name.data(), name.size(), (void *)i->st_value, i->st_size, nullptr))) {
 					switch (result) {
@@ -100,11 +100,11 @@ PBOS_NORETURN void kernel_main() {
 					}
 				}
 			} else {
-				kd_println("kernel", "Skipped symbol: %s -> %p", name.data(), (void *)i->st_value);
+				dbg_println("kernel", "Skipped symbol: %s -> %p", name.data(), (void *)i->st_value);
 			}
 		}
 	}
-	kd_println("kernel", "Symbol scanning completed");
+	dbg_println("kernel", "Symbol scanning completed");
 
 	ki_initcar_init();
 	ki_devio_init();

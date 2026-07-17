@@ -6,7 +6,6 @@
 #include <pbos/ps/exec.h>
 #include <pbos/ps/kmod.h>
 #include <string.h>
-#include <pbos/hal/irq.hh>
 #include <pbos/kfxx/dynarray.hh>
 #include <pbos/kfxx/list.hh>
 #include <pbos/kfxx/scope_guard.hh>
@@ -251,7 +250,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 				break;
 			}
 			case PT_INTERP:
-				kd_println(__func__, "Trying to load a kernel module with PT_INTERP segments");
+				dbg_println(__func__, "Trying to load a kernel module with PT_INTERP segments");
 				return KM_RESULT_INVALID_ARGS;
 			case PT_DYNAMIC: {
 				if (!dyn_entries.resize(kfxx::ceil_align_to(i.p_filesz, alignof(Elf64_Dyn)))) {
@@ -395,7 +394,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 					const char *name = strtab + symtab[sym_idx].st_name;
 					void *sym_addr = ps_get_kernel_symbol(name, strlen(name));
 					if (!sym_addr) {
-						kd_println(__func__, "Unresolved symbol: %s", name);
+						dbg_println(__func__, "Unresolved symbol: %s", name);
 						return KM_RESULT_UNRESOLVED_SYMBOL;
 					}
 					*loc = (Elf64_Addr)sym_addr + rela[i].r_addend;
@@ -427,7 +426,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 				const char *name = strtab + symtab[sym_idx].st_name;
 				void *func = ps_get_kernel_symbol(name, strlen(name));
 				if (!func) {
-					kd_println(__func__, "Unresolved symbol: %s", name);
+					dbg_println(__func__, "Unresolved symbol: %s", name);
 					return KM_RESULT_UNRESOLVED_SYMBOL;
 				}
 				*loc = (Elf64_Addr)func + jmprel[i].r_addend;
@@ -516,17 +515,17 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 	}
 
 	if (!module_init) {
-		kd_println(__func__, "pbos_module_init not found in the module, unloading...");
+		dbg_println(__func__, "pbos_module_init not found in the module, unloading...");
 		return KM_RESULT_MALFORMED;
 	}
 
 	if (!module_deinit) {
-		kd_println(__func__, "pbos_module_deinit not found in the module, unloading...");
+		dbg_println(__func__, "pbos_module_deinit not found in the module, unloading...");
 		return KM_RESULT_MALFORMED;
 	}
 
 	if (!module_name) {
-		kd_println(__func__, "PBOS_MODULE_NAME not found in the module, unloading...");
+		dbg_println(__func__, "PBOS_MODULE_NAME not found in the module, unloading...");
 		return KM_RESULT_MALFORMED;
 	}
 
@@ -578,7 +577,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 
 	{
 		size_t name_len;
-		kd_println(__func__, "Loaded kernel module '%s' at %p-%p", ps_get_kmod_name(kmod, &name_len), vaddr_base, vaddr_limit);
+		dbg_println(__func__, "Loaded kernel module '%s' at %p-%p", ps_get_kmod_name(kmod, &name_len), vaddr_base, vaddr_limit);
 	}
 
 	unmap_guard.release();

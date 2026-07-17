@@ -2,7 +2,6 @@
 #include <pbos/ps/exec.h>
 #include <pbos/ps/proc.h>
 #include <pbos/syscall/pbcore.h>
-#include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 
 PBOS_EXTERN_C_BEGIN

@@ -77,18 +77,18 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 
 	// Overflow is an error.
 	if (UINTPTR_MAX - (uintptr_t)aligned_vaddr < aligned_size) {
-		kd_println(__func__, "Trying to unmap with address and size combination that will overflow");
+		dbg_println(__func__, "Trying to unmap with address and size combination that will overflow");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
 	if (is_user_space !=
 		mm_is_user_space(vaddr_limit)) {
-		kd_println(__func__, "Trying to unmap across kernel and user space");
+		dbg_println(__func__, "Trying to unmap across kernel and user space");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
 	if ((!is_user_space) && (access & MM_PAGE_USER)) {
-		kd_println(__func__, "Trying to map kernel space with user accessible");
+		dbg_println(__func__, "Trying to map kernel space with user accessible");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
@@ -243,13 +243,13 @@ PBOS_API km_result_t mm_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 
 	// Overflow is an error.
 	if (UINTPTR_MAX - (uintptr_t)aligned_vaddr < aligned_size) {
-		kd_println(__func__, "Trying to unmap with address and size combination that will overflow");
+		dbg_println(__func__, "Trying to unmap with address and size combination that will overflow");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
 	if (is_user_space !=
 		mm_is_user_space(vaddr_limit)) {
-		kd_println(__func__, "Trying to unmap across kernel and user space");
+		dbg_println(__func__, "Trying to unmap across kernel and user space");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
@@ -337,18 +337,18 @@ PBOS_NODISCARD PBOS_API km_result_t mm_merge_mapped_area(
 
 	vmr_a = static_cast<mm_vmr_t *>(context->vmr_tree.find(vaddr_a));
 	if (!vmr_a) {
-		kd_println(__func__, "VMR not found with address %p", vaddr_a);
+		dbg_println(__func__, "VMR not found with address %p", vaddr_a);
 		return KM_RESULT_INVALID_ARGS;
 	}
 
 	vmr_b = static_cast<mm_vmr_t *>(context->vmr_tree.find(vaddr_b));
 	if (!vmr_b) {
-		kd_println(__func__, "VMR not found with address %p", vaddr_b);
+		dbg_println(__func__, "VMR not found with address %p", vaddr_b);
 		return KM_RESULT_INVALID_ARGS;
 	}
 
 	if (((char *)vmr_a->rb_value) + vmr_a->size != vmr_b->rb_value) {
-		kd_println(__func__, "VMR at %p is not neighbor of VMR %p", vaddr_a, vaddr_b);
+		dbg_println(__func__, "VMR at %p is not neighbor of VMR %p", vaddr_a, vaddr_b);
 		return KM_RESULT_INVALID_ARGS;
 	}
 
@@ -387,7 +387,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
 	void *area_vaddr,
 	void *split_point) {
 	if (area_vaddr >= split_point) {
-		kd_println(__func__, "Trying to split a mapped area with area address >= split point");
+		dbg_println(__func__, "Trying to split a mapped area with area address >= split point");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
@@ -400,12 +400,12 @@ PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
 
 	vmr = static_cast<mm_vmr_t *>(context->vmr_tree.find(area_vaddr));
 	if (!vmr) {
-		kd_println(__func__, "VMR not found with address %p", area_vaddr);
+		dbg_println(__func__, "VMR not found with address %p", area_vaddr);
 		return KM_RESULT_INVALID_ARGS;
 	}
 
 	if (((char *)vmr->rb_value) + vmr->size <= split_point) {
-		kd_println(__func__, "Splitting area with split point %p which is beyond the area", split_point);
+		dbg_println(__func__, "Splitting area with split point %p which is beyond the area", split_point);
 		return KM_RESULT_INVALID_ARGS;
 	}
 
@@ -501,7 +501,7 @@ PBOS_API km_result_t mm_set_page_access(
 
 	if (is_user_space !=
 		mm_is_user_space(vaddr_limit)) {
-		kd_println(__func__, "Trying to set page access across kernel and user space");
+		dbg_println(__func__, "Trying to set page access across kernel and user space");
 		return KM_RESULT_INVALID_ARGS;
 	}
 
@@ -516,12 +516,12 @@ PBOS_API km_result_t mm_set_page_access(
 		vmr = static_cast<mm_vmr_t *>(context->vmr_tree.find(vaddr));
 
 		if (!vmr) {
-			kd_println(__func__, "VMR not found with address %p", vaddr);
+			dbg_println(__func__, "VMR not found with address %p", vaddr);
 			return KM_RESULT_INVALID_ARGS;
 		}
 
 		if (vmr->size != size) {
-			kd_println(__func__, "Operation size does not match VMR's size");
+			dbg_println(__func__, "Operation size does not match VMR's size");
 			return KM_RESULT_INVALID_ARGS;
 		}
 		vmr->access = access;
@@ -544,7 +544,7 @@ PBOS_API void *mm_vmalloc(mm_context_t *context,
 
 	if (is_user_space !=
 		mm_is_user_space((void *)PGFLOOR(maxaddr))) {
-		kd_println(__func__, "Trying to allocate virtual memory across kernel and user space");
+		dbg_println(__func__, "Trying to allocate virtual memory across kernel and user space");
 		return nullptr;
 	}
 

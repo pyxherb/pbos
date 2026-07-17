@@ -2,7 +2,7 @@
 #define _HAL_X86_64_IRQ_HH_
 
 #include <arch/x86_64/irq.h>
-#include <pbos/hal/irq.h>
+#include <pbos/kh/io/irq.hh>
 #include "mm.hh"
 
 PBOS_EXTERN_C_BEGIN
@@ -65,7 +65,7 @@ extern arch_gate_t hali_kidt[512];
 
 void hali_calibrate_apic();
 
-void hali_set_isr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
+void hali_set_isr(kh_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
 
 PBOS_EXTERN_C_END
 

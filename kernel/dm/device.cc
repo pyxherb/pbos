@@ -108,7 +108,7 @@ PBOS_API km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_c
 	memcpy(&dev_cls->rb_value, uuid, sizeof(kf_uuid_t));
 
 	if (!ki_registered_device_classes.insert(dev_cls)) {
-		kd_println(
+		dbg_println(
 			__func__,
 			"Trying to register an existed device class: %.08x-%.04hx-%.04hx-%.04hx-%.08hx%.04hx",
 			uuid->a,
@@ -119,7 +119,7 @@ PBOS_API km_result_t dm_register_device_class(const kf_uuid_t *uuid, dm_device_c
 		return KM_RESULT_EXISTED;
 	}
 
-	kd_println(
+	dbg_println(
 		__func__,
 		"Registered device class: %.08x-%.04hx-%.04hx-%.04hx-%.08hx%.04hx",
 		uuid->a,
@@ -142,7 +142,7 @@ PBOS_API dm_device_class_t *dm_query_device_class(const kf_uuid_t *uuid) {
 }
 
 PBOS_API void dm_unregister_device_class(dm_device_class_t *device_class) {
-	kd_println(
+	dbg_println(
 		__func__,
 		"Registered device class: %.08x-%.04hx-%.04hx-%.04hx-%.08hx%.04hx",
 		device_class->rb_value.a,

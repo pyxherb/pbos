@@ -1,5 +1,4 @@
 #include <pbos/ps/proc.h>
-#include <pbos/hal/irq.hh>
 #include "../mm.hh"
 
 PBOS_EXTERN_C_BEGIN

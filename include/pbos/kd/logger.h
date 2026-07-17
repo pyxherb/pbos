@@ -69,15 +69,15 @@ void klog_putc(char ch);
 void klog_puts(const char *str);
 
 #ifndef NDEBUG
-	#define dbg_vprintf klog_vprintf
-	#define dbg_printf klog_printf
+	#define kd_vprintf klog_vprintf
+	#define kd_printf klog_printf
 #else
-	#define dbg_vprintf
-	#define dbg_printf
+	#define kd_vprintf
+	#define kd_printf
 #endif
 
-#define kd_printf(component, fmt, ...) klog_printf("[%s]" fmt, component, ##__VA_ARGS__)
-#define kd_println(component, fmt, ...) klog_printf("[%s]" fmt "\n", component, ##__VA_ARGS__)
+#define dbg_printf(component, fmt, ...) klog_printf("[%s]" fmt, component, ##__VA_ARGS__)
+#define dbg_println(component, fmt, ...) klog_printf("[%s]" fmt "\n", component, ##__VA_ARGS__)
 
 PBOS_EXTERN_C_END
 

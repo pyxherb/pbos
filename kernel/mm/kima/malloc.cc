@@ -1,7 +1,6 @@
 #include <pbos/kd/logger.h>
 #include <string.h>
 #include <kernel/generated/config.hh>
-#include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/kasan/impl.hh>
 #include <pbos/ki/km/symbol.hh>

@@ -14,7 +14,7 @@ bool kh_acpi_is_required() {
 }
 
 void kh_acpi_init() {
-	dbg_printf("Initializing ACPI...\n");
+	kd_printf("Initializing ACPI...\n");
 
 	const size_t page_size = mm_get_page_size();
 
@@ -54,7 +54,7 @@ void kh_acpi_init() {
 		default:
 			km_panic("Invalid ACPI RSDP revision: %d", (int)ki_acpi_rsdp_vaddr->revision);
 	}
-	dbg_printf("Found ACPI RSDP with revision: %d\n", (int)ki_acpi_rsdp_vaddr->revision);
+	kd_printf("Found ACPI RSDP with revision: %d\n", (int)ki_acpi_rsdp_vaddr->revision);
 
 	if (!(ki_acpi_rsdt_vaddr = (acpi_sdt_header_t *)kh_get_direct_mmap(rsdt_paddr))) {
 		is_acpi_rsdt_direct_mmap = false;
@@ -67,7 +67,7 @@ void kh_acpi_init() {
 	char oem_id[7];
 	memcpy(oem_id, ki_acpi_rsdt_vaddr->oem_id, sizeof(oem_id) - 1);
 	oem_id[6] = '\0';
-	dbg_printf("Found ACPI RSDT with OEM id: %s\n", oem_id);
+	kd_printf("Found ACPI RSDT with OEM id: %s\n", oem_id);
 
 	if (!is_acpi_rsdt_direct_mmap) {
 		uint32_t len = ki_acpi_rsdt_vaddr->length;
@@ -81,7 +81,7 @@ void kh_acpi_init() {
 	if (!acpi_verify_checksum((char *)ki_acpi_rsdt_vaddr, ki_acpi_rsdt_vaddr->length))
 		km_panic("ACPI RSDT damaged");
 
-	dbg_printf("Mapping ACPI root tables...\n");
+	kd_printf("Mapping ACPI root tables...\n");
 
 	const size_t rsdt_len = acpi_rsdt_length();
 
@@ -118,5 +118,5 @@ void kh_acpi_init() {
 		}
 	}
 
-	dbg_printf("Initialized ACPI\n");
+	kd_printf("Initialized ACPI\n");
 }

@@ -1,9 +1,9 @@
 #ifndef _PBOS_IO_IRQ_X86_64_H_
 #define _PBOS_IO_IRQ_X86_64_H_
 
-#include <pbos/hal/irq.h>
+#include "irq.h"
 
-typedef struct _irq_isr_frame_t {
+typedef struct _io_isr_frame_t {
 	uint64_t rdi;
 	uint64_t rsi;
 	uint64_t rdx;
@@ -29,6 +29,6 @@ typedef struct _irq_isr_frame_t {
 	uint64_t cs;
 	uint64_t rflags;
 	// TODO: Do we have to add RSP and SS?
-} irq_isr_frame_t;
+} io_isr_frame_t;
 
 #endif

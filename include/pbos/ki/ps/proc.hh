@@ -7,6 +7,7 @@
 #include <pbos/kfxx/rbtree.hh>
 #include <pbos/kfxx/allocator.hh>
 #include <pbos/fs/file.hh>
+#include <pbos/ps/semaphore.hh>
 
 PBOS_EXTERN_C_BEGIN
 
@@ -49,6 +50,8 @@ typedef struct _ps_pcb_t : kfxx::rbtree_t<ps_proc_id_t>::node_t {
 
 	kfxx::rbtree_t<ps_ufd_t> ufcb_set;
 	ps_ufd_t last_fd;
+
+	ps::semaphore_t thread_set_semaphore;
 
 	_ps_pcb_t() = default;
 	~_ps_pcb_t() = default;

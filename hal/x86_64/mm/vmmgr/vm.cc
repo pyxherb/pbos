@@ -3,7 +3,6 @@
 #include <pbos/ki/kf/misc.h>
 #include <pbos/ps/proc.h>
 #include <string.h>
-#include <pbos/hal/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/mm/pgalloc.hh>
 // TODO: Separate the configuration into another new file.

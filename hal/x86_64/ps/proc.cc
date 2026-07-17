@@ -2,7 +2,6 @@
 #include <pbos/fs/file.h>
 #include <pbos/fs/fs.h>
 #include <hal/x86_64/proc.hh>
-#include <pbos/hal/irq.hh>
 #include <pbos/kfxx/allocator.hh>
 #include <pbos/kfxx/scope_guard.hh>
 

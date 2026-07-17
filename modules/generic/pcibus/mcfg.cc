@@ -9,7 +9,7 @@ PBOS_EXTERN_C_BEGIN
 
 km_result_t pcibus_scan_acpi_mcfg_table_and_create_domains() {
 	if (!acpi_is_supported()) {
-		kd_println(PCIROOT_COMPONENT_NAME, "ACPI is not available, skipping scanning ACPI MCFG table");
+		dbg_println(PCIROOT_COMPONENT_NAME, "ACPI is not available, skipping scanning ACPI MCFG table");
 		return KM_RESULT_OK;
 	}
 	mm_context_t *context = mm_get_cur_context();
@@ -18,7 +18,7 @@ km_result_t pcibus_scan_acpi_mcfg_table_and_create_domains() {
 		const acpi_sdt_header_t *header = acpi_rsdt_vaddr_at(i);
 
 		if (!memcmp(&header->signature, "MCFG", sizeof(header->signature))) {
-			kd_println(PCIROOT_COMPONENT_NAME, "Found ACPI MCFG header at %p", header);
+			dbg_println(PCIROOT_COMPONENT_NAME, "Found ACPI MCFG header at %p", header);
 			for (size_t j = sizeof(acpi_sdt_header_t) + 8; j < header->length; j += sizeof(pci_mcfg_entry_t)) {
 				pci_mcfg_entry_t entry;
 
@@ -26,7 +26,7 @@ km_result_t pcibus_scan_acpi_mcfg_table_and_create_domains() {
 				// so we have to make it aligned first to avoid unaligned access.
 				memcpy(&entry, (pci_mcfg_entry_t *)(((char *)header) + j), sizeof(entry));
 
-				kd_println(PCIROOT_COMPONENT_NAME, "Found PCI segment: %.4x", entry.pci_segment_group_num);
+				dbg_println(PCIROOT_COMPONENT_NAME, "Found PCI segment: %.4x", entry.pci_segment_group_num);
 
 				if (pcibus_domain_tree.find(entry.pci_segment_group_num))
 					continue;
@@ -63,7 +63,7 @@ km_result_t pcibus_scan_acpi_mcfg_table_and_create_domains() {
 
 				remove_from_segment_group_guard.release();
 
-				kd_println(PCIROOT_COMPONENT_NAME, "Registered PCI segment -> domain registry: %.4x -> %.4x", entry.pci_segment_group_num, registry->rb_value);
+				dbg_println(PCIROOT_COMPONENT_NAME, "Registered PCI segment -> domain registry: %.4x -> %.4x", entry.pci_segment_group_num, registry->rb_value);
 
 				{
 					char name[sizeof("0000")] = {};
@@ -75,7 +75,7 @@ km_result_t pcibus_scan_acpi_mcfg_table_and_create_domains() {
 
 					// dm_create_device(pcibus_bus_object, pcibus_bus_controller_device_class, /* TODO: Fill it. */, /* TODO: Fill it. */);
 
-					kd_println(PCIROOT_COMPONENT_NAME, "Created device for PCI domain: %s", name);
+					dbg_println(PCIROOT_COMPONENT_NAME, "Created device for PCI domain: %s", name);
 				}
 			}
 			break;
