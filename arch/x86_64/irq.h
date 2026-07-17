@@ -12,11 +12,11 @@ PBOS_EXTERN_C_BEGIN
 
 #define arch_sti() __asm__ __volatile__("sti")
 
-static inline void arch_mask_nmi() {
+PBOS_FORCEINLINE void arch_mask_nmi() {
 	arch_out8(0x70, arch_in8(0x70) | 0x80);
 }
 
-static inline void arch_unmask_nmi() {
+PBOS_FORCEINLINE void arch_unmask_nmi() {
 	arch_out8(0x70, arch_in8(0x70) & 0x7f);
 }
 
@@ -45,19 +45,19 @@ enum {
 	ARCH_ICW4_COMMAND_SFNM = 0x10,		  // Special fully nested
 };
 
-static inline void arch_pic_eoi(uint8_t irq) {
+PBOS_FORCEINLINE void arch_pic_eoi(uint8_t irq) {
 	if (irq >= 8)
 		arch_out8(ARCH_PIC2_IO_COMMAND, ARCH_PIC_COMMAND_EOI);
 
 	arch_out8(ARCH_PIC1_IO_COMMAND, ARCH_PIC_COMMAND_EOI);
 }
 
-static inline void arch_disable_pic() {
+PBOS_FORCEINLINE void arch_disable_pic() {
 	arch_out8(ARCH_PIC1_IO_DATA, 0xff);
 	arch_out8(ARCH_PIC2_IO_DATA, 0xff);
 }
 
-static inline void arch_mask_irq(uint8_t irq) {
+PBOS_FORCEINLINE void arch_mask_irq(uint8_t irq) {
 	if (irq < 8) {
 		arch_out8(
 			ARCH_PIC1_IO_DATA,
@@ -69,7 +69,7 @@ static inline void arch_mask_irq(uint8_t irq) {
 	}
 }
 
-static inline void arch_unmask_irq(uint8_t irq) {
+PBOS_FORCEINLINE void arch_unmask_irq(uint8_t irq) {
 	if (irq < 8) {
 		arch_out8(
 			ARCH_PIC1_IO_DATA,
@@ -86,21 +86,21 @@ enum {
 	ARCH_PIC_COMMAND_READ_ISR = 0x0b,
 };
 
-static inline uint16_t arch_read_pic_reg(uint8_t ocw3) {
+PBOS_FORCEINLINE uint16_t arch_read_pic_reg(uint8_t ocw3) {
 	arch_out8(ARCH_PIC1_IO_COMMAND, ocw3);
 	arch_out8(ARCH_PIC2_IO_COMMAND, ocw3);
 	return (arch_in8(ARCH_PIC2_IO_COMMAND) << 8) | arch_in8(ARCH_PIC1_IO_COMMAND);
 }
 
-static inline uint16_t arch_read_pic_irr() {
+PBOS_FORCEINLINE uint16_t arch_read_pic_irr() {
 	return arch_read_pic_reg(ARCH_PIC_COMMAND_READ_IRR);
 }
 
-static inline uint16_t arch_read_pic_isr() {
+PBOS_FORCEINLINE uint16_t arch_read_pic_isr() {
 	return arch_read_pic_reg(ARCH_PIC_COMMAND_READ_ISR);
 }
 
-static inline void arch_ack_irq() {
+PBOS_FORCEINLINE void arch_ack_irq() {
 	arch_out8(0x20, 0x20);
 }
 

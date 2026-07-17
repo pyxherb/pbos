@@ -5,7 +5,7 @@ PBOS_EXTERN_C_BEGIN
 
 alignas(16) arch_gate_t hali_kidt[512] = {};
 
-size_t hal_irq_getmax() {
+size_t kh_get_irq_max() {
 	return PBOS_ARRAYSIZE(hali_kidt) / 2;
 }
 
@@ -17,7 +17,7 @@ void hali_set_isr(hal_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type) {
 }
 
 void kh_set_isr(hal_isr_t isr, size_t irq) {
-	if (irq > hal_irq_getmax())
+	if (irq > kh_get_irq_max())
 		return;
 	hali_set_isr(isr, irq, 0, GATE_INT386);
 }

@@ -5,10 +5,10 @@
 
 PBOS_EXTERN_C_BEGIN
 
-PBOS_FORCEINLINE bool ki_is_ctbs_list_empty(io_dispatch_context_t *dc) {
-	return dc->num_ctbs;
+PBOS_FORCEINLINE bool ki_is_iocbs_list_empty(io_dispatch_context_t *dc) {
+	return dc->num_iocbs;
 }
-PBOS_API km_result_t ki_poll_ctbs(io_dispatch_context_t *dc);
+PBOS_API km_result_t ki_poll_iocbs(io_dispatch_context_t *dc);
 
 PBOS_EXTERN_C_END
 

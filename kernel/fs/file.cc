@@ -286,7 +286,7 @@ PBOS_API km_result_t fs_create_child_file(
 			filename_len,
 			file_out));
 
-	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	KM_RETURN_IF_FAILED(ki_poll_iocbs(&dispatch_context));
 
 	return KM_RESULT_OK;
 }
@@ -302,7 +302,7 @@ PBOS_API km_result_t fs_create_child_dir(
 	io_init_dispatch_context(&dispatch_context);
 	KM_RETURN_IF_FAILED(parent->fs->ops.create_dir(&dispatch_context, parent, filename, filename_len, file_out));
 
-	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	KM_RETURN_IF_FAILED(ki_poll_iocbs(&dispatch_context));
 
 	return KM_RESULT_OK;
 }
@@ -321,7 +321,7 @@ PBOS_NODISCARD PBOS_API km_result_t fs_remove(
 	io_init_dispatch_context(&dispatch_context);
 	KM_RETURN_IF_FAILED(fnode->fs->ops.remove(&dispatch_context, fnode));
 
-	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	KM_RETURN_IF_FAILED(ki_poll_iocbs(&dispatch_context));
 
 	return KM_RESULT_OK;
 }
@@ -542,7 +542,7 @@ PBOS_API km_result_t fs_seek(fs_fcb_t *fcb, long off, fs_seek_mode_t mode) {
 
 	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.seek(&dispatch_context, fcb, off, mode));
 
-	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	KM_RETURN_IF_FAILED(ki_poll_iocbs(&dispatch_context));
 	return KM_RESULT_OK;
 }
 
@@ -557,7 +557,7 @@ PBOS_API km_result_t fs_read(fs_fcb_t *fcb, void *dest, size_t size, size_t *byt
 
 	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.read(&dispatch_context, fcb, (char *)dest, size, bytes_read_out));
 
-	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	KM_RETURN_IF_FAILED(ki_poll_iocbs(&dispatch_context));
 	return KM_RESULT_OK;
 }
 
@@ -572,7 +572,7 @@ PBOS_API km_result_t fs_write(fs_fcb_t *fcb, const void *src, size_t size, size_
 
 	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.write(&dispatch_context, fcb, (char *)src, size, bytes_written_out));
 
-	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	KM_RETURN_IF_FAILED(ki_poll_iocbs(&dispatch_context));
 	return KM_RESULT_OK;
 }
 
@@ -587,7 +587,7 @@ PBOS_API km_result_t fs_pread(fs_fcb_t *fcb, void *dest, size_t size, size_t off
 
 	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.pread(&dispatch_context, fcb, (char *)dest, size, off, bytes_read_out));
 
-	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	KM_RETURN_IF_FAILED(ki_poll_iocbs(&dispatch_context));
 	return KM_RESULT_OK;
 }
 
@@ -602,7 +602,7 @@ PBOS_API km_result_t fs_pwrite(fs_fcb_t *fcb, const void *src, size_t size, size
 
 	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.pwrite(&dispatch_context, fcb, (char *)src, size, off, bytes_written_out));
 
-	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	KM_RETURN_IF_FAILED(ki_poll_iocbs(&dispatch_context));
 	return KM_RESULT_OK;
 }
 
@@ -617,7 +617,7 @@ PBOS_API km_result_t fs_size(fs_fcb_t *fcb, size_t *size_out) {
 
 	KM_RETURN_IF_FAILED(fcb->fnode->fs->ops.size(&dispatch_context, fcb, size_out));
 
-	KM_RETURN_IF_FAILED(ki_poll_ctbs(&dispatch_context));
+	KM_RETURN_IF_FAILED(ki_poll_iocbs(&dispatch_context));
 	return KM_RESULT_OK;
 }
 
