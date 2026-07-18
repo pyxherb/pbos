@@ -389,7 +389,8 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 					*loc = (uint64_t)(vaddr_base + rela[i].r_addend);
 					break;
 
-				case R_X86_64_GLOB_DAT: {
+				case R_X86_64_GLOB_DAT:
+				case R_X86_64_JUMP_SLOT: {
 					// Write GOT.
 					const char *name = strtab + symtab[sym_idx].st_name;
 					void *sym_addr = ps_get_kernel_symbol(name, strlen(name));
