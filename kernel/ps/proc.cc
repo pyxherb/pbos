@@ -126,22 +126,11 @@ PBOS_API ps_pcb_t *ps_alloc_pcb() {
 		ki_destroy_proc(proc);
 	});
 
-	if (!(proc->mm_context = (mm_context_t *)mm_kalloc(sizeof(mm_context_t), alignof(mm_context_t)))) {
-		mm_kfree(proc);
+	if (KM_FAILED(mm_alloc_context(mm_context, &proc->mm_context)))
 		return nullptr;
-	}
 
-	if (KM_FAILED(mm_alloc_context(mm_context, &proc->mm_context))) {
-		mm_kfree(proc->mm_context);
-		mm_kfree(proc);
+	if (KM_FAILED(ps_cur_sched->prepare_proc(ps_cur_sched, proc)))
 		return nullptr;
-	}
-
-	if (KM_FAILED(ps_cur_sched->prepare_proc(ps_cur_sched, proc))) {
-		mm_kfree(proc->mm_context);
-		mm_kfree(proc);
-		return nullptr;
-	}
 
 	proc->last_thread_id = 0;
 	proc->last_fd = 0;

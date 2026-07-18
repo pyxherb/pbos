@@ -89,7 +89,7 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 
 void mm_free_context(mm_context_t *context) {
 	// TODO: Free associated pages.
-	km_unwrap_result(mm_munmap(context, 0, USER_SIZE, MM_MMAP_IGNORE_VMR));
+	km_unwrap_result(mm_munmap(context, 0, USER_SIZE, MM_MUNMAP_IGNORE_VMR));
 
 	while (context->vmr_tree.size()) {
 		auto vmr = static_cast<mm_vmr_t *>(context->vmr_tree.begin().node);

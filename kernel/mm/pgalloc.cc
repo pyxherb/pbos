@@ -27,6 +27,9 @@ void *mm_pgalloc(uint8_t memtype) {
 			void *addr = i->free_list->rb_value;
 			ki_mad_t *mad = i->free_list;
 
+			if (addr == (void *)0x0000000000e44000)
+				mad = mad;
+
 			if ((!(mad->pin_count++)) && (!mad->ref_count)) {
 				i->free_list = mad->next_free;
 				if (mad->prev_free)
@@ -100,6 +103,9 @@ void mm_unref_page(void *ptr) {
 	ki_pmad_t *area = ki_get_pmad(ptr);
 	ki_mad_t *mad = kh_get_mad(ptr);
 
+	if (ptr == (void *)0x0000000000e44000)
+		mad = mad;
+
 	hal_lock_spinlock(&mad->spinlock);
 	kfxx::deferred unlocker([mad]() noexcept {
 		hal_unlock_spinlock(&mad->spinlock);
@@ -123,6 +129,9 @@ void mm_unref_page(void *ptr) {
 void mm_unpin_page(void *ptr) {
 	ki_pmad_t *area = ki_get_pmad(ptr);
 	ki_mad_t *mad = kh_get_mad(ptr);
+
+	if (ptr == (void *)0x0000000000e44000)
+		mad = mad;
 
 	hal_lock_spinlock(&mad->spinlock);
 	kfxx::deferred unlocker([mad]() noexcept {

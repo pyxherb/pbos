@@ -255,6 +255,8 @@ PBOS_NO_ASAN km_result_t kh_mmap(mm_context_t *ctxt,
 				return KM_RESULT_PGTAB_NOT_ALLOCATED;
 			// Allocate page table.
 			void *t = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+			if (!t)
+				return KM_RESULT_NO_MEM;
 			*pml4te =
 				ARCH_PML4TE_WITH_XD(
 					ARCH_PML4TE_WITH_ADDR(
@@ -296,6 +298,8 @@ PBOS_NO_ASAN km_result_t kh_mmap(mm_context_t *ctxt,
 					return KM_RESULT_PGTAB_NOT_ALLOCATED;
 				// Allocate page table.
 				void *t = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+				if (!t)
+					return KM_RESULT_NO_MEM;
 				pdpt[pdptx] =
 					ARCH_PDPTE_WITH_XD(
 						ARCH_PDPTE_WITH_ADDR(
@@ -314,7 +318,7 @@ PBOS_NO_ASAN km_result_t kh_mmap(mm_context_t *ctxt,
 				pdt = (arch_pde_t *)
 					hali_tmpmap_post(
 						pdt_paddr,
-						sizeof(arch_pde_t) * (PTX_MAX + 1),
+						sizeof(arch_pde_t) * (PDX_MAX + 1),
 						PTE_P | PTE_RW);
 			} else
 				release_tmpmap_pdt_guard.release();
@@ -341,6 +345,8 @@ PBOS_NO_ASAN km_result_t kh_mmap(mm_context_t *ctxt,
 						return KM_RESULT_PGTAB_NOT_ALLOCATED;
 					// Allocate page table.
 					void *t = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+					if (!t)
+						return KM_RESULT_NO_MEM;
 					pdt[pdx] =
 						ARCH_PDE_WITH_XD(
 							ARCH_PDE_WITH_ADDR(
@@ -509,13 +515,14 @@ PBOS_NO_ASAN void kh_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_f
 					continue;
 
 				arch_pte_t *ptt;
+				void *ptt_paddr = UNPGADDR(ARCH_PDE_ADDR(pdt[pdx]));
 				kfxx::scope_guard release_tmpmap_ptt_guard([&ptt]() noexcept {
 					hali_tmpunmap_post((void *)ptt, PAGESIZE);
 				});
-				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(pdt_paddr))) {
+				if (!(ptt = (arch_pte_t *)kh_get_direct_mmap(ptt_paddr))) {
 					ptt = (arch_pte_t *)
 						hali_tmpmap_post(
-							UNPGADDR(ARCH_PDPTE_ADDR(pdt[pdx])),
+							ptt_paddr,
 							sizeof(arch_pte_t) * (PTX_MAX + 1),
 							PTE_P | PTE_RW);
 				} else
@@ -541,10 +548,7 @@ PBOS_NO_ASAN void kh_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_f
 					arch_pte_t *pte = &ptt[ptx];
 
 					if (ARCH_PTE_MASK(*pte) & PTE_P) {
-						if (flags & MM_MMAP_NO_REMAP)
-							km_panic("Remapping address %p with MM_MMAP_NO_REMAP", ptt_vaddr);
-
-						if (!(flags & MM_MMAP_NO_INC_RC)) {
+						if (!(flags & MM_MUNMAP_NO_DEC_RC)) {
 							void *addr = (void *)UNPGADDR(ARCH_PTE_ADDR(*pte));
 							if (addr) {
 								if (is_user_space)

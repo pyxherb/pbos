@@ -29,10 +29,8 @@ ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb) {
 	kfxx::scope_guard release_tcb_guard([t]() noexcept {
 		ki_destroy_thread(t);
 	});
-	if (!(t->context = ps_alloc_context())) {
-		mm_kfree(t);
+	if (!(t->context = ps_alloc_context()))
 		return nullptr;
-	}
 	t->parent = pcb;
 
 	release_tcb_guard.release();
