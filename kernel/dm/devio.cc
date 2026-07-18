@@ -64,25 +64,6 @@ km_result_t ki_devio_remove_file(io_dispatch_context_t *dc, fs_fnode_t *fnode) {
 	if (fs_filesys_of_fnode(parent) != ki_devio_filesys)
 		return KM_RESULT_INVALID_ARGS;
 
-	switch (fs_get_fnode_type(fnode)) {
-		case FS_FNODE_TYPE_DIR: {
-			ki_devio_dir_exdata_t *fnode_exdata = static_cast<ki_devio_dir_exdata_t *>(exdata);
-
-			if (fnode_exdata->first_child)
-				return KM_RESULT_DIR_NOT_EMPTY;
-			break;
-		}
-		case FS_FNODE_TYPE_FILE: {
-			auto xd = static_cast<ki_devio_file_exdata_t *>(exdata);
-			auto dev = xd->device;
-			KM_RETURN_IF_FAILED(xd->ops.remove(dc, dev, fnode));
-			dm_unref_device(dev);
-			break;
-		}
-		default:
-			return KM_RESULT_UNSUPPORTED_OPERATION;
-	}
-
 	{
 		ki_devio_fnode_exdata_t *base_exdata = static_cast<ki_devio_fnode_exdata_t *>(fs_get_fnode_exdata(parent));
 		ki_devio_dir_exdata_t *parent_exdata = static_cast<ki_devio_dir_exdata_t *>(fs_get_fnode_exdata(parent));
@@ -102,9 +83,36 @@ km_result_t ki_devio_remove_file(io_dispatch_context_t *dc, fs_fnode_t *fnode) {
 		}
 	}
 
+	switch (fs_get_fnode_type(fnode)) {
+		case FS_FNODE_TYPE_DIR: {
+			ki_devio_dir_exdata_t *fnode_exdata = static_cast<ki_devio_dir_exdata_t *>(exdata);
+
+			if (fnode_exdata->first_child)
+				return KM_RESULT_DIR_NOT_EMPTY;
+
+			fs_set_fnode_exdata(fnode, nullptr);
+
+			kfxx::destroy_and_release<ki_devio_dir_exdata_t>(kfxx::kernel_allocator(), fnode_exdata);
+			break;
+		}
+		case FS_FNODE_TYPE_FILE: {
+			auto xd = static_cast<ki_devio_file_exdata_t *>(exdata);
+			auto dev = xd->device;
+			KM_RETURN_IF_FAILED(xd->ops.remove(dc, dev, fnode));
+			dm_unref_device(dev);
+
+			fs_set_fnode_exdata(fnode, nullptr);
+
+			kfxx::destroy_and_release<ki_devio_file_exdata_t>(kfxx::kernel_allocator(), xd);
+			break;
+		}
+		default:
+			return KM_RESULT_UNSUPPORTED_OPERATION;
+	}
+
 	KM_RETURN_IF_FAILED(fs_unlink_subnode(fnode));
 
-	// TODO: Delete the fnode?
+	// TODO: No need to delete the fnode manually, just mark it as invalid.
 
 	return KM_RESULT_OK;
 }
@@ -234,7 +242,7 @@ void ki_devio_init() {
 	if (KM_FAILED(result = fs_alloc_dir_fnode(ki_devio_filesys, ki_devio_root_dir.get_addr_without_release())))
 		km_panic("Error creating devio root directory, error code = %.0x", result);
 
-	ki_devio_dir_exdata_t *exdata = (ki_devio_dir_exdata_t *)mm_kalloc(sizeof(ki_devio_dir_exdata_t), alignof(ki_devio_dir_exdata_t));
+	ki_devio_dir_exdata_t *exdata = kfxx::alloc_and_construct<ki_devio_dir_exdata_t>(kfxx::kernel_allocator());
 
 	if (!exdata)
 		km_panic("Error allocating exdata for devio root directory");

@@ -218,6 +218,11 @@ namespace kfxx {
 			reset();
 			return &_ptr;
 		}
+		///
+		/// @brief Get the raw pointer. This operation will not unreference the object.
+		///
+		/// @return Pointer stored inside.
+		///
 		PBOS_FORCEINLINE T *release() noexcept {
 			T *ptr = _ptr;
 			_ptr = nullptr;

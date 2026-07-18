@@ -275,7 +275,7 @@ PBOS_API km_result_t dm_create_devio_file(dm_device_t *device, fs_fnode_t *paren
 
 	KM_RETURN_IF_FAILED(fs_alloc_file_fnode(ki_devio_filesys, fnode.get_addr_without_release()));
 
-	ki_devio_file_exdata_t *exdata = (ki_devio_file_exdata_t *)mm_kalloc(sizeof(ki_devio_file_exdata_t), alignof(ki_devio_file_exdata_t));
+	ki_devio_file_exdata_t *exdata = kfxx::alloc_and_construct<ki_devio_file_exdata_t>(kfxx::kernel_allocator());
 
 	if (!exdata)
 		return KM_RESULT_NO_MEM;
@@ -317,7 +317,7 @@ PBOS_API km_result_t dm_create_devio_dir(fs_fnode_t *parent, const char *filenam
 
 	KM_RETURN_IF_FAILED(fs_alloc_dir_fnode(ki_devio_filesys, fnode.get_addr_without_release()));
 
-	ki_devio_dir_exdata_t *exdata = (ki_devio_dir_exdata_t *)mm_kalloc(sizeof(ki_devio_dir_exdata_t), alignof(ki_devio_dir_exdata_t));
+	ki_devio_dir_exdata_t *exdata = kfxx::alloc_and_construct<ki_devio_dir_exdata_t>(kfxx::kernel_allocator());
 
 	if (!exdata)
 		return KM_RESULT_NO_MEM;

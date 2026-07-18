@@ -1,10 +1,10 @@
 #include <pbos/hal/init.h>
-#include <pbos/kh/io/irq.hh>
 #include <pbos/kd/logger.h>
 #include <pbos/km/panic.h>
 #include <pbos/kfxx/map.hh>
 #include <pbos/kh/acpi/misc.hh>
 #include <pbos/kh/initcar.hh>
+#include <pbos/kh/io/irq.hh>
 #include <pbos/kh/mm/init.hh>
 #include <pbos/kh/mp/init.hh>
 #include <pbos/ki/dm/devcls.hh>
@@ -83,24 +83,29 @@ PBOS_NORETURN void kernel_main() {
 	ki_ps_init();
 
 	dbg_println("kernel", "Scanning for kernel symbols...");
+	const size_t exported_symbols_section_size = KI_EXPORTED_SYMBOL_NAMES_END - KI_EXPORTED_SYMBOL_NAMES_BEGIN;
 	{
 		for (const Elf64_Sym *i = KI_EXPORTED_SYMBOLS_BEGIN; i != KI_EXPORTED_SYMBOLS_END; ++i) {
 			uint8_t visibility = ELF64_ST_VISIBILITY(i->st_other);
-			kfxx::string_view name = kfxx::string_view(KI_EXPORTED_SYMBOL_NAMES_BEGIN + i->st_name);
 
 			if ((visibility == STV_DEFAULT) && i->st_value) {
+				if (i->st_name >= exported_symbols_section_size)
+					km_panic("Kernel symbol table damaged");
+
+				kfxx::string_view name = kfxx::string_view(KI_EXPORTED_SYMBOL_NAMES_BEGIN + i->st_name);
 				// dbg_println("kernel", "Found public symbol: %s -> %p", name.data(), (void *)i->st_value);
 				// TODO: Handle value when ASLR enabled...
-				if (KM_FAILED(result = ki_do_register_kernel_symbol(name.data(), name.size(), (void *)i->st_value, i->st_size, nullptr))) {
-					switch (result) {
-						case KM_RESULT_NO_MEM:
-							km_panic("Error registering kernel symbols because of out of memory");
-						default:
-							km_panic("Error registering kernel symbol %s, result = %u", name.data(), result);
+
+				if (name.size()) {
+					if (KM_FAILED(result = ki_do_register_kernel_symbol(name.data(), name.size(), (void *)i->st_value, i->st_size, nullptr))) {
+						switch (result) {
+							case KM_RESULT_NO_MEM:
+								km_panic("Error registering kernel symbols because of out of memory");
+							default:
+								km_panic("Error registering kernel symbol %s, result = %u", name.data(), result);
+						}
 					}
 				}
-			} else {
-				dbg_println("kernel", "Skipped symbol: %s -> %p", name.data(), (void *)i->st_value);
 			}
 		}
 	}

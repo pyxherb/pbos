@@ -43,13 +43,13 @@ SECTIONS
 		KEEP(*(.fini_array EXCLUDE_FILE(*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o) .fini_array))
 		HIDDEN(KXI_DTORS_END = .);
 	}
-	
+
 	.got :
 	{
 		*(.got)
 		*(.got.*)
-	} :rodata
-	
+	}
+
 	. = ALIGN(CONSTANT(MAXPAGESIZE));
 
 	.dynamic :

@@ -60,11 +60,11 @@ namespace kfxx {
 	// PBOS_REQUIRES_CONCEPT(std::constructible_from<T, Args...>)
 	PBOS_FORCEINLINE T *alloc_and_construct(allocator_t *alloc, Args &&...args) {
 		static_assert(std::is_constructible_v<T, Args...>, "Cannot construct from provided arguments!");
-		char *p = (char *)alloc->alloc(sizeof(T), alignof(T));
+		T *p = static_cast<T *>(alloc->alloc(sizeof(T), alignof(T)));
 		if (!p)
 			return nullptr;
 		construct_at<T>((T *)p, std::forward<Args>(args)...);
-		return (T *)p;
+		return p;
 	}
 
 	template <typename T>
