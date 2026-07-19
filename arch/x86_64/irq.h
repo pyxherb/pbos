@@ -57,7 +57,7 @@ PBOS_FORCEINLINE void arch_disable_pic() {
 	arch_out8(ARCH_PIC2_IO_DATA, 0xff);
 }
 
-PBOS_FORCEINLINE void arch_mask_irq(uint8_t irq) {
+PBOS_FORCEINLINE void arch_mask_pic_irq(uint8_t irq) {
 	if (irq < 8) {
 		arch_out8(
 			ARCH_PIC1_IO_DATA,
@@ -69,7 +69,7 @@ PBOS_FORCEINLINE void arch_mask_irq(uint8_t irq) {
 	}
 }
 
-PBOS_FORCEINLINE void arch_unmask_irq(uint8_t irq) {
+PBOS_FORCEINLINE void arch_unmask_pic_irq(uint8_t irq) {
 	if (irq < 8) {
 		arch_out8(
 			ARCH_PIC1_IO_DATA,

@@ -7,10 +7,6 @@
 
 PBOS_EXTERN_C_BEGIN
 
-typedef struct _hal_irq_context_t {
-	uint32_t placeholder;
-} hal_irq_context_t;
-
 PBOS_NORETURN void isr_diverr();		// 0x00 Divide-by-zero Error
 PBOS_NORETURN void isr_overflow();		// 0x04 Overflow
 PBOS_NORETURN void isr_boundrange();	// 0x05 Bound Range Exceeded
@@ -65,7 +61,9 @@ extern arch_gate_t hali_kidt[512];
 
 void hali_calibrate_apic();
 
-void hali_set_isr(kh_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
+typedef void (*hali_isr_t)();
+
+void hali_set_isr(hali_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
 
 PBOS_EXTERN_C_END
 

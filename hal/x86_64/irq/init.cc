@@ -71,8 +71,8 @@ void kh_irq_init() {
 
 	arch_lidt(hali_kidt, 512);
 
-	for (int i = 0; i < 16; ++i)
-		arch_mask_irq(i);
+	// for (int i = 0; i < 16; ++i)
+		// arch_mask_pic_irq(i);
 
 	// hali_remap_pic(0x20, 0x28);
 	// arch_disable_pic();
