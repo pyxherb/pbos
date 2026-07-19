@@ -636,6 +636,16 @@ namespace kfxx {
 			return _data[index];
 		}
 
+		PBOS_FORCEINLINE T &operator[](size_t index) {
+			kd_assert(index < _length);
+			return _data[index];
+		}
+
+		PBOS_FORCEINLINE const T &operator[](size_t index) const {
+			kd_assert(index < _length);
+			return _data[index];
+		}
+
 		PBOS_FORCEINLINE size_t size() const {
 			return _length;
 		}

@@ -69,23 +69,23 @@ namespace kfxx {
 
 		pair_cmp comparator;
 
-		using SetType = std::conditional_t<Fallible, fallible_hashset_t<pair_t, pair_cmp, pair_hash>, hashset_t<pair_t, pair_cmp, pair_hash>>;
+		using set_type = std::conditional_t<Fallible, fallible_hashset_t<pair_t, pair_cmp, pair_hash>, hashset_t<pair_t, pair_cmp, pair_hash>>;
 
-		SetType _set;
+		set_type _set;
 
-		using ThisType = hashmap_impl<K, V, Eq, Hasher, Fallible>;
+		using this_type = hashmap_impl<K, V, Eq, Hasher, Fallible>;
 
 	public:
-		using RemoveResultType = typename SetType::RemoveResultType;
-		using ElementQueryResultType = typename std::conditional_t<Fallible, option_t<V &>, V &>;
-		using ConstElementQueryResultType = typename std::conditional_t<Fallible, option_t<const V &>, const V &>;
-		using ContainsResultType = typename SetType::ContainsResultType;
+		using remove_result_type = typename set_type::RemoveResultType;
+		using element_query_result_type = typename std::conditional_t<Fallible, option_t<V &>, V &>;
+		using const_element_query_result_type = typename std::conditional_t<Fallible, option_t<const V &>, const V &>;
+		using contains_result_type = typename set_type::ContainsResultType;
 
 		PBOS_FORCEINLINE hashmap_impl(allocator_t *allocator) : _set(allocator) {}
-		PBOS_FORCEINLINE hashmap_impl(ThisType &&rhs) : comparator(std::move(rhs.comparator)), _set(std::move(rhs._set)) {
+		PBOS_FORCEINLINE hashmap_impl(this_type &&rhs) : comparator(std::move(rhs.comparator)), _set(std::move(rhs._set)) {
 		}
 
-		PBOS_FORCEINLINE ThisType &operator=(ThisType &&rhs) noexcept {
+		PBOS_FORCEINLINE this_type &operator=(this_type &&rhs) noexcept {
 			clear_and_shrink();
 
 			comparator = std::move(rhs.comparator);
@@ -114,7 +114,7 @@ namespace kfxx {
 			return _set.insert(std::move(pair));
 		}
 
-		[[nodiscard]] PBOS_FORCEINLINE RemoveResultType remove(const K &key) {
+		[[nodiscard]] PBOS_FORCEINLINE remove_result_type remove(const K &key) {
 			if constexpr (Fallible) {
 				return _set.remove(query_pair_t(&key));
 			} else {
@@ -122,11 +122,11 @@ namespace kfxx {
 			}
 		}
 
-		PBOS_FORCEINLINE ContainsResultType contains(const K &key) const {
+		PBOS_FORCEINLINE contains_result_type contains(const K &key) const {
 			return _set.contains(query_pair_t(&key));
 		}
 
-		PBOS_FORCEINLINE ElementQueryResultType at(const K &key) {
+		PBOS_FORCEINLINE element_query_result_type at(const K &key) {
 			if constexpr (Fallible) {
 				auto maybe_pair = _set.at(query_pair_t(&key));
 
@@ -139,7 +139,7 @@ namespace kfxx {
 			}
 		}
 
-		PBOS_FORCEINLINE ConstElementQueryResultType at(const K &key) const {
+		PBOS_FORCEINLINE const_element_query_result_type at(const K &key) const {
 			if constexpr (Fallible) {
 				auto maybe_pair = _set.at(query_pair_t(&key));
 
@@ -169,8 +169,8 @@ namespace kfxx {
 		}
 
 		struct iterator {
-			typename SetType::iterator _iterator;
-			PBOS_FORCEINLINE iterator(typename SetType::iterator &&iterator_in) : _iterator(iterator_in) {
+			typename set_type::iterator _iterator;
+			PBOS_FORCEINLINE iterator(typename set_type::iterator &&iterator_in) : _iterator(iterator_in) {
 			}
 			iterator(const iterator &rhs) = default;
 			iterator(iterator &&rhs) = default;
@@ -274,16 +274,16 @@ namespace kfxx {
 		};
 
 		PBOS_FORCEINLINE const_iterator begin_const() const noexcept {
-			return const_iterator(const_cast<ThisType *>(this)->begin());
+			return const_iterator(const_cast<this_type *>(this)->begin());
 		}
 		PBOS_FORCEINLINE const_iterator end_const() const noexcept {
-			return const_iterator(const_cast<ThisType *>(this)->end());
+			return const_iterator(const_cast<this_type *>(this)->end());
 		}
 		PBOS_FORCEINLINE const_iterator begin_const_reversed() const noexcept {
-			return const_iterator(const_cast<ThisType *>(this)->begin_reversed());
+			return const_iterator(const_cast<this_type *>(this)->begin_reversed());
 		}
 		PBOS_FORCEINLINE const_iterator end_const_reversed() const noexcept {
-			return const_iterator(const_cast<ThisType *>(this)->end_reversed());
+			return const_iterator(const_cast<this_type *>(this)->end_reversed());
 		}
 		PBOS_FORCEINLINE const_iterator begin() const {
 			return begin_const();
@@ -299,7 +299,7 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE const_iterator find(const K &key) const {
-			return const_iterator(const_cast<ThisType *>(this)->find(key));
+			return const_iterator(const_cast<this_type *>(this)->find(key));
 		}
 
 		PBOS_FORCEINLINE iterator find(const K &key) {

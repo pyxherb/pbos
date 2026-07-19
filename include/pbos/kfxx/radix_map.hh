@@ -4,8 +4,8 @@
 #include "allocator.hh"
 #include "bitset.hh"
 #include "option.hh"
-#include "scope_guard.hh"
 #include "rcobj.hh"
+#include "scope_guard.hh"
 
 namespace kfxx {
 	template <typename K, typename V, size_t R = sizeof(K) * 2>
@@ -235,7 +235,7 @@ namespace kfxx {
 			return _grow_node(index, std::move(data));
 		}
 
-		[[nodiscard]] inline V &_lookup(K index) const {
+		[[nodiscard]] inline kfxx::option_t<std::pair<Node, size_t>> _lookup(K index) const {
 			kd_assert(_root);
 			Node *node = _root;
 			Height height = _height;
@@ -243,15 +243,17 @@ namespace kfxx {
 				Height shift = height - R;
 				K offset = (index >> shift) & MASK;
 				if (!node->children[offset]) {
-					kd_assert(node->radix_value.has_value(offset));
-					return node->radix_value.value(offset);
+					if (!node->radix_value.has_value(offset))
+						return kfxx::nullopt;
+					return { node, offset };
 				}
 				node = node->children[offset];
 				height -= R;
 			}
 			K offset = index & MASK;
-			kd_assert(node->radix_value.has_value(offset));
-			return node->radix_value.value(offset);
+			if (!node->radix_value.has_value(offset))
+				return kfxx::nullopt;
+			return { node, offset };
 		}
 
 		[[nodiscard]] static inline Node *_get_min_node(Node *node) {
@@ -415,11 +417,17 @@ namespace kfxx {
 		}
 
 		PBOS_FORCEINLINE const V &at(K key) const {
-			return _lookup(key);
+			auto result = *_lookup(key);
+			return result.first->radix_value[result.second];
 		}
 
 		PBOS_FORCEINLINE V &at(K key) {
-			return _lookup(key);
+			auto result = *_lookup(key);
+			return result.first->radix_value[result.second];
+		}
+
+		PBOS_FORCEINLINE bool contains(K key) {
+			return _lookup(key).has_value();
 		}
 
 		PBOS_FORCEINLINE size_t size() {
@@ -456,46 +464,46 @@ namespace kfxx {
 			return nullptr;
 		}
 
-		struct Iterator {
+		struct iterator {
 			Node *node;
 			ThisType *tree;
 			iterator_direction direction;
 			size_t slot_index;
 
-			PBOS_FORCEINLINE Iterator(
+			PBOS_FORCEINLINE iterator(
 				Node *node,
 				ThisType *tree,
 				iterator_direction direction,
 				size_t slot_index)
 				: node(node), tree(tree), direction(direction), slot_index(slot_index) {}
 
-			Iterator(const Iterator &it) = default;
-			PBOS_FORCEINLINE Iterator(Iterator &&it) {
+			iterator(const iterator &it) = default;
+			PBOS_FORCEINLINE iterator(iterator &&it) {
 				node = it.node;
 				tree = it.tree;
 				direction = it.direction;
 				slot_index = it.slot_index;
 				it.direction = iterator_direction::Invalid;
 			}
-			PBOS_FORCEINLINE Iterator &operator=(const Iterator &rhs) noexcept {
+			PBOS_FORCEINLINE iterator &operator=(const iterator &rhs) noexcept {
 				kd_dbgcheck(direction == rhs.direction, "Incompatible iterator direction");
 				node = rhs.node;
 				tree = rhs.tree;
 				slot_index = rhs.slot_index;
 				return *this;
 			}
-			PBOS_FORCEINLINE Iterator &operator=(Iterator &&rhs) noexcept {
+			PBOS_FORCEINLINE iterator &operator=(iterator &&rhs) noexcept {
 				kd_dbgcheck(direction == rhs.direction, "Incompatible iterator direction");
-				kfxx::construct_at<Iterator>(this, std::move(rhs));
+				kfxx::construct_at<iterator>(this, std::move(rhs));
 				return *this;
 			}
 
-			PBOS_FORCEINLINE bool copy(Iterator &dest) noexcept {
+			PBOS_FORCEINLINE bool copy(iterator &dest) noexcept {
 				dest = *this;
 				return true;
 			}
 
-			PBOS_FORCEINLINE Iterator &operator++() {
+			PBOS_FORCEINLINE iterator &operator++() {
 				kd_dbgcheck(node, "Increasing the end iterator");
 
 				if (direction == iterator_direction::Forward) {
@@ -542,18 +550,18 @@ namespace kfxx {
 				}
 			}
 
-			PBOS_FORCEINLINE Iterator operator++(int) {
-				Iterator it = *this;
+			PBOS_FORCEINLINE iterator operator++(int) {
+				iterator it = *this;
 				++(*this);
 				return it;
 			}
 
-			PBOS_FORCEINLINE Iterator next() {
-				Iterator iterator = *this;
+			PBOS_FORCEINLINE iterator next() {
+				iterator iterator = *this;
 				return ++iterator;
 			}
 
-			PBOS_FORCEINLINE Iterator &operator--() {
+			PBOS_FORCEINLINE iterator &operator--() {
 				if (direction == iterator_direction::Forward) {
 					if (node == tree->_get_min_node(tree->_root) && slot_index == [&]() {
 							for (size_t i = 0; i < N; ++i)
@@ -611,24 +619,24 @@ namespace kfxx {
 				}
 			}
 
-			PBOS_FORCEINLINE Iterator operator--(int) {
-				Iterator it = *this;
+			PBOS_FORCEINLINE iterator operator--(int) {
+				iterator it = *this;
 				--(*this);
 				return it;
 			}
 
-			PBOS_FORCEINLINE Iterator prev() {
-				Iterator iterator = *this;
+			PBOS_FORCEINLINE iterator prev() {
+				iterator iterator = *this;
 				return --iterator;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const Iterator &it) const {
+			PBOS_FORCEINLINE bool operator==(const iterator &it) const {
 				if (tree != it.tree)
 					km_panic("Cannot compare iterators from different trees");
 				return node == it.node && slot_index == it.slot_index;
 			}
 
-			PBOS_FORCEINLINE bool operator!=(const Iterator &it) const {
+			PBOS_FORCEINLINE bool operator!=(const iterator &it) const {
 				return !(*this == it);
 			}
 
@@ -657,79 +665,79 @@ namespace kfxx {
 			}
 		};
 
-		PBOS_FORCEINLINE Iterator begin() {
+		PBOS_FORCEINLINE iterator begin() {
 			Node *node = _get_min_node(_root);
 			if (!node) return end();
 			size_t slot = 0;
 			for (; slot < N; ++slot)
 				if (node->radix_value.has_value(slot)) break;
-			return Iterator(node, this, iterator_direction::Forward, slot);
+			return iterator(node, this, iterator_direction::Forward, slot);
 		}
-		PBOS_FORCEINLINE Iterator end() {
-			return Iterator(nullptr, this, iterator_direction::Forward, 0);
+		PBOS_FORCEINLINE iterator end() {
+			return iterator(nullptr, this, iterator_direction::Forward, 0);
 		}
-		PBOS_FORCEINLINE Iterator begin_reversed() {
+		PBOS_FORCEINLINE iterator begin_reversed() {
 			Node *node = _get_max_node(_root);
 			if (!node) return end_reversed();
 			size_t slot = N - 1;
 			for (; slot < N; --slot);
 			slot = N - 1;
 			while (slot > 0 && !node->radix_value.has_value(slot)) --slot;
-			return Iterator(node, this, iterator_direction::Reversed, node->radix_value.has_value(slot) ? slot : 0);
+			return iterator(node, this, iterator_direction::Reversed, node->radix_value.has_value(slot) ? slot : 0);
 		}
-		PBOS_FORCEINLINE Iterator end_reversed() {
-			return Iterator(nullptr, this, iterator_direction::Reversed, N - 1);
+		PBOS_FORCEINLINE iterator end_reversed() {
+			return iterator(nullptr, this, iterator_direction::Reversed, N - 1);
 		}
 
-		struct ConstIterator {
-			Iterator _iterator;
+		struct const_iterator {
+			iterator _iterator;
 
-			PBOS_FORCEINLINE ConstIterator(Iterator &&iterator) : _iterator(iterator) {}
-			ConstIterator(const ConstIterator &it) = default;
-			PBOS_FORCEINLINE ConstIterator(ConstIterator &&it) : _iterator(std::move(it._iterator)) {}
-			PBOS_FORCEINLINE ConstIterator &operator=(const ConstIterator &rhs) noexcept {
+			PBOS_FORCEINLINE const_iterator(iterator &&iterator) : _iterator(iterator) {}
+			const_iterator(const const_iterator &it) = default;
+			PBOS_FORCEINLINE const_iterator(const_iterator &&it) : _iterator(std::move(it._iterator)) {}
+			PBOS_FORCEINLINE const_iterator &operator=(const const_iterator &rhs) noexcept {
 				_iterator = rhs._iterator;
 				return *this;
 			}
-			PBOS_FORCEINLINE ConstIterator &operator=(ConstIterator &&rhs) noexcept {
+			PBOS_FORCEINLINE const_iterator &operator=(const_iterator &&rhs) noexcept {
 				_iterator = std::move(rhs._iterator);
 				return *this;
 			}
 
-			PBOS_FORCEINLINE bool copy(ConstIterator &dest) noexcept {
-				kfxx::construct_at<ConstIterator>(&dest, *this);
+			PBOS_FORCEINLINE bool copy(const_iterator &dest) noexcept {
+				kfxx::construct_at<const_iterator>(&dest, *this);
 				return true;
 			}
 
-			PBOS_FORCEINLINE ConstIterator &operator++() {
+			PBOS_FORCEINLINE const_iterator &operator++() {
 				++_iterator;
 				return *this;
 			}
-			PBOS_FORCEINLINE ConstIterator operator++(int) {
-				ConstIterator it = *this;
+			PBOS_FORCEINLINE const_iterator operator++(int) {
+				const_iterator it = *this;
 				++(*this);
 				return it;
 			}
-			PBOS_FORCEINLINE ConstIterator next() {
-				ConstIterator it = *this;
+			PBOS_FORCEINLINE const_iterator next() {
+				const_iterator it = *this;
 				return ++it;
 			}
-			PBOS_FORCEINLINE ConstIterator &operator--() {
+			PBOS_FORCEINLINE const_iterator &operator--() {
 				--_iterator;
 				return *this;
 			}
-			PBOS_FORCEINLINE ConstIterator operator--(int) {
-				ConstIterator it = *this;
+			PBOS_FORCEINLINE const_iterator operator--(int) {
+				const_iterator it = *this;
 				--(*this);
 				return it;
 			}
-			PBOS_FORCEINLINE ConstIterator prev() {
-				ConstIterator it = *this;
+			PBOS_FORCEINLINE const_iterator prev() {
+				const_iterator it = *this;
 				return --it;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const ConstIterator &it) const { return _iterator == it._iterator; }
-			PBOS_FORCEINLINE bool operator!=(const ConstIterator &it) const { return _iterator != it._iterator; }
+			PBOS_FORCEINLINE bool operator==(const const_iterator &it) const { return _iterator == it._iterator; }
+			PBOS_FORCEINLINE bool operator!=(const const_iterator &it) const { return _iterator != it._iterator; }
 
 			PBOS_FORCEINLINE const V &operator*() { return *_iterator; }
 			PBOS_FORCEINLINE const V &operator*() const { return *_iterator; }
@@ -737,17 +745,27 @@ namespace kfxx {
 			PBOS_FORCEINLINE const V *operator->() const { return &*_iterator; }
 		};
 
-		PBOS_FORCEINLINE ConstIterator begin_const() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->begin());
+		PBOS_FORCEINLINE const_iterator begin_const() const noexcept {
+			return const_iterator(const_cast<ThisType *>(this)->begin());
 		}
-		PBOS_FORCEINLINE ConstIterator end_const() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->end());
+		PBOS_FORCEINLINE const_iterator end_const() const noexcept {
+			return const_iterator(const_cast<ThisType *>(this)->end());
 		}
-		PBOS_FORCEINLINE ConstIterator begin_const_reversed() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->begin_reversed());
+		PBOS_FORCEINLINE const_iterator begin_const_reversed() const noexcept {
+			return const_iterator(const_cast<ThisType *>(this)->begin_reversed());
 		}
-		PBOS_FORCEINLINE ConstIterator end_const_reversed() const noexcept {
-			return ConstIterator(const_cast<ThisType *>(this)->end_reversed());
+		PBOS_FORCEINLINE const_iterator end_const_reversed() const noexcept {
+			return const_iterator(const_cast<ThisType *>(this)->end_reversed());
+		}
+
+		PBOS_FORCEINLINE iterator find(K key) {
+			auto result = *_lookup(key);
+			return iterator(result.first, this, iterator_direction::Forward, result.second);
+		}
+
+		PBOS_FORCEINLINE iterator find(K key) const {
+			auto result = *_lookup(key);
+			return const_iterator(result.first, this, iterator_direction::Forward, result.second);
 		}
 	};
 }

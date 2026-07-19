@@ -28,7 +28,8 @@ typedef struct _io_isr_frame_t {
 	uint64_t rip;
 	uint64_t cs;
 	uint64_t rflags;
-	// TODO: Do we have to add RSP and SS?
+	uint64_t rsp;
+	uint64_t ss;
 } io_isr_frame_t;
 
 #endif

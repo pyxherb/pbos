@@ -23,8 +23,13 @@ PBOS_API size_t io_get_irq_max();
 
 PBOS_API bool io_is_per_cpu_irq_supported();
 
-PBOS_API km_result_t io_register_irq(io_isr_t isr, size_t irq, io_interrupt_t **interrupt_out);
-PBOS_API km_result_t io_register_shared_irq(io_isr_t isr, size_t irq, io_interrupt_t **interrupt_out);
+enum {
+	IO_REGISTER_IRQ_SHARED = 0,
+};
+
+typedef uint32_t io_register_irq_flags;
+
+PBOS_API km_result_t io_register_irq(io_isr_t isr, size_t irq, io_register_irq_flags flags, io_interrupt_t **interrupt_out);
 PBOS_API void io_free_irq(io_interrupt_t *interrupt);
 
 #endif

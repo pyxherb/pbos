@@ -1,0 +1,262 @@
+#ifndef _PBOS_KFXX_BITARRAY_H_
+#define _PBOS_KFXX_BITARRAY_H_
+
+#include "dynarray.hh"
+
+namespace kfxx {
+	class bitarray_t {
+	private:
+		kfxx::dynarray_t<uint8_t> _buffer;
+		size_t _num_bits = 0;
+
+		PBOS_FORCEINLINE void _set_bit(size_t bit_index) {
+			_buffer[(bit_index >> 3)] |= (1 << (bit_index & 7));
+		}
+
+		PBOS_FORCEINLINE void _clear_bit(size_t bit_index) {
+			_buffer[(bit_index >> 3)] &= ~(1 << (bit_index & 7));
+		}
+
+		PBOS_FORCEINLINE void _set_byte(size_t bit_index, uint8_t b, uint8_t num_bits) {
+			size_t index = (bit_index >> 3), bit_index_in_byte = (bit_index & 7);
+
+			if ((bit_index + (num_bits - 1)) >> 3 == index) {
+				// Does not across the byte boundary and inside a single byte.
+				// Such as 000|111|00
+				uint8_t mask = ~(((1 << num_bits) - 1) << bit_index_in_byte);
+				_buffer[index] &= mask;
+				_buffer[index] |= b << bit_index_in_byte;
+			} else {
+				// Acrosses the byte boundary.
+				// Such as 000|10010 110|00000
+				uint8_t mask = 0xff >> (8 - bit_index_in_byte);
+				_buffer[index] &= mask;
+				_buffer[index] |= b << bit_index_in_byte;
+
+				uint8_t bits_remaining = num_bits - (8 - bit_index_in_byte);
+				mask = 0xff << bits_remaining;
+				_buffer[index + 1] &= mask;
+				_buffer[index + 1] |= b >> (8 - bit_index_in_byte);
+			}
+
+			// Used for verifying if the set byte works correctly
+			uint8_t test = _get_byte(bit_index, num_bits);
+			if (num_bits < 8) {
+				test &= (0xff >> (8 - num_bits));
+				b &= (0xff >> (8 - num_bits));
+			}
+			kd_assert(test == b);
+		}
+
+		PBOS_FORCEINLINE uint8_t _get_byte(size_t bit_index, uint8_t num_bits) const {
+			if (bit_index & 7) {
+				size_t index_in_byte = bit_index >> 3, bit_offset = bit_index & 7;
+				if (((bit_index + (num_bits - 1)) >> 3) > index_in_byte) {
+					uint8_t l = _buffer[index_in_byte] >> (bit_offset), h = _buffer[index_in_byte + 1] << (8 - bit_offset);
+					return (l | h) & (0xff >> (8 - num_bits));
+				} else {
+					return (_buffer[index_in_byte] >> (bit_offset)) & (0xff >> (8 - num_bits));
+				}
+			}
+			return _buffer[bit_index >> 3] & (0xff >> (8 - num_bits));
+		}
+
+	public:
+		PBOS_FORCEINLINE bitarray_t(kfxx::allocator_t *allocator) : _buffer(allocator) {
+		}
+		PBOS_FORCEINLINE ~bitarray_t() {
+		}
+
+		PBOS_FORCEINLINE size_t size() const {
+			return (_num_bits + 7) >> 3;
+		}
+
+		PBOS_FORCEINLINE size_t bit_size() const {
+			return _num_bits;
+		}
+
+		PBOS_FORCEINLINE bool resize_uninit(size_t num_bits) {
+			if (!_buffer.resize_uninit((num_bits + 7) / 8))
+				return false;
+			_num_bits = num_bits;
+			return true;
+		}
+
+		PBOS_FORCEINLINE bool push_back(bool bit) {
+			size_t old_num_bits = _num_bits;
+			if (!resize_uninit(_num_bits + 1)) {
+				return false;
+			}
+			if (bit) {
+				_set_bit(old_num_bits);
+			} else {
+				_clear_bit(old_num_bits);
+			}
+
+			return true;
+		}
+
+		PBOS_FORCEINLINE bool push_back_byte(uint8_t b) {
+			size_t old_num_bits = _num_bits;
+			if (!resize_uninit(_num_bits + 8)) {
+				return false;
+			}
+			_set_byte(old_num_bits, b, 8);
+
+			return true;
+		}
+
+		PBOS_FORCEINLINE bool push_back_bytes(char *data, size_t len) {
+			size_t old_num_bits = _num_bits;
+			if (!resize_uninit(_num_bits + len * 8)) {
+				return false;
+			}
+			for (size_t i = 0; i < len; ++i) {
+				_set_byte(old_num_bits + i, data[i], 8);
+			}
+			return true;
+		}
+
+		PBOS_FORCEINLINE void pop_back() {
+			--_num_bits;
+		}
+
+		PBOS_FORCEINLINE void pop_byte() {
+			_num_bits -= 8;
+		}
+
+		PBOS_FORCEINLINE bool pop_back_and_resize_capacity() {
+			if (!resize_uninit(_num_bits - 1)) {
+				return false;
+			}
+
+			return true;
+		}
+
+		PBOS_FORCEINLINE bool pop_back_byte_and_resize_capacity() {
+			if (!resize_uninit(_num_bits - 8)) {
+				return false;
+			}
+			_num_bits -= 8;
+
+			return true;
+		}
+
+		PBOS_FORCEINLINE const uint8_t *data() const {
+			return _buffer.data();
+		}
+
+		PBOS_FORCEINLINE uint8_t *data() {
+			return _buffer.data();
+		}
+
+		PBOS_FORCEINLINE void set_bit(size_t bit_index) {
+			kd_assert(bit_index < _num_bits);
+			_set_bit(bit_index);
+		}
+
+		PBOS_FORCEINLINE void clear_bit(size_t bit_index) {
+			kd_assert(bit_index < _num_bits);
+			_clear_bit(bit_index);
+		}
+
+		PBOS_FORCEINLINE bool get_bit(size_t bit_index) const {
+			kd_assert(bit_index < _num_bits);
+			return (_buffer[(bit_index >> 3)] >> (bit_index & 7)) & 1;
+		}
+
+		PBOS_FORCEINLINE void fill_set(size_t bit_index, size_t num_bits) {
+			kd_assert(bit_index < _num_bits);
+			kd_assert(bit_index + num_bits <= _num_bits);
+
+			size_t idx_end = bit_index + num_bits;
+
+			size_t idx_start_fill_byte = (bit_index + 7) >> 3;
+			size_t idx_end_fill_byte = idx_end >> 3;
+			size_t sz_fill_byte = idx_end_fill_byte - idx_start_fill_byte;
+
+			if (bit_index & 7) {
+				uint8_t start_bits = 0xff << (bit_index & 7);
+				_buffer[bit_index >> 3] |= start_bits;
+			}
+
+			if (sz_fill_byte)
+				memset(_buffer.data() + idx_start_fill_byte, 0xff, sz_fill_byte);
+
+			if (idx_end & 7) {
+				uint8_t end_bits = 0xff >> (7 - (bit_index & 7));
+				_buffer[idx_end >> 3] |= end_bits;
+			}
+		}
+
+		PBOS_FORCEINLINE void fill_clear(size_t bit_index, size_t num_bits) {
+			kd_assert(bit_index < _num_bits);
+			kd_assert(bit_index + num_bits < _num_bits);
+
+			size_t idx_end = bit_index + num_bits;
+
+			size_t idx_start_fill_byte = (bit_index + 7) >> 3;
+			size_t idx_end_fill_byte = idx_end >> 3;
+			size_t sz_fill_byte = idx_end_fill_byte - idx_start_fill_byte;
+
+			if (bit_index & 7) {
+				uint8_t start_bits = 0xff >> (7 - (bit_index & 7));
+				_buffer[bit_index >> 3] &= start_bits;
+			}
+
+			if (sz_fill_byte)
+				memset(_buffer.data() + idx_start_fill_byte, 0x00, sz_fill_byte);
+
+			if (idx_end & 7) {
+				uint8_t end_bits = 0xff << (bit_index & 7);
+				_buffer[idx_end >> 3] &= end_bits;
+			}
+		}
+
+		PBOS_FORCEINLINE void set_byte(size_t bit_index, uint8_t b) {
+			kd_assert(bit_index + 8 <= _num_bits);
+
+			_set_byte(bit_index, b, 8);
+		}
+
+		PBOS_FORCEINLINE void set_byte(size_t bit_index, uint8_t b, uint8_t num_bits) {
+			kd_assert(bit_index + num_bits <= _num_bits);
+
+			_set_byte(bit_index, b, num_bits);
+		}
+
+		PBOS_FORCEINLINE uint8_t get_byte(size_t bit_index) const {
+			kd_assert(bit_index + 8 <= _num_bits);
+
+			return _get_byte(bit_index, 8);
+		}
+
+		PBOS_FORCEINLINE uint8_t get_byte(size_t bit_index, uint8_t num_bits) const {
+			kd_assert(num_bits);
+			kd_assert(num_bits <= 8);
+			kd_assert(bit_index + num_bits <= _num_bits);
+
+			return _get_byte(bit_index, num_bits);
+		}
+
+		PBOS_FORCEINLINE void get_bytes(char *buf, size_t len, size_t bit_index) const {
+			kd_assert(bit_index + 8 * len <= _num_bits);
+
+			if (!((bit_index) & 7)) {
+				memcpy(buf, _buffer.data() + bit_index / 8, len);
+			} else {
+				size_t cur_index = bit_index;
+				for (size_t i = 0; i < len; ++i) {
+					buf[i] = _get_byte(cur_index, 8);
+					cur_index += 8;
+				}
+			}
+		}
+
+		PBOS_FORCEINLINE kfxx::allocator_t *allocator() const {
+			return _buffer.allocator();
+		}
+	};
+}
+
+#endif
