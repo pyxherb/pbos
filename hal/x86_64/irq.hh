@@ -7,29 +7,321 @@
 
 PBOS_EXTERN_C_BEGIN
 
-PBOS_NORETURN void isr_diverr();		// 0x00 Divide-by-zero Error
-PBOS_NORETURN void isr_overflow();		// 0x04 Overflow
-PBOS_NORETURN void isr_boundrange();	// 0x05 Bound Range Exceeded
-PBOS_NORETURN void isr_invl_opcode();	// 0x06 Invalid Opcode
-PBOS_NORETURN void isr_nofpu();			// 0x07 Device (FPU) Not Available
-PBOS_NORETURN void isr_double_fault();	// 0x08 Double Fault
-PBOS_NORETURN void isr_dev_invltss();	// 0x0a Invalid TSS
-PBOS_NORETURN void isr_noseg();			// 0x0b Segment Not Present
-PBOS_NORETURN void isr_stackerr();		// 0x0c Stack Segment Fault
-PBOS_NORETURN void isr_prot();			// 0x0d General Protection Fault
-PBOS_NORETURN void isr_pgfault();		// 0x0e Page Fault
-PBOS_NORETURN void isr_fpuerr();		// 0x10 x87 Floating-Point Exception
-PBOS_NORETURN void isr_alignchk();		// 0x11 Alignment Check
-PBOS_NORETURN void isr_machchk();		// 0x12 Machine Check
-PBOS_NORETURN void isr_simderr();		// 0x13 SIMD Floating-Point Exception
-PBOS_NORETURN void isr_virterr();		// 0x14 Virtualization Exception
-PBOS_NORETURN void isr_ctrlprot();		// 0x15 Control Protection Exception
-PBOS_NORETURN void isr_hverr();			// 0x1c Hypervisor Injection Exception
-PBOS_NORETURN void isr_vmmerr();		// 0x1d VMM Communication Exception
-PBOS_NORETURN void isr_securityerr();	// 0x1e Security Exception
+PBOS_NORETURN void hali_div_err_isr();	// 0x00 Divide-by-zero Error
+void hali_div_err_isr_impl();
 
-PBOS_NORETURN void hali_isr_timer();	 // IRQ0
-void hali_isr_timer_impl(
+PBOS_NORETURN void hali_overflow_isr();	 // 0x04 Overflow
+void hali_overflow_isr_impl();
+
+PBOS_NORETURN void hali_bound_range_exceeded_isr();	// 0x05 Bound Range Exceeded
+void hali_bound_range_exceeded_isr_impl();
+
+PBOS_NORETURN void hali_invalid_opcode_isr();  // 0x06 Invalid Opcode
+void hali_invalid_opcode_isr_impl();
+
+PBOS_NORETURN void hali_nofpu_isr();  // 0x07 Device (FPU) Not Available
+void hali_nofpu_isr_impl();
+
+PBOS_NORETURN void hali_double_fault_isr();	 // 0x08 Double Fault
+void hali_double_fault_isr_impl();
+
+PBOS_NORETURN void hali_invalid_tss_isr();	// 0x0a Invalid TSS
+void hali_invalid_tss_isr_impl();
+
+PBOS_NORETURN void hali_seg_not_present_isr();  // 0x0b Segment Not Present
+void hali_seg_not_present_isr_impl();
+
+PBOS_NORETURN void hali_stack_seg_fault_isr();	// 0x0c Stack Segment Fault
+void hali_stack_seg_fault_isr_impl();
+
+PBOS_NORETURN void hali_general_protect_isr();	// 0x0d General Protection Fault
+void hali_general_protect_isr_impl();
+
+PBOS_NORETURN void hali_pgfault_isr();	// 0x0e Page Fault
+void hali_pgfault_isr_impl();
+
+PBOS_NORETURN void hali_fpu_except_isr();  // 0x10 x87 Floating-Point Exception
+void hali_fpu_except_isr_impl();
+
+PBOS_NORETURN void hali_align_check_isr();	// 0x11 Alignment Check
+void hali_align_check_isr_impl();
+
+PBOS_NORETURN void hali_machine_check_isr();  // 0x12 Machine Check
+void hali_machine_check_isr_impl();
+
+PBOS_NORETURN void hali_simd_except_isr();	// 0x13 SIMD Floating-Point Exception
+void hali_simd_except_isr_impl();
+
+PBOS_NORETURN void hali_virt_except_isr();	// 0x14 Virtualization Exception
+void hali_virt_except_isr_impl();
+
+PBOS_NORETURN void hali_ctrl_protect_isr();	 // 0x15 Control Protection Exception
+void hali_ctrl_protect_isr_impl();
+
+PBOS_NORETURN void hali_hypervisor_inject_except_isr();	 // 0x1c Hypervisor Injection Exception
+void hali_hypervisor_inject_except_isr_impl();
+
+PBOS_NORETURN void hali_vmm_comm_except_isr();	// 0x1d VMM Communication Exception
+void hali_vmm_comm_except_isr_impl();
+
+PBOS_NORETURN void hali_security_err_isr();	 // 0x1e Security Exception
+void hali_security_err_isr_impl();
+
+#define HALI_DECL_USABLE_IRQ_ISR(irq_id) \
+	PBOS_NORETURN void hali_usable_irq_isr_##irq_id();
+
+HALI_DECL_USABLE_IRQ_ISR(20);
+HALI_DECL_USABLE_IRQ_ISR(21);
+HALI_DECL_USABLE_IRQ_ISR(22);
+HALI_DECL_USABLE_IRQ_ISR(23);
+HALI_DECL_USABLE_IRQ_ISR(24);
+HALI_DECL_USABLE_IRQ_ISR(25);
+HALI_DECL_USABLE_IRQ_ISR(26);
+HALI_DECL_USABLE_IRQ_ISR(27);
+HALI_DECL_USABLE_IRQ_ISR(28);
+HALI_DECL_USABLE_IRQ_ISR(29);
+HALI_DECL_USABLE_IRQ_ISR(2a);
+HALI_DECL_USABLE_IRQ_ISR(2b);
+HALI_DECL_USABLE_IRQ_ISR(2c);
+HALI_DECL_USABLE_IRQ_ISR(2d);
+HALI_DECL_USABLE_IRQ_ISR(2e);
+HALI_DECL_USABLE_IRQ_ISR(2f);
+HALI_DECL_USABLE_IRQ_ISR(30);
+HALI_DECL_USABLE_IRQ_ISR(31);
+HALI_DECL_USABLE_IRQ_ISR(32);
+HALI_DECL_USABLE_IRQ_ISR(33);
+HALI_DECL_USABLE_IRQ_ISR(34);
+HALI_DECL_USABLE_IRQ_ISR(35);
+HALI_DECL_USABLE_IRQ_ISR(36);
+HALI_DECL_USABLE_IRQ_ISR(37);
+HALI_DECL_USABLE_IRQ_ISR(38);
+HALI_DECL_USABLE_IRQ_ISR(39);
+HALI_DECL_USABLE_IRQ_ISR(3a);
+HALI_DECL_USABLE_IRQ_ISR(3b);
+HALI_DECL_USABLE_IRQ_ISR(3c);
+HALI_DECL_USABLE_IRQ_ISR(3d);
+HALI_DECL_USABLE_IRQ_ISR(3e);
+HALI_DECL_USABLE_IRQ_ISR(3f);
+HALI_DECL_USABLE_IRQ_ISR(40);
+HALI_DECL_USABLE_IRQ_ISR(41);
+HALI_DECL_USABLE_IRQ_ISR(42);
+HALI_DECL_USABLE_IRQ_ISR(43);
+HALI_DECL_USABLE_IRQ_ISR(44);
+HALI_DECL_USABLE_IRQ_ISR(45);
+HALI_DECL_USABLE_IRQ_ISR(46);
+HALI_DECL_USABLE_IRQ_ISR(47);
+HALI_DECL_USABLE_IRQ_ISR(48);
+HALI_DECL_USABLE_IRQ_ISR(49);
+HALI_DECL_USABLE_IRQ_ISR(4a);
+HALI_DECL_USABLE_IRQ_ISR(4b);
+HALI_DECL_USABLE_IRQ_ISR(4c);
+HALI_DECL_USABLE_IRQ_ISR(4d);
+HALI_DECL_USABLE_IRQ_ISR(4e);
+HALI_DECL_USABLE_IRQ_ISR(4f);
+HALI_DECL_USABLE_IRQ_ISR(50);
+HALI_DECL_USABLE_IRQ_ISR(51);
+HALI_DECL_USABLE_IRQ_ISR(52);
+HALI_DECL_USABLE_IRQ_ISR(53);
+HALI_DECL_USABLE_IRQ_ISR(54);
+HALI_DECL_USABLE_IRQ_ISR(55);
+HALI_DECL_USABLE_IRQ_ISR(56);
+HALI_DECL_USABLE_IRQ_ISR(57);
+HALI_DECL_USABLE_IRQ_ISR(58);
+HALI_DECL_USABLE_IRQ_ISR(59);
+HALI_DECL_USABLE_IRQ_ISR(5a);
+HALI_DECL_USABLE_IRQ_ISR(5b);
+HALI_DECL_USABLE_IRQ_ISR(5c);
+HALI_DECL_USABLE_IRQ_ISR(5d);
+HALI_DECL_USABLE_IRQ_ISR(5e);
+HALI_DECL_USABLE_IRQ_ISR(5f);
+HALI_DECL_USABLE_IRQ_ISR(60);
+HALI_DECL_USABLE_IRQ_ISR(61);
+HALI_DECL_USABLE_IRQ_ISR(62);
+HALI_DECL_USABLE_IRQ_ISR(63);
+HALI_DECL_USABLE_IRQ_ISR(64);
+HALI_DECL_USABLE_IRQ_ISR(65);
+HALI_DECL_USABLE_IRQ_ISR(66);
+HALI_DECL_USABLE_IRQ_ISR(67);
+HALI_DECL_USABLE_IRQ_ISR(68);
+HALI_DECL_USABLE_IRQ_ISR(69);
+HALI_DECL_USABLE_IRQ_ISR(6a);
+HALI_DECL_USABLE_IRQ_ISR(6b);
+HALI_DECL_USABLE_IRQ_ISR(6c);
+HALI_DECL_USABLE_IRQ_ISR(6d);
+HALI_DECL_USABLE_IRQ_ISR(6e);
+HALI_DECL_USABLE_IRQ_ISR(6f);
+HALI_DECL_USABLE_IRQ_ISR(70);
+HALI_DECL_USABLE_IRQ_ISR(71);
+HALI_DECL_USABLE_IRQ_ISR(72);
+HALI_DECL_USABLE_IRQ_ISR(73);
+HALI_DECL_USABLE_IRQ_ISR(74);
+HALI_DECL_USABLE_IRQ_ISR(75);
+HALI_DECL_USABLE_IRQ_ISR(76);
+HALI_DECL_USABLE_IRQ_ISR(77);
+HALI_DECL_USABLE_IRQ_ISR(78);
+HALI_DECL_USABLE_IRQ_ISR(79);
+HALI_DECL_USABLE_IRQ_ISR(7a);
+HALI_DECL_USABLE_IRQ_ISR(7b);
+HALI_DECL_USABLE_IRQ_ISR(7c);
+HALI_DECL_USABLE_IRQ_ISR(7d);
+HALI_DECL_USABLE_IRQ_ISR(7e);
+HALI_DECL_USABLE_IRQ_ISR(7f);
+HALI_DECL_USABLE_IRQ_ISR(80);
+HALI_DECL_USABLE_IRQ_ISR(81);
+HALI_DECL_USABLE_IRQ_ISR(82);
+HALI_DECL_USABLE_IRQ_ISR(83);
+HALI_DECL_USABLE_IRQ_ISR(84);
+HALI_DECL_USABLE_IRQ_ISR(85);
+HALI_DECL_USABLE_IRQ_ISR(86);
+HALI_DECL_USABLE_IRQ_ISR(87);
+HALI_DECL_USABLE_IRQ_ISR(88);
+HALI_DECL_USABLE_IRQ_ISR(89);
+HALI_DECL_USABLE_IRQ_ISR(8a);
+HALI_DECL_USABLE_IRQ_ISR(8b);
+HALI_DECL_USABLE_IRQ_ISR(8c);
+HALI_DECL_USABLE_IRQ_ISR(8d);
+HALI_DECL_USABLE_IRQ_ISR(8e);
+HALI_DECL_USABLE_IRQ_ISR(8f);
+HALI_DECL_USABLE_IRQ_ISR(90);
+HALI_DECL_USABLE_IRQ_ISR(91);
+HALI_DECL_USABLE_IRQ_ISR(92);
+HALI_DECL_USABLE_IRQ_ISR(93);
+HALI_DECL_USABLE_IRQ_ISR(94);
+HALI_DECL_USABLE_IRQ_ISR(95);
+HALI_DECL_USABLE_IRQ_ISR(96);
+HALI_DECL_USABLE_IRQ_ISR(97);
+HALI_DECL_USABLE_IRQ_ISR(98);
+HALI_DECL_USABLE_IRQ_ISR(99);
+HALI_DECL_USABLE_IRQ_ISR(9a);
+HALI_DECL_USABLE_IRQ_ISR(9b);
+HALI_DECL_USABLE_IRQ_ISR(9c);
+HALI_DECL_USABLE_IRQ_ISR(9d);
+HALI_DECL_USABLE_IRQ_ISR(9e);
+HALI_DECL_USABLE_IRQ_ISR(9f);
+HALI_DECL_USABLE_IRQ_ISR(a0);
+HALI_DECL_USABLE_IRQ_ISR(a1);
+HALI_DECL_USABLE_IRQ_ISR(a2);
+HALI_DECL_USABLE_IRQ_ISR(a3);
+HALI_DECL_USABLE_IRQ_ISR(a4);
+HALI_DECL_USABLE_IRQ_ISR(a5);
+HALI_DECL_USABLE_IRQ_ISR(a6);
+HALI_DECL_USABLE_IRQ_ISR(a7);
+HALI_DECL_USABLE_IRQ_ISR(a8);
+HALI_DECL_USABLE_IRQ_ISR(a9);
+HALI_DECL_USABLE_IRQ_ISR(aa);
+HALI_DECL_USABLE_IRQ_ISR(ab);
+HALI_DECL_USABLE_IRQ_ISR(ac);
+HALI_DECL_USABLE_IRQ_ISR(ad);
+HALI_DECL_USABLE_IRQ_ISR(ae);
+HALI_DECL_USABLE_IRQ_ISR(af);
+HALI_DECL_USABLE_IRQ_ISR(b0);
+HALI_DECL_USABLE_IRQ_ISR(b1);
+HALI_DECL_USABLE_IRQ_ISR(b2);
+HALI_DECL_USABLE_IRQ_ISR(b3);
+HALI_DECL_USABLE_IRQ_ISR(b4);
+HALI_DECL_USABLE_IRQ_ISR(b5);
+HALI_DECL_USABLE_IRQ_ISR(b6);
+HALI_DECL_USABLE_IRQ_ISR(b7);
+HALI_DECL_USABLE_IRQ_ISR(b8);
+HALI_DECL_USABLE_IRQ_ISR(b9);
+HALI_DECL_USABLE_IRQ_ISR(ba);
+HALI_DECL_USABLE_IRQ_ISR(bb);
+HALI_DECL_USABLE_IRQ_ISR(bc);
+HALI_DECL_USABLE_IRQ_ISR(bd);
+HALI_DECL_USABLE_IRQ_ISR(be);
+HALI_DECL_USABLE_IRQ_ISR(bf);
+// HALI_DECL_USABLE_IRQ_ISR(c0);
+HALI_DECL_USABLE_IRQ_ISR(c1);
+HALI_DECL_USABLE_IRQ_ISR(c2);
+HALI_DECL_USABLE_IRQ_ISR(c3);
+HALI_DECL_USABLE_IRQ_ISR(c4);
+HALI_DECL_USABLE_IRQ_ISR(c5);
+HALI_DECL_USABLE_IRQ_ISR(c6);
+HALI_DECL_USABLE_IRQ_ISR(c7);
+HALI_DECL_USABLE_IRQ_ISR(c8);
+HALI_DECL_USABLE_IRQ_ISR(c9);
+HALI_DECL_USABLE_IRQ_ISR(ca);
+HALI_DECL_USABLE_IRQ_ISR(cb);
+HALI_DECL_USABLE_IRQ_ISR(cc);
+HALI_DECL_USABLE_IRQ_ISR(cd);
+HALI_DECL_USABLE_IRQ_ISR(ce);
+HALI_DECL_USABLE_IRQ_ISR(cf);
+HALI_DECL_USABLE_IRQ_ISR(d0);
+HALI_DECL_USABLE_IRQ_ISR(d1);
+HALI_DECL_USABLE_IRQ_ISR(d2);
+HALI_DECL_USABLE_IRQ_ISR(d3);
+HALI_DECL_USABLE_IRQ_ISR(d4);
+HALI_DECL_USABLE_IRQ_ISR(d5);
+HALI_DECL_USABLE_IRQ_ISR(d6);
+HALI_DECL_USABLE_IRQ_ISR(d7);
+HALI_DECL_USABLE_IRQ_ISR(d8);
+HALI_DECL_USABLE_IRQ_ISR(d9);
+HALI_DECL_USABLE_IRQ_ISR(da);
+HALI_DECL_USABLE_IRQ_ISR(db);
+HALI_DECL_USABLE_IRQ_ISR(dc);
+HALI_DECL_USABLE_IRQ_ISR(dd);
+HALI_DECL_USABLE_IRQ_ISR(de);
+HALI_DECL_USABLE_IRQ_ISR(df);
+HALI_DECL_USABLE_IRQ_ISR(e0);
+HALI_DECL_USABLE_IRQ_ISR(e1);
+HALI_DECL_USABLE_IRQ_ISR(e2);
+HALI_DECL_USABLE_IRQ_ISR(e3);
+HALI_DECL_USABLE_IRQ_ISR(e4);
+HALI_DECL_USABLE_IRQ_ISR(e5);
+HALI_DECL_USABLE_IRQ_ISR(e6);
+HALI_DECL_USABLE_IRQ_ISR(e7);
+HALI_DECL_USABLE_IRQ_ISR(e8);
+HALI_DECL_USABLE_IRQ_ISR(e9);
+HALI_DECL_USABLE_IRQ_ISR(ea);
+HALI_DECL_USABLE_IRQ_ISR(eb);
+HALI_DECL_USABLE_IRQ_ISR(ec);
+HALI_DECL_USABLE_IRQ_ISR(ed);
+HALI_DECL_USABLE_IRQ_ISR(ee);
+HALI_DECL_USABLE_IRQ_ISR(ef);
+HALI_DECL_USABLE_IRQ_ISR(f0);
+HALI_DECL_USABLE_IRQ_ISR(f1);
+HALI_DECL_USABLE_IRQ_ISR(f2);
+HALI_DECL_USABLE_IRQ_ISR(f3);
+HALI_DECL_USABLE_IRQ_ISR(f4);
+HALI_DECL_USABLE_IRQ_ISR(f5);
+HALI_DECL_USABLE_IRQ_ISR(f6);
+HALI_DECL_USABLE_IRQ_ISR(f7);
+HALI_DECL_USABLE_IRQ_ISR(f8);
+HALI_DECL_USABLE_IRQ_ISR(f9);
+HALI_DECL_USABLE_IRQ_ISR(fa);
+HALI_DECL_USABLE_IRQ_ISR(fb);
+HALI_DECL_USABLE_IRQ_ISR(fc);
+HALI_DECL_USABLE_IRQ_ISR(fd);
+HALI_DECL_USABLE_IRQ_ISR(fe);
+HALI_DECL_USABLE_IRQ_ISR(ff);
+
+void hali_usable_irq_impl(
+	const uint64_t irq_id,
+	const uint64_t rdi,
+	const uint64_t rsi,
+	const uint64_t rdx,
+	const uint64_t rcx,
+	const uint64_t r8,
+	const uint64_t r9,
+
+	const uint64_t gs,
+	const uint64_t fs,
+	const uint64_t es,
+	const uint64_t ds,
+	const uint64_t r10,
+	const uint64_t r11,
+	const uint64_t r12,
+	const uint64_t r13,
+	const uint64_t r14,
+	const uint64_t r15,
+	const uint64_t rax,
+	const uint64_t rbx,
+	const uint64_t rbp,
+
+	const uint64_t *const rsp_top);
+
+PBOS_NORETURN void hali_timer_isr();  // IRQ0
+void hali_timer_isr_impl(
 	const uint64_t rdi,
 	const uint64_t rsi,
 	const uint64_t rdx,

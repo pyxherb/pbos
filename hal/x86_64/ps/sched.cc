@@ -5,7 +5,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-void hali_isr_timer_impl(
+void hali_timer_isr_impl(
 	const uint64_t rdi,
 	const uint64_t rsi,
 	const uint64_t rdx,

@@ -216,6 +216,8 @@ void mp_main_cpu_init() {
 
 	arch_loades(SELECTOR_KDATA);
 
+	kh_init_irq_for_cpu(0);
+
 	hali_calibrate_apic();
 
 	klog_printf("Timer interval ticks: %u\n", hali_sched_interval);

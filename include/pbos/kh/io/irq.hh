@@ -15,6 +15,8 @@ bool kh_is_per_cpu_irq_supported();
 
 void kh_irq_init();
 
+km_result_t kh_init_irq_for_cpu(ps_cpuid_t cpu);
+
 PBOS_EXTERN_C_END
 
 #endif
