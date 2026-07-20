@@ -2,6 +2,7 @@
 #define _PBOS_KI_IO_IRQ_H_
 
 #include <pbos/ki/io/context.hh>
+#include <pbos/io/irq.h>
 #include <pbos/kfxx/bitarray.hh>
 
 typedef struct _io_interrupt_t {

@@ -57,13 +57,11 @@ PBOS_NORETURN void isr_stub();
 
 void hali_set_sched_timer();
 
-extern arch_gate_t hali_kidt[512];
-
 void hali_calibrate_apic();
 
 typedef void (*hali_isr_t)();
 
-void hali_set_isr(hali_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
+void hali_set_isr(arch_gate_t *idt, hali_isr_t isr, size_t irq, uint8_t dpl, uint8_t gate_type);
 
 PBOS_EXTERN_C_END
 

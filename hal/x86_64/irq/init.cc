@@ -1,8 +1,10 @@
 #include <arch/x86_64/apic.h>
-#include <hal/x86_64/irq.hh>
-#include <hal/x86_64/ps/syscall.hh>
 #include <pbos/kd/logger.h>
 #include <pbos/ps/proc.h>
+#include <hal/x86_64/irq.hh>
+#include <hal/x86_64/ps/syscall.hh>
+#include <pbos/ki/mp/misc.hh>
+
 
 PBOS_EXTERN_C_BEGIN
 
@@ -65,21 +67,28 @@ void kh_irq_init() {
 	hali_set_isr(isr_vmmerr, 0x1d, 0, GATE_INT386);
 	hali_set_isr(isr_securityerr, 0x1e, 0, GATE_INT386);*/
 
-	hali_set_isr(hali_isr_timer, 0x30, 0, GATE_INT386);
+	for (ps_cpuid_t i = 0; i < mp_num_total_cpu; ++i) {
+		ki_per_cpu_io_contexts[i]->interrupt_table = mm_kalloc(sizeof(arch_gate_t) * 256 * 2, sizeof(arch_gate_t) * 2);
 
-	hali_set_isr(isr_syscall, 0xc0, 3, GATE_TRAP386);
+		if (!ki_per_cpu_io_contexts[i]->interrupt_table)
+			km_panic("Error allocating memory for IDT for CPU #%d", i);
 
-	arch_lidt(hali_kidt, 512);
+		hali_set_isr(static_cast<arch_gate_t *>(ki_per_cpu_io_contexts[i]->interrupt_table), hali_isr_timer, 0x30, 0, GATE_INT386);
+
+		hali_set_isr(static_cast<arch_gate_t *>(ki_per_cpu_io_contexts[i]->interrupt_table), isr_syscall, 0xc0, 3, GATE_TRAP386);
+	}
+
+	arch_lidt(static_cast<arch_gate_t *>(ki_per_cpu_io_contexts[0]->interrupt_table), 512);
 
 	// for (int i = 0; i < 16; ++i)
-		// arch_mask_pic_irq(i);
+	// arch_mask_pic_irq(i);
 
 	// hali_remap_pic(0x20, 0x28);
 	// arch_disable_pic();
 
 	// Check if the CPU has APIC.
 	// if (!arch_has_apic())
-		// km_panic("The kernel requires APIC support");
+	// km_panic("The kernel requires APIC support");
 }
 
 PBOS_EXTERN_C_END

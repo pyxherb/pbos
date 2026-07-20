@@ -2,6 +2,8 @@
 #include <pbos/kd/logger.h>
 #include <pbos/ki/km/symbol.hh>
 
+PBOS_EXTERN_C_BEGIN
+
 kima_pool_t ki_global_pool_storage;
 kima_pool_t *mm_global_pool = &ki_global_pool_storage;
 
@@ -24,3 +26,5 @@ PBOS_NODISCARD PBOS_API void *mm_krealloc_in_place(void *old_ptr, size_t size) {
 PBOS_API void mm_kfree(void *ptr) {
 	kima_free(mm_global_pool, ptr);
 }
+
+PBOS_EXTERN_C_END

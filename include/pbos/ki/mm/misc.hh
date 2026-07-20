@@ -11,8 +11,6 @@
 
 PBOS_EXTERN_C_BEGIN
 
-void ki_mm_init_global_allocator();
-
 void kh_mm_sync_global_mappings(const mm_context_t *src);
 void kh_mm_copy_global_mappings(mm_context_t *dest, const mm_context_t *src);
 

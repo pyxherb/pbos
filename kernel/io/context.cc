@@ -1,5 +1,7 @@
 #include <pbos/ki/io/context.hh>
 
+io_context_t **ki_per_cpu_io_contexts = nullptr;
+
 _io_context_t::_io_context_t() {
 }
 

@@ -2,6 +2,7 @@
 #define _PBOS_KFXX_RADIX_MAP_HH_
 
 #include "allocator.hh"
+#include "bitops.hh"
 #include "bitset.hh"
 #include "option.hh"
 #include "rcobj.hh"
@@ -12,52 +13,53 @@ namespace kfxx {
 	class radix_map_t final {
 	public:
 		static_assert(std::is_integral_v<K>, "The key must be integral type");
-		using ThisType = radix_map_t<K, V, R>;
+		using this_type = radix_map_t<K, V, R>;
 
 		constexpr static uintmax_t HEIGHT_MAX = sizeof(K) * 8;
-		using Height = size_t;	// TODO: Use auto-sized integer type.
+		// TODO: Use auto sized integer
+		using height_type = size_t;
 
 		constexpr static size_t N = static_cast<size_t>(1) << R;
 		constexpr static K MASK = N - 1;
 
 		constexpr static size_t MAX_STEPS = (HEIGHT_MAX + R - 1) / R;
 
-		struct Node {
-			Node *p = nullptr;
-			Node *children[N] = {};
+		struct node_t {
+			node_t *p = nullptr;
+			node_t *children[N] = {};
 			option_array_t<V, N> radix_value;
-			Height height = 0;
+			height_type height = 0;
 			size_t num_used_children = 0;
-			size_t offset = 0;
+			K offset = 0;
 
-			PBOS_FORCEINLINE Node() {
+			PBOS_FORCEINLINE node_t() {
 			}
 		};
 
 	private:
 		kfxx::rc_object_ptr<kfxx::allocator_t> _allocator;
-		Height _height;
-		size_t _num_nodes;
-		Node *_root;
+		height_type _height;
+		size_t _size;
+		node_t *_root;
 
-		[[nodiscard]] PBOS_FORCEINLINE Node *_alloc_single_node() {
-			Node *node = alloc_and_construct<Node>(_allocator.get());
+		[[nodiscard]] PBOS_FORCEINLINE node_t *_alloc_single_node() {
+			node_t *node = alloc_and_construct<node_t>(_allocator.get());
 			if (!node)
 				return nullptr;
 
 			return node;
 		}
 
-		PBOS_FORCEINLINE void _delete_single_node(Node *node) {
-			kfxx::destroy_and_release<Node>(_allocator.get(), node);
+		PBOS_FORCEINLINE void _delete_single_node(node_t *node) {
+			kfxx::destroy_and_release<node_t>(_allocator.get(), node);
 		}
 
-		[[nodiscard]] inline bool _grow_height(Height height) {
-			Node *original_root = _root, *first_node = nullptr;
-			Height original_height = _height;
+		[[nodiscard]] inline bool _grow_height(height_type height) {
+			node_t *original_root = _root, *first_node = nullptr;
+			height_type original_height = _height;
 
 			kfxx::scope_guard restore_guard([this, &first_node, original_root, original_height]() noexcept {
-				for (Node *i = first_node; i; i = i->p) {
+				for (node_t *i = first_node; i; i = i->p) {
 					_delete_single_node(i);
 				}
 
@@ -71,7 +73,7 @@ namespace kfxx {
 			while (_height < height) {
 				++_height;
 
-				Node *new_node = _alloc_single_node();
+				node_t *new_node = _alloc_single_node();
 				if (!new_node)
 					return false;
 
@@ -93,8 +95,8 @@ namespace kfxx {
 		}
 
 		[[nodiscard]] inline bool _grow_node(K index, V &&data) {
-			Node *node = _root;
-			Height height = _height;
+			node_t *node = _root;
+			height_type height = _height;
 
 			size_t i = 0;
 			kfxx::bitset_t<MAX_STEPS> insertion_flags;
@@ -103,9 +105,8 @@ namespace kfxx {
 				while (i && node) {
 					--i;
 					if (insertion_flags.get_bit(i)) {
-						Node *parent = node->p;
+						node_t *parent = node->p;
 						K offset = node->offset;
-						--_num_nodes;
 						_delete_single_node(node);
 						if (parent) {
 							parent->children[offset] = nullptr;
@@ -118,11 +119,11 @@ namespace kfxx {
 			});
 
 			while (height > R) {
-				Height shift = height - R;
+				height_type shift = height - R;
 				K offset = (index >> shift) & MASK;
 
 				if ((!node->children[offset]) && (!node->radix_value.has_value(offset))) {
-					Node *new_node = _alloc_single_node();
+					node_t *new_node = _alloc_single_node();
 					if (!new_node)
 						return false;
 					new_node->height = height - R;
@@ -143,19 +144,21 @@ namespace kfxx {
 
 			sg.release();
 
-			Node *leaf = node;
+			node_t *leaf = node;
 			K offset = index & MASK;
 			kd_assert(!(leaf->children[offset] || leaf->radix_value.has_value(offset)));
 			leaf->radix_value.set_value(offset, std::move(data));
+			++leaf->num_used_children;
+			++_size;
 			return true;
 		}
 
-		[[nodiscard]] inline bool _grow_height_then_grow_node(K index, Height height, V &&data) {
-			Node *original_root = _root, *first_node = nullptr;
-			Height original_height = _height;
+		[[nodiscard]] inline bool _grow_height_then_grow_node(K index, height_type height, V &&data) {
+			node_t *original_root = _root, *first_node = nullptr;
+			height_type original_height = _height;
 
 			kfxx::scope_guard restore_guard([this, &first_node, original_root, original_height]() noexcept {
-				for (Node *i = first_node; i; i = i->p) {
+				for (node_t *i = first_node; i; i = i->p) {
 					_delete_single_node(i);
 				}
 
@@ -169,7 +172,7 @@ namespace kfxx {
 			while (_height < height) {
 				_height += R;
 
-				Node *new_node = _alloc_single_node();
+				node_t *new_node = _alloc_single_node();
 				if (!new_node)
 					return false;
 
@@ -193,18 +196,18 @@ namespace kfxx {
 			return true;
 		}
 
-		static PBOS_FORCEINLINE Height _required_height(K index) {
+		static PBOS_FORCEINLINE height_type _required_height(K index) {
 			if (index == 0)
 				return R;
-			Height bits = (Height)(sizeof(K) * 8 - count_leading_zero(index));
+			height_type bits = (height_type)(sizeof(K) * 8 - count_leading_zero(index));
 			return ((bits + R - 1) / R) * R;
 		}
 
 		[[nodiscard]] inline bool _insert(K index, V &&data) {
-			Height required_height = _required_height(index);
+			height_type required_height = _required_height(index);
 
 			if (!_root) {
-				Node *node = _alloc_single_node();
+				node_t *node = _alloc_single_node();
 				if (!node)
 					return false;
 				kfxx::scope_guard delete_node_guard([this, node]() noexcept {
@@ -213,8 +216,8 @@ namespace kfxx {
 				node->height = required_height;
 				_height = required_height;
 
-				Height original_height = _height;
-				Node *original_root = _root;
+				height_type original_height = _height;
+				node_t *original_root = _root;
 
 				kfxx::scope_guard restore_props_guard([this, original_root, original_height]() noexcept {
 					_root = original_root;
@@ -235,17 +238,18 @@ namespace kfxx {
 			return _grow_node(index, std::move(data));
 		}
 
-		[[nodiscard]] inline kfxx::option_t<std::pair<Node, size_t>> _lookup(K index) const {
-			kd_assert(_root);
-			Node *node = _root;
-			Height height = _height;
+		[[nodiscard]] inline kfxx::option_t<std::pair<node_t *, size_t>> _lookup(K index) const {
+			if (!_root)
+				return kfxx::nullopt;
+			node_t *node = _root;
+			height_type height = _height;
 			while (height > R) {
-				Height shift = height - R;
+				height_type shift = height - R;
 				K offset = (index >> shift) & MASK;
 				if (!node->children[offset]) {
 					if (!node->radix_value.has_value(offset))
 						return kfxx::nullopt;
-					return { node, offset };
+					return std::pair<node_t *, size_t>(node, offset);
 				}
 				node = node->children[offset];
 				height -= R;
@@ -253,10 +257,10 @@ namespace kfxx {
 			K offset = index & MASK;
 			if (!node->radix_value.has_value(offset))
 				return kfxx::nullopt;
-			return { node, offset };
+			return std::pair<node_t *, size_t>(node, offset);
 		}
 
-		[[nodiscard]] static inline Node *_get_min_node(Node *node) {
+		[[nodiscard]] static inline node_t *_get_min_node(node_t *node) {
 			kd_assert(node);
 
 			while (true) {
@@ -275,7 +279,7 @@ namespace kfxx {
 			return node;
 		}
 
-		[[nodiscard]] static inline Node *_get_max_node(Node *node) {
+		[[nodiscard]] static inline node_t *_get_max_node(node_t *node) {
 			kd_assert(node);
 
 			while (true) {
@@ -294,14 +298,14 @@ namespace kfxx {
 			return node;
 		}
 
-		[[nodiscard]] inline Node *_lookup_upper_bound(K index) const {
+		[[nodiscard]] inline node_t *_lookup_upper_bound(K index) const {
 			if (!_root)
 				return nullptr;
 
-			Node *node = _root;
-			Height height = _height;
+			node_t *node = _root;
+			height_type height = _height;
 			while (node && height > R) {
-				Height shift = height - R;
+				height_type shift = height - R;
 				K offset = (index >> shift) & MASK;
 				if (node->children[offset]) {
 					node = node->children[offset];
@@ -336,12 +340,16 @@ namespace kfxx {
 		}
 
 	public:
-		PBOS_FORCEINLINE radix_map_t(kfxx::allocator_t *allocator) : _allocator(allocator), _height(0), _num_nodes(0), _root(nullptr) {}
+		PBOS_FORCEINLINE radix_map_t(kfxx::allocator_t *allocator) : _allocator(allocator), _height(0), _size(0), _root(nullptr) {}
 		PBOS_FORCEINLINE ~radix_map_t() {
+			clear();
+		}
+
+		inline void clear() noexcept {
 			if (!_root)
 				return;
-			Node *cur_node = _get_min_node(_root);
-			Node *parent = _root->p;
+			node_t *cur_node = _get_min_node(_root);
+			node_t *parent = _root->p;
 			bool walked_root_node = false;
 
 			while (cur_node != parent) {
@@ -354,13 +362,14 @@ namespace kfxx {
 					}
 				}
 				if (!has_unvisited) {
-					Node *node_to_delete = cur_node;
+					node_t *node_to_delete = cur_node;
 					while (cur_node->p &&
 						   (cur_node == cur_node->p->children[N - 1] ||
 							   [&]() {
-								   Node *p = cur_node->p;
+								   node_t *p = cur_node->p;
 								   for (size_t i = cur_node->offset + 1; i < N; ++i) {
-									   if (p->children[i]) return false;
+									   if (p->children[i])
+										   return false;
 								   }
 								   return true;
 							   }())) {
@@ -373,15 +382,18 @@ namespace kfxx {
 					_delete_single_node(node_to_delete);
 				}
 			}
+
+			_root = nullptr;
+			_size = 0;
 		}
 
 		[[nodiscard]] PBOS_FORCEINLINE bool insert(K key, V &&value) {
 			return _insert(key, std::move(value));
 		}
 
-		kfxx::option_t<V> remove(const K &index) noexcept {
-			Node *node = _root;
-			Height height = _height;
+		inline option_t<V> remove(const K &index) noexcept {
+			node_t *node = _root;
+			height_type height = _height;
 
 			while (height > R) {
 				K offset = (index >> (height - R)) & MASK;
@@ -400,64 +412,66 @@ namespace kfxx {
 			--node->num_used_children;
 
 			while (node->num_used_children == 0 && node != _root) {
-				Node *parent = node->p;
+				node_t *parent = node->p;
 				parent->children[node->offset] = nullptr;
 				--parent->num_used_children;
 				_delete_single_node(node);
 				node = parent;
 			}
 
-			if (node == _root && node->num_used_children == 0) {
+			if (node == _root && (!node->num_used_children)) {
 				_delete_single_node(_root);
 				_root = nullptr;
 				_height = 0;
 			}
 
+			--_size;
+
 			return std::move(removed);
 		}
 
 		PBOS_FORCEINLINE const V &at(K key) const {
-			auto result = *_lookup(key);
-			return result.first->radix_value[result.second];
+			auto result = _lookup(key);
+			kd_assert(result.has_value());
+			return result->first->radix_value.value(result->second);
 		}
 
 		PBOS_FORCEINLINE V &at(K key) {
-			auto result = *_lookup(key);
-			return result.first->radix_value[result.second];
+			auto result = _lookup(key);
+			kd_assert(result.has_value());
+			return result->first->radix_value.value(result->second);
 		}
 
-		PBOS_FORCEINLINE bool contains(K key) {
+		PBOS_FORCEINLINE bool contains(K key) const noexcept {
 			return _lookup(key).has_value();
 		}
 
 		PBOS_FORCEINLINE size_t size() {
-			return _num_nodes;
+			return _size;
 		}
 
-		[[nodiscard]] static Node *get_next_node(const Node *node) noexcept {
-			const Node *cur = node;
+		static node_t *get_next_node(const node_t *leaf) {
+			const node_t *cur = leaf;
 			while (cur->p) {
-				K off = cur->offset;
-				const Node *parent = cur->p;
-				for (K i = off + 1; i < N; ++i) {
-					if (parent->children[i]) {
+				size_t off = cur->offset;
+				const node_t *parent = cur->p;
+				for (size_t i = off + 1; i < N; ++i) {
+					if (parent->children[i])
 						return _get_min_node(parent->children[i]);
-					}
 				}
 				cur = parent;
 			}
 			return nullptr;
 		}
 
-		[[nodiscard]] static Node *get_prev_node(const Node *node) noexcept {
-			const Node *cur = node;
+		static node_t *get_prev_node(const node_t *leaf) {
+			const node_t *cur = leaf;
 			while (cur->p) {
-				K off = cur->offset;
-				const Node *parent = cur->p;
-				for (K i = off; i-- > 0;) {
-					if (parent->children[i]) {
+				size_t off = cur->offset;
+				const node_t *parent = cur->p;
+				for (size_t i = off; i-- > 0;) {
+					if (parent->children[i])
 						return _get_max_node(parent->children[i]);
-					}
 				}
 				cur = parent;
 			}
@@ -465,14 +479,14 @@ namespace kfxx {
 		}
 
 		struct iterator {
-			Node *node;
-			ThisType *tree;
+			node_t *node;
+			this_type *tree;
 			iterator_direction direction;
 			size_t slot_index;
 
 			PBOS_FORCEINLINE iterator(
-				Node *node,
-				ThisType *tree,
+				node_t *node,
+				this_type *tree,
 				iterator_direction direction,
 				size_t slot_index)
 				: node(node), tree(tree), direction(direction), slot_index(slot_index) {}
@@ -486,14 +500,16 @@ namespace kfxx {
 				it.direction = iterator_direction::Invalid;
 			}
 			PBOS_FORCEINLINE iterator &operator=(const iterator &rhs) noexcept {
-				kd_dbgcheck(direction == rhs.direction, "Incompatible iterator direction");
+				if (direction != rhs.direction)
+					km_panic("Incompatible iterator direction");
 				node = rhs.node;
 				tree = rhs.tree;
 				slot_index = rhs.slot_index;
 				return *this;
 			}
 			PBOS_FORCEINLINE iterator &operator=(iterator &&rhs) noexcept {
-				kd_dbgcheck(direction == rhs.direction, "Incompatible iterator direction");
+				if (direction != rhs.direction)
+					km_panic("Incompatible iterator direction");
 				kfxx::construct_at<iterator>(this, std::move(rhs));
 				return *this;
 			}
@@ -504,7 +520,8 @@ namespace kfxx {
 			}
 
 			PBOS_FORCEINLINE iterator &operator++() {
-				kd_dbgcheck(node, "Increasing the end iterator");
+				if (!node)
+					km_panic("Increasing the end iterator");
 
 				if (direction == iterator_direction::Forward) {
 					for (size_t i = slot_index + 1; i < N; ++i) {
@@ -514,7 +531,7 @@ namespace kfxx {
 						}
 					}
 
-					node = ThisType::get_next_node(node);
+					node = this_type::get_next_node(node);
 					if (!node) {
 						slot_index = 0;
 						return *this;
@@ -535,9 +552,9 @@ namespace kfxx {
 							return *this;
 						}
 					}
-					node = ThisType::get_prev_node(node);
+					node = this_type::get_prev_node(node);
 					if (!node) {
-						slot_index = N - 1;
+						slot_index = 0;
 						return *this;
 					}
 					for (size_t i = N; i-- > 0;) {
@@ -564,8 +581,10 @@ namespace kfxx {
 			PBOS_FORCEINLINE iterator &operator--() {
 				if (direction == iterator_direction::Forward) {
 					if (node == tree->_get_min_node(tree->_root) && slot_index == [&]() {
-							for (size_t i = 0; i < N; ++i)
-								if (node->radix_value.has_value(i)) return i;
+							for (size_t i = 0; i < N; ++i) {
+								if (node->radix_value.has_value(i))
+									return i;
+							}
 							return size_t(0);
 						}())
 						km_panic("Decreasing the begin iterator");
@@ -577,11 +596,10 @@ namespace kfxx {
 						}
 					}
 					if (!node)
-						node = (Node *)tree->_get_max_node(tree->_root);
+						node = (node_t *)tree->_get_max_node(tree->_root);
 					else
-						node = ThisType::get_prev_node(node);
-					if (!node)
-						km_panic("Decreasing invalid");
+						node = this_type::get_prev_node(node);
+					if (!node) km_panic("Decreasing invalid");
 					for (size_t i = N; i-- > 0;) {
 						if (node->radix_value.has_value(i)) {
 							slot_index = i;
@@ -591,8 +609,10 @@ namespace kfxx {
 					km_panic("Corrupted tree");
 				} else {
 					if (node == tree->_get_max_node(tree->_root) && slot_index == [&]() {
-							for (size_t i = N; i-- > 0;)
-								if (node->radix_value.has_value(i)) return i;
+							for (size_t i = N; i-- > 0;) {
+								if (node->radix_value.has_value(i))
+									return i;
+							}
 							return size_t(N - 1);
 						}())
 						km_panic("Decreasing the begin iterator");
@@ -604,11 +624,10 @@ namespace kfxx {
 						}
 					}
 					if (!node)
-						node = (Node *)tree->_get_min_node(tree->_root);
+						node = (node_t *)tree->_get_min_node(tree->_root);
 					else
-						node = ThisType::get_next_node(node);
-					if (!node)
-						km_panic("Decreasing invalid");
+						node = this_type::get_next_node(node);
+					if (!node) km_panic("Decreasing invalid");
 					for (size_t i = 0; i < N; ++i) {
 						if (node->radix_value.has_value(i)) {
 							slot_index = i;
@@ -666,27 +685,31 @@ namespace kfxx {
 		};
 
 		PBOS_FORCEINLINE iterator begin() {
-			Node *node = _get_min_node(_root);
-			if (!node) return end();
+			node_t *node = _get_min_node(_root);
+			if (!node)
+				return end();
 			size_t slot = 0;
-			for (; slot < N; ++slot)
-				if (node->radix_value.has_value(slot)) break;
+			for (; slot < N; ++slot) {
+				if (node->radix_value.has_value(slot))
+					break;
+			}
 			return iterator(node, this, iterator_direction::Forward, slot);
 		}
 		PBOS_FORCEINLINE iterator end() {
 			return iterator(nullptr, this, iterator_direction::Forward, 0);
 		}
 		PBOS_FORCEINLINE iterator begin_reversed() {
-			Node *node = _get_max_node(_root);
-			if (!node) return end_reversed();
+			node_t *node = _root ? _get_max_node(_root) : nullptr;
+			if (!node)
+				return end_reversed();
 			size_t slot = N - 1;
-			for (; slot < N; --slot);
-			slot = N - 1;
-			while (slot > 0 && !node->radix_value.has_value(slot)) --slot;
+			while (slot && !node->radix_value.has_value(slot))
+				--slot;
 			return iterator(node, this, iterator_direction::Reversed, node->radix_value.has_value(slot) ? slot : 0);
 		}
+
 		PBOS_FORCEINLINE iterator end_reversed() {
-			return iterator(nullptr, this, iterator_direction::Reversed, N - 1);
+			return iterator(nullptr, this, iterator_direction::Reversed, 0);
 		}
 
 		struct const_iterator {
@@ -736,36 +759,49 @@ namespace kfxx {
 				return --it;
 			}
 
-			PBOS_FORCEINLINE bool operator==(const const_iterator &it) const { return _iterator == it._iterator; }
-			PBOS_FORCEINLINE bool operator!=(const const_iterator &it) const { return _iterator != it._iterator; }
+			PBOS_FORCEINLINE bool operator==(const const_iterator &it) const {
+				return _iterator == it._iterator;
+			}
+			PBOS_FORCEINLINE bool operator!=(const const_iterator &it) const {
+				return _iterator != it._iterator;
+			}
 
-			PBOS_FORCEINLINE const V &operator*() { return *_iterator; }
-			PBOS_FORCEINLINE const V &operator*() const { return *_iterator; }
-			PBOS_FORCEINLINE const V *operator->() { return &*_iterator; }
-			PBOS_FORCEINLINE const V *operator->() const { return &*_iterator; }
+			PBOS_FORCEINLINE const V &operator*() {
+				return *_iterator;
+			}
+			PBOS_FORCEINLINE const V &operator*() const {
+				return *_iterator;
+			}
+			PBOS_FORCEINLINE const V *operator->() {
+				return &*_iterator;
+			}
+			PBOS_FORCEINLINE const V *operator->() const {
+				return &*_iterator;
+			}
 		};
 
 		PBOS_FORCEINLINE const_iterator begin_const() const noexcept {
-			return const_iterator(const_cast<ThisType *>(this)->begin());
+			return const_iterator(const_cast<this_type *>(this)->begin());
 		}
 		PBOS_FORCEINLINE const_iterator end_const() const noexcept {
-			return const_iterator(const_cast<ThisType *>(this)->end());
+			return const_iterator(const_cast<this_type *>(this)->end());
 		}
 		PBOS_FORCEINLINE const_iterator begin_const_reversed() const noexcept {
-			return const_iterator(const_cast<ThisType *>(this)->begin_reversed());
+			return const_iterator(const_cast<this_type *>(this)->begin_reversed());
 		}
 		PBOS_FORCEINLINE const_iterator end_const_reversed() const noexcept {
-			return const_iterator(const_cast<ThisType *>(this)->end_reversed());
+			return const_iterator(const_cast<this_type *>(this)->end_reversed());
 		}
 
-		PBOS_FORCEINLINE iterator find(K key) {
-			auto result = *_lookup(key);
-			return iterator(result.first, this, iterator_direction::Forward, result.second);
+		PBOS_FORCEINLINE iterator find(K key) noexcept {
+			auto result = _lookup(key);
+			if (!result.has_value())
+				return end();
+			return iterator(result->first, this, iterator_direction::Forward, result->second);
 		}
 
-		PBOS_FORCEINLINE iterator find(K key) const {
-			auto result = *_lookup(key);
-			return const_iterator(result.first, this, iterator_direction::Forward, result.second);
+		PBOS_FORCEINLINE const_iterator find(K key) const noexcept {
+			return const_iterator(const_cast<this_type>(this)->find(key));
 		}
 	};
 }
