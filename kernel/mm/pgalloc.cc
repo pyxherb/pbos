@@ -27,9 +27,6 @@ void *mm_pgalloc(uint8_t memtype) {
 			void *addr = i->free_list->rb_value;
 			ki_mad_t *mad = i->free_list;
 
-			if (addr == (void *)0x0000000000e44000)
-				mad = mad;
-
 			if ((!(mad->pin_count++)) && (!mad->ref_count)) {
 				i->free_list = mad->next_free;
 				if (mad->prev_free)
