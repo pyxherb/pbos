@@ -147,10 +147,6 @@ PBOS_NORETURN void kernel_main() {
 	if (KM_FAILED(result))
 		km_panic("Error closing the init FCB");
 
-	int a = 0;
-
-	int x = 1 / a;
-
 	kh_enter_sched(0);
 }
 

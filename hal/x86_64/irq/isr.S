@@ -25,6 +25,60 @@ hali_div_err_isr:
 	HALI_RESTORE_SCRATCH_REGS
 	iretq
 
+.global hali_debug_isr
+hali_debug_isr:
+	pushq %rbp
+	pushq %rbx
+	pushq %rax
+	pushq %r15
+	pushq %r14
+	pushq %r13
+	pushq %r12
+	pushq %r11
+	pushq %r10
+
+	movq %ds, %rax
+	pushq %rax
+
+	movq %es, %rax
+	pushq %rax
+
+	movq %fs, %rax
+	pushq %rax
+
+	movq %gs, %rax
+	pushq %rax
+	call hali_overflow_isr_impl
+
+.global hali_nmi_isr
+hali_nmi_isr:
+	call hali_nmi_isr_impl
+
+.global hali_breakpoint_isr
+hali_breakpoint_isr:
+	pushq %rbp
+	pushq %rbx
+	pushq %rax
+	pushq %r15
+	pushq %r14
+	pushq %r13
+	pushq %r12
+	pushq %r11
+	pushq %r10
+
+	movq %ds, %rax
+	pushq %rax
+
+	movq %es, %rax
+	pushq %rax
+
+	movq %fs, %rax
+	pushq %rax
+
+	movq %gs, %rax
+	pushq %rax
+	call hali_breakpoint_isr_impl
+
 .global hali_overflow_isr
 hali_overflow_isr:
 	HALI_SAVE_SCRATCH_REGS
