@@ -8,12 +8,32 @@
 PBOS_EXTERN_C_BEGIN
 
 PBOS_NORETURN void hali_div_err_isr();	// 0x00 Divide-by-zero Error
-void hali_div_err_isr_impl();
+void hali_div_err_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss);
 
 PBOS_NORETURN void hali_overflow_isr();	 // 0x04 Overflow
 void hali_overflow_isr_impl();
 
-PBOS_NORETURN void hali_bound_range_exceeded_isr();	// 0x05 Bound Range Exceeded
+PBOS_NORETURN void hali_bound_range_exceeded_isr();	 // 0x05 Bound Range Exceeded
 void hali_bound_range_exceeded_isr_impl();
 
 PBOS_NORETURN void hali_invalid_opcode_isr();  // 0x06 Invalid Opcode
@@ -28,7 +48,7 @@ void hali_double_fault_isr_impl();
 PBOS_NORETURN void hali_invalid_tss_isr();	// 0x0a Invalid TSS
 void hali_invalid_tss_isr_impl();
 
-PBOS_NORETURN void hali_seg_not_present_isr();  // 0x0b Segment Not Present
+PBOS_NORETURN void hali_seg_not_present_isr();	// 0x0b Segment Not Present
 void hali_seg_not_present_isr_impl();
 
 PBOS_NORETURN void hali_stack_seg_fault_isr();	// 0x0c Stack Segment Fault
@@ -318,7 +338,11 @@ void hali_usable_irq_impl(
 	const uint64_t rbx,
 	const uint64_t rbp,
 
-	const uint64_t *const rsp_top);
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss);
 
 PBOS_NORETURN void hali_timer_isr();  // IRQ0
 void hali_timer_isr_impl(
@@ -343,7 +367,11 @@ void hali_timer_isr_impl(
 	const uint64_t rbx,
 	const uint64_t rbp,
 
-	const uint64_t *const rsp_top);
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss);
 
 PBOS_NORETURN void isr_stub();
 

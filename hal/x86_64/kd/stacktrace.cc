@@ -1,5 +1,4 @@
 #include <pbos/kh/kd/stacktrace.h>
-#include <cstddef>
 
 struct hali_stack_frame_t {
 	hali_stack_frame_t *rbp;

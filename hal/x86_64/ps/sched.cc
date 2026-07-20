@@ -27,15 +27,15 @@ void hali_timer_isr_impl(
 	const uint64_t rbx,
 	const uint64_t rbp,
 
-	const uint64_t *const rsp_top) {
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss) {
 	ps_cpuid_t cur_cpuid = ps_get_cur_cpuid();
 	ps_pcb_t *cur_proc = ps_get_cur_proc();
 	ps_tcb_t *cur_thread = ps_get_cur_thread();
 	ps_tcb_t *next_thread = ps_cur_sched->next_thread(ps_cur_sched, cur_cpuid, cur_proc, cur_thread);
-
-	uint64_t rip = rsp_top[0];
-	uint64_t cs = rsp_top[1];
-	uint64_t rflags = rsp_top[2];
 
 	if (cur_thread) {
 		cur_thread->context->rax = rax;
@@ -56,14 +56,14 @@ void hali_timer_isr_impl(
 		cur_thread->context->rip = (void *)rip;
 		cur_thread->context->rflags = rflags;
 		// SS (32-bits?)->ESP->EFLAGS->CS (32-bits)->EIP
-		cur_thread->context->rsp = rsp_top[3];
+		cur_thread->context->rsp = rsp;
 		if (!mm_is_user_space((void *)rip))
 			cur_thread->context->rsp0 = cur_thread->context->rsp;
 		// kd_assert(cur_thread->context->esp0 == (uint32_t)((char*)cur_thread->kernel_stack + cur_thread->kernel_stack_size));
 		// kd_printf("U!\n");
 
 		cur_thread->context->ds = ds;
-		cur_thread->context->ss = rsp_top[4];
+		cur_thread->context->ss = ss;
 
 		cur_thread->context->cs = cs;
 		cur_thread->context->es = es;

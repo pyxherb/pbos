@@ -4,8 +4,6 @@ hali_timer_isr:
 	// User mode: SS -> RSP -> RFLAGS -> CS -> RIP
 	// xchg %bx, %bx
 
-	pushq %rsp
-
 	pushq %rbp
 	pushq %rbx
 	pushq %rax

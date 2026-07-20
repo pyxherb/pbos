@@ -1,21 +1,21 @@
 .macro HALI_SAVE_SCRATCH_REGS
-	pushq rax
-	pushq rcx
-	pushq rdx
-	pushq r8
-	pushq r9
-	pushq r10
-	pushq r11
+	pushq %rax
+	pushq %rcx
+	pushq %rdx
+	pushq %r8
+	pushq %r9
+	pushq %r10
+	pushq %r11
 .endm
 
 .macro HALI_RESTORE_SCRATCH_REGS
-	popq r11
-	popq r10
-	popq r9
-	popq r8
-	popq rdx
-	popq rcx
-	popq rax
+	popq %r11
+	popq %r10
+	popq %r9
+	popq %r8
+	popq %rdx
+	popq %rcx
+	popq %rax
 .endm
 
 .global hali_div_err_isr
@@ -63,7 +63,7 @@ hali_double_fault_isr:
 .global hali_invalid_tss_isr
 hali_invalid_tss_isr:
 	HALI_SAVE_SCRATCH_REGS
-	call hali_invalid_tss_impl
+	call hali_invalid_tss_isr_impl
 	HALI_RESTORE_SCRATCH_REGS
 	iretq
 
@@ -77,7 +77,7 @@ hali_seg_not_present_isr:
 .global hali_stack_seg_fault_isr
 hali_stack_seg_fault_isr:
 	HALI_SAVE_SCRATCH_REGS
-	call hali_stack_seg_fault_impl
+	call hali_stack_seg_fault_isr_impl
 	HALI_RESTORE_SCRATCH_REGS
 	iretq
 
@@ -178,7 +178,7 @@ hali_usable_irq_isr_\irq_id:
 
 	pushq 0x\irq_id
 
-	call hali_isr_usable_irq_impl
+	call hali_usable_irq_isr_impl
 
 	addq $8, %rsp
 

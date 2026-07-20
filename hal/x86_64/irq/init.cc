@@ -68,8 +68,8 @@ void kh_irq_init() {
 km_result_t kh_init_irq_for_cpu(ps_cpuid_t cpu) {
 	arch_gate_t *idt = static_cast<arch_gate_t *>(ki_per_cpu_io_contexts[cpu]->interrupt_table);
 
-	/*hali_set_isr(idt, hali_div_err_isr, 0x00, 0, GATE_TRAP386);
-	hali_set_isr(idt, hali_overflow_isr, 0x04, 0, GATE_TRAP386);
+	hali_set_isr(idt, hali_div_err_isr, 0x00, 0, GATE_TRAP386);
+	/*hali_set_isr(idt, hali_overflow_isr, 0x04, 0, GATE_TRAP386);
 	hali_set_isr(idt, hali_bound_range_exceeded_isr, 0x05, 0, GATE_TRAP386);
 	hali_set_isr(idt, hali_invalid_opcode_isr, 0x06, 0, GATE_INT386);
 	hali_set_isr(idt, hali_nofpu_isr, 0x07, 0, GATE_TRAP386);
