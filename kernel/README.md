@@ -8,6 +8,10 @@ Here is the universal kernel layer of the PbOS.
 
 `mm_alloc_single_page` references the page once, the `mm_mmap` also does, so we have to call `mm_unref_page` after the `mm_mmap` call.
 
+## KIMA's deadlock
+
+The KIMA occasionally deadlocks, solve it if you encountered it.
+
 ## mm_seal
 
 `mm_seal` permanently seals mapping status of a memory region, which makes read-only memory regions can be safely compressed after the region is sealed.

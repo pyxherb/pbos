@@ -101,7 +101,7 @@ typedef struct _mm_context_t {
 } mm_context_t;
 
 enum {
-	KI_REVERSAL_MAP_GRANULE = 64,
+	KI_REVERSAL_MAP_GRANULE = 128,
 };
 
 extern mm_context_t **mm_cur_contexts;
