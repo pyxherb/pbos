@@ -69,6 +69,7 @@ extern ki_madpool_t *ki_global_mad_pool_list;
 extern size_t kh_mad_pool_descs_off, kh_mad_pool_descs_num_per_page;
 
 extern size_t ki_num_available_phy_pages, ki_num_total_free_pages;
+extern ps::semaphore_t ki_page_alloc_counter_semaphore;
 
 #define KI_PMAD_FOREACH(i) \
 	for (ki_pmad_t *i = static_cast<ki_pmad_t*>(ki_pmad_tree.begin().node); i; i = static_cast<ki_pmad_t*>(ki_pmad_tree.get_next(i, nullptr)))

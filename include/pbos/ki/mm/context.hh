@@ -4,6 +4,7 @@
 #include <pbos/kfxx/set.hh>
 #include <pbos/ps/mutex.hh>
 #include "kima.hh"
+#include <pbos/ps/semaphore.hh>
 
 struct ki_mm_rmlt_t;
 
@@ -55,6 +56,10 @@ typedef struct _mm_context_t {
 	ki_mm_vmr_tree_t vmr_tree;
 
 	ps::rec_mutex_t vmr_mutex;
+
+	size_t num_reserved_user_pages;
+
+	ps::semaphore_t user_page_reserve_quota_semaphore;
 
 	_mm_context_t();
 } mm_context_t;

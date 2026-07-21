@@ -311,7 +311,7 @@ km_result_t ps_add_segment_to_binproto(km_binproto_t *proto, void *vaddr_base, s
 		for (size_t i = 0; i < PBOS_ARRAYSIZE(page_pool->descs); ++i) {
 			kfxx::construct_at<km_binseg_page_desc_t>(&page_pool->descs[i]);
 
-			void *paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+			void *paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 
 			if (!paddr)
 				return KM_RESULT_NO_MEM;

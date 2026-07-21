@@ -48,7 +48,7 @@ PBOS_NO_ASAN km_result_t ki_kasan_alloc_shadow_pages_for_vaddr(void *vaddr, size
 		if (kh_getmap(context, cur_page, nullptr))
 			return KM_RESULT_OK;
 
-		void *paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+		void *paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 
 		if (!paddr)
 			return KM_RESULT_NO_MEM;

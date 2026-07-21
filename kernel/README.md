@@ -4,9 +4,9 @@ Here is the universal kernel layer of the PbOS.
 
 ## Issues
 
-### mm_pgalloc reference count
+### mm_alloc_single_page reference count
 
-`mm_pgalloc` references the page once, the `mm_mmap` also does, so we have to call `mm_unref_page` after the `mm_mmap` call.
+`mm_alloc_single_page` references the page once, the `mm_mmap` also does, so we have to call `mm_unref_page` after the `mm_mmap` call.
 
 ## mm_seal
 

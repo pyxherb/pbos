@@ -46,7 +46,7 @@ km_result_t kh_mm_alloc_context(mm_context_t *context, mm_context_t **new_contex
 	void *pml4t_paddr = NULL,
 		 *pml4t_vaddr = NULL;
 
-	if (!(pml4t_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))) {
+	if (!(pml4t_paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))) {
 		return KM_RESULT_NO_MEM;
 	}
 	kfxx::scope_guard free_pml4t_paddr_guard([pml4t_paddr]() noexcept {

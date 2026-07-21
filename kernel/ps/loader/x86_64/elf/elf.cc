@@ -130,7 +130,7 @@ km_result_t ki_elf_load_exec(ps_pcb_t *proc, fs_fcb_t *file_fp) {
 						mm_unpin_page(paddr);
 					});
 					if (!(paddr = mm_getmap(target_context, vaddr + j, nullptr))) {
-						paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+						paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 						if (!paddr) {
 							unpin_paddr_guard.release();
 							return KM_RESULT_NO_MEM;
@@ -292,7 +292,7 @@ km_result_t ki_elf_load_kmod(ps_kmod_t *kmod, fs_fcb_t *file_fp) {
 			area_size = phdr.p_memsz;
 
 			for (size_t i = 0; i < area_size; i += PAGESIZE) {
-				void *cur_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+				void *cur_paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 				kfxx::scope_guard free_paddr_guard([cur_paddr]() noexcept {
 					mm_unpin_page(cur_paddr);
 				});

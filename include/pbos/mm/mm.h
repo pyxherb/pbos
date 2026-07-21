@@ -55,7 +55,12 @@ typedef struct _mm_context_t mm_context_t;
 /// @param memtype Type of the page to be allocated.
 /// @return Physical address of allocated page, NULL if failed.
 ///
-PBOS_NODISCARD void *mm_pgalloc(uint8_t memtype);
+PBOS_NODISCARD PBOS_API void *mm_alloc_single_page(uint8_t memtype);
+PBOS_API km_result_t mm_alloc_pages(uint8_t memtype, void **pages_out, size_t num_pages);
+
+PBOS_NODISCARD PBOS_API km_result_t mm_reserve_user_pages(mm_context_t *context, size_t num_pages);
+PBOS_NODISCARD PBOS_API void *mm_commit_single_reserved_page(mm_context_t *context);
+PBOS_NODISCARD PBOS_API km_result_t mm_commit_reserved_pages(mm_context_t *context, void **pages_out, size_t num_pages);
 
 ///
 /// @brief Unreference a single physical page.
@@ -64,7 +69,7 @@ PBOS_NODISCARD void *mm_pgalloc(uint8_t memtype);
 ///
 /// @param ptr Physical address of page to be freed.
 ///
-void mm_unref_page(void *ptr);
+PBOS_API void mm_unref_page(void *ptr);
 
 typedef uint32_t mm_iommap_flags_t;
 
@@ -83,21 +88,21 @@ PBOS_API void mm_uniommap(mm_context_t *context, void *vaddr, size_t size, mm_io
 ///
 /// @param ptr Physical address of page to be referenced.
 ///
-void mm_ref_page(void *ptr);
+PBOS_API void mm_ref_page(void *ptr);
 
 ///
 /// @brief Pin a page to prevent it from being swapped out.
 ///
 /// @param ptr Physical address of the page.
 ///
-void mm_pin_page(void *ptr);
+PBOS_API void mm_pin_page(void *ptr);
 
 ///
 /// @brief Unpin a page.
 ///
 /// @param ptr Physical address of the page.
 ///
-void mm_unpin_page(void *ptr);
+PBOS_API void mm_unpin_page(void *ptr);
 
 ///
 /// @brief Allocate a memory block from the default pool.
@@ -187,7 +192,7 @@ PBOS_NO_ASAN void mm_vmfree(mm_context_t *context, void *addr, size_t size);
 enum {
 	MM_MMAP_ATOMIC = 0x00000001,
 	MM_MMAP_NO_REMAP = 0x00000002,
-	/// @brief Do not increase the reference count, usually used for mapping page allocated by @c mm_pgalloc
+	/// @brief Do not increase the reference count, usually used for mapping page allocated by @c mm_alloc_single_page
 	MM_MMAP_NO_INC_RC = 0x00000004,
 	MM_MMAP_IGNORE_VMR = 0x20000000,
 	MM_MMAP_NO_PGTAB_ALLOC = 0x40000000,

@@ -254,7 +254,7 @@ PBOS_NO_ASAN km_result_t kh_mmap(mm_context_t *ctxt,
 			if (flags & MM_MMAP_NO_PGTAB_ALLOC)
 				return KM_RESULT_PGTAB_NOT_ALLOCATED;
 			// Allocate page table.
-			void *t = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+			void *t = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 			if (!t)
 				return KM_RESULT_NO_MEM;
 			*pml4te =
@@ -297,7 +297,7 @@ PBOS_NO_ASAN km_result_t kh_mmap(mm_context_t *ctxt,
 				if (flags & MM_MMAP_NO_PGTAB_ALLOC)
 					return KM_RESULT_PGTAB_NOT_ALLOCATED;
 				// Allocate page table.
-				void *t = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+				void *t = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 				if (!t)
 					return KM_RESULT_NO_MEM;
 				pdpt[pdptx] =
@@ -344,7 +344,7 @@ PBOS_NO_ASAN km_result_t kh_mmap(mm_context_t *ctxt,
 					if (flags & MM_MMAP_NO_PGTAB_ALLOC)
 						return KM_RESULT_PGTAB_NOT_ALLOCATED;
 					// Allocate page table.
-					void *t = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+					void *t = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 					if (!t)
 						return KM_RESULT_NO_MEM;
 					pdt[pdx] =

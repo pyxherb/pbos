@@ -17,6 +17,7 @@ ki_pmad_t::ki_pmad_t() {
 
 // Note: we initialized the page allocation counter with the maximum value in the early stage to avoid the uninitialized condition.
 size_t ki_num_available_phy_pages = SIZE_MAX, ki_num_total_free_pages = SIZE_MAX;
+ps::semaphore_t ki_page_alloc_counter_semaphore;
 
 void ki_init_page_alloc_counter() {
 	ki_num_available_phy_pages = 0;
@@ -33,9 +34,15 @@ void ki_init_page_alloc_counter() {
 	}
 }
 
-void *mm_pgalloc(uint8_t memtype) {
-	if (ki_num_total_free_pages < 1)
-		return nullptr;
+PBOS_API void *mm_alloc_single_page(uint8_t memtype) {
+	{
+		ps::write_semaphore_guard g(ki_page_alloc_counter_semaphore);
+
+		if (ki_num_total_free_pages < 1)
+			return nullptr;
+
+		--ki_num_total_free_pages;
+	}
 
 	KI_PMAD_FOREACH(i) {
 		if (i->type != memtype)
@@ -60,7 +67,7 @@ void *mm_pgalloc(uint8_t memtype) {
 			mad->prev_free = nullptr;
 			mad->next_free = nullptr;
 
-			kf_atomic_dec_size(&ki_num_total_free_pages);
+			++i->used_count;
 			// }
 
 			return addr;
@@ -70,7 +77,155 @@ void *mm_pgalloc(uint8_t memtype) {
 	return NULL;
 }
 
-void mm_ref_page(void *ptr) {
+PBOS_API km_result_t mm_alloc_pages(uint8_t memtype, void **pages_out, size_t num_pages) {
+	{
+		ps::write_semaphore_guard g(ki_page_alloc_counter_semaphore);
+
+		if (ki_num_total_free_pages < num_pages)
+			return KM_RESULT_NO_MEM;
+		ki_num_total_free_pages -= num_pages;
+	}
+
+	size_t count = 0;
+	KI_PMAD_FOREACH(i) {
+		if (i->type != memtype)
+			continue;
+
+		hal_lock_spinlock(&i->spinlock);
+		kfxx::deferred unlocker([i]() noexcept {
+			hal_unlock_spinlock(&i->spinlock);
+		});
+
+		if (i->free_list) {
+			void *addr = i->free_list->rb_value;
+			ki_mad_t *mad = i->free_list;
+
+			mad->pin_count++;
+			// if ((!(mad->pin_count++)) && (!mad->ref_count)) {
+			i->free_list = mad->next_free;
+			if (mad->prev_free)
+				mad->prev_free->next_free = mad->next_free;
+			if (mad->next_free)
+				mad->next_free->prev_free = mad->prev_free;
+			mad->prev_free = nullptr;
+			mad->next_free = nullptr;
+
+			++i->used_count;
+			// }
+
+			pages_out[count] = addr;
+			++count;
+
+			if (count >= num_pages)
+				break;
+		}
+	}
+
+	if (num_pages < count)
+		km_panic("%s didn't get expected number of allocatable memory, please report this bug to developers", __func__);
+
+	return KM_RESULT_OK;
+}
+
+PBOS_API km_result_t mm_reserve_pages(mm_context_t *context, size_t num_pages) {
+	ps::write_semaphore_guard g(ki_page_alloc_counter_semaphore);
+
+	if (ki_num_total_free_pages < num_pages)
+		return KM_RESULT_NO_MEM;
+
+	ki_num_total_free_pages -= num_pages;
+
+	return KM_RESULT_OK;
+}
+
+PBOS_API void *mm_commit_single_reserved_page(mm_context_t *context) {
+	{
+		ps::write_semaphore_guard g(context->user_page_reserve_quota_semaphore);
+		if (!context->num_reserved_user_pages)
+			return nullptr;
+		--context->num_reserved_user_pages;
+	}
+
+	KI_PMAD_FOREACH(i) {
+		if (i->type != MM_PHYSICAL_MEMORY_TYPE_AVAILABLE)
+			continue;
+
+		hal_lock_spinlock(&i->spinlock);
+		kfxx::deferred unlocker([i]() noexcept {
+			hal_unlock_spinlock(&i->spinlock);
+		});
+
+		if (i->free_list) {
+			void *addr = i->free_list->rb_value;
+			ki_mad_t *mad = i->free_list;
+
+			mad->pin_count++;
+			// if ((!(mad->pin_count++)) && (!mad->ref_count)) {
+			i->free_list = mad->next_free;
+			if (mad->prev_free)
+				mad->prev_free->next_free = mad->next_free;
+			if (mad->next_free)
+				mad->next_free->prev_free = mad->prev_free;
+			mad->prev_free = nullptr;
+			mad->next_free = nullptr;
+
+			++i->used_count;
+			// }
+
+			return addr;
+		}
+	}
+
+	--context->num_reserved_user_pages;
+	return nullptr;
+}
+
+PBOS_NODISCARD PBOS_API km_result_t mm_commit_reserved_pages(mm_context_t *context, void **pages_out, size_t num_pages) {
+	{
+		ps::write_semaphore_guard g(context->user_page_reserve_quota_semaphore);
+		if (context->num_reserved_user_pages < num_pages)
+			return KM_RESULT_NO_MEM;
+		--context->num_reserved_user_pages;
+	}
+
+	size_t count = 0;
+	KI_PMAD_FOREACH(i) {
+		if (i->type != MM_PHYSICAL_MEMORY_TYPE_AVAILABLE)
+			continue;
+
+		hal_lock_spinlock(&i->spinlock);
+		kfxx::deferred unlocker([i]() noexcept {
+			hal_unlock_spinlock(&i->spinlock);
+		});
+
+		if (i->free_list) {
+			void *addr = i->free_list->rb_value;
+			ki_mad_t *mad = i->free_list;
+
+			mad->pin_count++;
+			i->free_list = mad->next_free;
+			if (mad->prev_free)
+				mad->prev_free->next_free = mad->next_free;
+			if (mad->next_free)
+				mad->next_free->prev_free = mad->prev_free;
+			mad->prev_free = nullptr;
+			mad->next_free = nullptr;
+
+			pages_out[count] = addr;
+			++count;
+
+			if (count >= num_pages)
+				break;
+		}
+	}
+
+	if (count < num_pages)
+		km_panic("%s didn't get committed number of pages, please report this bug to developers", __func__);
+
+	return KM_RESULT_OK;
+}
+
+PBOS_API void mm_ref_page(void *ptr) {
 	ki_pmad_t *area = ki_get_pmad(ptr);
 	ki_mad_t *mad = kh_get_mad(ptr);
 
@@ -94,11 +249,13 @@ void mm_ref_page(void *ptr) {
 		mad->prev_free = nullptr;
 		mad->next_free = nullptr;
 
-		kf_atomic_dec_size(&ki_num_total_free_pages);
+		ps::write_semaphore_guard g(ki_page_alloc_counter_semaphore);
+		--ki_num_total_free_pages;
+		++area->used_count;
 	}
 }
 
-void mm_pin_page(void *ptr) {
+PBOS_API void mm_pin_page(void *ptr) {
 	ki_pmad_t *area = ki_get_pmad(ptr);
 	ki_mad_t *mad = kh_get_mad(ptr);
 
@@ -122,16 +279,15 @@ void mm_pin_page(void *ptr) {
 		mad->prev_free = nullptr;
 		mad->next_free = nullptr;
 
-		kf_atomic_dec_size(&ki_num_total_free_pages);
+		ps::write_semaphore_guard g(ki_page_alloc_counter_semaphore);
+		--ki_num_total_free_pages;
+		++area->used_count;
 	}
 }
 
-void mm_unref_page(void *ptr) {
+PBOS_API void mm_unref_page(void *ptr) {
 	ki_pmad_t *area = ki_get_pmad(ptr);
 	ki_mad_t *mad = kh_get_mad(ptr);
-
-	if (ptr == (void *)0x0000000000e44000)
-		mad = mad;
 
 	hal_lock_spinlock(&mad->spinlock);
 	kfxx::deferred unlocker([mad]() noexcept {
@@ -151,16 +307,15 @@ void mm_unref_page(void *ptr) {
 		mad->next_free = area->free_list;
 		kd_assert(!mad->prev_free);
 
-		kf_atomic_inc_size(&ki_num_total_free_pages);
+		ps::write_semaphore_guard g(ki_page_alloc_counter_semaphore);
+		++ki_num_total_free_pages;
+		--area->used_count;
 	}
 }
 
-void mm_unpin_page(void *ptr) {
+PBOS_API void mm_unpin_page(void *ptr) {
 	ki_pmad_t *area = ki_get_pmad(ptr);
 	ki_mad_t *mad = kh_get_mad(ptr);
-
-	if (ptr == (void *)0x0000000000e44000)
-		mad = mad;
 
 	hal_lock_spinlock(&mad->spinlock);
 	kfxx::deferred unlocker([mad]() noexcept {
@@ -179,7 +334,9 @@ void mm_unpin_page(void *ptr) {
 		mad->next_free = area->free_list;
 		kd_assert(!mad->prev_free);
 
-		kf_atomic_inc_size(&ki_num_total_free_pages);
+		ps::write_semaphore_guard g(ki_page_alloc_counter_semaphore);
+		++ki_num_total_free_pages;
+		--area->used_count;
 	}
 }
 

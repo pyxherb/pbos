@@ -11,7 +11,7 @@ void *kima_vpgalloc(kima_pool_t *pool, size_t size) {
 		mm_vmfree(mm_get_cur_context(), vaddr, size);
 	});
 	for (size_t i = 0; i < size; i += pool->page_size) {
-		void *paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+		void *paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 		if (!paddr)
 			return nullptr;
 		kfxx::deferred unpin_guard([paddr]() noexcept {

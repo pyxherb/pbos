@@ -31,10 +31,11 @@ struct kima_small_block_desc_t {
 // +-----------------------------------+--------------------+-----------+
 // |            block data             |     block desc     | page desc |
 // +-----------------------------------+--------------------+-----------+
+// NOTE: We reduced the fields' size to reduce the memory usage.
 struct kima_small_block_page_info_t {
-	size_t max_block_capacity;
-	size_t block_descs_off;
-	size_t page_descs_off;
+	size_t max_block_capacity : sizeof(size_t) * 8 / 2;
+	size_t block_descs_off : sizeof(size_t) * 8 / 2;
+	size_t page_descs_off : sizeof(size_t) * 8 / 2;
 };
 
 typedef struct _kima_pool_t {
@@ -56,11 +57,11 @@ typedef struct _kima_pool_t {
 
 	size_t page_size = 0;
 
-	bool _initialized = false;
-
 	size_t ublk_slots_off, ublk_slots_size;
 
 	size_t vpgdesc_slots_off, vpgdesc_slots_size;
+
+	bool _initialized = false;
 
 	_kima_pool_t();
 	_kima_pool_t(_kima_pool_t &&rhs);

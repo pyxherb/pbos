@@ -256,7 +256,7 @@ PBOS_NO_ASAN static void hali_mm_init_areas() {
 				}
 
 				if (cur_madpool_slot_index >= kh_mad_pool_descs_num_per_page) {
-					void *new_poolpg_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+					void *new_poolpg_paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 					if (!new_poolpg_paddr)
 						km_panic("No enough physical memory for new MAD pool page");
 					void *new_poolpg_vaddr = mm_kvmalloc_early(
@@ -264,11 +264,11 @@ PBOS_NO_ASAN static void hali_mm_init_areas() {
 						PAGESIZE,
 						MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE);
 
-					if ((!new_poolpg_pdpt_paddr) && (!(new_poolpg_pdpt_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
+					if ((!new_poolpg_pdpt_paddr) && (!(new_poolpg_pdpt_paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 						km_panic("Error allocating PDPT for new MAD pool page");
-					if ((!new_poolpg_pdt_paddr) && (!(new_poolpg_pdt_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
+					if ((!new_poolpg_pdt_paddr) && (!(new_poolpg_pdt_paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 						km_panic("Error allocating PDT for new MAD pool page");
-					if ((!new_poolpg_ptt_paddr) && (!(new_poolpg_ptt_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
+					if ((!new_poolpg_ptt_paddr) && (!(new_poolpg_ptt_paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 						km_panic("Error allocating PTT for new MAD pool page");
 
 					uint8_t mmap_result = hali_mm_mmap_early(
@@ -329,7 +329,7 @@ PBOS_NO_ASAN static void hali_mm_init_areas() {
 
 			for (char *j = (char *)i->rb_value; j < (char *)i->rb_value + i->len; j += PAGESIZE) {
 				if (cur_madpool_slot_index >= kh_mad_pool_descs_num_per_page) {
-					void *new_poolpg_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+					void *new_poolpg_paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 					if (!new_poolpg_paddr)
 						km_panic("No enough physical memory for new MAD pool page");
 					void *new_poolpg_vaddr = mm_kvmalloc_early(
@@ -340,11 +340,11 @@ PBOS_NO_ASAN static void hali_mm_init_areas() {
 					if (!new_poolpg_vaddr)
 						km_panic("Error allocating virtual memory for new MAD pool page");
 
-					if ((!new_poolpg_pdpt_paddr) && (!(new_poolpg_pdpt_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
+					if ((!new_poolpg_pdpt_paddr) && (!(new_poolpg_pdpt_paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 						km_panic("Error allocating PDPT for new MAD pool page");
-					if ((!new_poolpg_pdt_paddr) && (!(new_poolpg_pdt_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
+					if ((!new_poolpg_pdt_paddr) && (!(new_poolpg_pdt_paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 						km_panic("Error allocating PDT for new MAD pool page");
-					if ((!new_poolpg_ptt_paddr) && (!(new_poolpg_ptt_paddr = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
+					if ((!new_poolpg_ptt_paddr) && (!(new_poolpg_ptt_paddr = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 						km_panic("Error allocating PTT for new MAD pool page");
 
 					uint8_t mmap_result = hali_mm_mmap_early(
@@ -420,11 +420,11 @@ PBOS_NO_ASAN static void hali_mm_init_areas() {
 		char *base = (char *)i->rb_value;
 
 		for (size_t j = 0; j < size; j += PAGESIZE) {
-			if ((!new_poolpg_pdpt_page) && (!(new_poolpg_pdpt_page = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
+			if ((!new_poolpg_pdpt_page) && (!(new_poolpg_pdpt_page = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 				km_panic("Error allocating PDPT for direct physical memory mapping");
-			if ((!new_poolpg_pdt_page) && (!(new_poolpg_pdt_page = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
+			if ((!new_poolpg_pdt_page) && (!(new_poolpg_pdt_page = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 				km_panic("Error allocating PDT for direct physical memory mapping");
-			if ((!new_poolpg_ptt_page) && (!(new_poolpg_ptt_page = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
+			if ((!new_poolpg_ptt_page) && (!(new_poolpg_ptt_page = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE))))
 				km_panic("Error allocating PTT for direct physical memory mapping");
 
 			mmap_result = hali_mm_mmap_early(

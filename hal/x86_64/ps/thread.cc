@@ -67,7 +67,7 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 		});
 
 		for (; i < size; i += page_size) {
-			void *pg = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+			void *pg = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 
 			if (!pg) {
 				klog_printf("Error allocating physical page: %p", ptr + i);
@@ -124,7 +124,7 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 		});
 
 		for (; i < size; i += page_size) {
-			void *pg = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
+			void *pg = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
 
 			if (!pg) {
 				return KM_RESULT_NO_MEM;
