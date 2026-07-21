@@ -152,8 +152,8 @@ enum {
 
 typedef uint32_t mm_vmalloc_flags_t;
 
-/// @brief Allocate a virtual memory space, allocated spaces will be reserved
-/// until it was unmapped.
+/// @brief Allocate a virtual memory space, allocated spaces will be reserved until it was unmapped.
+/// @note This function does not setup user space VMRs.
 ///
 /// @param context Target memory context.
 /// @param minaddr Minimum address for allocation.
@@ -217,15 +217,13 @@ PBOS_NODISCARD PBOS_API km_result_t mm_mmap(
 	mmap_flags_t flags);
 
 ///
-/// @brief Map a series of physical pages to
+/// @brief Merge two continuous mapped areas.
 ///
-/// @param context
-/// @param vaddr
-/// @param paddrs
-/// @param size
-/// @param access
-/// @param flags
-/// @return PBOS_NODISCARD
+/// @param context Context to be operated.
+/// @param vaddr_a Beginning pointer to the first mapped area.
+/// @param vaddr_b End pointer to the first mapped area.
+/// @return KM_RESULT_OK The operation was performed successfully.
+/// @return KM_RESULT_INVALID_ARGS One of the area is invalid or the areas are not continuous.
 ///
 PBOS_NODISCARD PBOS_API km_result_t mm_merge_mapped_area(
 	mm_context_t *context,

@@ -5,7 +5,6 @@
 #include <pbos/kh/io/irq.hh>
 #include <pbos/ki/kasan/impl.hh>
 
-
 void ps_user_thread_init(ps_tcb_t *tcb) {
 	tcb->context->rflags |= (1 << 9);  // IF
 	tcb->context->cs = SELECTOR_UCODE;
@@ -47,19 +46,23 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 			  pcb->mm_context,
 			  (void *)USER_VBASE,
 			  (void *)USER_VTOP,
-			  size,
+			  size + page_size,
 			  MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER,
 			  0))) {
 		return KM_RESULT_NO_MEM;
 	}
 
+	// Setup the guard page.
+	KM_RETURN_IF_FAILED(mm_mmap(pcb->mm_context, ptr, ki_proc_stack_guard_page, page_size, MM_PAGE_MAPPED, 0));
+
 	{
 		size_t i = 0;
 
 		kfxx::scope_guard release_pages_guard([pcb, size, &i, ptr, page_size]() noexcept {
+			km_unwrap_result(mm_munmap(pcb->mm_context, ptr, page_size, 0));
 			if (i) {
-				klog_printf("Freeing stack page: %p-%p", ptr, ptr + (i - page_size));
-				mm_vmfree(pcb->mm_context, ptr, (i - page_size));
+				klog_printf("Freeing stack area: %p-%p", ptr, ptr + (i - page_size));
+				mm_munmap(pcb->mm_context, ptr, (i - page_size), 0);
 			}
 		});
 
@@ -77,7 +80,7 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 			});
 
 			// User mmap does not increase the kernel reference count.
-			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i, pg, page_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER, 0))) {
+			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i + page_size, pg, page_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER, 0))) {
 				return result;
 			}
 
@@ -88,7 +91,7 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 		release_pages_guard.release();
 	}
 
-	ki_thread_set_stack(tcb, ptr, size);
+	ki_thread_set_stack(tcb, ptr + page_size, size);
 
 	return KM_RESULT_OK;
 }
@@ -107,6 +110,8 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 			  VMALLOC_ATOMIC))) {
 		return KM_RESULT_NO_MEM;
 	}
+
+	// TODO: Setup the guard page.
 
 	{
 		size_t i = 0;
@@ -135,7 +140,7 @@ km_result_t ps_thread_alloc_kernel_stack(ps_tcb_t *tcb, size_t size) {
 
 	ki_thread_set_kernel_stack(tcb, ptr, size);
 
-	// TODO: Repoison the addresses in the free function.
+	// TODO: Repoison the addresses in the free function, the free function is currently not implemented.
 #if KI_ENABLE_KASAN
 	ki_kasan_unpoison_addr(ptr, size);
 #endif

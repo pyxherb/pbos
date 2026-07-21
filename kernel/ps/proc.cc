@@ -69,7 +69,7 @@ void ki_destroy_proc(ps_pcb_t *pcb) {
 		mm_free_context(pcb->mm_context);
 
 	pcb->thread_set.clear([](decltype(pcb->thread_set)::node_t *node) noexcept {
-		ki_destroy_thread(static_cast<ps_tcb_t *>(node));
+		ki_destroy_tcb(static_cast<ps_tcb_t *>(node));
 	});
 
 	kfxx::destroy_and_release<ps_pcb_t>(kfxx::kernel_allocator(), pcb);

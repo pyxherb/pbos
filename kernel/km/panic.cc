@@ -16,7 +16,7 @@ bool km_is_panicked() {
 }
 
 PBOS_NO_ASAN PBOS_NORETURN PBOS_API void km_panic(const char *fmt, ...) {
-	io_disable_irq();
+	io_disable_local_irq();
 #if KI_ENABLE_KASAN
 	kasan_disable();
 #endif

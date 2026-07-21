@@ -140,6 +140,7 @@ hali_general_protect_isr:
 	HALI_SAVE_SCRATCH_REGS
 	call hali_general_protect_isr_impl
 	HALI_RESTORE_SCRATCH_REGS
+	addq $8, %rsp
 	iretq
 
 .global hali_pgfault_isr

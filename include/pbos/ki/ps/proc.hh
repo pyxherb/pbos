@@ -59,6 +59,7 @@ typedef struct _ps_pcb_t : kfxx::rbtree_t<ps_proc_id_t>::node_t {
 
 extern kfxx::rbtree_t<ps_proc_id_t> ps_global_proc_set;
 extern ps_sched_t ps_simploop_sched;
+extern void *ki_proc_stack_guard_page;
 
 void hal_prepare_ps();
 void ki_ps_init();
@@ -66,7 +67,7 @@ void ki_ps_init();
 PBOS_NORETURN void kh_enter_sched(ps_cpuid_t cpuid);
 
 void ki_destroy_proc(ps_pcb_t *pcb);
-void ki_destroy_thread(ps_tcb_t *tcb);
+void ki_destroy_tcb(ps_tcb_t *tcb);
 
 ps_proc_id_t ki_alloc_proc_id();
 

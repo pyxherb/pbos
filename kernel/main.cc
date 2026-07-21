@@ -58,6 +58,8 @@ PBOS_NORETURN void kernel_main() {
 
 	kh_mm_init();
 
+	ki_init_page_alloc_counter();
+
 	// kh_irq_init();
 
 	ki_mm_init_global_allocator();
@@ -78,6 +80,8 @@ PBOS_NORETURN void kernel_main() {
 	kh_irq_init();
 
 	mp_main_cpu_init();
+
+	kh_init_irq_for_cpu(0);
 
 	ki_fs_init();
 	ki_ps_init();

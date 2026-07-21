@@ -188,6 +188,8 @@ PBOS_NO_ASAN static void hali_mm_init_areas() {
 			init_madpool_pmad->query_tree.insert_unwrap(&descs[cur_madpool_slot_index]);
 			++cur_madpool_slot_index;
 
+			++init_madpool_pmad->used_count;
+
 			if (initial_map_result & 0b100) {
 				kfxx::construct_at<ki_mad_t>(&descs[cur_madpool_slot_index]);
 				descs[cur_madpool_slot_index].next_free = nullptr;
@@ -197,6 +199,8 @@ PBOS_NO_ASAN static void hali_mm_init_areas() {
 				++ki_global_mad_pool_list->header.used_num;
 				init_pgtab_pmad->query_tree.insert_unwrap(&descs[cur_madpool_slot_index]);
 				++cur_madpool_slot_index;
+
+				++init_pgtab_pmad->used_count;
 			}
 
 			if (initial_map_result & 0b010) {
@@ -208,6 +212,8 @@ PBOS_NO_ASAN static void hali_mm_init_areas() {
 				++ki_global_mad_pool_list->header.used_num;
 				init_pgtab_pmad->query_tree.insert_unwrap(&descs[cur_madpool_slot_index]);
 				++cur_madpool_slot_index;
+
+				++init_pgtab_pmad->used_count;
 			}
 
 			if (initial_map_result & 0b001) {
@@ -219,6 +225,8 @@ PBOS_NO_ASAN static void hali_mm_init_areas() {
 				++ki_global_mad_pool_list->header.used_num;
 				init_pgtab_pmad->query_tree.insert_unwrap(&descs[cur_madpool_slot_index]);
 				++cur_madpool_slot_index;
+
+				++init_pgtab_pmad->used_count;
 			}
 		}
 

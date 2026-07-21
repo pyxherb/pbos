@@ -5,7 +5,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
-void ki_destroy_thread(ps_tcb_t *tcb) {
+void ki_destroy_tcb(ps_tcb_t *tcb) {
 	const size_t page_size = mm_get_page_size();
 
 	if (tcb->parent) {
@@ -18,6 +18,8 @@ void ki_destroy_thread(ps_tcb_t *tcb) {
 	if (tcb->context)
 		ps_destroy_context(tcb->context);
 
+	// TODO: Release the kernel stack.
+
 	kfxx::destroy_and_release<ps_tcb_t>(kfxx::kernel_allocator(), tcb);
 	mm_kfree(tcb);
 }
@@ -27,7 +29,7 @@ ps_tcb_t *ps_alloc_tcb(ps_pcb_t *pcb) {
 	if (!t)
 		return nullptr;
 	kfxx::scope_guard release_tcb_guard([t]() noexcept {
-		ki_destroy_thread(t);
+		ki_destroy_tcb(t);
 	});
 	if (!(t->context = ps_alloc_context()))
 		return nullptr;

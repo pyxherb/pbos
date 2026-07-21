@@ -15,9 +15,9 @@ typedef uint8_t io_irq_result_t;
 
 typedef io_irq_result_t (*io_isr_t)(io_interrupt_t *interrupt, io_irq_id_t irq_id, const void *isr_frame);
 
-PBOS_API bool io_is_irq_disabled();
-PBOS_API void io_disable_irq();
-PBOS_API void io_enable_irq();
+PBOS_API bool io_is_local_irq_disabled();
+PBOS_API void io_disable_local_irq();
+PBOS_API void io_enable_local_irq();
 
 PBOS_API size_t io_get_irq_max();
 

@@ -10,8 +10,8 @@ namespace io {
 
 	public:
 		PBOS_FORCEINLINE local_irq_lock() noexcept {
-			if (!(io_is_irq_disabled())) {
-				io_disable_irq();
+			if (!(io_is_local_irq_disabled())) {
+				io_disable_local_irq();
 				_int_disabled = true;
 			} else
 				_int_disabled = false;
@@ -19,7 +19,7 @@ namespace io {
 
 		PBOS_FORCEINLINE ~local_irq_lock() {
 			if (_int_disabled)
-				io_enable_irq();
+				io_enable_local_irq();
 		}
 	};
 }

@@ -5,6 +5,7 @@
 
 PBOS_EXTERN_C_BEGIN
 
+void ki_init_page_alloc_counter();
 void ki_mm_init_global_allocator();
 
 PBOS_NO_ASAN void kh_mm_init();

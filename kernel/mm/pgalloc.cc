@@ -1,3 +1,5 @@
+#include <pbos/kf/atomic.h>
+#include <pbos/io/irq.hh>
 #include <pbos/kfxx/scope_guard.hh>
 #include <pbos/ki/mm/pgalloc.hh>
 
@@ -13,7 +15,28 @@ size_t kh_mad_pool_descs_off, kh_mad_pool_descs_num_per_page;
 ki_pmad_t::ki_pmad_t() {
 }
 
+// Note: we initialized the page allocation counter with the maximum value in the early stage to avoid the uninitialized condition.
+size_t ki_num_available_phy_pages = SIZE_MAX, ki_num_total_free_pages = SIZE_MAX;
+
+void ki_init_page_alloc_counter() {
+	ki_num_available_phy_pages = 0;
+	ki_num_total_free_pages = 0;
+
+	size_t page_size = mm_get_page_size();
+
+	KI_PMAD_FOREACH(i) {
+		if (i->type != MM_PHYSICAL_MEMORY_TYPE_AVAILABLE)
+			continue;
+
+		ki_num_available_phy_pages += i->len;
+		ki_num_total_free_pages += (i->len / page_size) - i->used_count;
+	}
+}
+
 void *mm_pgalloc(uint8_t memtype) {
+	if (ki_num_total_free_pages < 1)
+		return nullptr;
+
 	KI_PMAD_FOREACH(i) {
 		if (i->type != memtype)
 			continue;
@@ -27,15 +50,18 @@ void *mm_pgalloc(uint8_t memtype) {
 			void *addr = i->free_list->rb_value;
 			ki_mad_t *mad = i->free_list;
 
-			if ((!(mad->pin_count++)) && (!mad->ref_count)) {
-				i->free_list = mad->next_free;
-				if (mad->prev_free)
-					mad->prev_free->next_free = mad->next_free;
-				if (mad->next_free)
-					mad->next_free->prev_free = mad->prev_free;
-				mad->prev_free = nullptr;
-				mad->next_free = nullptr;
-			}
+			mad->pin_count++;
+			// if ((!(mad->pin_count++)) && (!mad->ref_count)) {
+			i->free_list = mad->next_free;
+			if (mad->prev_free)
+				mad->prev_free->next_free = mad->next_free;
+			if (mad->next_free)
+				mad->next_free->prev_free = mad->prev_free;
+			mad->prev_free = nullptr;
+			mad->next_free = nullptr;
+
+			kf_atomic_dec_size(&ki_num_total_free_pages);
+			// }
 
 			return addr;
 		}
@@ -67,6 +93,8 @@ void mm_ref_page(void *ptr) {
 			mad->next_free->prev_free = mad->prev_free;
 		mad->prev_free = nullptr;
 		mad->next_free = nullptr;
+
+		kf_atomic_dec_size(&ki_num_total_free_pages);
 	}
 }
 
@@ -93,6 +121,8 @@ void mm_pin_page(void *ptr) {
 			mad->next_free->prev_free = mad->prev_free;
 		mad->prev_free = nullptr;
 		mad->next_free = nullptr;
+
+		kf_atomic_dec_size(&ki_num_total_free_pages);
 	}
 }
 
@@ -120,6 +150,8 @@ void mm_unref_page(void *ptr) {
 			area->free_list->prev_free = mad;
 		mad->next_free = area->free_list;
 		kd_assert(!mad->prev_free);
+
+		kf_atomic_inc_size(&ki_num_total_free_pages);
 	}
 }
 
@@ -146,6 +178,8 @@ void mm_unpin_page(void *ptr) {
 			area->free_list->prev_free = mad;
 		mad->next_free = area->free_list;
 		kd_assert(!mad->prev_free);
+
+		kf_atomic_inc_size(&ki_num_total_free_pages);
 	}
 }
 

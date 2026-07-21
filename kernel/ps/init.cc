@@ -3,8 +3,13 @@
 
 PBOS_EXTERN_C_BEGIN
 
+void *ki_proc_stack_guard_page = nullptr;
+
 void ki_ps_init() {
 	hal_prepare_ps();
+
+	if(!(ki_proc_stack_guard_page = mm_pgalloc(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE)))
+		km_panic("Unable to allocate the stack guard page");
 
 	ki_init_binldrs();
 

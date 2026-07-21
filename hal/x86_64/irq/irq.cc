@@ -52,6 +52,7 @@ void hali_div_err_isr_impl(
 	const uint64_t saved_rdx,
 	const uint64_t saved_rcx,
 	const uint64_t saved_rax,
+	const uint64_t saved_rbp,
 
 	const uint64_t rip,
 	const uint64_t cs,
@@ -139,6 +140,7 @@ void hali_overflow_isr_impl(
 	const uint64_t saved_rdx,
 	const uint64_t saved_rcx,
 	const uint64_t saved_rax,
+	const uint64_t saved_rbp,
 
 	const uint64_t rip,
 	const uint64_t cs,
@@ -165,6 +167,7 @@ void hali_bound_range_exceeded_isr_impl(
 	const uint64_t saved_rdx,
 	const uint64_t saved_rcx,
 	const uint64_t saved_rax,
+	const uint64_t saved_rbp,
 
 	const uint64_t rip,
 	const uint64_t cs,
@@ -191,6 +194,7 @@ void hali_invalid_opcode_isr_impl(
 	const uint64_t saved_rdx,
 	const uint64_t saved_rcx,
 	const uint64_t saved_rax,
+	const uint64_t saved_rbp,
 
 	const uint64_t rip,
 	const uint64_t cs,
@@ -216,6 +220,7 @@ void hali_nofpu_isr_impl(
 	const uint64_t saved_rdx,
 	const uint64_t saved_rcx,
 	const uint64_t saved_rax,
+	const uint64_t saved_rbp,
 
 	const uint64_t rip,
 	const uint64_t cs,
@@ -242,6 +247,7 @@ void hali_double_fault_isr_impl(
 	const uint64_t saved_rdx,
 	const uint64_t saved_rcx,
 	const uint64_t saved_rax,
+	const uint64_t saved_rbp,
 
 	const uint64_t error_code,
 
@@ -268,6 +274,7 @@ void hali_fpu_segment_overrun_impl(
 	const uint64_t saved_rdx,
 	const uint64_t saved_rcx,
 	const uint64_t saved_rax,
+	const uint64_t saved_rbp,
 
 	const uint64_t error_code,
 
@@ -296,6 +303,7 @@ void hali_invalid_tss_isr_impl(
 	const uint64_t saved_rdx,
 	const uint64_t saved_rcx,
 	const uint64_t saved_rax,
+	const uint64_t saved_rbp,
 
 	const uint64_t error_code,
 
@@ -323,6 +331,7 @@ void hali_seg_not_present_isr_impl(
 	const uint64_t saved_rdx,
 	const uint64_t saved_rcx,
 	const uint64_t saved_rax,
+	const uint64_t saved_rbp,
 
 	const uint64_t error_code,
 
@@ -350,6 +359,7 @@ void hali_stack_seg_fault_isr_impl(
 	const uint64_t saved_rdx,
 	const uint64_t saved_rcx,
 	const uint64_t saved_rax,
+	const uint64_t saved_rbp,
 
 	const uint64_t error_code,
 
@@ -383,7 +393,7 @@ void hali_general_protect_isr_impl(
 	const uint64_t rflags,
 	const uint64_t rsp,
 	const uint64_t ss) {
-	if (!mm_is_user_space((void *)rip))
+	if (!mm_is_user_space((void*)rip))
 		km_panic("General protection error has triggered in kernel at 0x%p", (void *)rip);
 }
 

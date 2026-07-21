@@ -790,7 +790,7 @@ PBOS_API void mm_uniommap(mm_context_t *context, void *vaddr, size_t size, mm_io
 	km_result_t result;
 	mmap_flags_t mmap_flags = MM_MMAP_NO_INC_RC;
 
-	mm_munmap(context, vaddr, size, mmap_flags);
+	km_unwrap_result(mm_munmap(context, vaddr, size, mmap_flags));
 }
 
 PBOS_API mm_context_t *mm_get_cur_context() {
