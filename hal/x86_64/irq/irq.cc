@@ -393,43 +393,315 @@ void hali_general_protect_isr_impl(
 	const uint64_t rflags,
 	const uint64_t rsp,
 	const uint64_t ss) {
-	if (!mm_is_user_space((void*)rip))
+	if (!mm_is_user_space((void *)rip))
 		km_panic("General protection error has triggered in kernel at 0x%p", (void *)rip);
 }
 
-void hali_pgfault_isr_impl() {
+void hali_page_fault_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t error_code,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss) {
 	// TODO: Implement it.
+	uint64_t cr2 = arch_rcr2();
+	mm_context_t *context = mm_get_cur_context();
+	size_t page_size = mm_get_page_size();
+
+	if (error_code & MM_PAGE_USER) {
+		if (error_code & ARCH_PAGE_FAULT_SGX) {
+			// TODO: Handle this.
+		}
+		if (error_code & ARCH_PAGE_FAULT_R) {
+			// TODO: Cause SEGV
+		}
+		if (error_code & ARCH_PAGE_FAULT_P) {
+			if (mm_is_user_space((void *)cr2)) {
+				ki_mm_lock_vmr(context);
+				if (auto node = context->vmr_tree.find((void *)cr2); node) {
+					mm_vmr_t *vmr = static_cast<mm_vmr_t *>(node);
+
+					void *paddr = mm_commit_single_reserved_page(context);
+					km_unwrap_result(kh_mmap(context, (void *)cr2, paddr, page_size, vmr->access & ~MM_PAGE_RESERVED, MM_MMAP_IGNORE_VMR | MM_MMAP_NO_PGTAB_ALLOC));
+				} else {
+					// TODO: Cause SEGV.
+				}
+			} else {
+				// TODO: Cause SEGV.
+			}
+		}
+		if (error_code & ARCH_PAGE_FAULT_I) {
+			// TODO: Cause SEGV
+		}
+		if (error_code & ARCH_PAGE_FAULT_PK) {
+			// TODO: Cause SEGV
+		}
+		if (error_code & ARCH_PAGE_FAULT_SS) {
+			// TODO: Cause SEGV
+		}
+	} else {
+		if (error_code & ARCH_PAGE_FAULT_SGX)
+			km_panic("Page protected by %p was accessed by kernel at %p!", (void *)cr2, (void *)rip);
+		if (error_code & ARCH_PAGE_FAULT_R) {
+			if (error_code & ARCH_PAGE_FAULT_W)
+				km_panic("Code at %p was trying writing %p in kernel which is mapped to an invalid physical page", (void *)rip, (void *)cr2);
+			else
+				km_panic("Code at %p was trying reading %p in kernel which is mapped to an invalid physical page", (void *)rip, (void *)cr2);
+		}
+		if (error_code & ARCH_PAGE_FAULT_I)
+			km_panic("Trying to execute code at %p where the page is not executable", (void *)cr2);
+		if (error_code & ARCH_PAGE_FAULT_P) {
+			if (error_code & ARCH_PAGE_FAULT_W)
+				km_panic("Code at %p was trying writing %p in kernel which is not present", (void *)rip, (void *)cr2);
+			else
+				km_panic("Code at %p was trying reading %p in kernel which is not present", (void *)rip, (void *)cr2);
+		}
+		if (error_code & ARCH_PAGE_FAULT_PK) {
+			if (error_code & ARCH_PAGE_FAULT_W)
+				km_panic("Code at %p was trying to write page at %p with protection key mismatched", (void *)rip, (void *)cr2);
+			else
+				km_panic("Code at %p was trying to read page at %p with protection key mismatched", (void *)rip, (void *)cr2);
+		}
+		if (error_code & ARCH_PAGE_FAULT_SS)
+			km_panic("Shadow stack at %p was accessed by kernel at %p!", (void *)cr2, (void *)rip);
+		km_panic("Page fault with unresolved error code was triggered, please contact developers");
+	}
 }
 
-void hali_fpu_except_isr_impl() {
+void hali_fpu_except_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss) {
 }
 
-void hali_align_check_isr_impl() {
+void hali_align_check_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t error_code,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss) {
 }
 
-void hali_machine_check_isr_impl() {
+void hali_machine_check_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss) {
+	km_panic("Machine check error triggered, the hardware may have faults!");
 }
 
-void hali_simd_except_isr_impl() {
+void hali_simd_except_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss) {
 }
 
-void hali_virt_except_isr_impl() {
+void hali_virt_except_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss) {
 }
 
-void hali_ctrl_protect_isr_impl() {
+void hali_ctrl_protect_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t error_code,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss) {
 }
 
-void hali_hypervisor_inject_except_isr_impl() {
+void hali_hypervisor_inject_except_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss) {
 }
 
-void hali_vmm_comm_except_isr_impl() {
+void hali_vmm_comm_except_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t error_code,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss) {
 }
 
-void hali_security_err_isr_impl() {
+void hali_security_err_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t error_code,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss) {
 }
 
 void hali_usable_irq_isr_impl(
-	const uint64_t irq_id,
 	const uint64_t rdi,
 	const uint64_t rsi,
 	const uint64_t rdx,

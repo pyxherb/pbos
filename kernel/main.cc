@@ -56,13 +56,7 @@ PBOS_NORETURN void kernel_main() {
 
 	kd_set_logger(kd_default_logger());
 
-	kh_mm_init();
-
-	ki_init_page_alloc_counter();
-
-	// kh_irq_init();
-
-	ki_mm_init_global_allocator();
+	ki_mm_init();
 
 	if (kh_acpi_is_supported()) {
 		kh_acpi_init();

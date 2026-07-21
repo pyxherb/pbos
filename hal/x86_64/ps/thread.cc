@@ -55,43 +55,15 @@ km_result_t ps_thread_alloc_stack(ps_tcb_t *tcb, size_t size) {
 	// Setup the guard page.
 	KM_RETURN_IF_FAILED(mm_mmap(pcb->mm_context, ptr, ki_proc_stack_guard_page, page_size, MM_PAGE_MAPPED, 0));
 
-	{
-		size_t i = 0;
+	kfxx::scope_guard release_guard_page_guard([pcb, size, ptr, page_size]() noexcept {
+		km_unwrap_result(mm_munmap(pcb->mm_context, ptr, page_size, 0));
+	});
 
-		kfxx::scope_guard release_pages_guard([pcb, size, &i, ptr, page_size]() noexcept {
-			km_unwrap_result(mm_munmap(pcb->mm_context, ptr, page_size, 0));
-			if (i) {
-				klog_printf("Freeing stack area: %p-%p", ptr, ptr + (i - page_size));
-				mm_munmap(pcb->mm_context, ptr, (i - page_size), 0);
-			}
-		});
-
-		for (; i < size; i += page_size) {
-			void *pg = mm_alloc_single_page(MM_PHYSICAL_MEMORY_TYPE_AVAILABLE);
-
-			if (!pg) {
-				klog_printf("Error allocating physical page: %p", ptr + i);
-				--i;
-				return KM_RESULT_NO_MEM;
-			}
-
-			kfxx::deferred release_pg_guard([pg]() noexcept {
-				mm_unpin_page(pg);
-			});
-
-			// User mmap does not increase the kernel reference count.
-			if (KM_FAILED(result = mm_mmap(pcb->mm_context, ptr + i + page_size, pg, page_size, MM_PAGE_MAPPED | MM_PAGE_READ | MM_PAGE_WRITE | MM_PAGE_USER, 0))) {
-				return result;
-			}
-
-			if (i)
-				km_unwrap_result(mm_merge_mapped_area(pcb->mm_context, ptr, ptr + i));
-		}
-
-		release_pages_guard.release();
-	}
+	KM_RETURN_IF_FAILED(mm_mmap(pcb->mm_context, ptr + page_size, nullptr, size, MM_PAGE_RESERVED | MM_PAGE_READ | MM_PAGE_WRITE, 0));
 
 	ki_thread_set_stack(tcb, ptr + page_size, size);
+
+	release_guard_page_guard.release();
 
 	return KM_RESULT_OK;
 }

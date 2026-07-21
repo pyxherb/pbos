@@ -78,7 +78,7 @@ km_result_t kh_init_irq_for_cpu(ps_cpuid_t cpu) {
 	hali_set_isr(idt, hali_seg_not_present_isr, 0x0b, 0, GATE_INT386);
 	hali_set_isr(idt, hali_stack_seg_fault_isr, 0x0c, 0, GATE_INT386);
 	hali_set_isr(idt, hali_general_protect_isr, 0x0d, 0, GATE_INT386);
-	// hali_set_isr(isr_pgfault, 0x0e, 0, GATE_INT386);
+	hali_set_isr(idt, hali_page_fault_isr, 0x0e, 0, GATE_INT386);
 	/*hali_set_isr(idt, hali_fpu_except_isr, 0x10, 0, GATE_INT386);
 	hali_set_isr(idt, hali_align_check_isr, 0x11, 0, GATE_INT386);
 	hali_set_isr(idt, hali_machine_check_isr, 0x12, 0, GATE_INT386);

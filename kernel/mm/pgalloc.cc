@@ -203,7 +203,7 @@ PBOS_API void *mm_commit_single_reserved_page(mm_context_t *context) {
 		}
 	}
 
-	return nullptr;
+	km_panic("Unable to find any free page with free page committed, please report this bug to developers");
 }
 
 PBOS_NODISCARD PBOS_API km_result_t mm_commit_reserved_pages(mm_context_t *context, void **pages_out, size_t num_pages) {

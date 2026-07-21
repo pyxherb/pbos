@@ -43,7 +43,7 @@ PBOS_API fs_fcb_t *ps_kfcb_of_ufcb(ps_ufcb_t *ufcb) {
 	return ufcb->kernel_fcb;
 }
 
-void ki_destroy_proc(ps_pcb_t *pcb) {
+void ki_destroy_pcb(ps_pcb_t *pcb) {
 	{
 		// Make sure only remove when the PCB is in the global process set.
 		ps::write_semaphore_guard g(ps_global_proc_set_mutex);
@@ -123,11 +123,13 @@ PBOS_API ps_pcb_t *ps_alloc_pcb() {
 		return nullptr;
 
 	kfxx::scope_guard release_proc_guard([proc]() noexcept {
-		ki_destroy_proc(proc);
+		ki_destroy_pcb(proc);
 	});
 
 	if (KM_FAILED(mm_alloc_context(mm_context, &proc->mm_context)))
 		return nullptr;
+
+	proc->mm_context->pcb = proc;
 
 	if (KM_FAILED(ps_cur_sched->prepare_proc(ps_cur_sched, proc)))
 		return nullptr;

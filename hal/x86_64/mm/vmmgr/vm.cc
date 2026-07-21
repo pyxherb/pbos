@@ -382,6 +382,9 @@ PBOS_NO_ASAN km_result_t kh_mmap(mm_context_t *ctxt,
 								 : 0);
 					ptx < PTX_MAX + 1;
 					++ptx) {
+					if (flags & MM_MMAP_RESERVE_PGTAB_ONLY)
+						break;
+
 					char *const ptt_vaddr = (char *)(addr_prefix | (uintptr_t)UVADDR(pml4x, pdptx, pdx, ptx, 0));
 
 					if (ptt_vaddr >= (void *)addr_limit)
@@ -565,6 +568,11 @@ PBOS_NO_ASAN void kh_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_f
 						arch_invlpg(ptt_vaddr);
 				}
 
+				if (!is_user_space) {
+					if (auto node = ctxt->vmr_tree.find_max_lteq(vaddr); node->rb_value >= ptt_paddr)
+						goto skip_release_pt;
+				}
+
 				// Check if the page table is unneeded.
 				for (uint16_t i = 0; i < PTX_MAX; ++i) {
 					if (ARCH_PTE_MASK(ptt[i]) & PTE_P)
@@ -580,6 +588,11 @@ PBOS_NO_ASAN void kh_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_f
 			skip_release_pt:;
 			}
 
+			if (!is_user_space) {
+				if (auto node = ctxt->vmr_tree.find_max_lteq(vaddr); node->rb_value >= pdt_paddr)
+					goto skip_release_pd;
+			}
+
 			// Check if the page directory is unneeded.
 			for (uint16_t i = 0; i < PDX_MAX; ++i) {
 				if (ARCH_PDE_MASK(pdt[i]) & PDE_P)
@@ -593,6 +606,11 @@ PBOS_NO_ASAN void kh_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mmap_f
 			}
 
 		skip_release_pd:;
+		}
+
+		if (!is_user_space) {
+			if (auto node = ctxt->vmr_tree.find_max_lteq(vaddr); node->rb_value >= pdpt_paddr)
+				goto skip_release_pdp;
 		}
 
 		// Check if the PML4T is unneeded.

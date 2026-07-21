@@ -112,6 +112,7 @@ hali_double_fault_isr:
 	HALI_SAVE_SCRATCH_REGS
 	call hali_double_fault_isr_impl
 	HALI_RESTORE_SCRATCH_REGS
+	addq $8, %rsp
 	iretq
 
 .global hali_invalid_tss_isr
@@ -119,6 +120,7 @@ hali_invalid_tss_isr:
 	HALI_SAVE_SCRATCH_REGS
 	call hali_invalid_tss_isr_impl
 	HALI_RESTORE_SCRATCH_REGS
+	addq $8, %rsp
 	iretq
 
 .global hali_seg_not_present_isr
@@ -126,6 +128,7 @@ hali_seg_not_present_isr:
 	HALI_SAVE_SCRATCH_REGS
 	call hali_seg_not_present_isr_impl
 	HALI_RESTORE_SCRATCH_REGS
+	addq $8, %rsp
 	iretq
 
 .global hali_stack_seg_fault_isr
@@ -133,6 +136,7 @@ hali_stack_seg_fault_isr:
 	HALI_SAVE_SCRATCH_REGS
 	call hali_stack_seg_fault_isr_impl
 	HALI_RESTORE_SCRATCH_REGS
+	addq $8, %rsp
 	iretq
 
 .global hali_general_protect_isr
@@ -143,11 +147,12 @@ hali_general_protect_isr:
 	addq $8, %rsp
 	iretq
 
-.global hali_pgfault_isr
-hali_pgfault_isr:
+.global hali_page_fault_isr
+hali_page_fault_isr:
 	HALI_SAVE_SCRATCH_REGS
-	call hali_pgfault_isr_impl
+	call hali_page_fault_isr_impl
 	HALI_RESTORE_SCRATCH_REGS
+	addq $8, %rsp
 	iretq
 
 .global hali_fpu_except_isr
@@ -162,6 +167,7 @@ hali_align_check_isr:
 	HALI_SAVE_SCRATCH_REGS
 	call hali_align_check_isr_impl
 	HALI_RESTORE_SCRATCH_REGS
+	addq $8, %rsp
 	iretq
 
 .global hali_machine_check_isr
@@ -190,6 +196,7 @@ hali_ctrl_protect_isr:
 	HALI_SAVE_SCRATCH_REGS
 	call hali_ctrl_protect_isr_impl
 	HALI_RESTORE_SCRATCH_REGS
+	addq $8, %rsp
 	iretq
 
 .global hali_hypervisor_inject_except_isr
@@ -204,6 +211,7 @@ hali_vmm_comm_except_isr:
 	HALI_SAVE_SCRATCH_REGS
 	call hali_vmm_comm_except_isr_impl
 	HALI_RESTORE_SCRATCH_REGS
+	addq $8, %rsp
 	iretq
 
 .global hali_security_err_isr
@@ -211,6 +219,7 @@ hali_security_err_isr:
 	HALI_SAVE_SCRATCH_REGS
 	call hali_security_err_isr_impl
 	HALI_RESTORE_SCRATCH_REGS
+	addq $8, %rsp
 	iretq
 
 .macro HALI_DECL_USABLE_IRQ_ISR irq_id

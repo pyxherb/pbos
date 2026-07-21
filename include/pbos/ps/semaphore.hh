@@ -40,48 +40,60 @@ namespace ps {
 
 	class read_semaphore_guard {
 	private:
-		ps_semaphore_t &_semaphore;
+		ps_semaphore_t *_semaphore;
 
 	public:
-		PBOS_FORCEINLINE read_semaphore_guard(ps_semaphore_t &rec_mutex) : _semaphore(rec_mutex) {
-			ps_read_lock_semaphore(&_semaphore);
+		PBOS_FORCEINLINE read_semaphore_guard(ps_semaphore_t &rec_mutex) : _semaphore(&rec_mutex) {
+			ps_read_lock_semaphore(_semaphore);
 		}
 
-		PBOS_FORCEINLINE read_semaphore_guard(ps::semaphore_t &rec_mutex) : _semaphore(rec_mutex.c_mutex()) {
-			ps_read_lock_semaphore(&_semaphore);
+		PBOS_FORCEINLINE read_semaphore_guard(ps::semaphore_t &rec_mutex) : _semaphore(&rec_mutex.c_mutex()) {
+			ps_read_lock_semaphore(_semaphore);
 		}
 
 		PBOS_FORCEINLINE ~read_semaphore_guard() {
-			ps_read_unlock_semaphore(&_semaphore);
+			if (_semaphore)
+				ps_read_unlock_semaphore(_semaphore);
 		}
 
 		read_semaphore_guard(const read_semaphore_guard &) = delete;
 		read_semaphore_guard(read_semaphore_guard &&) = delete;
 		read_semaphore_guard &operator=(const read_semaphore_guard &) = delete;
 		read_semaphore_guard &operator=(read_semaphore_guard &&) = delete;
+
+		PBOS_FORCEINLINE void release() {
+			ps_read_unlock_semaphore(_semaphore);
+			_semaphore = nullptr;
+		}
 	};
 
 	class write_semaphore_guard {
 	private:
-		ps_semaphore_t &_semaphore;
+		ps_semaphore_t *_semaphore;
 
 	public:
-		PBOS_FORCEINLINE write_semaphore_guard(ps_semaphore_t &rec_mutex) : _semaphore(rec_mutex) {
-			ps_write_lock_semaphore(&_semaphore);
+		PBOS_FORCEINLINE write_semaphore_guard(ps_semaphore_t &rec_mutex) : _semaphore(&rec_mutex) {
+			ps_write_lock_semaphore(_semaphore);
 		}
 
-		PBOS_FORCEINLINE write_semaphore_guard(ps::semaphore_t &rec_mutex) : _semaphore(rec_mutex.c_mutex()) {
-			ps_write_lock_semaphore(&_semaphore);
+		PBOS_FORCEINLINE write_semaphore_guard(ps::semaphore_t &rec_mutex) : _semaphore(&rec_mutex.c_mutex()) {
+			ps_write_lock_semaphore(_semaphore);
 		}
 
 		PBOS_FORCEINLINE ~write_semaphore_guard() {
-			ps_write_unlock_semaphore(&_semaphore);
+			if (_semaphore)
+				ps_write_unlock_semaphore(_semaphore);
 		}
 
 		write_semaphore_guard(const write_semaphore_guard &) = delete;
 		write_semaphore_guard(write_semaphore_guard &&) = delete;
 		write_semaphore_guard &operator=(const write_semaphore_guard &) = delete;
 		write_semaphore_guard &operator=(write_semaphore_guard &&) = delete;
+
+		PBOS_FORCEINLINE void release() {
+			ps_write_unlock_semaphore(_semaphore);
+			_semaphore = nullptr;
+		}
 	};
 }
 

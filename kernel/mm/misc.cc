@@ -1,11 +1,16 @@
 #include <pbos/kd/logger.h>
 #include <kernel/generated/config.hh>
 #include <pbos/kfxx/scope_guard.hh>
+#include <pbos/kh/mm/init.hh>
 #include <pbos/kh/mm/misc.hh>
 #include <pbos/ki/kasan/impl.hh>
 #include <pbos/ki/km/symbol.hh>
 #include <pbos/ki/mm/pgalloc.hh>
 #include <pbos/ki/ps/proc.hh>
+
+PBOS_FORCEINLINE uintptr_t ki_compute_reversal_mapping_key(size_t page_size, uintptr_t addr) {
+	return kfxx::floor_align_to<uintptr_t>(addr, page_size * KI_REVERSAL_MAP_GRANULE);
+}
 
 mm_context_t **mm_cur_contexts = nullptr;
 const ki_paging_config_t *ki_cur_paging_config;
@@ -54,9 +59,22 @@ PBOS_PRIVATE void ki_mm_destroy_rmlt(ki_mm_rmlt_t *rmlt) {
 }
 
 PBOS_PRIVATE void ki_mm_destroy_vmr(mm_vmr_t *vmr) {
+	size_t page_size = mm_get_page_size();
+	for (size_t k = 0, j = 0; k < vmr->size; k += page_size * KI_REVERSAL_MAP_GRANULE, ++j) {
+		if (vmr->get_index_alloc_mask(j)) {
+			kfxx::destroy_at<ki_vmr_index_t>(&vmr->indices[j]);
+		}
+	}
+	if (vmr->indices)
+		kima_free(&*vmr->mm_context->kima_vmr_pool, vmr->indices);
+	if (vmr->index_alloc_masks)
+		kima_free(&*vmr->mm_context->kima_vmr_pool, vmr->index_alloc_masks);
 	kfxx::destroy_at<mm_vmr_t>(vmr);
 	kima_free(&*vmr->mm_context->kima_vmr_pool, vmr);
 }
+
+kfxx::option_t<kfxx::radix_map_t<uintptr_t, ki_reversal_map_t, 3>> ki_reversal_mapping;
+ps::semaphore_t ki_reversal_mapping_semaphore;
 
 PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 	void *vaddr,
@@ -75,6 +93,7 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 	size_t aligned_size = kfxx::ceil_align_to<size_t>(size, page_size);
 	char *vaddr_limit = (char *)aligned_vaddr + (size - 1);
 	bool is_user_space = mm_is_user_space(aligned_vaddr);
+	ps_proc_id_t pid = PS_PROC_ID_MAX;
 
 	// Overflow is an error.
 	if (UINTPTR_MAX - (uintptr_t)aligned_vaddr < aligned_size) {
@@ -93,126 +112,180 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 		return KM_RESULT_INVALID_ARGS;
 	}
 
-	kfxx::scope_guard remove_vmr_guard([ctxt, aligned_vaddr]() noexcept {
-		if (auto node = ctxt->vmr_tree.find(aligned_vaddr)) {
-			ctxt->vmr_tree.remove(node);
-			ki_mm_destroy_vmr(static_cast<mm_vmr_t *>(node));
+	mm_vmr_t *vmr = nullptr;
+
+	kfxx::switchable_scope_guard unreserve_quota_guard([ctxt, aligned_size, page_size]() noexcept {
+		ki_unreserve_page_quota(ctxt, aligned_size / page_size);
+	},
+		false);
+
+	kfxx::switchable_scope_guard release_reversal_mappings_guard([ctxt, aligned_size, page_size, paddr, vmr, pid]() noexcept {
+		if (vmr)
+			km_panic("Reversal mapping removing guard is triggered with vmr == nullptr, please report this bug");
+		const size_t limit = aligned_size / page_size;
+		for (size_t i = 0; i < limit; i += KI_REVERSAL_MAP_GRANULE) {
+			ps::read_semaphore_guard gm_g(ki_reversal_mapping_semaphore);
+			uintptr_t revmap_key = ki_compute_reversal_mapping_key(page_size, reinterpret_cast<uintptr_t>(paddr) + i);
+			if (auto it = ki_reversal_mapping->find(revmap_key); it != ki_reversal_mapping->end()) {
+				ps::read_semaphore_guard rvmr_g((*it).related_vmrs_semaphore);
+				if (auto jt = (*it).proc_related_vmrs.find(pid); jt != (*it).proc_related_vmrs.end()) {
+					ps::write_semaphore_guard vt_g((*jt).vmr_index_tree_semaphore);
+					for (size_t k = 0, j = 0; k < vmr->size; k += page_size * KI_REVERSAL_MAP_GRANULE, ++j) {
+						if (vmr->get_index_alloc_mask(j))
+							(*jt).vmr_index_tree.remove(&vmr->indices[j]);
+					}
+					if (!(*jt).vmr_index_tree.size()) {
+						(*it).proc_related_vmrs.remove(pid);
+						vt_g.release();
+					}
+				}
+				if (!(*it).proc_related_vmrs.size()) {
+					ki_reversal_mapping->remove(revmap_key);
+					rvmr_g.release();
+				}
+			}
 		}
-	});
+
+		ki_mm_destroy_vmr(vmr);
+	},
+		false);
 
 	if (!(flags & MM_MMAP_IGNORE_VMR)) {
 		if (is_user_space) {
-			if (access & MM_PAGE_RESERVED) {
-				if (access & MM_PAGE_MAPPED)
-					return KM_RESULT_INVALID_ARGS;
-				KM_RETURN_IF_FAILED(mm_reserve_pages(ctxt, aligned_size / page_size));
-				return KM_RESULT_OK;
-			}
-
-			ki_mm_lock_vmr(ctxt);
-			kfxx::deferred lock_release([ctxt]() noexcept {
-				ki_mm_unlock_vmr(ctxt);
-			});
-
-			mm_vmr_t *vmr_begin, *vmr_end;
-
-			vmr_begin = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find_max_lteq(aligned_vaddr));
-			vmr_end = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find_max_lteq(vaddr_limit));
-
-			if (ctxt->vmr_tree.size()) {
-				// Check if vmr_begin and vmr_end has covered the area we are going to map.
-				if (((vmr_begin) && (((char *)vmr_begin->rb_value) + (vmr_begin->size - 1) >= aligned_vaddr)))
-					return KM_RESULT_INVALID_ARGS;
-				if (((vmr_end) && (((char *)vmr_end->rb_value) + (vmr_end->size - 1) >= vaddr_limit)))
-					return KM_RESULT_INVALID_ARGS;
-			}
-
-			mm_vmr_t *new_vmr = (mm_vmr_t *)kima_alloc(&*ctxt->kima_vmr_pool, sizeof(mm_vmr_t), alignof(mm_vmr_t));
-			if (!new_vmr)
-				return KM_RESULT_NO_MEM;
-			kfxx::construct_at<mm_vmr_t>(new_vmr);
-
-			new_vmr->rb_value = vaddr;
-			new_vmr->size = size;
-			new_vmr->access = access;
-
-			{
-				ki_mm_rmlt_t *default_group = nullptr;
-
-				if (vmr_begin) {
-					if ((char *)vmr_begin->rb_value + vmr_begin->size == vaddr) {
-						default_group = vmr_begin->default_rmlt;
-					}
-				}
-
-				// Choose a default PM group for unmapped PMAD.
-				if (!default_group) {
-					mm_vmr_t *nearing_vmr;
-					nearing_vmr = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find((char *)vaddr + kfxx::ceil_align_to(size, page_size)));
-					if (nearing_vmr) {
-						default_group = nearing_vmr->default_rmlt;
-					}
-					if (!default_group) {
-						for (size_t i = 0; i < size; i += page_size) {
-							ki_mad_t *mad = kh_get_mad((char *)paddr + i);
-							if (mad->rmlt) {
-								default_group = mad->rmlt;
-								break;
-							}
-						}
-						if (!default_group) {
-							if (!(default_group = ki_mm_alloc_rmlt()))
-								return KM_RESULT_NO_MEM;
-						}
-					}
-				}
-
-				kfxx::deferred destroy_default_group_guard([&default_group]() noexcept {
-					if (!default_group->vmrs.size())
-						ki_mm_destroy_rmlt(default_group);
+			pid = ctxt->pcb->rb_value;
+			if (flags & MM_MMAP_COMMIT_RESERVED_MEM) {
+				ki_mm_lock_vmr(ctxt);
+				kfxx::deferred lock_release([ctxt]() noexcept {
+					ki_mm_unlock_vmr(ctxt);
 				});
 
-				if (!default_group->vmrs.insert_or_keep(+new_vmr))
-					return KM_RESULT_NO_MEM;
+				if (auto node = ctxt->vmr_tree.find(aligned_vaddr); !node)
+					return KM_RESULT_INVALID_ARGS;
 
 				size_t i = 0;
-				// Guard which removes VMR from each involved PM groups.
-				kfxx::scope_guard remove_vmr_guard([new_vmr, paddr, &i]() noexcept {
-					for (size_t j = 0; j < i; ++j) {
-						ki_mad_t *mad = kh_get_mad((char *)paddr + i);
 
-						if (mad->rmlt) {
-							if (ki_mm_remove_vmr_from_rmlt(mad->rmlt, new_vmr))
-								mad->rmlt = nullptr;
-						}
-					}
-				});
+				for (; i < size; i += page_size * KI_REVERSAL_MAP_GRANULE) {
+					ki_reversal_map_t *m = nullptr;
+					ps::read_semaphore_guard gm_g(ki_reversal_mapping_semaphore);
+					uintptr_t revmap_key = ki_compute_reversal_mapping_key(page_size, reinterpret_cast<uintptr_t>(paddr) + i);
+					if (auto it = ki_reversal_mapping->find(revmap_key); it != ki_reversal_mapping->end()) {
+						m = &*it;
+					} else
+						km_panic("Kernel reversal mapping for %p is not found", static_cast<char *>(paddr) + i);
 
-				for (; i < size; i += page_size) {
-					ki_mad_t *mad = kh_get_mad((char *)paddr + i);
-					if (mad->rmlt) {
-						if (!mad->rmlt->vmrs.insert_or_keep(+new_vmr))
-							return KM_RESULT_NO_MEM;
-					} else {
-						mad->rmlt = default_group;
+					ki_related_vmrs_entry_t *t = nullptr;
+					ps::read_semaphore_guard rvmr_g(m->related_vmrs_semaphore);
+					if (auto it = m->proc_related_vmrs.find(pid); it != m->proc_related_vmrs.end()) {
+						t = &(*it);
 					}
+					km_panic("Process #%u's related VMR set of mapping for %p is not found", pid, static_cast<char *>(paddr) + i);
+					gm_g.release();
+
+					ps::read_semaphore_guard vt_g(t->vmr_index_tree_semaphore);
+
+					kd_assert(vmr->index_alloc_cur_index < vmr->size / page_size);
+					kfxx::construct_at<ki_vmr_index_t>(&vmr->indices[vmr->index_alloc_cur_index]);
+					// Use itself as key, for uniqueness.
+					vmr->indices[vmr->index_alloc_cur_index].rb_value = &vmr->indices[vmr->index_alloc_cur_index];
+					t->vmr_index_tree.insert_unwrap(&vmr->indices[vmr->index_alloc_cur_index]);
+					++vmr->index_alloc_cur_index;
+				}
+			} else {
+				if (access & MM_PAGE_RESERVED) {
+					if (paddr)
+						return KM_RESULT_INVALID_ARGS;
+					if (access & MM_PAGE_MAPPED)
+						return KM_RESULT_INVALID_ARGS;
+					KM_RETURN_IF_FAILED(mm_reserve_pages(ctxt, aligned_size / page_size));
+					flags |= MM_MMAP_RESERVE_PGTAB_ONLY;
+					unreserve_quota_guard.enable();
 				}
 
-				remove_vmr_guard.release();
+				ki_mm_lock_vmr(ctxt);
+				kfxx::deferred lock_release([ctxt]() noexcept {
+					ki_mm_unlock_vmr(ctxt);
+				});
 
-				new_vmr->default_rmlt = default_group;
+				mm_vmr_t *vmr_begin, *vmr_end;
+
+				vmr_begin = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find_max_lteq(aligned_vaddr));
+				vmr_end = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find_max_lteq(vaddr_limit));
+
+				if (ctxt->vmr_tree.size()) {
+					// Check if vmr_begin and vmr_end has covered the area we are going to map.
+					if (((vmr_begin) && (((char *)vmr_begin->rb_value) + (vmr_begin->size - 1) >= aligned_vaddr)))
+						return KM_RESULT_INVALID_ARGS;
+					if (((vmr_end) && (((char *)vmr_end->rb_value) + (vmr_end->size - 1) >= vaddr_limit)))
+						return KM_RESULT_INVALID_ARGS;
+				}
+
+				mm_vmr_t *new_vmr = (mm_vmr_t *)kima_alloc(&*ctxt->kima_vmr_pool, sizeof(mm_vmr_t), alignof(mm_vmr_t));
+				if (!new_vmr)
+					return KM_RESULT_NO_MEM;
+				kfxx::construct_at<mm_vmr_t>(new_vmr);
+
+				new_vmr->rb_value = vaddr;
+				new_vmr->size = size;
+				new_vmr->access = access;
+				new_vmr->mm_context = ctxt;
+
+				kfxx::scope_guard destroy_new_vmr_guard([ctxt, new_vmr]() noexcept {
+					ki_mm_destroy_vmr(new_vmr);
+				});
+
+				size_t index_len = kfxx::ceil_align_to(size, page_size * KI_REVERSAL_MAP_GRANULE) / KI_REVERSAL_MAP_GRANULE;
+				if (!(new_vmr->index_alloc_masks = static_cast<uint8_t *>(kima_alloc(&*ctxt->kima_vmr_pool, index_len * sizeof(uint8_t), alignof(ki_vmr_index_t)))))
+					return KM_RESULT_NO_MEM;
+				// Initialize the index allocation mask with 0.
+				memset(new_vmr->index_alloc_masks, 0, kfxx::ceil_align_to<size_t, 8>(index_len));
+				if (!(new_vmr->indices = static_cast<ki_vmr_index_t *>(kima_alloc(&*ctxt->kima_vmr_pool, index_len * sizeof(ki_vmr_index_t), alignof(ki_vmr_index_t)))))
+					return KM_RESULT_NO_MEM;
+
+				ctxt->vmr_tree.insert_unwrap(new_vmr);
+
+				vmr = new_vmr;
+
+				destroy_new_vmr_guard.release();
+
+				size_t i = 0;
+
+				release_reversal_mappings_guard.enable();
+
+				for (; i < size; i += page_size * KI_REVERSAL_MAP_GRANULE) {
+					ki_reversal_map_t *m = nullptr;
+					ps::read_semaphore_guard gm_g(ki_reversal_mapping_semaphore);
+					uintptr_t revmap_key = ki_compute_reversal_mapping_key(page_size, reinterpret_cast<uintptr_t>(paddr) + i);
+					if (auto it = ki_reversal_mapping->find(revmap_key); it != ki_reversal_mapping->end()) {
+						m = &*it;
+					} else {
+						if (!ki_reversal_mapping->insert(revmap_key, ki_reversal_map_t(kfxx::kernel_allocator())))
+							return KM_RESULT_NO_MEM;
+						m = &ki_reversal_mapping->at(revmap_key);
+					}
+
+					ki_related_vmrs_entry_t *t = nullptr;
+					ps::read_semaphore_guard rvmr_g(m->related_vmrs_semaphore);
+					if (auto it = m->proc_related_vmrs.find(pid); it != m->proc_related_vmrs.end()) {
+						t = &(*it);
+					} else {
+						if (!m->proc_related_vmrs.insert(pid, {}))
+							return KM_RESULT_NO_MEM;
+						t = &m->proc_related_vmrs.at(pid);
+					}
+					gm_g.release();
+
+					kd_assert(vmr->index_alloc_cur_index < vmr->size / page_size);
+					kfxx::construct_at<ki_vmr_index_t>(&vmr->indices[vmr->index_alloc_cur_index]);
+					// Use itself as key, for uniqueness.
+					vmr->indices[vmr->index_alloc_cur_index].rb_value = &vmr->indices[vmr->index_alloc_cur_index];
+					t->vmr_index_tree.insert_unwrap(&vmr->indices[vmr->index_alloc_cur_index]);
+					++vmr->index_alloc_cur_index;
+				}
 			}
-
-			ctxt->vmr_tree.insert_unwrap(new_vmr);
-
 		} else {
-			remove_vmr_guard.release();
-
 			if (access & MM_PAGE_RESERVED)
 				return KM_RESULT_INVALID_ARGS;
 		}
-	} else {
-		remove_vmr_guard.release();
 	}
 
 	kfxx::scope_guard release_kernel_mmap_mutex_guard([]() noexcept {
@@ -240,7 +313,8 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 	}
 #endif
 
-	remove_vmr_guard.release();
+	release_reversal_mappings_guard.disable();
+	unreserve_quota_guard.disable();
 
 	return KM_RESULT_OK;
 }
@@ -254,6 +328,7 @@ PBOS_API km_result_t mm_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 	char *vaddr_limit = (char *)aligned_vaddr + (size - 1);
 	bool is_user_space = mm_is_user_space(aligned_vaddr);
 	size_t page_size = kh_get_page_size();
+	ps_proc_id_t pid = PS_PROC_ID_MAX;
 
 	// Overflow is an error.
 	if (UINTPTR_MAX - (uintptr_t)aligned_vaddr < aligned_size) {
@@ -269,20 +344,29 @@ PBOS_API km_result_t mm_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 
 	if (!(flags & MM_MUNMAP_IGNORE_VMR)) {
 		if (is_user_space) {
+			pid = ctxt->pcb->rb_value;
+
 			ki_mm_lock_vmr(ctxt);
 			kfxx::deferred lock_release([ctxt]() noexcept {
 				ki_mm_unlock_vmr(ctxt);
 			});
 
-			mm_vmr_t *vmr;
+			struct user_data_t {
+				mm_vmr_t *vmr;
+				ps_proc_id_t pid;
+				size_t page_size;
+			};
+			user_data_t user_data;
 
-			vmr = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find(vaddr));
+			mm_vmr_t *vmr = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find(vaddr));
 
 			if (!vmr)
 				return KM_RESULT_INVALID_ARGS;
 
 			if (size)
 				return KM_RESULT_INVALID_ARGS;
+
+			user_data = { vmr, pid, page_size };
 
 			kh_walk_pgtab(
 				ctxt,
@@ -292,15 +376,31 @@ PBOS_API km_result_t mm_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 					if (!(page_access & MM_PAGE_MAPPED))
 						return KF_CONTROL_FLOW_CONTINUE;
 
-					ki_mad_t *mad = kh_get_mad(paddr);
-					mm_vmr_t *vmr = (mm_vmr_t *)user_data;
+					mm_vmr_t *vmr = static_cast<user_data_t *>(user_data)->vmr;
 
-					if (ki_mm_remove_vmr_from_rmlt(mad->rmlt, vmr)) {
-						mad->rmlt = nullptr;
+					ps::read_semaphore_guard gm_g(ki_reversal_mapping_semaphore);
+					uintptr_t revmap_key = ki_compute_reversal_mapping_key(static_cast<user_data_t *>(user_data)->page_size, reinterpret_cast<uintptr_t>(paddr));
+					if (auto it = ki_reversal_mapping->find(revmap_key); it != ki_reversal_mapping->end()) {
+						ps::read_semaphore_guard rvmr_g((*it).related_vmrs_semaphore);
+						if (auto jt = (*it).proc_related_vmrs.find(static_cast<user_data_t *>(user_data)->pid); jt != (*it).proc_related_vmrs.end()) {
+							ps::write_semaphore_guard vt_g((*jt).vmr_index_tree_semaphore);
+							for (size_t k = 0, j = 0; k < vmr->size; k += static_cast<user_data_t *>(user_data)->page_size, ++j) {
+								if (vmr->get_index_alloc_mask(j))
+									(*jt).vmr_index_tree.remove(&vmr->indices[j]);
+							}
+							if (!(*jt).vmr_index_tree.size()) {
+								(*it).proc_related_vmrs.remove(static_cast<user_data_t *>(user_data)->pid);
+								vt_g.release();
+							}
+						}
+						if (!(*it).proc_related_vmrs.size()) {
+							ki_reversal_mapping->remove(revmap_key);
+							rvmr_g.release();
+						}
 					}
 					return KF_CONTROL_FLOW_CONTINUE;
 				},
-				vmr,
+				&user_data,
 				KH_WALK_PGTAB_SKIP_UNMAPPED);
 
 			aligned_size = PGCEIL(vmr->size);
@@ -338,26 +438,26 @@ PBOS_API km_result_t mm_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 }
 
 PBOS_NODISCARD PBOS_API km_result_t mm_merge_mapped_area(
-	mm_context_t *context,
+	mm_context_t *ctxt,
 	void *vaddr_a,
 	void *vaddr_b) {
 	if (vaddr_a >= vaddr_b)
 		return KM_RESULT_INVALID_ARGS;
 
-	ki_mm_lock_vmr(context);
-	kfxx::deferred lock_release([context]() noexcept {
-		ki_mm_unlock_vmr(context);
+	ki_mm_lock_vmr(ctxt);
+	kfxx::deferred lock_release([ctxt]() noexcept {
+		ki_mm_unlock_vmr(ctxt);
 	});
 
 	mm_vmr_t *vmr_a, *vmr_b;
 
-	vmr_a = static_cast<mm_vmr_t *>(context->vmr_tree.find(vaddr_a));
+	vmr_a = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find(vaddr_a));
 	if (!vmr_a) {
 		dbg_println(__func__, "VMR not found with address %p", vaddr_a);
 		return KM_RESULT_INVALID_ARGS;
 	}
 
-	vmr_b = static_cast<mm_vmr_t *>(context->vmr_tree.find(vaddr_b));
+	vmr_b = static_cast<mm_vmr_t *>(ctxt->vmr_tree.find(vaddr_b));
 	if (!vmr_b) {
 		dbg_println(__func__, "VMR not found with address %p", vaddr_b);
 		return KM_RESULT_INVALID_ARGS;
@@ -369,31 +469,57 @@ PBOS_NODISCARD PBOS_API km_result_t mm_merge_mapped_area(
 	}
 
 	size_t page_size = kh_get_page_size();
+	ps_proc_id_t pid = ctxt->pcb->rb_value;
+
+	struct user_data_t {
+		mm_vmr_t *vmr;
+		ps_proc_id_t pid;
+		size_t page_size;
+	};
+	user_data_t user_data;
+
+	user_data = { vmr_b, pid, page_size };
 
 	kh_walk_pgtab(
-		context,
+		ctxt,
 		vmr_b->rb_value,
 		vmr_b->size,
 		[](void *vaddr, void *paddr, mm_page_access_t page_access, void *user_data) -> kf_control_flow_t {
 			if (!(page_access & MM_PAGE_MAPPED))
 				return KF_CONTROL_FLOW_CONTINUE;
 
-			ki_mad_t *mad = kh_get_mad(paddr);
-			mm_vmr_t *vmr_b = (mm_vmr_t *)user_data;
+			mm_vmr_t *vmr = static_cast<user_data_t *>(user_data)->vmr;
 
-			if (ki_mm_remove_vmr_from_rmlt(mad->rmlt, vmr_b))
-				mad->rmlt = nullptr;
-
+			ps::read_semaphore_guard gm_g(ki_reversal_mapping_semaphore);
+			uintptr_t revmap_key = ki_compute_reversal_mapping_key(static_cast<user_data_t *>(user_data)->page_size, reinterpret_cast<uintptr_t>(paddr));
+			if (auto it = ki_reversal_mapping->find(revmap_key); it != ki_reversal_mapping->end()) {
+				ps::read_semaphore_guard rvmr_g((*it).related_vmrs_semaphore);
+				if (auto jt = (*it).proc_related_vmrs.find(static_cast<user_data_t *>(user_data)->pid); jt != (*it).proc_related_vmrs.end()) {
+					ps::write_semaphore_guard vt_g((*jt).vmr_index_tree_semaphore);
+					for (size_t k = 0, j = 0; k < vmr->size; k += static_cast<user_data_t *>(user_data)->page_size, ++j) {
+						if (vmr->get_index_alloc_mask(j))
+							(*jt).vmr_index_tree.remove(&vmr->indices[j]);
+					}
+					if (!(*jt).vmr_index_tree.size()) {
+						(*it).proc_related_vmrs.remove(static_cast<user_data_t *>(user_data)->pid);
+						vt_g.release();
+					}
+				}
+				if (!(*it).proc_related_vmrs.size()) {
+					ki_reversal_mapping->remove(revmap_key);
+					rvmr_g.release();
+				}
+			}
 			return KF_CONTROL_FLOW_CONTINUE;
 		},
-		vmr_b,
+		&user_data,
 		KH_WALK_PGTAB_SKIP_UNMAPPED);
 
 	vmr_a->size += vmr_b->size;
 
-	context->vmr_tree.remove(vmr_b);
+	ctxt->vmr_tree.remove(vmr_b);
 	kfxx::destroy_at<mm_vmr_t>(vmr_b);
-	kima_free(&*context->kima_vmr_pool, vmr_b);
+	kima_free(&*ctxt->kima_vmr_pool, vmr_b);
 
 	return KM_RESULT_OK;
 }
@@ -433,61 +559,108 @@ PBOS_NODISCARD PBOS_API km_result_t mm_split_mapped_area(
 	size_t latter_vmr_size = (((char *)vmr->rb_value) + vmr->size) - (char *)split_point;
 	size_t split_point_off = (char *)split_point - (char *)vmr->rb_value;
 	size_t page_size = kh_get_page_size();
+	ps_proc_id_t pid = context->pcb->rb_value;
 
-	{
-		ki_mm_rmlt_t *default_group = vmr->default_rmlt;
-		if (!ki_mm_add_vmr_to_rmlt(default_group, new_vmr))
-			return KM_RESULT_NO_MEM;
+	struct user_data_t {
+		mm_vmr_t *vmr;
+		ps_proc_id_t pid;
+		size_t page_size;
+		km_result_t result;
+	};
+	user_data_t user_data;
 
-		// Guard which removes VMR from each involved PMGroups.
-		kfxx::scope_guard remove_vmr_guard([context, split_point, latter_vmr_size, split_point_off, new_vmr]() noexcept {
-			kh_walk_pgtab(
-				context,
-				split_point,
-				latter_vmr_size,
-				[](void *vaddr, void *paddr, mm_page_access_t page_access, void *user_data) -> kf_control_flow_t {
-					if (!(page_access & MM_PAGE_MAPPED))
-						return KF_CONTROL_FLOW_CONTINUE;
-					ki_mad_t *mad = kh_get_mad(paddr);
-					mm_vmr_t *new_vmr = (mm_vmr_t *)user_data;
-					if (ki_mm_remove_vmr_from_rmlt(mad->rmlt, new_vmr))
-						mad->rmlt = nullptr;
-					return KF_CONTROL_FLOW_CONTINUE;
-				},
-				new_vmr,
-				KH_WALK_PGTAB_SKIP_UNMAPPED);
-		});
+	user_data = { new_vmr, pid, page_size, KM_RESULT_OK };
+	kh_walk_pgtab(
+		context,
+		split_point,
+		latter_vmr_size,
+		[](void *vaddr, void *paddr, mm_page_access_t page_access, void *user_data) -> kf_control_flow_t {
+			ki_reversal_map_t *m = nullptr;
+			auto ud = static_cast<user_data_t *>(user_data);
+			ps::read_semaphore_guard gm_g(ki_reversal_mapping_semaphore);
+			uintptr_t revmap_key = ki_compute_reversal_mapping_key(static_cast<user_data_t *>(user_data)->page_size, reinterpret_cast<uintptr_t>(paddr));
+			if (auto it = ki_reversal_mapping->find(revmap_key); it != ki_reversal_mapping->end()) {
+				m = &*it;
+			} else {
+				if (!ki_reversal_mapping->insert(revmap_key, ki_reversal_map_t(kfxx::kernel_allocator()))) {
+					ud->result = KM_RESULT_NO_MEM;
+					return KF_CONTROL_FLOW_BREAK;
+				}
+				m = &ki_reversal_mapping->at(revmap_key);
+			}
 
-		struct context_struct_t {
-			km_result_t result;
-			mm_vmr_t *new_vmr;
-		};
+			ki_related_vmrs_entry_t *t = nullptr;
+			ps_proc_id_t pid = ud->pid;
+			ps::read_semaphore_guard rvmr_g(m->related_vmrs_semaphore);
+			if (auto it = m->proc_related_vmrs.find(pid); it != m->proc_related_vmrs.end()) {
+				t = &(*it);
+			} else {
+				if (!m->proc_related_vmrs.insert(pid, {})) {
+					ud->result = KM_RESULT_NO_MEM;
+					return KF_CONTROL_FLOW_BREAK;
+				}
+				t = &m->proc_related_vmrs.at(pid);
+			}
 
-		context_struct_t cs = {
-			KM_RESULT_OK,
-			new_vmr
-		};
+			ps::read_semaphore_guard vt_g(t->vmr_index_tree_semaphore);
+			kd_assert(ud->vmr->index_alloc_cur_index < ud->vmr->size / ud->page_size);
+			t->vmr_index_tree.insert_unwrap(&ud->vmr->indices[ud->vmr->index_alloc_cur_index]);
+			++ud->vmr->index_alloc_cur_index;
 
+			return KF_CONTROL_FLOW_CONTINUE;
+		},
+		&user_data,
+		KH_WALK_PGTAB_SKIP_UNMAPPED);
+
+	auto free_walker = [](void *vaddr, void *paddr, mm_page_access_t page_access, void *user_data) -> kf_control_flow_t {
+		if (!(page_access & MM_PAGE_MAPPED))
+			return KF_CONTROL_FLOW_CONTINUE;
+
+		mm_vmr_t *vmr = static_cast<user_data_t *>(user_data)->vmr;
+
+		ps::read_semaphore_guard gm_g(ki_reversal_mapping_semaphore);
+		uintptr_t revmap_key = ki_compute_reversal_mapping_key(static_cast<user_data_t *>(user_data)->page_size, reinterpret_cast<uintptr_t>(paddr));
+		if (auto it = ki_reversal_mapping->find(revmap_key); it != ki_reversal_mapping->end()) {
+			ps::read_semaphore_guard rvmr_g((*it).related_vmrs_semaphore);
+			if (auto jt = (*it).proc_related_vmrs.find(static_cast<user_data_t *>(user_data)->pid); jt != (*it).proc_related_vmrs.end()) {
+				ps::write_semaphore_guard vt_g((*jt).vmr_index_tree_semaphore);
+				for (size_t k = 0, j = 0; k < vmr->size; k += static_cast<user_data_t *>(user_data)->page_size, ++j) {
+					if (vmr->get_index_alloc_mask(j))
+						(*jt).vmr_index_tree.remove(&vmr->indices[j]);
+				}
+				if (!(*jt).vmr_index_tree.size()) {
+					(*it).proc_related_vmrs.remove(static_cast<user_data_t *>(user_data)->pid);
+					vt_g.release();
+				}
+			}
+			if (!(*it).proc_related_vmrs.size()) {
+				ki_reversal_mapping->remove(revmap_key);
+				rvmr_g.release();
+			}
+		}
+		return KF_CONTROL_FLOW_CONTINUE;
+	};
+
+	if (KM_FAILED(user_data.result)) {
+		km_result_t result = user_data.result;
+		user_data.vmr = new_vmr;
 		kh_walk_pgtab(
 			context,
 			split_point,
 			latter_vmr_size,
-			[](void *vaddr, void *paddr, mm_page_access_t page_access, void *user_data) -> kf_control_flow_t {
-				if (!(page_access & MM_PAGE_MAPPED))
-					return KF_CONTROL_FLOW_CONTINUE;
-				context_struct_t *cs = (context_struct_t *)user_data;
-				ki_mad_t *mad = kh_get_mad(paddr);
-				if (!mad->rmlt->vmrs.insert_or_keep(+cs->new_vmr)) {
-					cs->result = KM_RESULT_NO_MEM;
-					return KF_CONTROL_FLOW_BREAK;
-				}
-				return KF_CONTROL_FLOW_CONTINUE;
-			},
-			&cs,
+			free_walker,
+			&user_data,
 			KH_WALK_PGTAB_SKIP_UNMAPPED);
-		KM_RETURN_IF_FAILED(cs.result);
-
-		remove_vmr_guard.release();
+		return result;
+	} else {
+		user_data = { vmr, pid, page_size, KM_RESULT_OK };
+		kh_walk_pgtab(
+			context,
+			split_point,
+			latter_vmr_size,
+			free_walker,
+			&user_data,
+			KH_WALK_PGTAB_SKIP_UNMAPPED);
 	}
 
 	new_vmr->rb_value = split_point;
@@ -811,4 +984,14 @@ PBOS_API void mm_uniommap(mm_context_t *context, void *vaddr, size_t size, mm_io
 
 PBOS_API mm_context_t *mm_get_cur_context() {
 	return mm_cur_contexts ? mm_cur_contexts[ps_get_cur_cpuid()] : mm_kernel_context;
+}
+
+void ki_mm_init() {
+	kh_mm_init();
+
+	ki_init_page_alloc_counter();
+
+	ki_reversal_mapping = kfxx::radix_map_t<uintptr_t, ki_reversal_map_t, 3>{ kfxx::kernel_allocator() };
+
+	ki_mm_init_global_allocator();
 }

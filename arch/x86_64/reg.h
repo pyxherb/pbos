@@ -61,6 +61,17 @@ PBOS_FORCEINLINE static void arch_wcr0(uint64_t value) {
 	__asm__ __volatile__("movq %0,%%cr0" ::"r"(value));
 }
 
+enum {
+	ARCH_PAGE_FAULT_P = 1 << 0,
+	ARCH_PAGE_FAULT_W = 1 << 1,
+	ARCH_PAGE_FAULT_U = 1 << 2,
+	ARCH_PAGE_FAULT_R = 1 << 3,
+	ARCH_PAGE_FAULT_I = 1 << 4,
+	ARCH_PAGE_FAULT_PK = 1 << 5,
+	ARCH_PAGE_FAULT_SS = 1 << 6,
+	ARCH_PAGE_FAULT_SGX = 1 << 15,
+};
+
 ///
 /// @brief Read CR2 register.
 ///

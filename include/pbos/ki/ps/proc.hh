@@ -66,7 +66,7 @@ void ki_ps_init();
 
 PBOS_NORETURN void kh_enter_sched(ps_cpuid_t cpuid);
 
-void ki_destroy_proc(ps_pcb_t *pcb);
+void ki_destroy_pcb(ps_pcb_t *pcb);
 void ki_destroy_tcb(ps_tcb_t *tcb);
 
 ps_proc_id_t ki_alloc_proc_id();

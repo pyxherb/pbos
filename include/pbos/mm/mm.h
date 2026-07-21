@@ -197,6 +197,9 @@ enum {
 	/// @brief Do not increase the reference count, usually used for mapping page allocated by @c mm_alloc_single_page
 	MM_MMAP_NO_INC_RC = 0x00000004,
 	MM_MMAP_RESERVE = 0x00000008,
+
+	MM_MMAP_COMMIT_RESERVED_MEM = 0x08000000,
+	MM_MMAP_RESERVE_PGTAB_ONLY = 0x10000000,
 	MM_MMAP_IGNORE_VMR = 0x20000000,
 	MM_MMAP_NO_PGTAB_ALLOC = 0x40000000,
 	MM_MMAP_IGNORE_KASAN = 0x80000000

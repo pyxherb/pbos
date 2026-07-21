@@ -131,7 +131,7 @@ km_result_t ps_exec(
 	}
 
 	kfxx::scope_guard destroy_pcb_guard([pcb]() noexcept {
-		ki_destroy_proc(pcb);
+		ki_destroy_pcb(pcb);
 	});
 
 	for (auto it = ki_registered_binldrs.begin(); it != ki_registered_binldrs.end(); ++it) {

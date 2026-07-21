@@ -345,35 +345,245 @@ void hali_general_protect_isr_impl(
 	const uint64_t rsp,
 	const uint64_t ss);
 
-PBOS_NORETURN void hali_pgfault_isr();	// 0x0e Page Fault
-void hali_pgfault_isr_impl();
+PBOS_NORETURN void hali_page_fault_isr();	// 0x0e Page Fault
+void hali_page_fault_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t error_code,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss);
 
 PBOS_NORETURN void hali_fpu_except_isr();  // 0x10 x87 Floating-Point Exception
-void hali_fpu_except_isr_impl();
+void hali_fpu_except_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss);
 
 PBOS_NORETURN void hali_align_check_isr();	// 0x11 Alignment Check
-void hali_align_check_isr_impl();
+void hali_align_check_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t error_code,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss);
 
 PBOS_NORETURN void hali_machine_check_isr();  // 0x12 Machine Check
-void hali_machine_check_isr_impl();
+void hali_machine_check_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss);
 
 PBOS_NORETURN void hali_simd_except_isr();	// 0x13 SIMD Floating-Point Exception
-void hali_simd_except_isr_impl();
+void hali_simd_except_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss);
 
 PBOS_NORETURN void hali_virt_except_isr();	// 0x14 Virtualization Exception
-void hali_virt_except_isr_impl();
+void hali_virt_except_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss);
 
 PBOS_NORETURN void hali_ctrl_protect_isr();	 // 0x15 Control Protection Exception
-void hali_ctrl_protect_isr_impl();
+void hali_ctrl_protect_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t error_code,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss);
 
 PBOS_NORETURN void hali_hypervisor_inject_except_isr();	 // 0x1c Hypervisor Injection Exception
-void hali_hypervisor_inject_except_isr_impl();
+void hali_hypervisor_inject_except_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss);
 
 PBOS_NORETURN void hali_vmm_comm_except_isr();	// 0x1d VMM Communication Exception
-void hali_vmm_comm_except_isr_impl();
+void hali_vmm_comm_except_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t error_code,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss);
 
 PBOS_NORETURN void hali_security_err_isr();	 // 0x1e Security Exception
-void hali_security_err_isr_impl();
+void hali_security_err_isr_impl(
+	uint64_t rdi,
+	uint64_t rsi,
+	uint64_t rdx,
+	uint64_t rcx,
+	uint64_t r8,
+	uint64_t r9,
+
+	const uint64_t saved_r11,
+	const uint64_t saved_r10,
+	const uint64_t saved_r9,
+	const uint64_t saved_r8,
+	const uint64_t saved_rdx,
+	const uint64_t saved_rcx,
+	const uint64_t saved_rax,
+
+	const uint64_t error_code,
+
+	const uint64_t rip,
+	const uint64_t cs,
+	const uint64_t rflags,
+	const uint64_t rsp,
+	const uint64_t ss);
 
 #define HALI_DECL_USABLE_IRQ_ISR(irq_id) \
 	PBOS_NORETURN void hali_usable_irq_isr_##irq_id();
@@ -604,7 +814,6 @@ HALI_DECL_USABLE_IRQ_ISR(fe);
 HALI_DECL_USABLE_IRQ_ISR(ff);
 
 void hali_usable_irq_impl(
-	const uint64_t irq_id,
 	const uint64_t rdi,
 	const uint64_t rsi,
 	const uint64_t rdx,
@@ -625,6 +834,8 @@ void hali_usable_irq_impl(
 	const uint64_t rax,
 	const uint64_t rbx,
 	const uint64_t rbp,
+
+	const uint64_t irq_id,
 
 	const uint64_t rip,
 	const uint64_t cs,
