@@ -32,7 +32,6 @@ typedef struct _mm_vmr_t
 	: public ki_mm_vmr_tree_t::node_t {
 	ps::mutex_t mutex;
 
-	mm_vmr_t *prev, *next;
 	mm_context_t *mm_context = nullptr;
 
 	ki_mm_rmlt_t *default_rmlt = nullptr;

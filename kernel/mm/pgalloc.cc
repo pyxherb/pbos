@@ -128,14 +128,41 @@ PBOS_API km_result_t mm_alloc_pages(uint8_t memtype, void **pages_out, size_t nu
 }
 
 PBOS_API km_result_t mm_reserve_pages(mm_context_t *context, size_t num_pages) {
-	ps::write_semaphore_guard g(ki_page_alloc_counter_semaphore);
+	{
+		ps::write_semaphore_guard g(ki_page_alloc_counter_semaphore);
 
-	if (ki_num_total_free_pages < num_pages)
-		return KM_RESULT_NO_MEM;
+		if (ki_num_total_free_pages < num_pages)
+			return KM_RESULT_NO_MEM;
 
-	ki_num_total_free_pages -= num_pages;
+		ki_num_total_free_pages -= num_pages;
+	}
+
+	{
+		ps::write_semaphore_guard g(context->user_page_reserve_quota_semaphore);
+		context->num_reserved_user_pages += num_pages;
+	}
 
 	return KM_RESULT_OK;
+}
+
+void ki_unreserve_page_quota(mm_context_t *context, size_t num_pages) {
+	{
+		ps::write_semaphore_guard g(context->user_page_reserve_quota_semaphore);
+
+		if (context->num_reserved_user_pages < num_pages)
+			km_panic("Context does not have enough user pages to unreserve, please report this bug to developers");
+
+		context->num_reserved_user_pages += num_pages;
+	}
+
+	{
+		ps::write_semaphore_guard g(ki_page_alloc_counter_semaphore);
+
+		if (ki_num_total_free_pages < num_pages)
+			km_panic("Mismatched total free page counter, please report this bug to developers");
+
+		ki_num_total_free_pages -= num_pages;
+	}
 }
 
 PBOS_API void *mm_commit_single_reserved_page(mm_context_t *context) {
@@ -176,7 +203,6 @@ PBOS_API void *mm_commit_single_reserved_page(mm_context_t *context) {
 		}
 	}
 
-	--context->num_reserved_user_pages;
 	return nullptr;
 }
 
@@ -185,7 +211,7 @@ PBOS_NODISCARD PBOS_API km_result_t mm_commit_reserved_pages(mm_context_t *conte
 		ps::write_semaphore_guard g(context->user_page_reserve_quota_semaphore);
 		if (context->num_reserved_user_pages < num_pages)
 			return KM_RESULT_NO_MEM;
-		--context->num_reserved_user_pages;
+		context->num_reserved_user_pages -= num_pages;
 	}
 
 	size_t count = 0;
@@ -279,8 +305,10 @@ PBOS_API void mm_pin_page(void *ptr) {
 		mad->prev_free = nullptr;
 		mad->next_free = nullptr;
 
-		ps::write_semaphore_guard g(ki_page_alloc_counter_semaphore);
-		--ki_num_total_free_pages;
+		{
+			ps::write_semaphore_guard g(ki_page_alloc_counter_semaphore);
+			--ki_num_total_free_pages;
+		}
 		++area->used_count;
 	}
 }

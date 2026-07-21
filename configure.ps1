@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 $pbosTriplet = $env:PBOS_TRIPLET
 
 if (-not $pbosTriplet) {
-	Write-Output "LIMINE_PATH not set"
+	Write-Output "PBOS_TRIPLET not set"
 	Exit -1
 }
 

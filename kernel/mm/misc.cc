@@ -69,11 +69,12 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 	if (!size)
 		return KM_RESULT_INVALID_ARGS;
 
-	void *aligned_vaddr = (void *)PGFLOOR(vaddr), *aligned_paddr = (void *)PGFLOOR(paddr);
-	size_t aligned_size = PGCEIL(size);
+	size_t page_size = kh_get_page_size();
+	void *aligned_vaddr = (void *)kfxx::floor_align_to<uintptr_t>((uintptr_t)vaddr, page_size),
+		 *aligned_paddr = (void *)kfxx::floor_align_to<uintptr_t>((uintptr_t)paddr, page_size);
+	size_t aligned_size = kfxx::ceil_align_to<size_t>(size, page_size);
 	char *vaddr_limit = (char *)aligned_vaddr + (size - 1);
 	bool is_user_space = mm_is_user_space(aligned_vaddr);
-	size_t page_size = kh_get_page_size();
 
 	// Overflow is an error.
 	if (UINTPTR_MAX - (uintptr_t)aligned_vaddr < aligned_size) {
@@ -101,6 +102,13 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 
 	if (!(flags & MM_MMAP_IGNORE_VMR)) {
 		if (is_user_space) {
+			if (access & MM_PAGE_RESERVED) {
+				if (access & MM_PAGE_MAPPED)
+					return KM_RESULT_INVALID_ARGS;
+				KM_RETURN_IF_FAILED(mm_reserve_pages(ctxt, aligned_size / page_size));
+				return KM_RESULT_OK;
+			}
+
 			ki_mm_lock_vmr(ctxt);
 			kfxx::deferred lock_release([ctxt]() noexcept {
 				ki_mm_unlock_vmr(ctxt);
@@ -196,10 +204,16 @@ PBOS_API km_result_t mm_mmap(mm_context_t *ctxt,
 			}
 
 			ctxt->vmr_tree.insert_unwrap(new_vmr);
-		} else
+
+		} else {
 			remove_vmr_guard.release();
-	} else
+
+			if (access & MM_PAGE_RESERVED)
+				return KM_RESULT_INVALID_ARGS;
+		}
+	} else {
 		remove_vmr_guard.release();
+	}
 
 	kfxx::scope_guard release_kernel_mmap_mutex_guard([]() noexcept {
 		ki_kernel_mmap_mutex.unlock();
@@ -292,6 +306,8 @@ PBOS_API km_result_t mm_munmap(mm_context_t *ctxt, void *vaddr, size_t size, mma
 			aligned_size = PGCEIL(vmr->size);
 
 			ctxt->vmr_tree.remove(vmr);
+
+			ki_unreserve_page_quota(ctxt, vmr->size / page_size);
 			ki_mm_destroy_vmr(vmr);
 		}
 	} else {

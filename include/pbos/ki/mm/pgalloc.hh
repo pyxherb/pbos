@@ -78,6 +78,8 @@ ki_mad_t *kh_get_mad(void *pgaddr);
 
 ki_pmad_t *ki_get_pmad(void *addr);
 
+void ki_unreserve_page_quota(mm_context_t *context, size_t num_pages);
+
 PBOS_EXTERN_C_END
 
 #endif

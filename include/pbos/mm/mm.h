@@ -30,16 +30,18 @@ enum {
 enum {
 	/// @brief The page is mapped.
 	MM_PAGE_MAPPED = 0x01,
+	/// @brief The page is reserved.
+	MM_PAGE_RESERVED = 0x02,
 	/// @brief The page can be read.
-	MM_PAGE_READ = 0x02,
+	MM_PAGE_READ = 0x04,
 	/// @brief The page can be written.
-	MM_PAGE_WRITE = 0x04,
+	MM_PAGE_WRITE = 0x08,
 	/// @brief The page can be executed.
-	MM_PAGE_EXEC = 0x08,
+	MM_PAGE_EXEC = 0x10,
 	/// @brief The page should not be cached.
-	MM_PAGE_NOCACHE = 0x10,
+	MM_PAGE_NOCACHE = 0x20,
 	/// @brief The page can be accessed by the user.
-	MM_PAGE_USER = 0x20,
+	MM_PAGE_USER = 0x40,
 };
 
 /// @brief Type used for representing access mode of a page.
@@ -58,7 +60,7 @@ typedef struct _mm_context_t mm_context_t;
 PBOS_NODISCARD PBOS_API void *mm_alloc_single_page(uint8_t memtype);
 PBOS_API km_result_t mm_alloc_pages(uint8_t memtype, void **pages_out, size_t num_pages);
 
-PBOS_NODISCARD PBOS_API km_result_t mm_reserve_user_pages(mm_context_t *context, size_t num_pages);
+PBOS_NODISCARD PBOS_API km_result_t mm_reserve_pages(mm_context_t *context, size_t num_pages);
 PBOS_NODISCARD PBOS_API void *mm_commit_single_reserved_page(mm_context_t *context);
 PBOS_NODISCARD PBOS_API km_result_t mm_commit_reserved_pages(mm_context_t *context, void **pages_out, size_t num_pages);
 
@@ -194,6 +196,7 @@ enum {
 	MM_MMAP_NO_REMAP = 0x00000002,
 	/// @brief Do not increase the reference count, usually used for mapping page allocated by @c mm_alloc_single_page
 	MM_MMAP_NO_INC_RC = 0x00000004,
+	MM_MMAP_RESERVE = 0x00000008,
 	MM_MMAP_IGNORE_VMR = 0x20000000,
 	MM_MMAP_NO_PGTAB_ALLOC = 0x40000000,
 	MM_MMAP_IGNORE_KASAN = 0x80000000
